@@ -72,7 +72,8 @@ export function loadSeason(seasonId) {
       const [seasons, leagues, venues, teams, players, fixtures] = await Promise.all([
         table("seasons", "name"), table("leagues", "sort"), table("venues", "name"),
         table("teams", "name"), table("players", "full_name"),
-        selectAll(() => db.from("fixtures").select("*").eq("season_id", seasonId).order("starts_at")),
+        // No season yet (brand-new database): show everything else with no fixtures.
+        seasonId ? selectAll(() => db.from("fixtures").select("*").eq("season_id", seasonId).order("starts_at")) : [],
       ]);
       const ids = fixtures.map((f) => f.id);
       const [frames, breaks] = await Promise.all([selectIn("frames", "fixture_id", ids), selectIn("breaks", "fixture_id", ids)]);

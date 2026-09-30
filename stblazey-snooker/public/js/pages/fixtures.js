@@ -12,6 +12,6 @@ export default async function fixtures(view, { query }) {
     <h1>${title}</h1>
     ${seasonPicker(ctx)}
     ${ctx.leagues.map((l) => html`<h3>${l.name}</h3>
-      <div class="cards">${ctx.teamsIn(l.id).map((t) => html`<a class="tile" href="${urls.team(t)}?season=${ctx.season.id}"><h4>${t.name}</h4>Click here to view the fixtures</a>`)}</div>`)}
+      <div class="cards">${ctx.teamsIn(l.id).map((t) => html`<a class="tile" href="${urls.team(t)}?season=${ctx.season?.id ?? ""}"><h4>${t.name}</h4>Click here to view the fixtures</a>`)}</div>`)}
   </div>`);
 }
