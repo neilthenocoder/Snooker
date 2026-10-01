@@ -1,0 +1,215 @@
+// ─────────────────────────────────────────────────────────────
+//  ADMIN SECTIONS — describe a table here and the dashboard builds
+//  its list, search, filters, add/edit form and delete button for
+//  you (see admin/crud.js). To add a field, add one line.
+//
+//  Field types: text, email, password, textarea, number, checkbox,
+//               date, datetime, select (options), ref (another table),
+//               slug (auto-filled from `from` when left blank),
+//               image (upload / pick from library), gallery (several images),
+//               heading (a section title in the form, not a field)
+//  Options:     in: "column" stores the field inside a JSON column,
+//               store: "name" makes a ref save the name instead of the id,
+//               help: "…" shows a hint under the label.
+// ─────────────────────────────────────────────────────────────
+import { adminUsers } from "../core/db.js";
+import { STATUSES } from "../core/rules.js";
+import { CUEVIEW } from "../core/cueview.js";
+import { refreshShell } from "../core/router.js";
+
+export const RESOURCES = {
+  fixtures: {
+    label: "Fixtures", table: "fixtures", order: "starts_at",
+    filters: ["season_id", "league_id", "status"],
+    columns: ["starts_at", "home_team_id", "away_team_id", "league_id", "status"],
+    fields: [
+      { name: "season_id", label: "Season", type: "ref", ref: "seasons", required: true },
+      { name: "league_id", label: "League", type: "ref", ref: "leagues", required: true },
+      { name: "home_team_id", label: "Home team", type: "ref", ref: "teams", required: true },
+      { name: "away_team_id", label: "Away team", type: "ref", ref: "teams", required: true },
+      { name: "venue_id", label: "Venue (leave blank for home team's venue)", type: "ref", ref: "venues" },
+      { name: "starts_at", label: "Date & time", type: "datetime", required: true },
+      { name: "status", label: "Status", type: "select", options: STATUSES, default: "scheduled" },
+      { name: "notes", label: "Notes (shown on the match page)", type: "textarea" },
+    ],
+    validate: (row) => (row.home_team_id === row.away_team_id ? "A team can't play itself." : null),
+    beforeSave: (row, refs) => ({ ...row, venue_id: row.venue_id || refs.teams.find((t) => t.id === row.home_team_id)?.venue_id || null }),
+    rowActions: [{ label: "Scorecard", href: (row) => `/scorecard/${row.id}` }],
+  },
+  competitions: {
+    label: "Competitions", table: "competitions", order: "sort", filters: ["season_id", "kind"],
+    columns: ["image_url", "name", "kind", "season_id"],
+    intro: "Create the competition here, then add its entrants and make the draw under “Draws & results”.",
+    fields: [
+      { name: "name", label: "Competition name", type: "text", required: true },
+      { name: "slug", label: "Web address (auto)", type: "slug", from: "name" },
+      { name: "season_id", label: "Season", type: "ref", ref: "seasons" },
+      { name: "kind", label: "Type", type: "select", options: ["Team", "Singles", "Doubles", "Other"], default: "Team" },
+      { name: "draw_mode", label: "Draw", type: "select", options: ["bracket", "redraw"], default: "bracket",
+        help: "bracket = winners follow the fixed bracket. redraw = a fresh random draw is made every round." },
+      { name: "best_of", label: "Frames per match (best of)", type: "number", default: 5 },
+      { name: "sort", label: "Display order", type: "number", default: 1 },
+      { name: "image_url", label: "Picture (winner photo, trophy…)", type: "image", folder: "competitions", maxSize: 1200 },
+      { name: "info", label: "Competition information (rules, dates, format)", type: "textarea" },
+    ],
+    rowActions: [{ label: "Draw", href: (row) => `/admin/draws?c=${row.id}` }, { label: "View", href: (row) => `/competition/${row.slug}` }],
+  },
+  teams: {
+    label: "Teams", table: "teams", order: "name", filters: ["league_id"],
+    columns: ["name", "league_id", "venue_id"],
+    fields: [
+      { name: "name", label: "Team name", type: "text", required: true },
+      { name: "slug", label: "Web address (auto)", type: "slug", from: "name" },
+      { name: "league_id", label: "League", type: "ref", ref: "leagues", required: true },
+      { name: "venue_id", label: "Home venue", type: "ref", ref: "venues" },
+      { name: "logo_url", label: "Team emblem (shown in league tables, scorecards and the shield box)", type: "image", folder: "teams", maxSize: 400 },
+    ],
+  },
+  players: {
+    label: "Players", table: "players", order: "full_name", filters: ["team_id"],
+    columns: ["avatar_url", "full_name", "team_id", "position", "handicap"],
+    fields: [
+      { name: "full_name", label: "Full name", type: "text", required: true },
+      { name: "team_id", label: "Team", type: "ref", ref: "teams" },
+      { name: "position", label: "Position", type: "select", options: ["Player", "Team Captain", "Vice Captain"], default: "Player" },
+      { name: "handicap", label: "Handicap", type: "number", default: 0 },
+      { name: "birth_date", label: "Birthday (optional)", type: "date" },
+      { name: "avatar_url", label: "Photo (shown as a circle — square photos work best)", type: "image", folder: "players", maxSize: 600, round: true },
+      { type: "heading", label: "CueView interview", help: "Leave any question blank to hide it on the player's page." },
+      { name: "cueview_featured", label: "Show this CueView on the home page", type: "checkbox" },
+      ...CUEVIEW.map((q) => ({ name: q.key, in: "cueview", label: q.label, type: q.long ? "textarea" : q.options ? "select" : "text", options: q.options, wide: true })),
+    ],
+  },
+  venues: {
+    label: "Venues", table: "venues", order: "name", columns: ["image_url", "name", "address", "phone"],
+    fields: [
+      { name: "name", label: "Venue name", type: "text", required: true },
+      { name: "slug", label: "Web address (auto)", type: "slug", from: "name" },
+      { name: "address", label: "Postal address", type: "text", wide: true },
+      { name: "phone", label: "Telephone", type: "text" },
+      { name: "email", label: "Email", type: "email" },
+      { name: "contact_name", label: "Contact name", type: "text" },
+      { name: "map_url", label: "Google Map (optional)", type: "text", help: "Leave blank to place the map from the address, or paste a Google Maps link or embed code." },
+      { name: "image_url", label: "Main photo", type: "image", folder: "venues", maxSize: 1600 },
+      { name: "description", label: "Description", type: "textarea" },
+      { name: "quote", label: "Quote", type: "textarea", rows: 3 },
+      { name: "gallery", label: "Photo gallery", type: "gallery" },
+    ],
+  },
+  leagues: {
+    label: "Leagues", table: "leagues", order: "sort", columns: ["name", "short_name", "sort"],
+    intro: "Add a league here and it appears automatically on the home page, the fixtures page and the League page. Then add its teams under Teams and create its fixtures with the Fixture generator.",
+    fields: [
+      { name: "name", label: "League name", type: "text", required: true },
+      { name: "short_name", label: "Short name (e.g. Victory)", type: "text" },
+      { name: "slug", label: "Web address (auto)", type: "slug", from: "name" },
+      { name: "sort", label: "Display order", type: "number", default: 1 },
+      { type: "heading", label: "Weekly shield", help: "Whoever holds the shield defends it every match night. If they lose, the winners take it." },
+      { name: "shield_name", label: "Shield name (e.g. Victory Shield)", type: "text" },
+      { name: "shield_team_id", label: "Holder at the start of the season", type: "ref", ref: "teams" },
+    ],
+  },
+  seasons: {
+    label: "Seasons", table: "seasons", order: "name", columns: ["name", "is_current"],
+    fields: [
+      { name: "name", label: "Season (e.g. 2027-2028)", type: "text", required: true },
+      { name: "is_current", label: "This is the current season", type: "checkbox" },
+    ],
+  },
+  accounts: {
+    label: "Logins", table: "profiles", order: "email", filters: ["role", "team_id"],
+    columns: ["email", "full_name", "role", "team_id"],
+    intro: "Create a login for each captain and vice captain. They can only enter scorecards for their own team. Share the password privately — they can change it after logging in.",
+    fields: [
+      { name: "email", label: "Email (their login)", type: "email", required: true, createOnly: true },
+      { name: "full_name", label: "Name", type: "text", required: true },
+      { name: "role", label: "Role", type: "select", options: ["captain", "vice_captain", "admin"], default: "captain" },
+      { name: "team_id", label: "Team (captains only)", type: "ref", ref: "teams" },
+      { name: "password", label: "Password (leave blank to keep the current one)", type: "password", requiredOnCreate: true, minLength: 8 },
+    ],
+    validate: (row) => (row.role !== "admin" && !row.team_id ? "Captains must be linked to a team." : null),
+    // Logins need the secret service key, so they go through the Netlify Function.
+    save: (row) => adminUsers({ action: row.id ? "update" : "create", ...row }),
+    remove: (row) => adminUsers({ action: "delete", id: row.id }),
+  },
+  articles: {
+    label: "News", table: "articles", order: "published_at", desc: true, filters: ["category"],
+    columns: ["image_url", "published_at", "title", "category", "featured", "is_published"],
+    intro: "Ticked “Show in the home page banner” articles rotate in the big banner (newest first). Add more categories under Website → News categories.",
+    fields: [
+      { name: "title", label: "Headline", type: "text", required: true, wide: true },
+      { name: "slug", label: "Web address (auto)", type: "slug", from: "title" },
+      { name: "category", label: "Category", type: "ref", ref: "categories", store: "name", required: true },
+      { name: "published_at", label: "Date", type: "date", required: true },
+      { name: "competition_id", label: "Competition (optional)", type: "ref", ref: "competitions" },
+      { name: "is_published", label: "Published", type: "checkbox", default: true },
+      { name: "featured", label: "Show in the home page banner", type: "checkbox", default: true },
+      { type: "heading", label: "Pictures" },
+      { name: "image_url", label: "Background image (wide)", type: "image", folder: "news", maxSize: 1800 },
+      { name: "circle_image_url", label: "Circle image (square works best — leave blank to use the background image)", type: "image", folder: "news", maxSize: 600, round: true },
+      { type: "heading", label: "Text" },
+      { name: "excerpt", label: "Intro (shown under the headline in the banner and on cards)", type: "textarea", rows: 2 },
+      { name: "lead", label: "Lead text (bold opening paragraph)", type: "textarea", rows: 3 },
+      { name: "body", label: "Match report / article text", type: "textarea", rows: 12,
+        help: "Blank line = new paragraph. Type [quote] on its own line where the quote box should go (otherwise it goes after the first paragraph)." },
+      { name: "quote_text", label: "Quote (optional)", type: "textarea", rows: 2 },
+      { name: "quote_author", label: "Quote by", type: "text" },
+      { type: "heading", label: "Weekly round-up (optional)", help: "Adds tables under the article for the week ending on the date you choose." },
+      { name: "league_id", label: "League", type: "ref", ref: "leagues" },
+      { name: "week_ending", label: "Week ending (leave blank to use the article date)", type: "date" },
+      { name: "show_breaks", label: "Show top breaks of the week", type: "checkbox" },
+      { name: "show_results", label: "Show team results of the week", type: "checkbox" },
+      { name: "show_standings", label: "Show team standings", type: "checkbox" },
+    ],
+  },
+  categories: {
+    label: "News categories", table: "categories", order: "sort", columns: ["name", "sort"],
+    intro: "Categories group the articles on the News page. Renaming one doesn't move existing articles — edit those too.",
+    fields: [
+      { name: "name", label: "Category name", type: "text", required: true },
+      { name: "sort", label: "Display order", type: "number", default: 1 },
+    ],
+  },
+  pages: {
+    label: "Info pages", table: "pages", order: "sort", columns: ["title", "sort"],
+    intro: "These appear as tiles on the \"League\" page (Rules, History, Help…).",
+    fields: [
+      { name: "title", label: "Title", type: "text", required: true },
+      { name: "slug", label: "Web address (auto)", type: "slug", from: "title" },
+      { name: "summary", label: "Tile text", type: "text" },
+      { name: "body", label: "Page text (blank line = new paragraph)", type: "textarea" },
+      { name: "gallery", label: "Picture gallery", type: "gallery" },
+      { name: "sort", label: "Display order", type: "number", default: 1 },
+    ],
+  },
+  sponsors: {
+    label: "Sponsors", table: "sponsors", order: "sort", columns: ["name", "url", "sort"],
+    fields: [
+      { name: "name", label: "Name", type: "text", required: true },
+      { name: "url", label: "Website", type: "text" },
+      { name: "image_url", label: "Banner image (736×104 works well)", type: "image", folder: "sponsors", maxSize: 1000 },
+      { name: "sort", label: "Display order", type: "number", default: 1 },
+    ],
+  },
+  settings: {
+    label: "Site settings", table: "settings", order: "id", single: true, afterSave: () => refreshShell(),
+    fields: [
+      { type: "heading", label: "Branding" },
+      { name: "logo_url", label: "Logo (SVG or PNG — shown at the height of the menu)", type: "image", folder: "branding", maxSize: 400 },
+      { name: "favicon_url", label: "Favicon (the little browser-tab icon — square)", type: "image", folder: "branding", maxSize: 128 },
+      { name: "hero_image_url", label: "Home page banner background (leave blank for the standard photo)", type: "image", folder: "branding", maxSize: 2000 },
+      { name: "hero_count", label: "How many news articles rotate in the banner", type: "number", default: 4 },
+      { type: "heading", label: "Player of the week" },
+      { name: "player_of_week_show", label: "Show on the home page", type: "checkbox" },
+      { name: "player_of_week_id", label: "Player", type: "ref", ref: "players" },
+      { name: "player_of_week_text", label: "Why (one or two sentences)", type: "textarea", rows: 2 },
+      { type: "heading", label: "Team of the week" },
+      { name: "team_of_week_show", label: "Show on the home page", type: "checkbox" },
+      { name: "team_of_week_id", label: "Team", type: "ref", ref: "teams" },
+      { name: "team_of_week_text", label: "Why (one or two sentences)", type: "textarea", rows: 2 },
+      { type: "heading", label: "Other home page boxes" },
+      { name: "cueviews_show", label: "Show CueViews (pick which ones under Players → “Show this CueView on the home page”)", type: "checkbox" },
+      { name: "shields_show", label: "Show who holds each league's shield", type: "checkbox" },
+    ],
+  },
+};
