@@ -1,0 +1,13 @@
+{
+  "name": "st-blazey-snooker-league",
+  "private": true,
+  "type": "module",
+  "description": "St Blazey & District Snooker League website — static site on Netlify, data in Supabase.",
+  "scripts": {
+    "start": "npx --yes serve -s public -l 8080",
+    "seed": "node scripts/build-seed.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  }
+}
