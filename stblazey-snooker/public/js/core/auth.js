@@ -50,9 +50,11 @@ export const SECTION_AREA = {
   overview: "matchnights", results: "matchnights",
   fixtures: "fixtures", generator: "fixtures", import: "fixtures",
   leagues: "league", teams: "league", players: "league", venues: "league", seasons: "league",
+  handicaps: ["league", "competitions"],   // either secretary can adjust handicaps
+  entries: "competitions",
   competitions: "competitions", draws: "competitions",
   accounts: "people",
-  articles: "website", categories: "website", media: "website", pages: "website", sponsors: "website", settings: "website", stats: "website",
+  articles: "website", categories: "website", media: "website", pages: "website", sponsors: "website", branding: "website", settings: "website", stats: "website",
 };
 
 const roleOf = (user) => user?.profile?.role;
@@ -63,7 +65,7 @@ export const canManage = (user, area) => isAdmin(user) || (ROLE_AREAS[roleOf(use
 /** Anyone with at least one part of the admin dashboard. */
 export const isStaff = (user) => isAdmin(user) || !!ROLE_AREAS[roleOf(user)];
 /** May this person open the given admin section? */
-export const canOpenSection = (user, section) => canManage(user, SECTION_AREA[section]);
+export const canOpenSection = (user, section) => [SECTION_AREA[section]].flat().some((area) => canManage(user, area));
 /** Captain or vice captain of a team — by role, or an officer who was given team rights. */
 export const isCaptain = (user) => !!user?.profile?.team_id
   && (["captain", "vice_captain"].includes(roleOf(user)) || ["captain", "vice_captain"].includes(user.profile.team_role));
@@ -85,6 +87,10 @@ export function canEditFixture(user, fx) {
     && [fx.home_team_id, fx.away_team_id].includes(user.profile.team_id)
     && ["scheduled", "in_progress", "submitted"].includes(fx.status);
 }
+
+/** Match night photos: the HOME team's captain or vice captain (and admins). Mirrors set_match_photos(). */
+export const MATCH_PHOTO_LIMIT = 12;
+export const canAddMatchPhotos = (user, fx) => isAdmin(user) || (isCaptain(user) && user.profile.team_id === fx.home_team_id);
 
 /** Captains can postpone their own match until it starts (admins: any time). */
 export const canPostpone = (user, fx) => canEditFixture(user, fx) && (isAdmin(user) || fx.status === "scheduled");

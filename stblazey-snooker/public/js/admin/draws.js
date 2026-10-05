@@ -1,13 +1,13 @@
 // Admin: entrants, the draw and results for one knockout competition.
-import { html, mount, $, toast, readForm, toLocalInput, fromLocalInput } from "../core/dom.js";
+import { html, mount, $, toast, readForm, toLocalInput, fromLocalInput, fmtDate, fmtTime, confirmBox } from "../core/dom.js";
 import { table, save, remove, insertMany, loadCompetitions, replaceDraw } from "../core/api.js";
-import { buildBracket, makeDraw, shuffle, roundName, isEntry, redrawNextRound, winnerAdvance, firstMatchLosers, PENDING } from "../core/bracket.js";
+import { buildBracket, makeDraw, shuffle, roundName, isEntry, redrawNextRound, winnerAdvance, firstMatchLosers, drawPlan, drawNextTie, PENDING } from "../core/bracket.js";
 import { slugify } from "../core/schedule.js";
 import { panel, dataTable, urls, shortName } from "../core/components.js";
 import { navigate } from "../core/router.js";
 import { friendly } from "./crud.js";
 
-export async function draws(el) {
+export async function draws(el, { user } = {}) {
   const [data, teams, players, leagues, venues] = await Promise.all([
     loadCompetitions(), table("teams", "name"), table("players", "full_name"), table("leagues", "sort"), table("venues", "name"),
   ]);
@@ -20,6 +20,11 @@ export async function draws(el) {
   const rows = data.matches.filter((m) => m.competition_id === c.id);
   const b = buildBracket(entries, rows);
   const hasResults = rows.some((r) => r.score_a != null || r.score_b != null);
+  // A draw being made live, one tie at a time (see drawNextTie in core/bracket.js).
+  const live = c.draw_live?.status === "live" ? c.draw_live : null;
+  const liveDone = c.draw_live?.status === "done" ? c.draw_live : null;
+  const entryName = (id) => entries.find((e) => e.id === id)?.name ?? "–";
+  const inHat = live ? entries.filter((e) => !live.log.some((t) => [t.a, t.b].includes(e.id))) : [];
   const redraw = () => navigate(`/admin/draws?c=${c.id}`, { replace: true });
   // Only the leagues this competition is open to (all of them when none are chosen).
   const open = c.league_ids?.length ? leagues.filter((l) => c.league_ids.includes(l.id)) : leagues;
@@ -80,10 +85,29 @@ export async function draws(el) {
         ? "a fresh random draw every round (use “Draw next round” below when a round is finished)."
         : "winners follow the bracket."} Change this under Competitions → Edit.</p>
       ${hasResults ? html`<div class="notice error">Results have already been entered. Making a new draw will delete them.</div>` : ""}
-      <div class="btn-row">
+      ${live ? "" : html`<div class="btn-row">
         <button class="btn blue" data-draw="random" ${entries.length < 2 ? "disabled" : ""}>Random draw</button>
         <button class="btn secondary" data-draw="seeded" ${entries.length < 2 ? "disabled" : ""}>Seeded draw (keep order)</button>
-      </div></div>`)}
+      </div>`}
+
+      <h4 class="form-heading">Live draw<small>Make the draw in front of everyone: each press draws the next tie at random, and it appears on the public draw page, in the home page strip and as a pop-up as it happens. Starting the draw closes the entry form for this competition.</small></h4>
+      ${live ? html`<div class="live-ctl">
+          <p><span class="live-dot">Live</span> <b>The draw is live.</b> Drawn by ${live.by} · witnessed by ${live.witness}. <b>${live.log.length}</b> of ${drawPlan(entries.length).length} ties drawn.</p>
+          ${live.log.length ? html`<p class="live-last">Last drawn: <b>${entryName(live.log.at(-1).a ?? live.log.at(-1).b)}</b> ${live.log.at(-1).a && live.log.at(-1).b ? html`v <b>${entryName(live.log.at(-1).b)}</b>` : "— a bye"}</p>` : ""}
+          <p class="muted">Still in the hat (${inHat.length}): ${inHat.map((e) => e.name).join(", ") || "nobody"}</p>
+          <div class="btn-row"><button type="button" class="btn green live-next" data-live-next>Draw the next tie</button>
+            <a class="btn ghost" href="/draw/${c.slug}" target="_blank" rel="noopener">Open the public draw page</a>
+            <button type="button" class="btn small" data-live-cancel>Cancel the live draw</button></div></div>`
+        : html`<div class="live-setup" data-live-setup>
+          ${liveDone ? html`<p>✓ Drawn live on <b>${fmtDate(liveDone.finished_at)} at ${fmtTime(liveDone.finished_at)}</b> by ${liveDone.by}, witnessed by ${liveDone.witness}. <a href="/draw/${c.slug}" style="color:var(--red);font-weight:700">See the draw page</a></p>` : ""}
+          <div class="grid-2">
+            <label>When the draw will be made <span class="muted" style="font-weight:400">(shown on the website)</span><input type="datetime-local" name="draw_at" value="${toLocalInput(c.draw_at)}"></label>
+            <label>Witnessed by <span class="muted" style="font-weight:400">(a second person must watch the draw)</span><input type="text" name="witness" maxlength="80" placeholder="Their name"></label>
+          </div>
+          <div class="btn-row"><button type="button" class="btn secondary" data-save-draw-at>Save the date</button>
+            <button type="button" class="btn green" data-live-start ${entries.length < 2 ? "disabled" : ""}>Start the live draw now</button>
+            <a class="btn ghost" href="/draw/${c.slug}">Public draw page</a></div></div>`}
+      </div>`)}
 
     ${c.draw_mode === "redraw" && b.totalRounds > 1 ? html`<div class="btn-row">${b.rounds.slice(0, -1).map((list, i) => {
       const done = list.every((m) => m.winner !== PENDING);
@@ -155,6 +179,42 @@ export async function draws(el) {
 
   root.addEventListener("click", (e) => guard(async () => {
     const t = e.target;
+    // ── live draw ──
+    if (t.matches("[data-save-draw-at]")) {
+      await save("competitions", { id: c.id, draw_at: fromLocalInput($("[name=draw_at]", root).value) });
+      toast("Draw date saved"); return redraw();
+    }
+    if (t.matches("[data-live-start]")) {
+      const witness = $("[name=witness]", root).value.trim();
+      if (!witness) return toast("Type the name of the person witnessing the draw", "error");
+      const ok = await confirmBox(`${entries.length} entrants go into the hat. Each press of “Draw the next tie” draws at random and shows it to everyone straight away — it can't be re-drawn quietly.${rows.length ? "\n\nThe draw that's there now, and any results, will be replaced." : ""}`,
+        { title: `Start the ${c.name} draw?`, ok: "Start the live draw" });
+      if (!ok) return;
+      await replaceDraw(c.id, makeDraw(entries.map(() => null)));
+      await save("competitions", { id: c.id, entries_open: false, draw_live: { status: "live", round: 1, by: user?.profile?.full_name || user?.email || "League official", witness, started_at: new Date().toISOString(), log: [] } });
+      toast("The draw is live"); return redraw();
+    }
+    if (t.matches("[data-live-next]")) {
+      t.disabled = true;
+      const next = drawNextTie(entries.map((x) => x.id), live);
+      if (!next) return redraw();
+      const { tie, done } = next;
+      const row = rows.find((r) => r.round === 1 && r.slot === tie.slot);
+      await save("competition_matches", { id: row.id, entry_a: tie.a, entry_b: tie.b });
+      // A bye goes straight through to the next round.
+      const through = tie.a && !tie.b ? tie.a : !tie.a && tie.b ? tie.b : null;
+      const onward = through && rows.find((r) => r.round === 2 && r.slot === Math.floor(tie.slot / 2));
+      if (onward) await save("competition_matches", { id: onward.id, [tie.slot % 2 ? "entry_b" : "entry_a"]: through });
+      await save("competitions", { id: c.id, draw_live: { ...live, log: [...live.log, tie], ...(done ? { status: "done", finished_at: new Date().toISOString() } : {}) } });
+      toast(done ? "That's the draw complete" : tie.a && tie.b ? `${entryName(tie.a)} v ${entryName(tie.b)}` : `${entryName(through)} gets a bye`);
+      return redraw();
+    }
+    if (t.matches("[data-live-cancel]")) {
+      if (!(await confirmBox("The ties drawn so far are thrown away and the competition goes back to having no draw.", { title: "Cancel the live draw?", ok: "Cancel the draw", cancel: "Keep going" }))) return;
+      await replaceDraw(c.id, []);
+      await save("competitions", { id: c.id, draw_live: null });
+      toast("Live draw cancelled"); return redraw();
+    }
     if (t.matches("[data-plate-create]")) {
       const losers = plateEntrants(c);
       if (!confirm(`Create “${c.name} Plate”${losers.length ? ` with the ${losers.length} knocked out so far` : ""}? You can add more as first matches finish, then make its draw.`)) return;
@@ -187,6 +247,8 @@ export async function draws(el) {
       if (!confirm(hasResults ? "Make a new draw? All results for this competition will be deleted." : "Make the draw now?")) return;
       const order = t.dataset.draw === "random" ? shuffle(entries) : entries;
       await replaceDraw(c.id, makeDraw(order.map((x) => x.id)));
+      // This draw wasn't made live; and once there is a draw, the entry form closes for this competition.
+      if (c.draw_live || c.entries_open) await save("competitions", { id: c.id, draw_live: null, entries_open: false });
       toast("Draw made"); redraw();
     }
     if (t.matches("[data-redraw]")) {

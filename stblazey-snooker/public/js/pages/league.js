@@ -6,7 +6,8 @@ import { setTitle, adminEdit } from "../core/router.js";
 // Built-in sections first, then every page from the admin "Pages" section.
 const BUILT_IN = [
   ["News", "From latest news, to competition results and CueViews", "/news"],
-  ["Seasons", "Latest season, and season archives", "/fixtures"],
+  ["Seasons", "This season's fixtures and results, team by team", "/fixtures"],
+  ["Season archive", "Roll of honour: past seasons' tables, breaks and highest breaks", "/archive"],
   ["Competitions", "Cup competitions, singles, doubles and more", "/competitions"],
   ["Our Players", "Every team's players, past and present", "/players"],
   ["Handicaps", "Every player's current handicap", "/handicaps"],

@@ -1,5 +1,6 @@
 import { html, mount, $, fmtDate, paragraphs, cssUrl } from "../core/dom.js";
-import { table, articles, loadCompetitions, subscribe, competitionBreaks } from "../core/api.js";
+import { table, articles, loadCompetitions, subscribe, competitionBreaks, signupNames } from "../core/api.js";
+import { openForEntry } from "./enter.js";
 import { buildBracket, progressText, isEntry } from "../core/bracket.js";
 import { bracketView, wireBracket, roundCards, standingsTable } from "../core/bracket-view.js";
 import { breadcrumb, panel, urls, newsMini, topBreakPanel, dataTable, playerLink, shortName } from "../core/components.js";
@@ -31,6 +32,9 @@ export default async function competition(view, { params }) {
       .sort((x, y) => y.value - x.value);
     // Other competitions from the same season.
     const others = data.competitions.filter((x) => x.id !== c.id && x.season_id === c.season_id);
+    const canEnter = openForEntry([c]).length > 0;
+    const waiting = canEnter ? (await signupNames(c.id)).filter((s) => s.status === "pending") : [];
+    const liveDraw = c.draw_live?.status === "live";
     view.classList.add("flush");
 
     mount(view, html`
@@ -44,13 +48,20 @@ export default async function competition(view, { params }) {
               <p class="comp-progress">${progressText(b)}</p>
               ${parent ? html`<p class="comp-link">The plate competition of the <a href="${urls.competition(parent)}">${parent.name}</a> — for everyone knocked out in their first match.</p>` : ""}
               ${plate ? html`<p class="comp-link">Knocked out in your first match? You go into the <a href="${urls.competition(plate)}">${plate.name}</a>.</p>` : ""}
+              <div class="btn-row comp-actions">
+                ${canEnter ? html`<a class="btn green" href="/enter?c=${c.slug}">Enter this competition${c.entry_fee ? ` · ${c.entry_fee}` : ""}</a>` : ""}
+                ${liveDraw ? html`<a class="btn" href="/draw/${c.slug}"><span class="live-dot">Live</span>&nbsp; Watch the draw</a>`
+                  : c.draw_live || (c.draw_at && !b.totalRounds) ? html`<a class="btn ghost light" href="/draw/${c.slug}">${c.draw_live ? "How the draw was made" : `The draw: ${fmtDate(c.draw_at)}`}</a>` : ""}
+              </div>
+              ${canEnter && c.entry_closes ? html`<p class="comp-link">Entries close on ${fmtDate(c.entry_closes)}.${waiting.length ? ` ${waiting.length} ${waiting.length === 1 ? "entry is" : "entries are"} waiting for payment to be confirmed.` : ""}</p>` : ""}
             </div>
             ${champ ? html`<div class="comp-champ"><small>Champion</small>${champ.name}</div>` : ""}
           </div>
         </div>
       </section>
       <div class="wrap" style="margin-top:30px">
-        ${panel(`${c.name} ${season?.name ?? ""} — the road to the final`, html`
+        ${liveDraw ? html`<a class="live-draw-note" href="/draw/${c.slug}"><span class="live-dot">Live</span> The draw is being made right now — watch each tie as it comes out →</a>` : ""}
+        ${liveDraw ? "" : panel(`${c.name} ${season?.name ?? ""} — the road to the final`, html`
           <p class="bracket-hint">Hover over (or tap) a name to follow their route, or click a match for its scorecard. Scroll sideways on a phone.
             ${c.draw_mode === "redraw" ? "This competition is redrawn at random every round, so the lines show where each match sits, not who will meet next." : ""}</p>
           ${bracketView(b, c.round_deadlines)}`, { cls: "bracket-panel" })}
@@ -81,5 +92,5 @@ export default async function competition(view, { params }) {
     wireBracket($("[data-bracket]", view) ?? document.createElement("div"));
   };
   await draw();
-  return subscribe(["competition_matches"], draw);
+  return subscribe(["competition_matches", "competitions"], draw);
 }

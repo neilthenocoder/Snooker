@@ -1,9 +1,10 @@
-import { html, mount, fmtDate, fmtTime } from "../core/dom.js";
+import { html, mount, $, toast, fmtDate, fmtTime } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
-import { loadFixture, headToHead, subscribe } from "../core/api.js";
+import { loadFixture, headToHead, subscribe, setMatchPhotos } from "../core/api.js";
+import { uploadImage } from "../core/upload.js";
 import { matchScore, frameWinner, breakPoints, isShieldMatch, RULES } from "../core/rules.js";
-import { canEditFixture } from "../core/auth.js";
-import { breadcrumb, panel, dataTable, resultsList, statusBadge, urls, teamLink, playerLink, badge } from "../core/components.js";
+import { canEditFixture, canAddMatchPhotos, MATCH_PHOTO_LIMIT } from "../core/auth.js";
+import { breadcrumb, panel, dataTable, resultsList, statusBadge, urls, teamLink, playerLink, badge, gallery } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import notFound from "./not-found.js";
 
@@ -67,6 +68,8 @@ export default async function match(view, { params, user }) {
     const league = ctx.league.get(fx.league_id);
     const shield = league?.shield_team_id ? isShieldMatch(league, fx, ctx.fixtures, ctx.framesByFixture) : { isShield: false };
     const won = (s) => played && fx.status !== "in_progress" && score[s] > score[s === "home" ? "away" : "home"];
+    // Match night photos: added by the home captain / vice captain, shown here and in that week's news report.
+    const photos = fx.gallery ?? [], mayAddPhotos = canAddMatchPhotos(user, fx);
 
     mount(view, html`
       <div class="wrap">${breadcrumb([["Home", "/"], [title]])}</div>
@@ -98,6 +101,15 @@ export default async function match(view, { params, user }) {
           { label: "Status", cell: () => statusBadge(fx.status) },
         ], [fx]))}
         ${fx.notes ? html`<div class="notice">${fx.notes}</div>` : ""}
+        ${photos.length || mayAddPhotos ? html`<div id="match-photos">${panel("Match night photos", html`<div class="mn-photos">
+          ${!photos.length ? html`<p class="muted" style="margin:0">No photos yet.</p>` : mayAddPhotos ? "" : gallery(photos)}
+          ${mayAddPhotos ? html`<div class="mn-manage">
+            ${photos.length ? html`<div class="gal-thumbs">${photos.map((u, i) => html`<figure class="gal-thumb"><img src="${u}" alt="" data-lightbox="${u}"><button type="button" data-photo-remove="${i}" aria-label="Remove this photo">×</button></figure>`)}</div>` : ""}
+            <div class="btn-row">
+              ${photos.length < MATCH_PHOTO_LIMIT ? html`<label class="btn small blue">Add match night photos<input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden data-photo-add></label>` : ""}
+              <small class="muted">${photos.length} of ${MATCH_PHOTO_LIMIT} · home captain or vice captain · they also appear in this week's news report</small>
+            </div></div>` : ""}
+        </div>`)}</div>` : ""}
         ${scoreOnly ? html`<div class="notice">Only the final score was recorded for this match — there's no frame-by-frame scorecard.</div>` : played ? html`
           ${sides.map(([s, t]) => panel(t?.name ?? "", html`${dataTable([
             { label: "Player", cell: (r) => playerLink(r.player) },
@@ -121,6 +133,30 @@ export default async function match(view, { params, user }) {
         ` : html`<div class="notice">No frames entered yet${fx.status === "scheduled" ? " — check back on match night." : "."}</div>`}
         ${panel("Past Meetings", resultsList(ctx, past, { scoreFn: (f) => { const s = matchScore(h2hFrames.get(f.id)); return `${s.home} - ${s.away}`; } }))}
       </div>`);
+    // The photo controls live inside the panel, which is rebuilt on every draw — so nothing is left listening.
+    const box = $("#match-photos", view);
+    if (box && mayAddPhotos) {
+      const store = async (list, message) => {
+        try { await setMatchPhotos(fx.id, list); toast(message); await draw(); }
+        catch (err) { toast(err.message, "error"); }
+      };
+      box.addEventListener("change", async (e) => {
+        if (!e.target.matches("[data-photo-add]")) return;
+        const files = [...e.target.files].slice(0, MATCH_PHOTO_LIMIT - photos.length);
+        if (!files.length) return;
+        e.target.closest("label").classList.add("busy");
+        try {
+          const added = [];
+          for (const file of files) added.push(await uploadImage(file, { folder: "matchnight", maxSize: 1600, library: false }));
+          await store([...photos, ...added], `${added.length} photo${added.length > 1 ? "s" : ""} added`);
+        } catch (err) { toast(err.message, "error"); e.target.closest("label")?.classList.remove("busy"); }
+      });
+      box.addEventListener("click", (e) => {
+        const i = e.target.dataset.photoRemove;
+        if (i == null || !confirm("Remove this photo?")) return;
+        store(photos.filter((_, n) => n !== Number(i)), "Photo removed");
+      });
+    }
     return fx;
   };
 

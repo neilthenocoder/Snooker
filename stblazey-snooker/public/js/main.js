@@ -4,7 +4,8 @@
 //  js/pages/ and is loaded only when it's needed.
 // ─────────────────────────────────────────────────────────────
 import { SITE, DEMO_MODE } from "./config.js";
-import { html, mount, $, ukDay, toast, LOADING } from "./core/dom.js";
+import { html, mount, $, ukDay, toast } from "./core/dom.js";
+import { applyBranding, loaderOn, loaderOff } from "./core/branding.js";
 import { getUser, signOut, isStaff, isMember, canOpenSection } from "./core/auth.js";
 import { openSearch } from "./core/search.js";
 import { table, invalidate, settings, nearbyMatches, subscribe, trackPageView } from "./core/api.js";
@@ -25,6 +26,9 @@ const ROUTES = [
   ["/competitions", "competitions"],
   ["/standings/:slug", "standings"],
   ["/shield/:slug", "shield"],
+  ["/archive", "archive"],
+  ["/enter", "enter"],
+  ["/draw/:slug", "draw"],
   ["/handicaps", "handicaps"],
   ["/player/:id", "player"],
   ["/competition/:slug", "competition"],
@@ -42,6 +46,16 @@ const ROUTES = [
   ["/admin", "admin"],
   ["/admin/:section", "admin"],
 ];
+
+// Which part of the site each page belongs to. Its headers take that menu button's colour
+// (Admin → Branding → "Colour-code each section").
+const SECTION = {
+  competitions: "competitions", competition: "competitions", "cup-match": "competitions", handicaps: "competitions", enter: "competitions", draw: "competitions",
+  fixtures: "fixtures", team: "fixtures", match: "fixtures", calendar: "fixtures", live: "fixtures",
+  league: "league", standings: "league", shield: "league", archive: "league", players: "league", player: "league",
+  venues: "league", venue: "league", news: "league", article: "league", page: "league",
+  login: "login", my: "login", scorecard: "login", "cup-scorecard": "login",
+};
 
 function match(path) {
   const parts = path.replace(/\/+$/, "").split("/").filter(Boolean);
@@ -69,8 +83,12 @@ const LIVE_LABEL = { live: "Live", soon: "Live soon", idle: "Live" };
 
 /** Recolour the LIVE button (orange "LIVE SOON" an hour before, green while matches are on). */
 async function refreshLive() {
-  const { fixtures, comps } = await nearbyMatches(36).catch(() => ({ fixtures: [], comps: [] }));
-  const state = liveState([...fixtures, ...comps], Date.now(), ukDay);
+  const [{ fixtures, comps }, competitions] = await Promise.all([
+    nearbyMatches(36).catch(() => ({ fixtures: [], comps: [] })), table("competitions", "sort").catch(() => [])]);
+  // A competition draw counts too: "live soon" before it, "live" while it's being made.
+  const draws = competitions.filter((c) => c.draw_live?.status === "live" || (!c.draw_live && c.draw_at))
+    .map((c) => ({ starts_at: c.draw_live?.started_at ?? c.draw_at, status: c.draw_live ? "in_progress" : "scheduled" }));
+  const state = liveState([...fixtures, ...comps, ...draws], Date.now(), ukDay);
   const btn = $(".nav-live-btn");
   if (!btn) return;
   btn.className = `nav-live nav-live-btn state-${state}`;
@@ -88,6 +106,7 @@ function drawBell() {
 
 async function drawHeader() {
   const [user, site] = await Promise.all([getUser(), settings()]);
+  applyBranding(site);
   // Officers get the Admin button; anyone linked to a team or player gets My Team (some people have both).
   const account = !user ? html`<a class="nav-login" href="/login">Login</a>`
     : html`${isStaff(user) ? html`<a class="nav-login" href="/admin">Admin</a>` : ""}${isMember(user) ? html`<a class="nav-login nav-my" href="/my">My Team</a>` : ""}`;
@@ -156,7 +175,9 @@ async function renderRoute() {
   view.className = "";
   $(".main-nav")?.classList.remove("open");
   const { page, params } = match(location.pathname);
-  mount(view, LOADING);
+  view.dataset.section = SECTION[page] ?? "";
+  mount(view, "");
+  loaderOn();   // the black loading screen appears only if this takes more than a moment
   trackPageView(location.pathname);
   try {
     const mod = await import(`./pages/${page}.js`);
@@ -169,7 +190,7 @@ async function renderRoute() {
   } catch (err) {
     console.error(err);
     mount(view, html`<div class="wrap"><div class="notice error">Something went wrong: ${err.message}</div></div>`);
-  }
+  } finally { loaderOff(); }
 }
 
 /** Admins and officers get an "Edit this page" button that opens the right part of the dashboard. */
@@ -240,6 +261,6 @@ window.addEventListener("scroll", () => toTop.classList.toggle("show", window.sc
 
 // Keep the LIVE button current: every minute, and whenever a match changes.
 setInterval(refreshLive, 60e3);
-subscribe(["fixtures", "competition_matches"], refreshLive);
+subscribe(["fixtures", "competition_matches", "competitions"], refreshLive);
 if (notificationsOn()) startNotifications();
 

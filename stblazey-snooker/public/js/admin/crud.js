@@ -62,7 +62,7 @@ function input(field, row, refs, rows) {
   const attrs = `name="${name}" ${req ? "required" : ""} ${field.createOnly && !isNew ? "disabled" : ""}`;
   const a = (s) => html([s]); // attrs are built from our own config only, never user text
   switch (field.type) {
-    case "textarea": return html`<textarea ${a(attrs)} style="${field.rows ? `min-height:${field.rows * 24}px` : ""}">${value}</textarea>`;
+    case "textarea": return html`<textarea ${a(attrs)} placeholder="${field.placeholder ?? ""}" style="${field.rows ? `min-height:${field.rows * 24}px` : ""}">${value}</textarea>`;
     case "checkbox": return html`<input type="checkbox" ${a(attrs)} ${value ? "checked" : ""}>`;
     case "number": return html`<input type="number" ${a(attrs)} value="${value}">`;
     case "date": return html`<input type="date" ${a(attrs)} value="${String(value).slice(0, 10)}">`;
@@ -70,7 +70,12 @@ function input(field, row, refs, rows) {
     case "password": return html`<input type="password" autocomplete="new-password" minlength="${field.minLength ?? 8}" ${a(attrs)}>`;
     case "email": return html`<input type="email" ${a(attrs)} value="${value}">`;
     case "select": return html`<select ${a(attrs)}>${field.options.map((o) => html`<option value="${o}" ${o === value ? "selected" : ""}>${optionLabel(field, o) || "–"}</option>`)}</select>`;
-    case "color": return html`<input type="color" ${a(attrs)} value="${/^#[0-9a-f]{6}$/i.test(value) ? value : field.default ?? "#000000"}">`;
+    case "color": {
+      const set = /^#[0-9a-f]{6}$/i.test(value);
+      const picker = html`<input type="color" ${a(attrs)} value="${set ? value : field.default ?? "#000000"}">`;
+      // Optional colours can be left on the standard one: the picker only counts when "Use my own" is ticked.
+      return field.optional ? html`<span class="color-field">${picker}<label class="check"><input type="checkbox" data-own-color="${name}" ${set ? "checked" : ""}> Use my own colour</label></span>` : picker;
+    }
     case "image": return html`<div class="image-field">
       <img class="image-preview ${field.round ? "round" : ""} ${value ? "" : "hidden"}" src="${value}" alt="" data-preview="${name}">
       <div class="btn-row">
@@ -111,6 +116,7 @@ function collect(form, res, editing) {
     const el = form.elements[key(f)];
     if (!el || el.disabled) continue;
     let v = f.type === "checkbox" ? el.checked : el.value.trim();
+    if (f.type === "color" && f.optional && !form.querySelector(`[data-own-color="${key(f)}"]`)?.checked) v = "";
     if (f.type === "number") v = v === "" ? null : Number(v);
     else if (f.type === "datetime") v = fromLocalInput(v);
     else if (["gallery", "tags"].includes(f.type)) v = JSON.parse(v || "[]");
@@ -135,6 +141,7 @@ function formFields(res, editing, refs, rows) {
     if (f.type === "checkbox") return html`<label class="check">${input(f, editing, refs, rows)}${f.label}</label>`;
     // Image and gallery fields contain their own buttons, so they sit in a <div> rather than a <label>.
     if (["image", "gallery", "tags"].includes(f.type)) return html`<div class="field-label" style="grid-column:1/-1">${caption}${help}${input(f, editing, refs, rows)}</div>`;
+    if (f.type === "color" && f.optional) return html`<div class="field-label">${caption}${help}${input(f, editing, refs, rows)}</div>`;
     return html`<label style="${f.type === "textarea" || f.wide ? "grid-column:1/-1" : ""}">${caption}${help}${input(f, editing, refs, rows)}</label>`;
   });
 }
@@ -281,6 +288,8 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
 
   el.addEventListener("input", (e) => {
     if (e.target.matches("[data-image-url]")) setImage(e.target.name, e.target.value.trim());
+    // Picking a colour means you want your own.
+    if (e.target.type === "color") { const own = form()?.querySelector(`[data-own-color="${e.target.name}"]`); if (own) own.checked = true; }
     if (e.target.matches("[data-search]")) { search = e.target.value.trim().toLowerCase(); page = 0; drawList(); }
     if (e.target.matches("[data-filter]")) { filters[e.target.dataset.filter] = e.target.value; page = 0; drawList(); }
   });

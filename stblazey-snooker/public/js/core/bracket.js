@@ -184,3 +184,48 @@ export function firstMatchLosers(bracket) {
   }
   return ids.map((id) => bracket.entryById.get(id)).filter(Boolean);
 }
+
+// ── live draws ───────────────────────────────────────────────────
+/**
+ * The order a live draw is made in for `n` entrants: one first-round tie at a
+ * time. When the field isn't a power of two, some ties are byes (one name
+ * only) — the same ones makeDraw() would give, spread through the bracket.
+ * Returns [{ slot, sides: ["a", "b"] | ["a"] | ["b"] }].
+ */
+export function drawPlan(n) {
+  const template = makeDraw(Array.from({ length: n }, (_, i) => `seat-${i}`)).filter((r) => r.round === 1);
+  return template.map((r) => ({ slot: r.slot, sides: ["a", "b"].filter((s) => r[`entry_${s}`]) })).filter((t) => t.sides.length);
+}
+
+/** Pick `count` different items at random (using the browser's secure random numbers when it has them). */
+export function pickRandom(list, count = 1) {
+  const pool = [...list], out = [];
+  const rand = (max) => {
+    if (globalThis.crypto?.getRandomValues) {
+      // Throw away values that would favour the low numbers, so every name is equally likely.
+      const limit = Math.floor(0x100000000 / max) * max, buf = new Uint32Array(1);
+      do globalThis.crypto.getRandomValues(buf); while (buf[0] >= limit);
+      return buf[0] % max;
+    }
+    return Math.floor(Math.random() * max);
+  };
+  while (out.length < count && pool.length) out.push(pool.splice(rand(pool.length), 1)[0]);
+  return out;
+}
+
+/**
+ * The next tie of a live draw: who is still in the hat, drawn at random into
+ * the next place in the plan. `live` is competitions.draw_live.
+ * Returns { tie: { slot, a, b }, done } — a or b is null for a bye — or null when the draw is finished.
+ */
+export function drawNextTie(entryIds, live) {
+  const plan = drawPlan(entryIds.length);
+  const made = live.log ?? [];
+  const next = plan[made.length];
+  if (!next) return null;
+  const drawn = new Set(made.flatMap((t) => [t.a, t.b]));
+  const names = pickRandom(entryIds.filter((id) => !drawn.has(id)), next.sides.length);
+  const tie = { slot: next.slot, a: null, b: null, at: new Date().toISOString() };
+  next.sides.forEach((side, i) => { tie[side] = names[i]; });
+  return { tie, done: made.length + 1 >= plan.length };
+}

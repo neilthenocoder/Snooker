@@ -309,6 +309,48 @@ export async function teamPlayerHistory(teamId) {
   return new Set(frames.map((f) => (homeIds.has(f.fixture_id) ? f.home_player_id : f.away_player_id)).filter(Boolean));
 }
 
+// ── handicaps ────────────────────────────────────────────────────
+/** Change one player's handicap (league or competition secretary); the change is logged with the note. */
+export async function setHandicap(playerId, value, note = "") {
+  await run(db.rpc("set_handicap", { pid: playerId, value, note }));
+  invalidate();
+}
+/** Yearly review: remember today's handicaps as "last year's". Returns how many players were updated. */
+export async function startHandicapReview() {
+  const n = await run(db.rpc("start_handicap_review"));
+  invalidate();
+  return n;
+}
+/** The most recent handicap changes (officers only). */
+export const handicapLog = (limit = 40) => run(db.from("handicap_changes").select("*").order("created_at", { ascending: false }).limit(limit));
+
+// ── match night photos ───────────────────────────────────────────
+/** The home captain (or an admin) sets a match's photos. */
+export async function setMatchPhotos(fixtureId, urls) {
+  await run(db.rpc("set_match_photos", { fid: fixtureId, urls }));
+  invalidate();
+}
+
+// ── competition entry forms ──────────────────────────────────────
+/** Enter a player (or their team / doubles pair) into one or more competitions. Returns the pending entries. */
+export async function enterCompetitions(playerId, competitionIds, contact, partners = {}) {
+  const made = await run(db.rpc("enter_competitions", { p_player: playerId, p_competitions: competitionIds, p_contact: contact, p_partners: partners }));
+  invalidate();
+  return made;
+}
+/** Names entered through the form for one competition (no contact details). */
+export const signupNames = (competitionId) => run(db.rpc("signup_names", { p_competition: competitionId })).catch(() => []);
+/** Entries waiting for the competition secretary (officers only). Unpaid ones past their date are lapsed first. */
+export async function signups() {
+  await run(db.rpc("expire_signups")).catch(() => {});
+  return selectAll(() => db.from("competition_signups").select("*").order("created_at", { ascending: false }));
+}
+/** Confirm payment (the entrant joins the competition) or remove the entry. */
+export async function decideSignup(id, approve) {
+  await run(db.rpc("decide_signup", { sid: id, approve }));
+  invalidate();
+}
+
 // ── CSV import ───────────────────────────────────────────────────
 /** Every fixture in every season (the importer checks new rows against them). */
 export const allFixtures = () => selectAll(() => db.from("fixtures").select("*").order("starts_at"));

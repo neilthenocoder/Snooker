@@ -71,7 +71,7 @@ export default async function home(view) {
   // Live & upcoming matches strip, updated live.
   const drawStrip = async () => mount($("[data-strip]", view), await liveStrip());
   await drawStrip();
-  const unsubscribe = subscribe(["fixtures", "frames", "competition_matches"], drawStrip);
+  const unsubscribe = subscribe(["fixtures", "frames", "competition_matches", "competitions"], drawStrip);
 
   // …which moves on one card at a time, then goes back to the start.
   const strip = $("[data-strip]", view);
@@ -159,6 +159,17 @@ async function liveStrip() {
         score: { home: m.score_a ?? 0, away: m.score_b ?? 0 }, hasFrames: m.score_a != null, href: `/cup-match/${m.id}`, venue: venues.find((v) => v.id === m.venue_id),
       };
     }).filter(Boolean),
+    // Competition draws: one being made live now, one due soon, or one made in the last two days.
+    ...compData.competitions.map((c) => {
+      const dl = c.draw_live, entry = (id) => compData.entries.find((e) => e.id === id)?.name;
+      const last = dl?.log?.at(-1);
+      const tie = last ? (last.a && last.b ? `${entry(last.a)} has drawn ${entry(last.b)}` : `${entry(last.a ?? last.b)} gets a bye`) : "";
+      if (dl?.status === "live") return { draw: true, live: true, when: dl.started_at, title: c.name, text: tie || "The draw is starting…", foot: "Watch the draw live →", href: `/draw/${c.slug}` };
+      if (dl?.status === "done" && Date.now() - Date.parse(dl.finished_at) < 48 * 3600e3) return { draw: true, live: false, when: dl.finished_at, title: c.name, text: tie, foot: "See the full draw →", href: `/draw/${c.slug}` };
+      if (!dl && c.draw_at && Date.parse(c.draw_at) > Date.now() - 3 * 3600e3 && Date.parse(c.draw_at) < Date.now() + 21 * 864e5)
+        return { draw: true, live: false, when: c.draw_at, title: c.name, text: `Draw at ${fmtTime(c.draw_at)}`, foot: "Live on the website →", href: `/draw/${c.slug}` };
+      return null;
+    }).filter(Boolean),
   ].sort((x, y) => (y.live - x.live) || x.when.localeCompare(y.when)).slice(0, 12);
 
   if (!cards.length) return html`<div class="strip-empty">No matches coming up. <a href="/calendar">See the calendar</a></div>`;
@@ -167,14 +178,17 @@ async function liveStrip() {
   return html`<div class="strip-head"><h3>Live & upcoming matches</h3>
       <span class="strip-ctrl"><button type="button" data-strip-move="-1" aria-label="Previous matches">‹</button><button type="button" data-strip-move="1" aria-label="Next matches">›</button>
         <a href="/calendar">Calendar →</a></span></div>
-    <div class="strip-row">${cards.map((c) => html`<a class="strip-card ${c.live ? "is-live" : ""}" href="${c.href}">
+    <div class="strip-row">${cards.map((c) => (c.draw ? html`<a class="strip-card is-draw ${c.live ? "is-live" : ""}" href="${c.href}">
+      <div class="sc-top"><span>${ukDay(c.when) === todayUK() ? "Today" : fmtDate(c.when)}</span><span class="sc-comp">${c.title}</span></div>
+      <div class="sc-draw">${c.live ? html`<span class="live-dot">Live draw</span>` : html`<b>The draw</b>`}<p>${c.text}</p></div>
+      <div class="sc-foot">${c.foot}</div></a>` : html`<a class="strip-card ${c.live ? "is-live" : ""}" href="${c.href}">
       <div class="sc-top"><span>${ukDay(c.when) === todayUK() ? "Tonight" : fmtDate(c.when)}</span><span class="sc-comp">${c.title}</span></div>
       <div class="sc-body">${side(c.a)}
         <div class="sc-mid">${c.hasFrames || c.done ? html`<b>${c.score.home} - ${c.score.away}</b>` : html`<b class="time">${fmtTime(c.when)}</b>`}
           ${c.live ? html`<span class="live-dot">Live</span>` : c.done ? html`<small>Result</small>` : ""}</div>
         ${side(c.b)}</div>
       <div class="sc-foot">${c.venue?.name ?? ""}</div>
-    </a>`)}</div>`;
+    </a>`))}</div>`;
 }
 
 // ── shields, spotlights, CueViews ─────────────────────────────

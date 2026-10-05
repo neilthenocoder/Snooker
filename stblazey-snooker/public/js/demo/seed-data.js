@@ -241,7 +241,8 @@ export function buildSeed() {
     const comp = {
       id: uuid(), name, slug: slugify(name), season_id: season.id, kind, sort: ci + 1, image_url: "", draw_mode: "bracket", best_of: 5,
       info: `All matches to be played on the dates shown at the first-named venue. Placeholder text — edit in Admin → Competitions.`,
-      league_ids: [], round_deadlines: {}, handicap: false, parent_id: null, ...opts,
+      league_ids: [], round_deadlines: {}, handicap: false, parent_id: null,
+      entries_open: false, entry_fee: "", entry_closes: null, draw_at: null, draw_live: null, ...opts,
     };
     competitions.push(comp);
     const entries = shuffled(entrants).map((e, i) => ({ id: uuid(), competition_id: comp.id, team_id: null, player_id: null, seed: i + 1, ...e }));
@@ -325,6 +326,9 @@ export function buildSeed() {
     cueviews_show: true, shields_show: true,
     feature_show: true, feature_label: "NEW", feature_text: "Try our step-by-step scorecard — log in to find out more", feature_url: "/login", feature_bg: "#0b84e0",
     latest_news_mode: "not_banner", latest_news_category: "", latest_news_ids: [], latest_news_count: 1,
+    entry_intro: "Enter this season's competitions here. It takes a minute: choose your name, tick the competitions you want, then pay the entry fee by bank transfer.",
+    section_colors: true, sidebar_layout: "right",
+    bacs_details: "Account name: St Blazey & District Snooker League (placeholder)\nSort code: 00-00-00\nAccount number: 00000000", entry_pay_days: 7,
     facebook_url: "https://www.facebook.com/", x_url: "https://x.com/", instagram_url: "https://www.instagram.com/", youtube_url: "https://www.youtube.com/",
   }];
   const media = [0, 1, 2, 3, 4, 5, 11, 12].map((n) => ({ id: uuid(), url: img(n), path: null, name: `Sample photo ${n + 1}`, category: n > 10 ? "Galleries" : "News", created_at: `2026-09-${String(10 + n).padStart(2, "0")}T12:00:00Z` }));
@@ -358,12 +362,58 @@ export function buildSeed() {
     { email: "committee@demo.test", password: "committee123", id: profiles[4].id },
   ];
 
+  // ── Wave 4 samples ──
+  // Two competitions that are open for entries on the website, not drawn yet. The first has a live draw booked.
+  const inDays = (n) => new Date(Date.now() + n * 864e5).toISOString();
+  const openComp = (name, kind, fee, extra = {}) => {
+    const c = { ...competitions[0], id: uuid(), name, slug: slugify(name), kind, sort: 30 + competitions.length, handicap: true, league_ids: [], parent_id: null, round_deadlines: {},
+      info: "Enter on the website: choose your name, tick the competition and pay the entry fee by bank transfer. Placeholder text — edit in Admin → Competitions.",
+      entries_open: true, entry_fee: fee, entry_closes: inDays(14).slice(0, 10), draw_at: null, draw_live: null, ...extra };
+    competitions.push(c);
+    return c;
+  };
+  const xmas = openComp("Christmas Handicap Singles", "Singles", "£5", { draw_at: londonISO(inDays(16).slice(0, 10), "19:30") });
+  const pairsComp = openComp("New Year Doubles", "Doubles", "£10 per pair");
+  // Six players have paid and are in; three more entries are waiting for the competition secretary.
+  players.slice(12, 18).forEach((p, i) => competition_entries.push({ id: uuid(), competition_id: xmas.id, team_id: null, player_id: p.id, seed: i + 1, name: p.full_name }));
+  const signup = (c, p, partner, daysAgo) => ({ id: uuid(), competition_id: c.id, player_id: p.id, partner_id: partner?.id ?? null, team_id: null,
+    name: partner ? `${p.full_name} & ${partner.full_name}` : p.full_name, contact: "07700 900000 (placeholder)", status: "pending",
+    pay_by: inDays(7 - daysAgo), created_at: inDays(-daysAgo), decided_at: null, entry_id: null });
+  const competition_signups = [signup(xmas, players[20], null, 1), signup(xmas, players[25], null, 3), signup(pairsComp, players[30], players[31], 2)];
+
+  // Yearly handicap review: a few players have moved since last year (shown as arrows on the Handicaps page).
+  players.forEach((p, i) => { p.last_handicap = p.handicap + (i % 6 === 2 ? 5 : i % 9 === 4 ? -5 : 0); });
+
+  // Last season, brought in the way old results are: final scores only (no frame-by-frame cards),
+  // plus the season's best breaks. This is what fills the Season archive / roll of honour.
+  leagues.forEach((league) => {
+    const ids = teams.filter((t) => t.league_id === league.id).map((t) => t.id);
+    const rounds = roundRobin(ids);
+    rounds.slice(0, rounds.length / 2).forEach((pairs, round) => pairs.forEach(([home, away]) => {
+      // Last season's champions (the first team in each league) rarely slipped up.
+      const champ = home === ids[0] ? "home" : away === ids[0] ? "away" : null;
+      const homeWins = champ ? (champ === "home") !== (rand() < 0.12) : rand() < 0.55, lose = int(0, 2);
+      const fx = { id: uuid(), season_id: prevSeason.id, league_id: league.id, home_team_id: home, away_team_id: away,
+        venue_id: teams.find((t) => t.id === home).venue_id, starts_at: londonISO(addDays("2025-09-23", round * 7), "19:30"),
+        status: "approved", notes: "", scorecard_url: null, postponed_at: null, home_score: homeWins ? 5 - lose : lose, away_score: homeWins ? lose : 5 - lose };
+      fixtures.push(fx);
+      if (rand() < 0.3) breaks.push({ id: uuid(), fixture_id: fx.id, frame_no: 1, player_id: pick(teamPlayers(rand() < 0.5 ? home : away)).id, value: int(30, 87) });
+    }));
+  });
+
+  // Match night photos: one of last week's Rees matches has pictures from the home captain,
+  // so they show on the match page and in that week's news report.
+  for (const f of fixtures) f.gallery = [];
+  const photoMatch = fixtures.find((f) => f.league_id === leagues[1].id && f.status === "approved" && f.starts_at.slice(0, 10) > "2026-09-24" && f.starts_at.slice(0, 10) <= "2026-09-30");
+  if (photoMatch) photoMatch.gallery = [21, 22, 23].map(img);
+  for (const a of articles) a.show_photos = true;
+
   return {
     tables: {
       seasons: [season, prevSeason], leagues, venues, teams, players,
       fixtures, frames, breaks, articles, pages, sponsors, profiles,
-      competitions, competition_entries, competition_matches, competition_frames, competition_breaks,
-      categories, settings, media, page_views,
+      competitions, competition_entries, competition_matches, competition_frames, competition_breaks, competition_signups,
+      handicap_changes: [], categories, settings, media, page_views,
     },
     demoUsers,
   };

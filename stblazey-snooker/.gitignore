@@ -1,0 +1,8 @@
+node_modules/
+.netlify/
+.DS_Store
+
+# Secrets — never commit these. Real keys live in Netlify → Environment variables.
+.env
+.env.*
+!.env.example

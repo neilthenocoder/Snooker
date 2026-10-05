@@ -370,6 +370,69 @@ drop trigger if exists fixtures_stamp_postponed on fixtures;
 create trigger fixtures_stamp_postponed before insert or update on fixtures
   for each row execute function public.stamp_postponed();
 
+-- v6: Rich's fourth round of feedback ---------------------------------
+-- Branding (Admin → Branding): loading-screen logo, colours, fonts and page layout.
+-- An empty colour or font means "use the standard one".
+alter table settings add column if not exists loading_logo_url text;
+alter table settings add column if not exists color_primary text;
+alter table settings add column if not exists color_home text;
+alter table settings add column if not exists color_competitions text;
+alter table settings add column if not exists color_fixtures text;
+alter table settings add column if not exists color_league text;
+alter table settings add column if not exists color_login text;
+alter table settings add column if not exists color_background text;
+alter table settings add column if not exists section_colors boolean not null default true;
+alter table settings add column if not exists font_head text;
+alter table settings add column if not exists font_body text;
+alter table settings add column if not exists sidebar_layout text not null default 'right';
+-- Competition entry forms: how to pay, and how long entrants have to do it
+alter table settings add column if not exists bacs_details text;
+alter table settings add column if not exists entry_pay_days int not null default 7;
+alter table settings add column if not exists entry_intro text;
+alter table competitions add column if not exists entries_open boolean not null default false;
+alter table competitions add column if not exists entry_fee text;
+alter table competitions add column if not exists entry_closes date;
+-- Live draws: when the draw is due, and the record of a draw made live
+-- ({ status, round, by, witness, started_at, finished_at, log: [{ entry_id, slot, side, at }] })
+alter table competitions add column if not exists draw_at timestamptz;
+alter table competitions add column if not exists draw_live jsonb;
+-- Handicaps: last year's figure (for the up/down arrows)
+alter table players add column if not exists last_handicap int;
+-- Match night photos, added by the home captain; shown on the match page and the week's news report
+alter table fixtures add column if not exists gallery jsonb not null default '[]'::jsonb;
+alter table articles add column if not exists show_photos boolean not null default true;
+
+-- Entries made on the website's entry form. They wait here until the competition
+-- secretary confirms the entry fee has been paid; approving one adds the entrant
+-- to the competition. Contact details are never public.
+create table if not exists competition_signups (
+  id uuid primary key default gen_random_uuid(),
+  competition_id uuid not null references competitions on delete cascade,
+  player_id uuid references players on delete set null,
+  partner_id uuid references players on delete set null,
+  team_id uuid references teams on delete set null,
+  name text not null,
+  contact text,
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected', 'expired')),
+  pay_by timestamptz not null,
+  created_at timestamptz not null default now(),
+  decided_at timestamptz,
+  entry_id uuid references competition_entries on delete set null
+);
+create index if not exists competition_signups_comp_idx on competition_signups (competition_id, status);
+
+-- Every change to a player's handicap, with who made it and why.
+create table if not exists handicap_changes (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid not null references players on delete cascade,
+  old_handicap int,
+  new_handicap int not null,
+  note text,
+  changed_by text,
+  created_at timestamptz not null default now()
+);
+create index if not exists handicap_changes_player_idx on handicap_changes (player_id, created_at desc);
+
 -- One row per login. Created by the admin dashboard (Netlify Function).
 create table if not exists profiles (
   id uuid primary key references auth.users on delete cascade,
@@ -597,6 +660,175 @@ grant execute on function public.is_staff() to anon, authenticated;
 grant execute on function public.is_captain_of(uuid) to anon, authenticated;
 grant execute on function public.can_edit_fixture(uuid) to anon, authenticated;
 
+-- ── v6: handicaps ───────────────────────────────────────────────
+-- Keep a record whenever a handicap changes (however it was changed).
+create or replace function public.log_handicap() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into handicap_changes (player_id, old_handicap, new_handicap, note, changed_by)
+  values (new.id, old.handicap, new.handicap, nullif(current_setting('app.handicap_note', true), ''),
+          (select coalesce(full_name, email) from profiles where id = auth.uid()));
+  return new;
+end;
+$$;
+drop trigger if exists players_log_handicap on players;
+create trigger players_log_handicap after update of handicap on players
+  for each row when (old.handicap is distinct from new.handicap) execute function public.log_handicap();
+
+-- The league secretary AND the competition secretary can adjust a handicap
+-- without being able to change anything else about the player.
+create or replace function public.set_handicap(pid uuid, value int, note text default null) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not (public.can_manage('league') or public.can_manage('competitions')) then
+    raise exception 'Only the league or competition secretary can change a handicap';
+  end if;
+  if value is null or value < -200 or value > 200 then
+    raise exception 'A handicap must be a whole number between -200 and 200';
+  end if;
+  perform set_config('app.handicap_note', coalesce(left(note, 200), ''), true);
+  update players set handicap = value where id = pid;
+end;
+$$;
+
+-- The yearly review: remember every player's handicap as "last year's", so
+-- the website can show who has gone up or down since.
+create or replace function public.start_handicap_review() returns int
+language plpgsql security definer set search_path = public as $$
+declare n int;
+begin
+  if not (public.can_manage('league') or public.can_manage('competitions')) then
+    raise exception 'Only the league or competition secretary can start the handicap review';
+  end if;
+  update players set last_handicap = handicap where last_handicap is distinct from handicap;
+  get diagnostics n = row_count;
+  return n;
+end;
+$$;
+revoke all on function public.set_handicap(uuid, int, text) from public, anon;
+revoke all on function public.start_handicap_review() from public, anon;
+grant execute on function public.set_handicap(uuid, int, text) to authenticated;
+grant execute on function public.start_handicap_review() to authenticated;
+
+-- ── v6: match night photos ──────────────────────────────────────
+-- The home team's captain or vice captain (or an admin) sets the photos for a match.
+create or replace function public.set_match_photos(fid uuid, urls jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not (public.is_admin() or public.is_captain_of((select home_team_id from fixtures where id = fid))) then
+    raise exception 'Only the home team''s captain or vice captain can add match night photos';
+  end if;
+  if jsonb_typeof(urls) <> 'array' or jsonb_array_length(urls) > 12 or octet_length(urls::text) > 8000 then
+    raise exception 'A match can have up to 12 photos';
+  end if;
+  update fixtures set gallery = urls where id = fid;
+end;
+$$;
+revoke all on function public.set_match_photos(uuid, jsonb) from public, anon;
+grant execute on function public.set_match_photos(uuid, jsonb) to authenticated;
+
+-- ── v6: competition entry forms ─────────────────────────────────
+-- Anyone can enter (no login needed): pick a player and one or more
+-- competitions. Each entry waits as "pending" until the fee is confirmed.
+-- partners: { "<competition id>": "<partner's player id>" } for doubles.
+create or replace function public.enter_competitions(p_player uuid, p_competitions uuid[], p_contact text default null, p_partners jsonb default '{}'::jsonb)
+returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  pl players; c competitions; partner players; team teams; league uuid;
+  entry_name text; days int; made jsonb := '[]'::jsonb; cid uuid; new_row competition_signups;
+begin
+  select * into pl from players where id = p_player;
+  if pl.id is null then raise exception 'Please choose your name from the list'; end if;
+  if p_competitions is null or coalesce(array_length(p_competitions, 1), 0) = 0 then raise exception 'Choose at least one competition'; end if;
+  if array_length(p_competitions, 1) > 20 then raise exception 'Too many competitions in one entry'; end if;
+  select * into team from teams where id = pl.team_id;
+  league := team.league_id;
+  select entry_pay_days into days from settings where id = 1;
+
+  foreach cid in array p_competitions loop
+    select * into c from competitions where id = cid;
+    if c.id is null or not c.entries_open or (c.entry_closes is not null and c.entry_closes < current_date) then
+      raise exception 'Entries for % are closed', coalesce(c.name, 'that competition');
+    end if;
+    if jsonb_array_length(c.league_ids) > 0 and not (c.league_ids ? coalesce(league::text, '')) then
+      raise exception '% is not open to players from your league', c.name;
+    end if;
+    partner := null;
+    if c.kind = 'Team' then
+      if team.id is null then raise exception 'You need to be in a team to enter %', c.name; end if;
+      entry_name := team.name;
+      if exists (select 1 from competition_signups where competition_id = cid and team_id = team.id and status in ('pending', 'approved'))
+         or exists (select 1 from competition_entries where competition_id = cid and team_id = team.id) then
+        raise exception '% are already entered in %', team.name, c.name;
+      end if;
+    else
+      if c.kind = 'Doubles' then
+        select * into partner from players where id = nullif(p_partners ->> cid::text, '')::uuid;
+        if partner.id is null or partner.id = pl.id then raise exception 'Choose your partner for %', c.name; end if;
+        entry_name := pl.full_name || ' & ' || partner.full_name;
+      else
+        entry_name := pl.full_name;
+      end if;
+      if exists (select 1 from competition_signups where competition_id = cid and status in ('pending', 'approved')
+                   and (player_id in (pl.id, partner.id) or partner_id in (pl.id, partner.id)))
+         or exists (select 1 from competition_entries where competition_id = cid and player_id in (pl.id, partner.id)) then
+        raise exception '% already entered in %', case when c.kind = 'Doubles' then 'One of you is' else pl.full_name || ' is' end, c.name;
+      end if;
+    end if;
+    insert into competition_signups (competition_id, player_id, partner_id, team_id, name, contact, pay_by)
+    values (cid, pl.id, partner.id, case when c.kind = 'Team' then team.id end, entry_name, nullif(left(trim(coalesce(p_contact, '')), 200), ''),
+            now() + make_interval(days => greatest(1, coalesce(days, 7))))
+    returning * into new_row;
+    made := made || jsonb_build_object('id', new_row.id, 'competition_id', cid, 'name', entry_name, 'fee', c.entry_fee, 'pay_by', new_row.pay_by);
+  end loop;
+  return made;
+end;
+$$;
+
+-- Unpaid entries lapse once their pay-by date has passed.
+create or replace function public.expire_signups() returns void
+language sql security definer set search_path = public as $$
+  update competition_signups set status = 'expired', decided_at = now() where status = 'pending' and pay_by < now();
+$$;
+
+-- Who has entered a competition through the form (names only — no contact details).
+create or replace function public.signup_names(p_competition uuid) returns table (name text, status text, pay_by timestamptz)
+language sql stable security definer set search_path = public as $$
+  select name, case when status = 'pending' and pay_by < now() then 'expired' else status end, pay_by
+  from competition_signups where competition_id = p_competition and status in ('pending', 'approved') order by created_at;
+$$;
+
+-- The competition secretary confirms payment (the entrant joins the competition) or removes the entry.
+create or replace function public.decide_signup(sid uuid, approve boolean) returns void
+language plpgsql security definer set search_path = public as $$
+declare su competition_signups; eid uuid;
+begin
+  if not public.can_manage('competitions') then
+    raise exception 'Only the competition secretary can approve entries';
+  end if;
+  select * into su from competition_signups where id = sid;
+  if su.id is null then raise exception 'That entry no longer exists'; end if;
+  if approve then
+    if su.entry_id is null then
+      insert into competition_entries (competition_id, name, team_id, player_id, seed)
+      values (su.competition_id, su.name, su.team_id, case when su.team_id is null then su.player_id end,
+              (select coalesce(max(seed), 0) + 1 from competition_entries where competition_id = su.competition_id))
+      returning id into eid;
+    end if;
+    update competition_signups set status = 'approved', decided_at = now(), entry_id = coalesce(eid, entry_id) where id = sid;
+  else
+    if su.entry_id is not null then delete from competition_entries where id = su.entry_id; end if;
+    update competition_signups set status = 'rejected', decided_at = now(), entry_id = null where id = sid;
+  end if;
+end;
+$$;
+revoke all on function public.decide_signup(uuid, boolean) from public, anon;
+grant execute on function public.decide_signup(uuid, boolean) to authenticated;
+grant execute on function public.enter_competitions(uuid, uuid[], text, jsonb) to anon, authenticated;
+grant execute on function public.expire_signups() to anon, authenticated;
+grant execute on function public.signup_names(uuid) to anon, authenticated;
+
 -- ── row-level security ──────────────────────────────────────────
 -- Everyone can READ league data. Admins can WRITE all of it; each officer
 -- role can write its own part (see can_manage above). Captains can write
@@ -632,6 +864,15 @@ begin
   execute 'create policy "admin write" on media for all using (public.is_staff()) with check (public.is_staff())';
 end $$;
 
+-- Entry-form entries (with contact details) and the handicap log are for officers only.
+-- The public reaches them through enter_competitions() and signup_names() above.
+alter table competition_signups enable row level security;
+alter table handicap_changes enable row level security;
+drop policy if exists "admin write" on competition_signups;
+drop policy if exists "staff read" on handicap_changes;
+create policy "admin write" on competition_signups for all using (public.can_manage('competitions')) with check (public.can_manage('competitions'));
+create policy "staff read" on handicap_changes for select using (public.can_manage('league') or public.can_manage('competitions'));
+
 -- Unpublished articles are hidden from the public.
 create policy "public read" on articles for select using (is_published or public.can_manage('website'));
 
@@ -662,7 +903,7 @@ create policy "anyone insert" on page_views for insert to anon, authenticated wi
 do $$
 declare t text;
 begin
-  foreach t in array array['fixtures','frames','breaks','players','competition_matches','competition_frames','competition_breaks'] loop
+  foreach t in array array['fixtures','frames','breaks','players','competition_matches','competition_frames','competition_breaks','competitions'] loop
     begin
       execute format('alter publication supabase_realtime add table %I', t);
     exception when duplicate_object then null;
@@ -680,11 +921,12 @@ on conflict (id) do update set public = true, file_size_limit = excluded.file_si
 drop policy if exists "images admin insert" on storage.objects;
 drop policy if exists "images admin update" on storage.objects;
 drop policy if exists "images admin delete" on storage.objects;
--- Captains may also upload photos of paper scorecards (into scorecards/ only),
--- and anyone linked to a player profile may upload their own photos (players/ only).
+-- Captains may also upload photos of paper scorecards (scorecards/) and of the
+-- match night (matchnight/), and anyone linked to a player profile may upload
+-- their own photos (players/ only).
 create policy "images admin insert" on storage.objects for insert to authenticated
   with check (bucket_id = 'images' and (public.is_staff()
-    or (name like 'scorecards/%' and exists (select 1 from public.profiles where id = auth.uid()
+    or ((name like 'scorecards/%' or name like 'matchnight/%') and exists (select 1 from public.profiles where id = auth.uid()
           and (role in ('captain', 'vice_captain') or team_role in ('captain', 'vice_captain'))))
     or (name like 'players/%' and exists (select 1 from public.profiles where id = auth.uid() and player_id is not null))
   ));

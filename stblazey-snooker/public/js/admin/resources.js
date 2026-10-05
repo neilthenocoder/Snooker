@@ -20,6 +20,7 @@ import { STATUSES } from "../core/rules.js";
 import { CUEVIEW } from "../core/cueview.js";
 import { ROLE_LABEL, TEAM_ROLE_LABEL } from "../core/auth.js";
 import { refreshShell } from "../core/router.js";
+import { FONTS } from "../core/branding.js";
 
 export const RESOURCES = {
   fixtures: {
@@ -48,7 +49,7 @@ export const RESOURCES = {
   },
   competitions: {
     label: "Competitions", table: "competitions", order: "sort", filters: ["season_id", "kind"],
-    columns: ["image_url", "name", "kind", "league_ids", "season_id"],
+    columns: ["image_url", "name", "kind", "league_ids", "season_id", "entries_open"],
     intro: "Create the competition here, then add its entrants, round deadlines and the draw under “Draws & results”. A plate competition (for those knocked out in the first round) is created from its main competition's Draws page.",
     fields: [
       { name: "name", label: "Competition name", type: "text", required: true },
@@ -64,6 +65,10 @@ export const RESOURCES = {
       { name: "image_url", label: "Picture (winner photo, trophy…)", type: "image", folder: "competitions", maxSize: 1200 },
       { name: "info", label: "Competition information (rules, dates, format)", type: "textarea" },
       { name: "parent_id", label: "Plate competition of (leave empty for a normal competition)", type: "ref", ref: "competitions" },
+      { type: "heading", label: "Entry form", help: "Tick “Open for entries” and the competition appears on the website's entry form (/enter). Entries wait under Competitions → Entries to approve until the fee has been paid. The bank details and the days allowed to pay are under Website → Site settings." },
+      { name: "entries_open", label: "Open for entries on the website", short: "Entries open", type: "checkbox" },
+      { name: "entry_fee", label: "Entry fee (as you want it shown, e.g. £5 per player)", type: "text", placeholder: "£5 per player" },
+      { name: "entry_closes", label: "Entries close on (optional — the form stops taking entries after this day)", type: "date" },
     ],
     validate: (row) => (row.parent_id && row.parent_id === row.id ? "A competition can't be its own plate." : null),
     rowActions: [{ label: "Draw", href: (row) => `/admin/draws?c=${row.id}` }, { label: "View", href: (row) => `/competition/${row.slug}` }],
@@ -199,6 +204,7 @@ export const RESOURCES = {
       { name: "show_breaks", label: "Show top breaks of the week", type: "checkbox" },
       { name: "show_results", label: "Show team results of the week", type: "checkbox" },
       { name: "show_standings", label: "Show team standings", type: "checkbox" },
+      { name: "show_photos", label: "Show match night photos (the ones home captains add to that week's matches)", type: "checkbox", default: true },
     ],
   },
   categories: {
@@ -232,12 +238,37 @@ export const RESOURCES = {
       { name: "sort", label: "Display order", type: "number", default: 1 },
     ],
   },
+  // Branding and Site settings are two forms on the same single row of the settings table.
+  branding: {
+    label: "Branding", table: "settings", order: "id", single: true, afterSave: () => refreshShell(),
+    intro: "How the website looks. Leave a colour or font on “standard” to keep the original. Changes show as soon as you press Save.",
+    fields: [
+      { type: "heading", label: "Logos" },
+      { name: "logo_url", label: "Main logo (SVG or PNG — shown top left, at the height of the menu)", type: "image", folder: "branding", maxSize: 400 },
+      { name: "loading_logo_url", label: "Loading logo (pulses in the middle of the black loading screen — leave empty to use the main logo)", type: "image", folder: "branding", maxSize: 600 },
+      { name: "favicon_url", label: "Favicon (the little browser-tab icon — square)", type: "image", folder: "branding", maxSize: 128 },
+      { type: "heading", label: "Menu and section colours", help: "Each menu button has its own colour, and the pages in that part of the site use it for their headers." },
+      { name: "color_home", label: "Home (standard: brown)", type: "color", optional: true, default: "#4b2019" },
+      { name: "color_competitions", label: "Competitions & Handicaps (standard: gold)", type: "color", optional: true, default: "#fbb61a" },
+      { name: "color_fixtures", label: "Fixtures (standard: green)", type: "color", optional: true, default: "#0b8a12" },
+      { name: "color_league", label: "League & News (standard: white)", type: "color", optional: true, default: "#ffffff" },
+      { name: "color_login", label: "Login & My Team (standard: red)", type: "color", optional: true, default: "#e8003d" },
+      { name: "section_colors", label: "Colour-code each section: its table headers match its menu button", type: "checkbox", default: true },
+      { type: "heading", label: "Other colours" },
+      { name: "color_primary", label: "Main colour (standard: red — buttons, the line under the menu, headers that have no section colour)", type: "color", optional: true, default: "#e8003d" },
+      { name: "color_background", label: "Page background (standard: cream)", type: "color", optional: true, default: "#f9f8ee" },
+      { type: "heading", label: "Fonts", help: "From Google Fonts." },
+      { name: "font_head", label: "Headings and menu", type: "select", options: ["", ...FONTS.head.slice(1)], labels: { "": `${FONTS.head[0]} (standard)` } },
+      { name: "font_body", label: "Body text", type: "select", options: ["", ...FONTS.body.slice(1)], labels: { "": `${FONTS.body[0]} (standard)` } },
+      { type: "heading", label: "Page layout" },
+      { name: "sidebar_layout", label: "Side boxes (latest news, breaks, rankings)", type: "select", options: ["right", "left", "below"], default: "right",
+        labels: { right: "On the right (standard)", left: "On the left", below: "Underneath — the page uses the full width" } },
+    ],
+  },
   settings: {
     label: "Site settings", table: "settings", order: "id", single: true, afterSave: () => refreshShell(),
     fields: [
-      { type: "heading", label: "Branding" },
-      { name: "logo_url", label: "Logo (SVG or PNG — shown at the height of the menu)", type: "image", folder: "branding", maxSize: 400 },
-      { name: "favicon_url", label: "Favicon (the little browser-tab icon — square)", type: "image", folder: "branding", maxSize: 128 },
+      { type: "heading", label: "Home page banner", help: "The logo, colours and fonts are under Website → Branding." },
       { name: "hero_image_url", label: "Home page banner background (leave blank for the standard photo)", type: "image", folder: "branding", maxSize: 2000 },
       { name: "hero_count", label: "How many news articles rotate in the banner", type: "number", default: 4 },
       { type: "heading", label: "Player of the week" },
@@ -263,6 +294,11 @@ export const RESOURCES = {
       { name: "latest_news_count", label: "How many articles", type: "number", default: 1 },
       { name: "latest_news_category", label: "Category (for “one category”)", type: "ref", ref: "categories", store: "name" },
       { name: "latest_news_ids", label: "Chosen articles (for “the articles I choose”)", type: "tags", ref: "articles" },
+      { type: "heading", label: "Competition entry form", help: "Shown to players at the end of the entry form (/enter). Which competitions are open is set on each competition." },
+      { name: "entry_intro", label: "Introduction at the top of the form (optional)", type: "textarea", rows: 2 },
+      { name: "bacs_details", label: "How to pay — the league's bank details (BACS)", type: "textarea", rows: 4,
+        placeholder: "Account name: St Blazey & District Snooker League\nSort code: 00-00-00\nAccount number: 00000000\nReference: your name + competition" },
+      { name: "entry_pay_days", label: "Days allowed to pay (unpaid entries are removed after this)", type: "number", default: 7 },
       { type: "heading", label: "Social links (footer)", help: "Paste the full address of each page. Blank ones aren't shown." },
       { name: "facebook_url", label: "Facebook", type: "text", placeholder: "https://www.facebook.com/…" },
       { name: "x_url", label: "X (Twitter)", type: "text", placeholder: "https://x.com/…" },

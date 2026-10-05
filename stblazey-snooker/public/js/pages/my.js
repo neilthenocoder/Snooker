@@ -3,7 +3,7 @@
 import { html, mount, $, readForm, toast, fmtDate, fmtTime, confirmBox } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { loadCompetitions, updateMyPlayer, addPlayerToTeam, seasonFrames, setFixtureStatus } from "../core/api.js";
-import { isCaptain, isMember, canEditFixture, canPostpone, canEditCompMatch, changePassword, roleText } from "../core/auth.js";
+import { isCaptain, isMember, canEditFixture, canPostpone, canEditCompMatch, canAddMatchPhotos, changePassword, roleText } from "../core/auth.js";
 import { buildBracket, isEntry, roundName } from "../core/bracket.js";
 import { extCounts, EXT_PER_SEASON, POSTPONE_WEEKS, rearrangeBy } from "../core/rules.js";
 import { CUEVIEW } from "../core/cueview.js";
@@ -110,17 +110,22 @@ async function teamTab(el, { ctx, user, team }) {
 }
 
 // ── Fixtures ───────────────────────────────────────────────────
+/** Home captains can add match night photos once the match has started. */
+const photoLink = (user, f) => (isCaptain(user) && canAddMatchPhotos(user, f) && f.status !== "scheduled" && f.status !== "postponed"
+  ? html`<a class="btn small ghost" href="${urls.match(f)}#match-photos">Photos${f.gallery?.length ? ` (${f.gallery.length})` : ""}</a>` : "");
 function fixturesTab(el, { ctx, user, team }) {
   if (!team) return mount(el, noTeam);
   mount(el, html`
     ${postponedNotices(ctx, team)}
     ${isCaptain(user) ? html`<p class="muted" style="margin:0">You can enter and edit scorecards for your own team's matches until the league admin approves them.
-      A photo of the paper scorecard is needed before a result can be submitted. A match that hasn't started can be postponed here.</p>` : ""}
+      A photo of the paper scorecard is needed before a result can be submitted. A match that hasn't started can be postponed here.
+      <b>Home matches:</b> press <b>Photos</b> to add match night pictures — they show on the match page and in that week's news report.</p>` : ""}
     ${panel(`${team.name} fixtures ${ctx.season?.name ?? ""}`, fixturesTable(ctx, ctx.fixturesFor(team.id), {
       actions: (f) => canEditFixture(user, f)
         ? html`<span class="btn-row" style="flex-wrap:nowrap"><a class="btn small" href="${urls.scorecard(f)}">${ctx.hasResult(f) ? "Edit scorecard" : "Enter scorecard"}</a>
-            ${canPostpone(user, f) && f.status === "scheduled" ? html`<button type="button" class="btn small ghost" data-postpone="${f.id}">Postpone</button>` : ""}</span>`
-        : html`${statusBadge(f.status)} <a href="${urls.match(f)}">View</a>`,
+            ${canPostpone(user, f) && f.status === "scheduled" ? html`<button type="button" class="btn small ghost" data-postpone="${f.id}">Postpone</button>` : ""}
+            ${photoLink(user, f)}</span>`
+        : html`${statusBadge(f.status)} <a href="${urls.match(f)}">View</a> ${photoLink(user, f)}`,
     }))}
     <a class="btn ghost" href="/calendar?team=${team.id}" style="align-self:start">See these on the calendar</a>`);
 }

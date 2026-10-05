@@ -9,6 +9,10 @@ A fast, plain HTML/CSS/JavaScript website (no build step) with:
 - **Roles**: Master Admin and League Admin (everything), Competition Secretary, League Secretary, and Committee Member / President / Vice Chairman / Chairman (website) — each sees only their own part of the dashboard, and any of them can also be given captain rights for their team.
 - **CSV import**: bring in teams, players, old fixtures and results, or full scorecards from a spreadsheet (Admin → Import from CSV).
 - **Admin dashboard**: approve results, and manage fixtures, the fixture generator, leagues (and their weekly shield), teams, players (with CueView), venues, seasons, competitions (entrants, byes, draws — fixed bracket or redrawn every round — and results), logins, news and categories, an **image library**, info pages, sponsors, **site settings** (logo, favicon, banner, player/team of the week) and a **statistics** dashboard.
+- **Competition entry form** (`/enter`): players pick their name and the competitions they want, are shown the league's bank details and a pay-by date, and the entry waits for the competition secretary to confirm the payment.
+- **Live draws**: a competition's draw can be made live on the website, one tie at a time, with a named witness.
+- **Branding**: logo, loading logo, the colour of each menu button and its section, fonts and page layout are all set in the dashboard.
+- **Season archive & roll of honour** (`/archive`): every season's champions, top player and highest break, with its full tables and breaks a click away.
 - **Automatic calculations**: league tables (P/W/L/F/A/Pts), player rankings (5 pts per frame won plus break points), highest breaks and all breaks.
 
 It runs in **demo mode** out of the box, using sample data saved in your browser, so you can deploy it to Netlify and click around before setting up a database.
@@ -124,19 +128,38 @@ Tables and rankings count **submitted** and **approved** results. To make tables
 
 **Cup matches** work the same way: open Admin → Draws & results → **Scorecard** (or a captain of a team in the match can use the match page's **Start scoring** button). Press **Finish match** at the end and the winner moves into the next round.
 
+**Match night photos:** the **home** team's captain or vice captain (and the admins) can add up to 12 photos to a match: My Team → Fixtures → **Photos**, or the match page → **Add match night photos**. They show on the match page and, automatically, under that week's news report (a News article with a league and "week ending" date; untick "Show match night photos" on the article to leave them out). Photos are shrunk before upload and aren't added to the image library.
+
 Either team's captain can enter the scorecard for their match. A captain can only ever touch their own team's matches, and this is enforced by the database itself, not just hidden in the page.
 
 ---
+
+## 3a. Competition entries, live draws, handicaps
+
+**Entry form.** Under Admin → Competitions → Edit, tick **Open for entries on the website**, type the **entry fee** as you want it shown (e.g. `£5 per player`) and, if you like, the day entries close. The competition then appears on the entry form at `/enter` (there are buttons to it on the Competitions page and on the competition's own page). The form is step by step and needs no login:
+
+1. **Who you are** — choose your team, then your name from the list of players (plus an optional phone number or email that only the competition secretary sees).
+2. **Competitions** — tick one or more. A doubles competition asks for your partner; a team competition enters your team; a competition limited to one league only lets that league's players in.
+3. **Check** — the entries and the total to pay.
+4. **Pay** — the league's bank details (BACS) and the **pay-by date**.
+
+The bank details, the introduction and the number of days allowed to pay are under **Admin → Site settings → Competition entry form**.
+
+Each entry then waits under **Admin → Entries to approve** (a red number in the menu shows how many). When the competition secretary has seen the payment in the bank they press **Paid — approve** and the entrant is added to that competition's draw list. **Remove** deletes an entry; **Undo** takes an approved one back out. An entry that isn't approved by its pay-by date **lapses by itself** — it moves to "Lapsed" (where it can still be approved if the money turns up) and the player is free to enter again. Nobody can enter the same competition twice, and the database refuses entries for a competition that isn't open. Payment itself is never taken on the website: confirming it is always a person's decision.
+
+**Live draw.** On Admin → Draws & results, each competition has a **Live draw** box. Set the date and time (it's shown on the competition page and in the home page strip beforehand) and press **Save the date**. On the night, the person making the draw logs in, types the name of the **witness** and presses **Start the live draw now**; each press of **Draw the next tie** then pulls the next tie out at random. Everyone watching sees it as it happens: on the public draw page (`/draw/<competition>`, which updates by itself), as a card in the home page's "Live & upcoming" strip ("Player A has drawn Player B"), as a green pop-up, and on the LIVE button. When the last tie is out the bracket is complete and the draw page keeps a record of when it was made, by whom and who witnessed it. Starting a draw closes that competition's entry form. The live draw makes the first-round draw (byes included); for "redraw every round" competitions the later rounds are still drawn from the same screen as before.
+
+**Handicaps.** **Admin → Handicaps** lists every player with a box for their new handicap — type it and press Save. It's open to the **League Secretary and the Competition Secretary** (and the admins), and it changes only the handicap, not the rest of the player's profile. Every change is recorded with who made it, when, and an optional reason. For the **yearly review**, press **Start a new yearly review** first: today's figures are remembered as "last year", and from then on the public Handicaps page and player pages show a green ▲ or red ▼ with the difference beside anyone who has moved.
 
 ## 3b. Who can do what
 
 | Role | Admin dashboard | Also |
 |---|---|---|
 | **Master Admin**, **League Admin** | Everything | Only the Master Admin can create or change another Master Admin |
-| **Competition Secretary** | Competitions (and scoring any cup match) | |
-| **League Secretary** | League: leagues, teams, players, venues, seasons | |
-| **Committee Member**, **President**, **Vice Chairman**, **Chairman** | Website: news, pages, images, sponsors, site settings, statistics | |
-| **Captain**, **Vice Captain** | – | Scorecards and postponing for their own team; their own profile |
+| **Competition Secretary** | Competitions: entries to approve, draws (including live draws), scoring any cup match — and **Handicaps** | |
+| **League Secretary** | League: leagues, teams, players, **handicaps**, venues, seasons | |
+| **Committee Member**, **President**, **Vice Chairman**, **Chairman** | Website: news, pages, images, sponsors, **branding**, site settings, statistics | |
+| **Captain**, **Vice Captain** | – | Scorecards and postponing for their own team; match night photos for their **home** matches; their own profile |
 | **Player** | – | Their own profile only |
 
 Any officer who also plays can be given **Team rights** (Captain or Vice Captain) on their login, and then has a **My Team** button next to **Admin**. Results to approve, fixtures and logins stay with the Master Admin and League Admin. The database enforces all of this (`can_manage()` in `schema.sql`), so a section that isn't in someone's menu can't be changed by typing its address either.
@@ -186,6 +209,7 @@ public/                     ← everything Netlify serves
       context.js            ← turns raw data into tables/rankings for pages
       components.js         ← ALL reusable tables, panels, cards, sidebar
       auth.js               ← login + "who can edit what" (UI side)
+      branding.js           ← turns Admin → Branding (colours, fonts, layout, loading logo) into CSS variables
       dom.js                ← safe HTML helper, dates in UK time, toasts
       schedule.js           ← round-robin fixture generator + date helpers
       bracket.js            ← knockout draw + who-plays-whom logic (no HTML)
@@ -207,6 +231,8 @@ public/                     ← everything Netlify serves
       picker.js             ← the image library and "choose from library" pop-up
       stats.js              ← the statistics dashboard
       import.js             ← the Import from CSV screen
+      handicaps.js          ← the Handicaps screen (quick changes, yearly review, change log)
+      entries.js            ← Entries to approve (competition entry form)
     demo/seed-data.js       ← sample league (imaginary players)
 supabase/
   schema.sql                ← tables + security rules + image storage (safe to re-run)
@@ -231,13 +257,23 @@ For example, to add a "phone" field to venues, add one line to `RESOURCES.venues
 
 | I want to… | Edit |
 |---|---|
-| Use the real logo / favicon | Admin → Site settings & home page → Logo / Favicon |
+| Use the real logo / favicon / loading logo | Admin → Branding → Logos |
+| Change a menu button's colour (and its section's headers) | Admin → Branding → Menu and section colours. Tick "Use my own colour" and pick; untick to go back to the standard one |
+| Stop sections using their menu colour for headers | Admin → Branding → untick "Colour-code each section" (headers go back to the main colour) |
+| Change the main colour or the page background | Admin → Branding → Other colours |
+| Change the fonts | Admin → Branding → Fonts (Google Fonts; to offer a different one, add its name to `FONTS` in `core/branding.js`) |
+| Put the side boxes on the left, or underneath a full-width page | Admin → Branding → Page layout |
+| Open a competition for entries, set its fee | Admin → Competitions → Edit → Entry form |
+| Bank details and days allowed to pay | Admin → Site settings → Competition entry form |
+| Confirm someone has paid | Admin → Entries to approve → Paid — approve |
+| Make a draw live | Admin → Draws & results → Live draw |
+| Change a handicap / start the yearly review | Admin → Handicaps |
+| See past seasons | League → Season archive (`/archive`), or the Season list on any table, fixtures or competitions page |
 | Change the home page banner photo | Admin → Site settings & home page → Home page banner background |
 | Choose which news rotates in the banner | Admin → News → tick "Show in the home page banner" (newest 4 are shown; change the number in Site settings) |
 | Player / team of the week, CueViews on the home page | Admin → Site settings & home page; pick CueViews under Players → "Show this CueView on the home page" |
 | Add a CueView question | One line in `public/js/core/cueview.js` |
 | Put the quote somewhere else in an article | Type `[quote]` on its own line in the article text |
-| Change colours or fonts | The `:root` block at the top of `style.css` |
 | Footer: partner logos | Admin → Sponsors (they appear under "Principal Partners") |
 | Footer: Facebook / X / Instagram / YouTube links | Admin → Site settings & home page → Social links (an icon only shows when its link is filled in) |
 | Footer: Privacy Policy, Terms, Accessibility, About, Contact Us | Admin → Info pages — edit the text; "Show in the footer" / "Show on the League page" decide where each page is linked |
@@ -254,7 +290,6 @@ For example, to add a "phone" field to venues, add one line to `RESOURCES.venues
 | A plate competition | Admin → Draws & results → Create … Plate |
 | Emblems for teams, leagues and venues | Admin → Teams / Leagues / Venues → Edit |
 | File library pictures into categories | Admin → Image library (list under each picture) |
-| Body font | `--font-body` near the end of `style.css`, and the Google Fonts line in `index.html` |
 | Add sponsors, news, rules pages | Admin dashboard (no code) |
 | Create next season's fixtures | Admin → Seasons (add, tick "current"), then Admin → Fixture generator |
 | Add a new league | Admin → Leagues → Add new, then add its teams and generate its fixtures. It appears on the home page, fixtures page and League page automatically |
@@ -280,6 +315,12 @@ When you get new code files:
 - [ ] Test it: log in as one captain, then try to open another team's scorecard URL. It should say "Scorecard locked".
 - [ ] Test it: as a captain, try **Submit results** without a photo. It should be refused.
 - [ ] Test it: log in as an officer (e.g. a Committee Member) and open `/admin/fixtures`. It should say the login doesn't include that part.
+- [ ] Test it: as the away captain, open a match page. There should be no "Add match night photos" button.
+- [ ] Test it: enter a competition on `/enter` without logging in, then check it appears under Admin → Entries to approve and nowhere on the public site except as a name "waiting for payment".
 - [ ] Give each captain their own login, and ask them to change their password under **My Team → User details**.
 
-Players' names, scores and breaks are public, as they are on the current site. Login emails are only visible to the admin.
+Players' names, scores and breaks are public, as they are on the current site. Login emails are only visible to the admin. The contact details typed into the entry form are only visible to the competition secretary and the admins.
+
+The entry form is open to anyone (no login), like a paper form on a club noticeboard: someone could enter another player's name. Nothing happens until the competition secretary approves it, so a bogus entry is simply removed, or lapses on its own.
+
+**The loading screen.** While a page is loading, the screen is black with the logo pulsing in the middle (the loading logo from Admin → Branding, or the main logo). The colours and logo are remembered in each visitor's browser, so their second visit shows the right ones from the first instant.

@@ -4,7 +4,7 @@ import { table, playerHistory, loadCompetitions, articles } from "../core/api.js
 import { playerRankings, frameWinner, breakPoints, EXT_PER_SEASON } from "../core/rules.js";
 import { answered } from "../core/cueview.js";
 import { buildBracket, competitionStandings } from "../core/bracket.js";
-import { breadcrumb, panel, dataTable, avatar, teamLink, urls, gallery, articleCard, cueviewSection } from "../core/components.js";
+import { breadcrumb, panel, dataTable, avatar, teamLink, urls, gallery, articleCard, cueviewSection, handicapText, handicapMove } from "../core/components.js";
 import { setTitle, navigate, adminEdit } from "../core/router.js";
 import notFound from "./not-found.js";
 
@@ -72,7 +72,7 @@ export default async function player(view, { params }) {
   const cueview = answered(p);
   const facts = [
     ["Position", p.position],
-    ["Handicap", p.handicap > 0 ? `+${p.handicap}` : p.handicap],
+    ["Handicap", html`${handicapText(p.handicap)}${handicapMove(p)}`],
     ["Current team", team ? teamLink(team) : "–"],
     ...(pastTeams.length ? [["Past teams", pastTeams.join(", ")]] : []),
     ["League", league ? html`<a href="${urls.standings(league)}">${league.name}</a>` : "–"],

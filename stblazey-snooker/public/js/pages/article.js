@@ -2,7 +2,7 @@ import { html, mount, fmtDate, paragraphs, cssUrl, ukDay } from "../core/dom.js"
 import { seasonContext } from "../core/context.js";
 import { articles } from "../core/api.js";
 import { addDays } from "../core/schedule.js";
-import { sidebar, breadcrumb, panel, dataTable, articleCard, articleThumb, quoteBox, playerLink, teamLink, leagueTablePanel, urls, cueviewSection } from "../core/components.js";
+import { sidebar, breadcrumb, panel, dataTable, articleCard, articleThumb, quoteBox, playerLink, teamLink, leagueTablePanel, urls, cueviewSection, gallery } from "../core/components.js";
 import { articleCueview } from "../core/cueview.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import notFound from "./not-found.js";
@@ -22,6 +22,10 @@ export default async function article(view, { params }) {
   const inWeek = (iso) => weekStart && ukDay(iso) >= weekStart && ukDay(iso) <= weekEnd;
   const weekFixtures = league ? ctx.fixturesIn(league.id).filter((f) => inWeek(f.starts_at) && ctx.hasResult(f)) : [];
   const weekBreaks = league ? ctx.breaksIn(league.id).filter((b) => b.fixture && inWeek(b.fixture.starts_at)) : [];
+  // Match night photos the home captains added to that week's matches (the round-up's league, or every league).
+  const isRoundup = league || a.week_ending;
+  const photoMatches = isRoundup && a.show_photos !== false
+    ? (league ? ctx.fixturesIn(league.id) : ctx.fixtures).filter((f) => inWeek(f.starts_at) && f.gallery?.length) : [];
   const related = news.filter((x) => x.id !== a.id && (x.category === a.category || (a.competition_id && x.competition_id === a.competition_id))).slice(0, 3);
 
   mount(view, html`
@@ -53,6 +57,8 @@ export default async function article(view, { params }) {
           { label: "Away", cell: (f) => teamLink(ctx.team.get(f.away_team_id)) },
         ], weekFixtures, { empty: "No results that week." })) : ""}
         ${a.show_standings && league ? leagueTablePanel(ctx, league) : ""}
+        ${photoMatches.length ? html`<div class="mn-week"><h3>Match night photos</h3>
+          ${photoMatches.map((f) => html`<div class="mn-match"><a href="${urls.match(f)}">${ctx.team.get(f.home_team_id)?.name} v ${ctx.team.get(f.away_team_id)?.name}</a>${gallery(f.gallery)}</div>`)}</div>` : ""}
         ${related.length ? html`<div><h3>Related news</h3><div class="cards">${related.map(articleCard)}</div></div>` : ""}
       </div>
       ${sidebar(ctx, news.filter((x) => x.id !== a.id), { leagues: league ? [league] : ctx.leagues })}

@@ -51,6 +51,13 @@ export const statusBadge = (status) => html`<span class="status ${status}">${Str
 /** Signed handicap: +16, -14, 0. */
 export const handicapText = (h) => (Number(h) > 0 ? `+${h}` : String(h ?? 0));
 
+/** Up or down arrow against last year's handicap (set at the yearly review), or nothing if it hasn't moved. */
+export function handicapMove(player) {
+  if (player?.last_handicap == null || player.last_handicap === player.handicap) return "";
+  const diff = player.handicap - player.last_handicap, up = diff > 0;
+  return html`<span class="hc-move ${up ? "up" : "down"}" title="${up ? "Up" : "Down"} ${Math.abs(diff)} from last year (was ${handicapText(player.last_handicap)})">${up ? "▲" : "▼"} ${Math.abs(diff)}</span>`;
+}
+
 /** Season dropdown — main.js reloads the page with ?season=… when it changes. */
 export const seasonPicker = (ctx) => html`<label class="toolbar" style="font-weight:700">Season
   <select data-season-picker>${[...ctx.seasons].reverse().map((s) => html`<option value="${s.id}" ${s.id === ctx.season?.id ? "selected" : ""}>${s.name}</option>`)}</select></label>`;

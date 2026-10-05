@@ -55,8 +55,21 @@ export async function startNotifications() {
   cframes.forEach((f) => seen.add(frameKey(f, "c")));
   cbreaks.forEach((b) => seen.add(breakKey(b, "c")));
 
-  stop = listen(["frames", "breaks", "players", "competition_frames", "competition_breaks"], async (t, row, type) => {
+  // Live draws: remember how many ties each competition has shown already.
+  const tiesSeen = new Map((await table("competitions", "sort").catch(() => [])).map((c) => [c.id, c.draw_live?.log?.length ?? 0]));
+
+  stop = listen(["frames", "breaks", "players", "competition_frames", "competition_breaks", "competitions"], async (t, row, type) => {
     if (type === "DELETE" || !row.id) return;
+    if (t === "competitions") {
+      const log = row.draw_live?.log ?? [], from = tiesSeen.get(row.id) ?? 0;
+      tiesSeen.set(row.id, log.length);
+      if (row.draw_live?.status === "live" && !log.length && from === 0 && type === "UPDATE") popup(`The ${row.name} draw is starting — watch it live`);
+      if (log.length <= from) return;
+      const entries = await table("competition_entries", "seed");
+      const who = (id) => entries.find((e) => e.id === id)?.name ?? "?";
+      for (const tie of log.slice(from)) popup(tie.a && tie.b ? `${row.name} draw: ${who(tie.a)} has drawn ${who(tie.b)}` : `${row.name} draw: ${who(tie.a ?? tie.b)} gets a bye`);
+      return;
+    }
     if (t !== "players" && !(await isTonight(row.fixture_id ?? row.match_id))) return;
     if (t === "players") {
       // A whole squad arriving at once is an import, not news.

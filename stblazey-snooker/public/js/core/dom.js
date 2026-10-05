@@ -21,10 +21,6 @@ export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 export function mount(el, content) { el.innerHTML = render(content); return el; }
 
-/** Loading indicator: a row of bouncing snooker balls. */
-export const LOADING = html`<div class="loading" role="status" aria-label="Loading"><span class="balls">
-  <i class="red"></i><i class="yellow"></i><i class="green"></i><i class="brown"></i><i class="blue"></i><i class="pink"></i><i class="black"></i></span></div>`;
-
 /** Safe CSS url() for inline styles. */
 export const cssUrl = (u) => `url("${encodeURI(u).replace(/["'()]/g, (c) => `%${c.charCodeAt(0).toString(16)}`)}")`;
 

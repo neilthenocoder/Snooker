@@ -1,6 +1,6 @@
 import { html, mount, $, toast, readForm, fmtDate, fmtTime, fromLocalInput } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
-import { table, insertMany, setFixtureStatus, save, invalidate } from "../core/api.js";
+import { table, insertMany, setFixtureStatus, save, invalidate, signups } from "../core/api.js";
 import { isStaff, canOpenSection, isMember } from "../core/auth.js";
 import { rearrangeBy, POSTPONE_WEEKS } from "../core/rules.js";
 import { resetDemo } from "../core/db.js";
@@ -15,30 +15,35 @@ import { draws } from "../admin/draws.js";
 import { mediaPage } from "../admin/picker.js";
 import { statsPage } from "../admin/stats.js";
 import { importPage } from "../admin/import.js";
+import { handicapsPage } from "../admin/handicaps.js";
+import { entriesPage } from "../admin/entries.js";
 
 // The dashboard menu. Each login only sees the sections its role allows
 // (see SECTION_AREA and canManage in core/auth.js — the database enforces the same).
 const NAV = [
   ["Match nights", [["overview", "Overview"], ["results", "Results to approve"]]],
   ["Fixtures", [["fixtures", "All fixtures"], ["generator", "Fixture generator"], ["import", "Import from CSV"]]],
-  ["League", [["leagues", "Leagues"], ["teams", "Teams"], ["players", "Players"], ["venues", "Venues"], ["seasons", "Seasons"]]],
-  ["Competitions", [["competitions", "Competitions"], ["draws", "Draws & results"]]],
+  ["League", [["leagues", "Leagues"], ["teams", "Teams"], ["players", "Players"], ["handicaps", "Handicaps"], ["venues", "Venues"], ["seasons", "Seasons"]]],
+  ["Competitions", [["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws & results"]]],
   ["People", [["accounts", "Logins"]]],
-  ["Website", [["articles", "News"], ["categories", "News categories"], ["media", "Image library"], ["pages", "Info pages"], ["sponsors", "Sponsors"], ["settings", "Site settings & home page"], ["stats", "Statistics"]]],
+  ["Website", [["articles", "News"], ["categories", "News categories"], ["media", "Image library"], ["pages", "Info pages"], ["sponsors", "Sponsors"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["stats", "Statistics"]]],
 ];
-const SPECIAL = { overview, results, generator, draws, media: mediaPage, stats: statsPage, import: importPage };
+const SPECIAL = { overview, results, generator, draws, media: mediaPage, stats: statsPage, import: importPage, handicaps: handicapsPage, entries: entriesPage };
+// Menu items that show a red number when something is waiting.
+const COUNTS = { players: "New players to check", entries: "Entries waiting for payment" };
 
 export default async function admin(view, { params, user, query }) {
   if (!user) return mustLogin(view);
   if (!isStaff(user)) return navigate("/my", { replace: true });
   const nav = NAV.map(([group, items]) => [group, items.filter(([key]) => canOpenSection(user, key))]).filter(([, items]) => items.length);
-  const first = nav[0][1][0][0];
+  // Where the dashboard opens: the first section of this login's own area (Handicaps is shared, so it isn't the landing page).
+  const mine = nav.flatMap(([, items]) => items);
+  const first = (mine.find(([key]) => key !== "handicaps") ?? mine[0])[0];
   if (!params.section && first !== "overview") return navigate(`/admin/${first}`, { replace: true });
   const section = params.section || first;
   const title = NAV.flatMap(([, items]) => items).find(([k]) => k === section)?.[1] ?? "Admin";
   setTitle(`Admin – ${title}`);
-  // People waiting for the admin: players a captain has just added.
-  const count = (key) => (key === "players" ? html` <span class="nav-count" data-count="players" title="New players to check" hidden></span>` : "");
+  const count = (key) => (COUNTS[key] ? html` <span class="nav-count" data-count="${key}" title="${COUNTS[key]}" hidden></span>` : "");
 
   mount(view, html`<div class="wrap wide">
     ${breadcrumb([["Home", "/"], ["Admin", "/admin"], [title]])}
@@ -64,16 +69,20 @@ export default async function admin(view, { params, user, query }) {
 
   $("[data-admin-jump]").addEventListener("change", (e) => navigate(`/admin/${e.target.value}`));
 
-  // The red number beside "Players": how many new players are still waiting to be checked.
-  // It's worked out again whenever something is saved, so it goes as soon as they've been dealt with.
+  // The red numbers in the menu: new players still to be checked, and competition entries
+  // waiting for payment. Worked out again whenever something is saved, so they go as soon as it's dealt with.
   const drawCounts = async () => {
-    if (!canOpenSection(user, "players")) return;
     invalidate();
-    const waiting = (await table("players", "full_name")).filter((p) => p.needs_review).length;
-    const badge = $('[data-count="players"]', view);
-    if (badge) { badge.textContent = waiting; badge.hidden = !waiting; }
-    const opt = $('[data-admin-jump] option[value="players"]', view);
-    if (opt) opt.textContent = `${opt.dataset.label}${waiting ? ` (${waiting} new)` : ""}`;
+    const waiting = {
+      players: canOpenSection(user, "players") ? (await table("players", "full_name")).filter((p) => p.needs_review).length : 0,
+      entries: canOpenSection(user, "entries") ? (await signups().catch(() => [])).filter((r) => r.status === "pending").length : 0,
+    };
+    for (const [key, n] of Object.entries(waiting)) {
+      const badge = $(`[data-count="${key}"]`, view);
+      if (badge) { badge.textContent = n; badge.hidden = !n; }
+      const opt = $(`[data-admin-jump] option[value="${key}"]`, view);
+      if (opt) opt.textContent = `${opt.dataset.label}${n ? ` (${n} ${key === "players" ? "new" : "waiting"})` : ""}`;
+    }
   };
   drawCounts();
 
@@ -81,7 +90,7 @@ export default async function admin(view, { params, user, query }) {
   if (!canOpenSection(user, section)) {
     return mount(body, html`<div class="notice error">Your login doesn't include this part of the dashboard. Ask the Master Admin if you need it.</div>`);
   }
-  if (SPECIAL[section]) return SPECIAL[section](body, { user });
+  if (SPECIAL[section]) return SPECIAL[section](body, { user, onChange: drawCounts });
   if (RESOURCES[section]) {
     const current = (await table("seasons", "name")).find((s) => s.is_current);
     return crud(body, RESOURCES[section], {
@@ -93,8 +102,9 @@ export default async function admin(view, { params, user, query }) {
 }
 
 // ── Overview ───────────────────────────────────────────────────
-async function overview(el) {
+async function overview(el, { user }) {
   const ctx = await seasonContext();
+  const unpaid = canOpenSection(user, "entries") ? (await signups().catch(() => [])).filter((r) => r.status === "pending") : [];
   const count = (s) => ctx.fixtures.filter((f) => f.status === s).length;
   const stats = [
     ["Teams", ctx.teams.length], ["Players", ctx.players.length], ["Fixtures", ctx.fixtures.length],
@@ -105,6 +115,7 @@ async function overview(el) {
   mount(el, html`
     ${fresh.length ? html`<div class="notice todo"><b>${fresh.length} new player${fresh.length > 1 ? "s" : ""} added by captains</b> — press a name to set their handicap (saving clears the alert), or use “Mark as checked” in the Players list.
       <div class="todo-list">${fresh.map((p) => html`<a href="/admin/players?edit=${p.id}">${p.full_name} <small>${ctx.team.get(p.team_id)?.name ?? "no team"}</small></a>`)}</div></div>` : ""}
+    ${unpaid.length ? html`<div class="notice todo"><b>${unpaid.length} competition entr${unpaid.length > 1 ? "ies are" : "y is"} waiting for payment to be confirmed.</b> <a href="/admin/entries" style="font-weight:700">Entries to approve</a></div>` : ""}
     ${late.length ? html`<div class="notice error"><b>${late.length} postponed match${late.length > 1 ? "es have" : " has"} passed the ${POSTPONE_WEEKS}-week limit.</b> <a href="/admin/results" style="font-weight:700">Rearrange them</a></div>` : ""}
     <div class="stats">${stats.map(([l, n]) => html`<div class="stat"><b>${n}</b>${l}</div>`)}</div>
     <p>Season: <b>${ctx.season?.name ?? "none — add one under Seasons"}</b>. Match nights: captains enter frames on their phones,

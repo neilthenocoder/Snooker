@@ -1,6 +1,6 @@
 import { html, mount, fmtTime, todayUK, ukDay } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
-import { subscribe } from "../core/api.js";
+import { subscribe, table } from "../core/api.js";
 import { breadcrumb, panel, dataTable, statusBadge, urls } from "../core/components.js";
 import { frameWinner } from "../core/rules.js";
 import { setTitle, adminEdit } from "../core/router.js";
@@ -9,7 +9,8 @@ export default async function live(view) {
   setTitle("Live scores");
   adminEdit("results");
   const draw = async () => {
-    const ctx = await seasonContext();
+    const [ctx, competitions] = await Promise.all([seasonContext(), table("competitions", "sort")]);
+    const liveDraws = competitions.filter((c) => c.draw_live?.status === "live");
     const today = todayUK();
     const games = ctx.fixtures.filter((f) => f.status === "in_progress" || ukDay(f.starts_at) === today);
     const name = (id) => ctx.player.get(id)?.full_name ?? "–";
@@ -22,6 +23,7 @@ export default async function live(view) {
       ${breadcrumb([["Home", "/"], ["Live"]])}
       <h1>Live scores</h1>
       <p class="muted">Scores update automatically as captains save each frame — no need to refresh.</p>
+      ${liveDraws.map((c) => html`<a class="live-draw-note" href="/draw/${c.slug}"><span class="live-dot">Live</span> The <b>${c.name}</b> draw is being made now — watch it →</a>`)}
       ${games.length ? html`<div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(340px,1fr))">${games.map((fx) => {
         const s = ctx.scoreOf(fx);
         const home = ctx.team.get(fx.home_team_id), away = ctx.team.get(fx.away_team_id);
@@ -40,5 +42,5 @@ export default async function live(view) {
     </div>`);
   };
   await draw();
-  return subscribe(["frames", "breaks", "fixtures"], draw);
+  return subscribe(["frames", "breaks", "fixtures", "competitions"], draw);
 }

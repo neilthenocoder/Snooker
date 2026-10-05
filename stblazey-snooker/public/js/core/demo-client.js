@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────
 import { buildSeed } from "../demo/seed-data.js";
 
-const KEY = "sbdsl-demo-db-v5";
+const KEY = "sbdsl-demo-db-v6";
 const SESSION_KEY = "sbdsl-demo-session";
 const store = typeof localStorage !== "undefined" ? localStorage : (() => {
   const m = new Map();
@@ -86,6 +86,9 @@ class Query {
       rows.push(...data);
     } else if (this.action === "update") {
       data = rows.filter((r) => this.matches(r));
+      // Mirrors the players_log_handicap trigger in supabase/schema.sql.
+      if (this.table === "players" && "handicap" in this.payload)
+        for (const r of data) if (r.handicap !== this.payload.handicap) logHandicap(r, this.payload.handicap, "");
       data.forEach((r) => Object.assign(r, this.payload));
     } else if (this.action === "upsert") {
       data = [].concat(this.payload).map((r) => {
@@ -112,10 +115,17 @@ class Query {
 }
 for (const op of Object.keys(OPS)) Query.prototype[op] = function (col, val) { this.filters.push([op, col, val]); return this; };
 
+const me = () => state.tables.profiles.find((p) => p.id === currentSession()?.user.id);
+function logHandicap(player, value, note) {
+  (state.tables.handicap_changes ??= []).push({ id: newId(), player_id: player.id, old_handicap: player.handicap, new_handicap: value,
+    note: note || null, changed_by: me()?.full_name ?? null, created_at: new Date().toISOString() });
+}
+
 // Mirrors "on delete cascade" in supabase/schema.sql.
 const CASCADES = {
   fixtures: [["frames", "fixture_id"], ["breaks", "fixture_id"]],
-  competitions: [["competition_entries", "competition_id"], ["competition_matches", "competition_id"]],
+  competitions: [["competition_entries", "competition_id"], ["competition_matches", "competition_id"], ["competition_signups", "competition_id"]],
+  players: [["handicap_changes", "player_id"]],
   competition_matches: [["competition_frames", "match_id"], ["competition_breaks", "match_id"]],
 };
 function cascade(table, deleted) {
@@ -197,6 +207,73 @@ export const demoClient = {
       if (!row) return { data: null, error: { message: "Your login is not linked to a player profile yet" } };
       for (const k of ["avatar_url", "birth_date", "bio", "career_history", "past_teams", "gallery", "cueview"]) if (k in args.patch) row[k] = args.patch[k] === "" && k === "birth_date" ? null : args.patch[k];
       persist(); emit("players", [row]);
+      return { data: null, error: null };
+    }
+    if (name === "set_handicap") {
+      const row = state.tables.players.find((p) => p.id === args.pid);
+      if (row.handicap !== args.value) { logHandicap(row, args.value, args.note); row.handicap = args.value; }
+      persist(); emit("players", [row]);
+      return { data: null, error: null };
+    }
+    if (name === "start_handicap_review") {
+      const changed = state.tables.players.filter((p) => p.last_handicap !== p.handicap);
+      changed.forEach((p) => { p.last_handicap = p.handicap; });
+      persist();
+      return { data: changed.length, error: null };
+    }
+    if (name === "set_match_photos") {
+      const fx = state.tables.fixtures.find((f) => f.id === args.fid);
+      fx.gallery = args.urls; persist(); emit("fixtures", [fx]);
+      return { data: null, error: null };
+    }
+    // Entry forms — mirrors enter_competitions(), signup_names(), expire_signups() and decide_signup().
+    if (name === "enter_competitions") {
+      const t = state.tables, list = (t.competition_signups ??= []);
+      const pl = t.players.find((p) => p.id === args.p_player), team = t.teams.find((x) => x.id === pl?.team_id);
+      if (!pl) return { data: null, error: { message: "Please choose your name from the list" } };
+      const days = t.settings[0]?.entry_pay_days || 7, made = [];
+      for (const cid of args.p_competitions) {
+        const c = t.competitions.find((x) => x.id === cid);
+        if (!c?.entries_open) return { data: null, error: { message: `Entries for ${c?.name ?? "that competition"} are closed` } };
+        const partner = c.kind === "Doubles" ? t.players.find((p) => p.id === args.p_partners?.[cid]) : null;
+        if (c.kind === "Doubles" && (!partner || partner.id === pl.id)) return { data: null, error: { message: `Choose your partner for ${c.name}` } };
+        const live = list.filter((s) => s.competition_id === cid && ["pending", "approved"].includes(s.status));
+        const taken = c.kind === "Team" ? live.some((s) => s.team_id === team?.id) || t.competition_entries.some((e) => e.competition_id === cid && e.team_id === team?.id)
+          : live.some((s) => [s.player_id, s.partner_id].some((id) => id && [pl.id, partner?.id].includes(id))) || t.competition_entries.some((e) => e.competition_id === cid && [pl.id, partner?.id].includes(e.player_id));
+        if (taken) return { data: null, error: { message: `${c.kind === "Team" ? `${team?.name} are` : `${pl.full_name} is`} already entered in ${c.name}` } };
+        const row = { id: newId(), competition_id: cid, player_id: pl.id, partner_id: partner?.id ?? null, team_id: c.kind === "Team" ? team?.id ?? null : null,
+          name: c.kind === "Team" ? team?.name : partner ? `${pl.full_name} & ${partner.full_name}` : pl.full_name, contact: args.p_contact || null,
+          status: "pending", pay_by: new Date(Date.now() + days * 864e5).toISOString(), created_at: new Date().toISOString(), decided_at: null, entry_id: null };
+        list.push(row); made.push({ id: row.id, competition_id: cid, name: row.name, fee: c.entry_fee, pay_by: row.pay_by });
+      }
+      persist(); emit("competition_signups", made);
+      return { data: made, error: null };
+    }
+    if (name === "expire_signups") {
+      for (const s of state.tables.competition_signups ?? []) if (s.status === "pending" && s.pay_by < new Date().toISOString()) s.status = "expired";
+      persist();
+      return { data: null, error: null };
+    }
+    if (name === "signup_names") {
+      const now = new Date().toISOString();
+      return { data: (state.tables.competition_signups ?? []).filter((s) => s.competition_id === args.p_competition && ["pending", "approved"].includes(s.status))
+        .map((s) => ({ name: s.name, status: s.status === "pending" && s.pay_by < now ? "expired" : s.status, pay_by: s.pay_by })), error: null };
+    }
+    if (name === "decide_signup") {
+      const t = state.tables, su = t.competition_signups.find((s) => s.id === args.sid);
+      if (args.approve) {
+        if (!su.entry_id) {
+          const seed = Math.max(0, ...t.competition_entries.filter((e) => e.competition_id === su.competition_id).map((e) => e.seed)) + 1;
+          const entry = { id: newId(), competition_id: su.competition_id, name: su.name, team_id: su.team_id, player_id: su.team_id ? null : su.player_id, seed };
+          t.competition_entries.push(entry); su.entry_id = entry.id;
+        }
+        su.status = "approved";
+      } else {
+        t.competition_entries = t.competition_entries.filter((e) => e.id !== su.entry_id);
+        Object.assign(su, { status: "rejected", entry_id: null });
+      }
+      su.decided_at = new Date().toISOString();
+      persist(); emit("competition_entries", []);
       return { data: null, error: null };
     }
     if (name === "add_player") {
