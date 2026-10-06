@@ -8,19 +8,26 @@
 //               slug (auto-filled from `from` when left blank),
 //               image (upload / pick from library), gallery (several images),
 //               tags (pick several rows of another table, e.g. players),
+//               list (add as many short text items as you like, e.g. past teams),
 //               heading (a section title in the form, not a field)
 //  Section options: pageSize: 50 pages a long list with ‹ › arrows (otherwise the first 100 rows show),
 //               flag: { … } marks rows waiting to be looked at as NEW (see players).
 //  Options:     in: "column" stores the field inside a JSON column,
 //               store: "name" makes a ref save the name instead of the id,
-//               help: "…" shows a hint under the label.
+//               help: "…" shows a hint under the label,
+//               options: (row) => [...] works a select's choices out from the row being edited.
+//  Section hooks: validate(row) → problem text, beforeSave(row, refs), afterSave(), onInput(form, changedElement).
 // ─────────────────────────────────────────────────────────────
 import { adminUsers } from "../core/db.js";
 import { STATUSES } from "../core/rules.js";
 import { CUEVIEW } from "../core/cueview.js";
 import { ROLE_LABEL, TEAM_ROLE_LABEL } from "../core/auth.js";
 import { refreshShell } from "../core/router.js";
-import { FONTS } from "../core/branding.js";
+import { FONTS, LAYOUT_GROUPS, LAYOUT_LABELS, parseFontEmbed } from "../core/branding.js";
+
+/** The fonts in a pasted Google Fonts embed link (Admin → Branding → Fonts). */
+const pastedFonts = (text) => parseFontEmbed(text)?.families ?? [];
+const fontOptions = (builtIn) => (row) => ["", ...new Set([...builtIn.slice(1), ...pastedFonts(row.font_embed)])];
 
 export const RESOURCES = {
   fixtures: {
@@ -104,7 +111,8 @@ export const RESOURCES = {
       { type: "heading", label: "Profile", help: "Players with a login can fill these in themselves under My Team → Profile." },
       { name: "bio", label: "Bio", type: "textarea", rows: 5 },
       { name: "career_history", label: "Career history (one achievement per line, e.g. “2019 — League singles champion”)", type: "textarea", rows: 5 },
-      { name: "past_teams", label: "Past teams (teams from before this website — later ones are worked out from results)", type: "text", wide: true },
+      { name: "past_teams", label: "Past teams (add as many as you like, with years if known — teams played for on this website are added automatically)", type: "list",
+        add: "+ Add another past team", placeholder: "e.g. St Blazey A (2015–2019)", suggest: "teams" },
       { name: "gallery", label: "Pictures", type: "gallery" },
       { type: "heading", label: "CueView interview", help: "Leave any question blank to hide it on the player's page." },
       { name: "cueview_featured", label: "Show this CueView on the home page", type: "checkbox" },
@@ -152,7 +160,7 @@ export const RESOURCES = {
   accounts: {
     label: "Logins", table: "profiles", order: "email", filters: ["role", "team_id"],
     columns: ["email", "full_name", "role", "team_role", "team_id", "player_id"],
-    intro: "Each role opens one part of this dashboard — Master Admin and League Admin: everything · Competition Secretary: Competitions · League Secretary: League · Committee Member, President, Vice Chairman and Chairman: Website. Captains and Vice Captains enter scorecards for their own team; a Player login can only edit that player's own profile. An officer who also plays can be given captain or vice captain rights for their team as well. Share passwords privately — people can change theirs after logging in.",
+    intro: "The Master Admin can do everything. What each other officer role can see and do is decided by the Master Admin under Master Admin → Roles & permissions. Captains and Vice Captains enter scorecards for their own team; a Player login can only edit that player's own profile. An officer who also plays can be given captain or vice captain rights for their team as well. Share passwords privately — people can change theirs after logging in.",
     fields: [
       { name: "email", label: "Email (their login)", type: "email", required: true, createOnly: true },
       { name: "full_name", label: "Name", type: "text", required: true },
@@ -208,12 +216,28 @@ export const RESOURCES = {
     ],
   },
   categories: {
-    label: "News categories", table: "categories", order: "sort", columns: ["name", "sort"],
-    intro: "Categories group the articles on the News page. Renaming one doesn't move existing articles — edit those too.",
+    label: "News categories", table: "categories", order: "sort", columns: ["name", "sort", "columns"],
+    intro: "Categories are the sections of the News page. “Position on the News page” decides which section comes first (1 = top, then 2, 3…), and “Columns” how many articles sit side by side in that section. Renaming a category doesn't move existing articles — edit those too.",
     fields: [
       { name: "name", label: "Category name", type: "text", required: true },
-      { name: "sort", label: "Display order", type: "number", default: 1 },
+      { name: "sort", label: "Position on the News page (1 = top)", short: "Position", type: "number", default: 1, min: 1 },
+      { name: "columns", label: "Columns (how many articles side by side on a wide screen: 1 to 6)", short: "Columns", type: "select", options: [1, 2, 3, 4, 5, 6], default: 4,
+        labels: { 1: "1 column", 2: "2 columns", 3: "3 columns", 4: "4 columns (standard)", 5: "5 columns", 6: "6 columns" } },
     ],
+    beforeSave: (row) => ({ ...row, columns: Number(row.columns) || 4 }),
+  },
+  announcements: {
+    label: "Announcements", table: "announcements", order: "sort", columns: ["text", "url", "sort", "is_active"],
+    intro: "Short announcements that scroll across the very top of the home page (the “ticker”). Visitors can stop it with the button on its right, and click an announcement that has a link. Switch the whole ticker on or off, and set its speed, under Website → Site settings.",
+    fields: [
+      { name: "text", label: "Announcement (keep it short — one line)", short: "Announcement", type: "text", required: true, wide: true, placeholder: "Entries for the Christmas Handicap close on Friday" },
+      { name: "url", label: "Link (optional — where it goes when clicked)", short: "Link", type: "text", placeholder: "/enter or https://…" },
+      { name: "sort", label: "Order (1 = first)", short: "Order", type: "number", default: 1 },
+      { name: "is_active", label: "Show this announcement", short: "Showing", type: "checkbox", default: true },
+      { name: "starts_on", label: "Show from (optional)", type: "date" },
+      { name: "ends_on", label: "Stop showing after (optional)", type: "date" },
+    ],
+    validate: (row) => (String(row.text ?? "").length > 160 ? "Please keep an announcement under 160 characters." : row.starts_on && row.ends_on && row.ends_on < row.starts_on ? "“Stop showing after” is before “Show from”." : null),
   },
   pages: {
     label: "Info pages", table: "pages", order: "sort", columns: ["title", "sort", "show_in_league", "show_in_footer"],
@@ -241,6 +265,17 @@ export const RESOURCES = {
   // Branding and Site settings are two forms on the same single row of the settings table.
   branding: {
     label: "Branding", table: "settings", order: "id", single: true, afterSave: () => refreshShell(),
+    validate: (row) => (row.font_embed && !parseFontEmbed(row.font_embed) ? "That doesn't look like a Google Fonts embed link — it should contain an address starting https://fonts.googleapis.com/css2?family=…"
+      : row.loader_seconds != null && (row.loader_seconds < 0 || row.loader_seconds > 10) ? "The loading screen time must be between 0 and 10 seconds." : null),
+    beforeSave: (row) => ({ ...row, loader_seconds: row.loader_seconds ?? 0 }),
+    // Pasting an embed link offers its fonts in the two lists at once (no need to save first).
+    onInput: (form, target) => {
+      if (target.name !== "font_embed") return;
+      for (const name of ["font_head", "font_body"]) {
+        const select = form.elements[name];
+        for (const family of pastedFonts(target.value)) if (![...select.options].some((o) => o.value === family)) select.add(new Option(family, family));
+      }
+    },
     intro: "How the website looks. Leave a colour or font on “standard” to keep the original. Changes show as soon as you press Save.",
     fields: [
       { type: "heading", label: "Logos" },
@@ -251,18 +286,25 @@ export const RESOURCES = {
       { name: "color_home", label: "Home (standard: brown)", type: "color", optional: true, default: "#4b2019" },
       { name: "color_competitions", label: "Competitions & Handicaps (standard: gold)", type: "color", optional: true, default: "#fbb61a" },
       { name: "color_fixtures", label: "Fixtures (standard: green)", type: "color", optional: true, default: "#0b8a12" },
-      { name: "color_league", label: "League & News (standard: white)", type: "color", optional: true, default: "#ffffff" },
+      { name: "color_league", label: "League (standard: white)", type: "color", optional: true, default: "#ffffff" },
+      { name: "color_news", label: "News (standard: white)", type: "color", optional: true, default: "#ffffff" },
       { name: "color_login", label: "Login & My Team (standard: red)", type: "color", optional: true, default: "#e8003d" },
       { name: "section_colors", label: "Colour-code each section: its table headers match its menu button", type: "checkbox", default: true },
       { type: "heading", label: "Other colours" },
       { name: "color_primary", label: "Main colour (standard: red — buttons, the line under the menu, headers that have no section colour)", type: "color", optional: true, default: "#e8003d" },
       { name: "color_background", label: "Page background (standard: cream)", type: "color", optional: true, default: "#f9f8ee" },
-      { type: "heading", label: "Fonts", help: "From Google Fonts." },
-      { name: "font_head", label: "Headings and menu", type: "select", options: ["", ...FONTS.head.slice(1)], labels: { "": `${FONTS.head[0]} (standard)` } },
-      { name: "font_body", label: "Body text", type: "select", options: ["", ...FONTS.body.slice(1)], labels: { "": `${FONTS.body[0]} (standard)` } },
-      { type: "heading", label: "Page layout" },
-      { name: "sidebar_layout", label: "Side boxes (latest news, breaks, rankings)", type: "select", options: ["right", "left", "below"], default: "right",
-        labels: { right: "On the right (standard)", left: "On the left", below: "Underneath — the page uses the full width" } },
+      { type: "heading", label: "Fonts", help: "Pick from the lists — or, for any other Google font, paste its embed link in the box underneath and it joins both lists." },
+      { name: "font_head", label: "Headings and menu", type: "select", options: fontOptions(FONTS.head), labels: { "": `${FONTS.head[0]} (standard)` } },
+      { name: "font_body", label: "Body text", type: "select", options: fontOptions(FONTS.body), labels: { "": `${FONTS.body[0]} (standard)` } },
+      { name: "font_embed", label: "Google Fonts embed link (optional)", type: "textarea", rows: 3,
+        placeholder: '<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet">',
+        help: "On fonts.google.com choose your font(s), press “Get font”, then “Get embed code”, and copy the code under “Embed code in the <head> of your html” (the @import version works too). Paste it here: the fonts in it appear in the two lists above straight away — choose them there, then Save." },
+      { type: "heading", label: "Page layout", help: "For each part of the site: “Right sidebar” puts the side boxes (latest results, breaks, rankings) on the right of every page in it, and adds them to pages that don't normally have any. “Full width” lets every page use the whole width — a page's own side boxes move underneath it." },
+      ...LAYOUT_GROUPS.map(([key, label]) => ({ name: key, in: "page_layouts", label, type: "select", options: ["auto", "sidebar", "full"], labels: LAYOUT_LABELS, default: "auto" })),
+      { name: "sidebar_layout", label: "Which side a sidebar goes on", type: "select", options: ["right", "left"], default: "right", labels: { right: "Right (standard)", left: "Left" } },
+      { type: "heading", label: "Loading screen", help: "The black screen with the logo pulsing in the middle. The loading logo is at the top of this page." },
+      { name: "loader_show", label: "Show the loading screen", type: "checkbox", default: true },
+      { name: "loader_seconds", label: "Show it for at least (seconds, when the site is first opened — 0 = only for as long as the page really takes to load)", short: "Seconds", type: "number", default: 0, min: 0, max: 10, step: 0.5 },
     ],
   },
   settings: {
@@ -288,17 +330,29 @@ export const RESOURCES = {
       { name: "feature_text", label: "Text", type: "text", wide: true, placeholder: "Try our step-by-step scorecard — log in to find out more" },
       { name: "feature_url", label: "Link (where it goes when clicked)", type: "text", placeholder: "/login or https://…" },
       { name: "feature_bg", label: "Background colour", type: "color", default: "#0b84e0" },
-      { type: "heading", label: "Home page: Latest News box", help: "The blue box at the top right. Choose what it shows, so it doesn't repeat what's in the banner." },
+      { type: "heading", label: "Home page: Latest News box", help: "Only used when “Side column: top box” (further down) is set to Latest news. Choose what it shows, so it doesn't repeat what's in the banner." },
       { name: "latest_news_mode", label: "Show", type: "select", options: ["newest", "not_banner", "category", "picked"], default: "newest",
         labels: { newest: "The newest articles", not_banner: "The newest articles that aren't in the banner", category: "The newest articles from one category", picked: "The articles I choose below" } },
       { name: "latest_news_count", label: "How many articles", type: "number", default: 1 },
       { name: "latest_news_category", label: "Category (for “one category”)", type: "ref", ref: "categories", store: "name" },
       { name: "latest_news_ids", label: "Chosen articles (for “the articles I choose”)", type: "tags", ref: "articles" },
+      { type: "heading", label: "Side column: top box", help: "The blue box at the top of the side column on the home page and other pages with a sidebar. It has a button to the full results page (/results)." },
+      { name: "side_box_mode", label: "Show", type: "select", options: ["results", "cup", "both", "news", "off"], default: "results",
+        labels: { results: "Latest league results (standard)", cup: "Latest competition results", both: "Latest league and competition results together", news: "Latest news (as it used to be — set up in the Latest News box section above)", off: "Nothing" } },
+      { name: "side_box_title", label: "Heading (leave empty for “Latest Results”)", type: "text", placeholder: "Latest Results" },
+      { name: "side_box_count", label: "How many results", type: "number", default: 5, min: 1, max: 20 },
+      { name: "side_box_league", label: "Only this league (leave empty for every league)", type: "ref", ref: "leagues" },
+      { type: "heading", label: "Announcements ticker", help: "The thin line of announcements that scrolls across the very top of the home page. Add the announcements themselves under Website → Announcements." },
+      { name: "ticker_show", label: "Show the ticker on the home page (when there is at least one announcement)", type: "checkbox", default: true },
+      { name: "ticker_speed", label: "Speed", type: "select", options: ["slow", "normal", "fast"], default: "normal" },
       { type: "heading", label: "Competition entry form", help: "Shown to players at the end of the entry form (/enter). Which competitions are open is set on each competition." },
       { name: "entry_intro", label: "Introduction at the top of the form (optional)", type: "textarea", rows: 2 },
       { name: "bacs_details", label: "How to pay — the league's bank details (BACS)", type: "textarea", rows: 4,
         placeholder: "Account name: St Blazey & District Snooker League\nSort code: 00-00-00\nAccount number: 00000000\nReference: your name + competition" },
       { name: "entry_pay_days", label: "Days allowed to pay (unpaid entries are removed after this)", type: "number", default: 7 },
+      { type: "heading", label: "Maintenance mode", help: "While this is on, visitors see a holding page with your message instead of the website. Anyone who is logged in still sees the full site, so you can keep working — and captains can still log in to enter results." },
+      { name: "maintenance_on", label: "Switch the public website off for now", type: "checkbox" },
+      { name: "maintenance_text", label: "Message for visitors", type: "textarea", rows: 2, placeholder: "We're making a few improvements to the website. Please check back shortly." },
       { type: "heading", label: "Social links (footer)", help: "Paste the full address of each page. Blank ones aren't shown." },
       { name: "facebook_url", label: "Facebook", type: "text", placeholder: "https://www.facebook.com/…" },
       { name: "x_url", label: "X (Twitter)", type: "text", placeholder: "https://x.com/…" },

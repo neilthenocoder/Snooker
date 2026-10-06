@@ -1,5 +1,5 @@
 import { html, mount, fmtDate, paragraphs, cssUrl, ukDay } from "../core/dom.js";
-import { seasonContext } from "../core/context.js";
+import { seasonContext, sideBoxData } from "../core/context.js";
 import { articles } from "../core/api.js";
 import { addDays } from "../core/schedule.js";
 import { sidebar, breadcrumb, panel, dataTable, articleCard, articleThumb, quoteBox, playerLink, teamLink, leagueTablePanel, urls, cueviewSection, gallery } from "../core/components.js";
@@ -8,7 +8,7 @@ import { setTitle, adminEdit } from "../core/router.js";
 import notFound from "./not-found.js";
 
 export default async function article(view, { params }) {
-  const [ctx, news] = await Promise.all([seasonContext(), articles()]);
+  const [ctx, news, box] = await Promise.all([seasonContext(), articles(), sideBoxData()]);
   const a = news.find((x) => x.slug === params.slug);
   if (!a) return notFound(view);
   setTitle(a.title);
@@ -61,7 +61,7 @@ export default async function article(view, { params }) {
           ${photoMatches.map((f) => html`<div class="mn-match"><a href="${urls.match(f)}">${ctx.team.get(f.home_team_id)?.name} v ${ctx.team.get(f.away_team_id)?.name}</a>${gallery(f.gallery)}</div>`)}</div>` : ""}
         ${related.length ? html`<div><h3>Related news</h3><div class="cards">${related.map(articleCard)}</div></div>` : ""}
       </div>
-      ${sidebar(ctx, news.filter((x) => x.id !== a.id), { leagues: league ? [league] : ctx.leagues })}
+      ${sidebar(ctx, news.filter((x) => x.id !== a.id), { leagues: league ? [league] : ctx.leagues, box })}
     </div>`);
 }
 

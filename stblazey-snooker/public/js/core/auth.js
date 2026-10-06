@@ -9,7 +9,10 @@ export async function getUser() {
   const { data: { session } } = await db.auth.getSession();
   if (!session) return (cached = null);
   const profile = await run(db.from("profiles").select("*").eq("id", session.user.id).maybeSingle()).catch(() => null);
-  return (cached = { ...session.user, profile });
+  // What this role may use in the dashboard — set by the Master Admin under Admin → Roles & permissions.
+  const perms = profile?.role && profile.role !== "admin"
+    ? await run(db.from("role_permissions").select("*").eq("role", profile.role).maybeSingle()).catch(() => null) : null;
+  return (cached = { ...session.user, profile, areas: perms?.areas ?? DEFAULT_AREAS[profile?.role] ?? [] });
 }
 
 export async function signIn(email, password) {
@@ -39,33 +42,62 @@ export const ROLE_LABEL = {
 };
 export const TEAM_ROLE_LABEL = { captain: "Captain", vice_captain: "Vice Captain" };
 
-/** The parts of the admin dashboard each officer role may use (admins: all of them). */
-const ROLE_AREAS = {
-  competition_secretary: ["competitions"],
-  league_secretary: ["league"],
-  committee_member: ["website"], president: ["website"], vice_chairman: ["website"], chairman: ["website"],
+/**
+ * The parts ("areas") of the admin dashboard. The Master Admin always has all of them; for every
+ * other role the Master Admin ticks which ones it gets (Admin → Roles & permissions). The same list
+ * is enforced by the database: can_manage() in supabase/schema.sql.
+ */
+export const AREAS = [
+  ["matchnights", "Match nights", "Approve results, edit any scorecard, rearrange postponed matches"],
+  ["fixtures", "Fixtures", "Add and edit fixtures, the fixture generator"],
+  ["league", "League", "Leagues, teams, players, venues, seasons"],
+  ["handicaps", "Handicaps", "Change handicaps, run the yearly review"],
+  ["competitions", "Competitions", "Competitions, entries to approve, draws, cup scorecards"],
+  ["website", "News & website", "News, categories, announcements, info pages, sponsors, image library"],
+  ["settings", "Settings & branding", "Site settings, home page, branding, statistics"],
+  ["people", "Logins", "Create, change and remove logins (never a Master Admin's)"],
+];
+const ALL_AREAS = AREAS.map(([key]) => key);
+/** The roles whose permissions can be set (everyone except the Master Admin, captains and players). */
+export const OFFICER_ROLES = ["league_admin", "competition_secretary", "league_secretary", "committee_member", "president", "vice_chairman", "chairman"];
+/** What each role starts with (also the fallback if the permissions table can't be read). */
+export const DEFAULT_AREAS = {
+  league_admin: ALL_AREAS,
+  competition_secretary: ["handicaps", "competitions"],
+  league_secretary: ["league", "handicaps"],
+  committee_member: ["website", "settings"], president: ["website", "settings"], vice_chairman: ["website", "settings"], chairman: ["website", "settings"],
 };
-/** Which part of the dashboard each admin section belongs to. */
+/**
+ * Which area each admin section belongs to. "master" = Master Admin only;
+ * an array = every one of those areas is needed (importing writes to all three).
+ */
 export const SECTION_AREA = {
   overview: "matchnights", results: "matchnights",
-  fixtures: "fixtures", generator: "fixtures", import: "fixtures",
+  fixtures: "fixtures", generator: "fixtures", import: ["fixtures", "league", "matchnights"],
   leagues: "league", teams: "league", players: "league", venues: "league", seasons: "league",
-  handicaps: ["league", "competitions"],   // either secretary can adjust handicaps
-  entries: "competitions",
-  competitions: "competitions", draws: "competitions",
-  accounts: "people",
-  articles: "website", categories: "website", media: "website", pages: "website", sponsors: "website", branding: "website", settings: "website", stats: "website",
+  handicaps: "handicaps",
+  competitions: "competitions", entries: "competitions", draws: "competitions",
+  accounts: "people", roles: "master", activity: "master", backup: "master",
+  articles: "website", categories: "website", announcements: "website", media: "website", pages: "website", sponsors: "website",
+  branding: "settings", settings: "settings", stats: "settings",
 };
 
 const roleOf = (user) => user?.profile?.role;
-/** Master Admin and League Admin: everything. */
-export const isAdmin = (user) => ["admin", "league_admin"].includes(roleOf(user));
+/** The Master Admin: everything, always. */
+export const isMaster = (user) => roleOf(user) === "admin";
 /** Mirrors can_manage() in supabase/schema.sql. */
-export const canManage = (user, area) => isAdmin(user) || (ROLE_AREAS[roleOf(user)] ?? []).includes(area);
+export const canManage = (user, area) => isMaster(user) || (!!user && (user.areas ?? []).includes(area));
+/** Looks after match nights: may approve results and edit any scorecard. (Older name, kept for the pages that use it.) */
+export const isAdmin = (user) => canManage(user, "matchnights");
 /** Anyone with at least one part of the admin dashboard. */
-export const isStaff = (user) => isAdmin(user) || !!ROLE_AREAS[roleOf(user)];
+export const isStaff = (user) => isMaster(user) || (user?.areas ?? []).length > 0;
 /** May this person open the given admin section? */
-export const canOpenSection = (user, section) => [SECTION_AREA[section]].flat().some((area) => canManage(user, area));
+export const canOpenSection = (user, section) => {
+  const need = SECTION_AREA[section];
+  if (!need) return false;
+  if (need === "master") return isMaster(user);
+  return [need].flat().every((area) => canManage(user, area));
+};
 /** Captain or vice captain of a team — by role, or an officer who was given team rights. */
 export const isCaptain = (user) => !!user?.profile?.team_id
   && (["captain", "vice_captain"].includes(roleOf(user)) || ["captain", "vice_captain"].includes(user.profile.team_role));

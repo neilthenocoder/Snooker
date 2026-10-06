@@ -8,6 +8,7 @@ import { slugify } from "../core/schedule.js";
 import { dataTable, panel } from "../core/components.js";
 import { uploadImage } from "../core/upload.js";
 import { pickImage, uploadFiles } from "./picker.js";
+import { listField, wireListFields, listItems } from "../core/list-field.js";
 
 const MAX_ROWS = 100;   // lists without paging show this many, then ask you to search or filter
 export const labelOf = (row) => row?.name ?? row?.full_name ?? row?.title ?? row?.email ?? "–";
@@ -16,13 +17,15 @@ const shortLabel = (f) => f.short ?? f.label.split(" (")[0];
 const pretty = (v) => String(v ?? "").replace(/_/g, " ").replace(/\b[a-z]/g, (c) => c.toUpperCase());
 const optionLabel = (f, v) => f.labels?.[v] ?? pretty(v);
 const isField = (f) => f.type !== "heading";
+/** A select's choices: a fixed list, or worked out from the row being edited (options: (row) => [...]). */
+const optionsOf = (f, row = {}) => (typeof f.options === "function" ? f.options(row) : f.options ?? []);
 
 /** Form-element name. Fields with `in` live inside a JSON column (e.g. players.cueview). */
 const key = (f) => (f.in ? `${f.in}__${f.name}` : f.name);
 const valueOf = (f, row) => (f.in ? row[f.in]?.[f.name] : row[f.name]);
 
 async function loadRefs(res) {
-  const names = [...new Set(res.fields.filter((f) => ["ref", "tags"].includes(f.type)).map((f) => f.ref))];
+  const names = [...new Set(res.fields.filter((f) => ["ref", "tags"].includes(f.type) || f.suggest).map((f) => f.ref ?? f.suggest))];
   const byName = { players: "full_name" };
   const order = { leagues: "sort", categories: "sort", competitions: "sort", fixtures: "starts_at", articles: "published_at" };
   const loaded = await Promise.all(names.map((n) => table(n, order[n] ?? byName[n] ?? "name")));
@@ -43,6 +46,7 @@ function display(field, value, refs) {
     case "color": return html`<span class="swatch" style="background:${value}"></span>`;
     case "image": return html`<img class="thumb" src="${value}" alt="">`;
     case "gallery": return `${value.length} picture${value.length === 1 ? "" : "s"}`;
+    case "list": return listItems(value).join(", ");
     case "tags": return value.map((id) => labelOf(refs[field.ref].find((r) => r.id === id))).join(", ") || (field.empty ?? "–");
     default: return String(value).length > 60 ? `${String(value).slice(0, 60)}…` : value;
   }
@@ -64,12 +68,13 @@ function input(field, row, refs, rows) {
   switch (field.type) {
     case "textarea": return html`<textarea ${a(attrs)} placeholder="${field.placeholder ?? ""}" style="${field.rows ? `min-height:${field.rows * 24}px` : ""}">${value}</textarea>`;
     case "checkbox": return html`<input type="checkbox" ${a(attrs)} ${value ? "checked" : ""}>`;
-    case "number": return html`<input type="number" ${a(attrs)} value="${value}">`;
+    case "number": return html`<input type="number" ${a(attrs)} value="${value}" ${a(["min", "max", "step"].filter((k) => field[k] != null).map((k) => `${k}="${field[k]}"`).join(" "))}>`;
+    case "list": return listField(name, value, { add: field.add, placeholder: field.placeholder ?? "", suggestions: field.suggest ? (refs[field.suggest] ?? []).map(labelOf) : [] });
     case "date": return html`<input type="date" ${a(attrs)} value="${String(value).slice(0, 10)}">`;
     case "datetime": return html`<input type="datetime-local" ${a(attrs)} value="${toLocalInput(value)}">`;
     case "password": return html`<input type="password" autocomplete="new-password" minlength="${field.minLength ?? 8}" ${a(attrs)}>`;
     case "email": return html`<input type="email" ${a(attrs)} value="${value}">`;
-    case "select": return html`<select ${a(attrs)}>${field.options.map((o) => html`<option value="${o}" ${o === value ? "selected" : ""}>${optionLabel(field, o) || "–"}</option>`)}</select>`;
+    case "select": return html`<select ${a(attrs)}>${optionsOf(field, row).map((o) => html`<option value="${o}" ${o === value ? "selected" : ""}>${optionLabel(field, o) || "–"}</option>`)}</select>`;
     case "color": {
       const set = /^#[0-9a-f]{6}$/i.test(value);
       const picker = html`<input type="color" ${a(attrs)} value="${set ? value : field.default ?? "#000000"}">`;
@@ -140,7 +145,7 @@ function formFields(res, editing, refs, rows) {
     const help = f.help ? html`<small class="help">${f.help}</small>` : "";
     if (f.type === "checkbox") return html`<label class="check">${input(f, editing, refs, rows)}${f.label}</label>`;
     // Image and gallery fields contain their own buttons, so they sit in a <div> rather than a <label>.
-    if (["image", "gallery", "tags"].includes(f.type)) return html`<div class="field-label" style="grid-column:1/-1">${caption}${help}${input(f, editing, refs, rows)}</div>`;
+    if (["image", "gallery", "tags", "list"].includes(f.type)) return html`<div class="field-label" style="grid-column:1/-1">${caption}${help}${input(f, editing, refs, rows)}</div>`;
     if (f.type === "color" && f.optional) return html`<div class="field-label">${caption}${help}${input(f, editing, refs, rows)}</div>`;
     return html`<label style="${f.type === "textarea" || f.wide ? "grid-column:1/-1" : ""}">${caption}${help}${input(f, editing, refs, rows)}</label>`;
   });
@@ -232,7 +237,7 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
       <button class="btn green" data-new>+ Add new</button>
       <input type="search" placeholder="Search…" data-search>
       ${filterFields.map((f) => html`<select data-filter="${f.name}"><option value="">Any ${shortLabel(f).toLowerCase()}</option>
-        ${(f.type === "ref" ? refs[f.ref].map((r) => [refValue(f, r), labelOf(r)]) : (f.options ?? [...new Set(rows.map((r) => r[f.name]).filter(Boolean))]).map((o) => [o, optionLabel(f, o)]))
+        ${(f.type === "ref" ? refs[f.ref].map((r) => [refValue(f, r), labelOf(r)]) : (f.options ? optionsOf(f) : [...new Set(rows.map((r) => r[f.name]).filter(Boolean))]).map((o) => [o, optionLabel(f, o)]))
           .map(([v, l]) => html`<option value="${v}" ${filters[f.name] === v ? "selected" : ""}>${l}</option>`)}</select>`)}
     </div>`}
     <div data-form style="margin-bottom:20px"></div>
@@ -286,7 +291,10 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
     finally { label.firstChild.textContent = "Upload image"; input.value = ""; }
   });
 
+  wireListFields(el);
   el.addEventListener("input", (e) => {
+    // A section can react while its form is being filled in (res.onInput — e.g. Branding offers a pasted font straight away).
+    if (form()?.contains(e.target)) res.onInput?.(form(), e.target);
     if (e.target.matches("[data-image-url]")) setImage(e.target.name, e.target.value.trim());
     // Picking a colour means you want your own.
     if (e.target.type === "color") { const own = form()?.querySelector(`[data-own-color="${e.target.name}"]`); if (own) own.checked = true; }

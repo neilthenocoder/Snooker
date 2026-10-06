@@ -368,3 +368,16 @@ export async function clearBreaks(fixtureIds) {
     await run(db.from("breaks").delete().in("fixture_id", fixtureIds.slice(i, i + CHUNK)));
   invalidate();
 }
+
+// ── master admin tools ───────────────────────────────────────────
+/** What each officer role may use in the dashboard: [{ role, areas: [...] }]. */
+export const rolePermissions = () => run(db.from("role_permissions").select("*"));
+/** Master Admin only (the database refuses anyone else). */
+export async function saveRolePermissions(rows) {
+  await run(db.from("role_permissions").upsert(rows.map((r) => ({ role: r.role, areas: r.areas, updated_at: new Date().toISOString() })), { onConflict: "role" }).select());
+  invalidate();
+}
+/** The activity log, newest first (Master Admin only). */
+export const auditLog = (limit = 500) => run(db.from("audit_log").select("*").order("at", { ascending: false }).limit(limit));
+/** Every row of one table, for the backup download. */
+export const allRows = (tableName) => selectAll(() => db.from(tableName).select("*"));

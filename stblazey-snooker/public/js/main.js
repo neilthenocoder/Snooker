@@ -5,10 +5,12 @@
 // ─────────────────────────────────────────────────────────────
 import { SITE, DEMO_MODE } from "./config.js";
 import { html, mount, $, ukDay, toast } from "./core/dom.js";
-import { applyBranding, loaderOn, loaderOff } from "./core/branding.js";
-import { getUser, signOut, isStaff, isMember, canOpenSection } from "./core/auth.js";
+import { applyBranding, loaderOn, loaderOff, layoutFor } from "./core/branding.js";
+import { getUser, signOut, isStaff, isMember, canOpenSection, roleText } from "./core/auth.js";
+import { seasonContext, sideBoxData } from "./core/context.js";
+import { sidebar } from "./core/components.js";
 import { openSearch } from "./core/search.js";
-import { table, invalidate, settings, nearbyMatches, subscribe, trackPageView } from "./core/api.js";
+import { table, invalidate, settings, nearbyMatches, subscribe, trackPageView, articles } from "./core/api.js";
 import { liveState } from "./core/rules.js";
 import { notificationsOn, setNotifications, startNotifications, stopNotifications } from "./core/notify.js";
 import { setNavigator, setShellRefresher, takeEditTarget } from "./core/router.js";
@@ -33,6 +35,7 @@ const ROUTES = [
   ["/player/:id", "player"],
   ["/competition/:slug", "competition"],
   ["/live", "live"],
+  ["/results", "results"],
   ["/calendar", "calendar"],
   ["/cup-match/:id", "cup-match"],
   ["/cup-scorecard/:id", "cup-scorecard"],
@@ -51,11 +54,16 @@ const ROUTES = [
 // (Admin → Branding → "Colour-code each section").
 const SECTION = {
   competitions: "competitions", competition: "competitions", "cup-match": "competitions", handicaps: "competitions", enter: "competitions", draw: "competitions",
-  fixtures: "fixtures", team: "fixtures", match: "fixtures", calendar: "fixtures", live: "fixtures",
+  fixtures: "fixtures", team: "fixtures", match: "fixtures", calendar: "fixtures", live: "fixtures", results: "fixtures",
   league: "league", standings: "league", shield: "league", archive: "league", players: "league", player: "league",
-  venues: "league", venue: "league", news: "league", article: "league", page: "league",
+  venues: "league", venue: "league", page: "league",
+  news: "news", article: "news",
   login: "login", my: "login", scorecard: "login", "cup-scorecard": "login",
 };
+// Page layout (Admin → Branding → Page layout) is chosen for these parts of the site.
+const LAYOUT_GROUP = (page) => (page === "home" ? "home" : ["competitions", "fixtures", "league", "news"].includes(SECTION[page]) ? SECTION[page] : null);
+// Pages that never get the standard side boxes added (they need the full width, or are a short form).
+const NO_SIDE = new Set(["calendar", "enter", "draw", "not-found"]);
 
 function match(path) {
   const parts = path.replace(/\/+$/, "").split("/").filter(Boolean);
@@ -108,19 +116,25 @@ async function drawHeader() {
   const [user, site] = await Promise.all([getUser(), settings()]);
   applyBranding(site);
   // Officers get the Admin button; anyone linked to a team or player gets My Team (some people have both).
+  // Under it, very small: who is logged in and their club.
+  const staff = isStaff(user), member = isMember(user);
+  const club = user?.profile?.team_id ? (await table("teams", "name").catch(() => [])).find((t) => t.id === user.profile.team_id)?.name : "";
+  const who = user ? [...new Set([user.profile?.full_name || user.email, club || (member ? "" : roleText(user.profile))].filter(Boolean))].join(" · ") : "";
+  const tagged = (label) => html`<span class="nav-who"><b>${label}</b><small>${who}</small></span>`;
   const account = !user ? html`<a class="nav-login" href="/login">Login</a>`
-    : html`${isStaff(user) ? html`<a class="nav-login" href="/admin">Admin</a>` : ""}${isMember(user) ? html`<a class="nav-login nav-my" href="/my">My Team</a>` : ""}`;
+    : html`${staff ? html`<a class="nav-login" href="/admin">${member ? "Admin" : tagged("Admin")}</a>` : ""}${member ? html`<a class="nav-login nav-my" href="/my">${tagged("My Team")}</a>` : ""}`;
   mount($("#site-header"), html`
     ${DEMO_MODE ? html`<div class="demo-banner">Demo mode — sample data saved in this browser only. Add your Supabase keys in js/config.js to go live.</div>` : ""}
     <header class="site-header"><div class="wrap">
       <a class="logo" href="/" aria-label="${SITE.name} home"><img src="${site.logo_url || "/assets/logo.svg"}" alt="${SITE.name}"></a>
       <button class="nav-search-m" data-search-open aria-label="Search">${searchIcon}</button>
       <button class="nav-toggle" aria-expanded="false">Menu</button>
-      <nav class="main-nav">
+      <nav class="main-nav ${user ? (staff && member ? "tight-2" : "tight") : ""}">
         <a class="nav-home" href="/">Home</a>
         <a class="nav-comps" href="/competitions">Competitions</a>
         <a class="nav-fixtures" href="/fixtures">Fixtures</a>
         <a class="nav-league" href="/league">League</a>
+        <a class="nav-news" href="/news">News</a>
         ${account}
         ${user ? html`<button class="nav-live" data-logout>Logout</button>` : ""}
         <a class="nav-live nav-live-btn state-idle" href="/live">Live</a>
@@ -151,6 +165,52 @@ async function drawFooter() {
   </div></footer>`);
 }
 
+// ── announcements ticker (home page only) ──────────────────────
+const TICKER_SPEED = { slow: 0.32, normal: 0.22, fast: 0.14 };   // seconds per character
+async function drawTicker(show) {
+  const box = $("#ticker");
+  if (!show) return mount(box, "");
+  const [site, rows] = await Promise.all([settings(), table("announcements", "sort").catch(() => [])]);
+  const today = ukDay(new Date().toISOString());
+  const items = rows.filter((a) => a.is_active !== false && a.text && (!a.starts_on || a.starts_on <= today) && (!a.ends_on || a.ends_on >= today));
+  if (site.ticker_show === false || !items.length) return mount(box, "");
+  const one = (a) => (a.url ? html`<a class="ticker-item" href="${a.url}" ${/^https?:/.test(a.url) ? html`target="_blank" rel="noopener"` : ""}>${a.text}<i>→</i></a>` : html`<span class="ticker-item">${a.text}</span>`);
+  const seconds = Math.max(12, Math.round(items.reduce((n, a) => n + a.text.length + 8, 0) * (TICKER_SPEED[site.ticker_speed] ?? TICKER_SPEED.normal)));
+  // The list is written twice so the loop has no gap; the copy is hidden from screen readers.
+  mount(box, html`<div class="ticker" role="region" aria-label="Announcements">
+    <span class="ticker-label">Announcements</span>
+    <div class="ticker-view"><div class="ticker-track" style="animation-duration:${seconds}s">
+      <div class="ticker-set">${items.map(one)}</div><div class="ticker-set" aria-hidden="true">${items.map(one)}</div></div></div>
+    <button type="button" class="ticker-stop" data-ticker-stop aria-pressed="false" aria-label="Stop the announcements moving" title="Stop / start"><span></span></button>
+  </div>`);
+}
+
+/**
+ * Page layout for this part of the site: as designed, a right sidebar on every page, or full width.
+ * Pages that already have side boxes are handled by the stylesheet; a page without any gets the
+ * standard ones (latest results, breaks, rankings) in the #side column next to it.
+ */
+async function applyLayout(view, page) {
+  const shell = $("#shell"), side = $("#side");
+  const group = LAYOUT_GROUP(page);
+  const mode = group ? layoutFor(group) : "auto";
+  view.dataset.layout = mode;
+  const add = mode === "sidebar" && !NO_SIDE.has(page) && !view.querySelector(".layout > .sidebar, .layout > aside");
+  shell.classList.toggle("has-side", add);
+  if (!add) return mount(side, "");
+  const [ctx, news, box] = await Promise.all([seasonContext(), articles(), sideBoxData()]);
+  mount(side, sidebar(ctx, news, { box }));
+}
+
+/** Maintenance mode (Admin → Site settings): visitors see a holding page, anyone logged in sees the site. */
+function holdingPage(view, site) {
+  view.classList.add("flush");
+  mount(view, html`<div class="holding"><img src="${site.logo_url || "/assets/logo.svg"}" alt="">
+    <h1>${SITE.name}</h1>
+    <p>${site.maintenance_text || "We're making a few improvements to the website. Please check back shortly."}</p>
+    <a class="btn ghost" href="/login">Officer and captain login</a></div>`);
+}
+
 // ── routing ────────────────────────────────────────────────────
 let cleanup = null;
 
@@ -177,13 +237,17 @@ async function renderRoute() {
   const { page, params } = match(location.pathname);
   view.dataset.section = SECTION[page] ?? "";
   mount(view, "");
+  mount($("#side"), ""); $("#shell").classList.remove("has-side");
   loaderOn();   // the black loading screen appears only if this takes more than a moment
   trackPageView(location.pathname);
   try {
-    const mod = await import(`./pages/${page}.js`);
-    const user = await getUser();
+    const [mod, user, site] = await Promise.all([import(`./pages/${page}.js`), getUser(), settings()]);
+    document.body.classList.toggle("maintenance", !!site.maintenance_on && !user);
+    drawTicker(page === "home" && !(site.maintenance_on && !user));
+    if (site.maintenance_on && !user && page !== "login") return holdingPage(view, site);
     takeEditTarget();
     cleanup = await mod.default(view, { params, user, query: new URLSearchParams(location.search) });
+    await applyLayout(view, page);
     drawEditButton(user, page);
     if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView();
     else window.scrollTo(0, 0);
@@ -223,6 +287,13 @@ document.addEventListener("click", async (e) => {
   }
   if (e.target.closest(".nav-toggle")) { $(".main-nav").classList.toggle("open"); return; }
   if (e.target.closest("[data-to-top]")) return window.scrollTo({ top: 0, behavior: "smooth" });
+  const stop = e.target.closest("[data-ticker-stop]");
+  if (stop) {
+    const paused = stop.closest(".ticker").classList.toggle("paused");
+    stop.setAttribute("aria-pressed", String(paused));
+    stop.setAttribute("aria-label", paused ? "Start the announcements moving again" : "Stop the announcements moving");
+    return;
+  }
   const shot = e.target.closest("[data-lightbox]");
   if (shot) return openLightbox(shot.dataset.lightbox);
   if (e.target.closest("[data-search-open]")) { $(".main-nav")?.classList.remove("open"); return openSearch(); }

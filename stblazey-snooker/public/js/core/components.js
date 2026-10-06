@@ -52,6 +52,9 @@ export const statusBadge = (status) => html`<span class="status ${status}">${Str
 export const handicapText = (h) => (Number(h) > 0 ? `+${h}` : String(h ?? 0));
 
 /** Up or down arrow against last year's handicap (set at the yearly review), or nothing if it hasn't moved. */
+/** A handicap as a coloured tag: scratch and minus handicaps green, plus handicaps red. */
+export const handicapTag = (h) => html`<span class="hc-val ${Number(h) > 0 ? "plus" : "minus"}">${handicapText(h)}</span>`;
+
 export function handicapMove(player) {
   if (player?.last_handicap == null || player.last_handicap === player.handicap) return "";
   const diff = player.handicap - player.last_handicap, up = diff > 0;
@@ -194,14 +197,40 @@ export const newsMini = (a) => html`<a class="news-mini" href="${urls.article(a)
  * to show only the relevant one(s), and `top` for page-specific panels
  * (e.g. a competition's own highest breaks).
  */
-export function sidebar(ctx, news = [], { leagues = ctx.leagues, top = "", count = 1 } = {}) {
-  const latest = news.slice(0, Math.max(1, count));
+export function sidebar(ctx, news = [], { leagues = ctx.leagues, top = "", count = 1, box = null } = {}) {
   return html`<aside class="sidebar">
     ${top}
-    ${panel("Latest News", latest.length ? html`<div>${latest.map(newsMini)}</div>` : "", { color: "blue", href: "/news" })}
-    <a class="btn-bar" href="/news">Click here to go to the news hub</a>
+    ${sideBox(ctx, news, count, box)}
     ${leagues.map((l) => html`${highestBreakPanel(ctx, l)}${breaksPanel(ctx, l, { limit: 2 })}${rankingsPanel(ctx, l, { limit: 4 })}`)}
   </aside>`;
+}
+
+/**
+ * The box at the top of the side column. What it shows is chosen under
+ * Admin → Site settings → "Side column: top box": the latest league results (the standard),
+ * competition results, both, the latest news (as it used to be), or nothing.
+ * `box` comes from sideBoxData() in core/context.js.
+ */
+function sideBox(ctx, news, count, box) {
+  const site = box?.site ?? {};
+  const mode = site.side_box_mode ?? "results";
+  if (mode === "off") return "";
+  if (mode === "news") {
+    const latest = news.slice(0, Math.max(1, count));
+    return html`${panel(site.side_box_title || "Latest News", latest.length ? html`<div>${latest.map(newsMini)}</div>` : "", { color: "blue", href: "/news" })}
+      <a class="btn-bar" href="/news">Click here to go to the news hub</a>`;
+  }
+  const league = mode === "cup" ? [] : ctx.fixtures
+    .filter((f) => ctx.hasResult(f) && f.status !== "in_progress" && (!site.side_box_league || f.league_id === site.side_box_league))
+    .map((f) => { const s = ctx.scoreOf(f); return { when: f.starts_at, home: ctx.team.get(f.home_team_id)?.name, away: ctx.team.get(f.away_team_id)?.name, score: `${s.home} – ${s.away}`, href: urls.match(f), won: s.home > s.away ? "h" : s.away > s.home ? "a" : "" }; });
+  const cups = mode === "results" ? [] : box?.cups ?? [];
+  const rows = [...league, ...cups].sort((a, b) => String(b.when ?? "").localeCompare(String(a.when ?? ""))).slice(0, Math.max(1, site.side_box_count || 5));
+  return html`${panel(site.side_box_title || "Latest Results", rows.length
+      ? html`<div class="res-list">${rows.map((r) => html`<a class="res-mini" href="${r.href}">
+          <small>${r.when ? fmtDate(r.when) : ""}${r.title ? ` · ${r.title}` : ""}</small>
+          <span class="${r.won === "h" ? "won" : ""}">${r.home}</span><b>${r.score}</b><span class="${r.won === "a" ? "won" : ""}">${r.away}</span></a>`)}</div>`
+      : html`<div class="empty">No results yet.</div>`, { color: "blue", href: "/results" })}
+    <a class="btn-bar" href="/results">See all results</a>`;
 }
 
 // ── fixtures ──────────────────────────────────────────────────

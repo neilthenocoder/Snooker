@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────────────────────
 //  BRANDING — turns the choices made under Admin → Branding
-//  (colours, fonts, layout, loading logo) into what the pages
-//  actually look like. The stylesheet reads everything from CSS
-//  variables, so this file only has to set those.
+//  (colours, fonts, page layouts, loading screen) into what the
+//  pages actually look like. The stylesheet reads everything from
+//  CSS variables, so this file only has to set those.
 // ─────────────────────────────────────────────────────────────
 const CACHE = "sbdsl-brand";
 
@@ -12,6 +12,10 @@ export const FONTS = {
   body: ["Questrial", "Inter", "Open Sans", "Roboto", "Lato", "Nunito", "Source Sans 3", "Plus Jakarta Sans", "Poppins", "Montserrat"],
 };
 
+/** The parts of the site that can each have their own page layout (Admin → Branding → Page layout). */
+export const LAYOUT_GROUPS = [["home", "Home page"], ["competitions", "Competitions"], ["fixtures", "Fixtures"], ["league", "League"], ["news", "News"]];
+export const LAYOUT_LABELS = { auto: "Standard — as each page was designed", sidebar: "Right sidebar on every page", full: "Full width on every page" };
+
 /** Colour settings → the CSS variable each one drives, and (for menu buttons) the variable for its text. */
 const COLOURS = {
   color_primary: ["--red"],
@@ -19,6 +23,7 @@ const COLOURS = {
   color_competitions: ["--yellow", "--nav-comps-ink"],
   color_fixtures: ["--green", "--nav-fixtures-ink"],
   color_league: ["--nav-league", "--nav-league-ink"],
+  color_news: ["--nav-news", "--nav-news-ink"],
   color_login: ["--nav-login", "--nav-login-ink"],
   color_background: ["--cream"],
 };
@@ -31,6 +36,22 @@ export function inkOn(hex) {
 }
 const darker = (hex, by = 0.82) => `#${[1, 3, 5].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * by).toString(16).padStart(2, "0")).join("")}`;
 
+/**
+ * Reads what Google Fonts gives you under "Get embed code" — the <link …> lines, the @import line,
+ * or just the address — and returns { url, families } (null if there's no Google Fonts address in it).
+ * Only fonts.googleapis.com is accepted, so nothing else can be loaded through this box.
+ */
+export function parseFontEmbed(text) {
+  const hit = String(text ?? "").replace(/&amp;/g, "&").match(/https:\/\/fonts\.googleapis\.com\/css2?\?[^"'\s)<>]+/);
+  if (!hit) return null;
+  const url = hit[0];
+  const families = [...url.matchAll(/[?&]family=([^&]+)/g)]
+    .flatMap((m) => decodeURIComponent(m[1].replace(/\+/g, " ")).split("|"))
+    .map((f) => f.split(":")[0].trim())
+    .filter((f) => /^[\w .'-]{1,60}$/.test(f));
+  return families.length ? { url, families: [...new Set(families)] } : null;
+}
+
 /** The plain values the page needs, worked out from the settings row. */
 function brandOf(site) {
   const vars = {};
@@ -41,32 +62,51 @@ function brandOf(site) {
     if (ink) vars[ink] = inkOn(v);
     if (key === "color_primary") vars["--red-dark"] = darker(v);
   }
-  const fonts = [site.font_head, site.font_body].filter((f) => f && [...FONTS.head, ...FONTS.body].includes(f));
-  if (FONTS.head.includes(site.font_head)) vars["--font-head"] = `"${site.font_head}", "Arial", sans-serif`;
-  if (FONTS.body.includes(site.font_body)) vars["--font-body"] = `"${site.font_body}", "Helvetica Neue", Arial, system-ui, sans-serif`;
+  // Fonts: one of the built-in list, or one from the pasted Google Fonts embed link.
+  const embed = parseFontEmbed(site.font_embed);
+  const mine = embed?.families ?? [];
+  const links = [];
+  const builtIn = [site.font_head, site.font_body].filter((f) => f && !mine.includes(f) && [...FONTS.head, ...FONTS.body].includes(f));
+  if (builtIn.length) links.push(`https://fonts.googleapis.com/css?family=${[...new Set(builtIn)].map((f) => `${f.replace(/ /g, "+")}:400,500,600,700`).join("|")}&display=swap`);
+  if (embed && [site.font_head, site.font_body].some((f) => mine.includes(f))) links.push(embed.url);
+  if ([...FONTS.head, ...mine].includes(site.font_head)) vars["--font-head"] = `"${site.font_head}", "Arial", sans-serif`;
+  if ([...FONTS.body, ...mine].includes(site.font_body)) vars["--font-body"] = `"${site.font_body}", "Helvetica Neue", Arial, system-ui, sans-serif`;
+  const layouts = {};
+  for (const [group] of LAYOUT_GROUPS) layouts[group] = ["sidebar", "full"].includes(site.page_layouts?.[group]) ? site.page_layouts[group] : "auto";
   return {
-    vars, fonts,
-    sidebar: ["left", "below"].includes(site.sidebar_layout) ? site.sidebar_layout : "right",
+    vars, links, layouts,
+    sidebar: site.sidebar_layout === "left" ? "left" : "right",
     sections: site.section_colors !== false,
     loader: site.loading_logo_url || site.logo_url || "",
+    loaderShow: site.loader_show !== false,
+    loaderMs: Math.max(0, Math.min(10, Number(site.loader_seconds) || 0)) * 1000,
   };
 }
 
-/** Put a brand on the page. (Also called from index.html's first lines with the remembered brand, so the right colours show straight away.) */
+let current = { layouts: {}, loaderShow: true, loaderMs: 0 };
+/** "auto" | "sidebar" | "full" for one part of the site (home, competitions, fixtures, league, news). */
+export const layoutFor = (group) => current.layouts?.[group] ?? "auto";
+
+/** Put a brand on the page. (index.html's first lines do the same with the remembered brand, so the right colours show straight away.) */
 export function paint(brand) {
+  current = brand;
   const root = document.documentElement;
   for (const name of [...Object.values(COLOURS).flat(), "--red-dark", "--font-head", "--font-body"]) root.style.removeProperty(name);
   for (const [name, value] of Object.entries(brand.vars ?? {})) root.style.setProperty(name, value);
   root.classList.toggle("sidebar-left", brand.sidebar === "left");
-  root.classList.toggle("sidebar-below", brand.sidebar === "below");
   root.classList.toggle("section-colors", brand.sections !== false);
-  let link = document.getElementById("brand-fonts");
-  if (brand.fonts?.length) {
-    if (!link) { link = Object.assign(document.createElement("link"), { id: "brand-fonts", rel: "stylesheet" }); document.head.append(link); }
-    const href = `https://fonts.googleapis.com/css?family=${brand.fonts.map((f) => `${f.replace(/ /g, "+")}:400,500,600,700`).join("|")}&display=swap`;
-    if (link.href !== href) link.href = href;
-  } else link?.remove();
-  const logo = document.querySelector("#boot img");
+  // Font stylesheets: keep the ones still wanted, drop the rest.
+  const wanted = brand.links ?? [];
+  for (const link of document.querySelectorAll("link[data-brand-font]")) if (!wanted.includes(link.href)) link.remove();
+  for (const href of wanted) {
+    if ([...document.querySelectorAll("link[data-brand-font]")].some((l) => l.href === href)) continue;
+    const link = Object.assign(document.createElement("link"), { rel: "stylesheet", href });
+    link.dataset.brandFont = "";
+    document.head.append(link);
+  }
+  const boot = document.getElementById("boot");
+  boot?.classList.toggle("off", brand.loaderShow === false);
+  const logo = boot?.querySelector("img");
   if (logo && brand.loader && logo.getAttribute("src") !== brand.loader) logo.src = brand.loader;
 }
 
@@ -78,13 +118,21 @@ export function applyBranding(site) {
 }
 
 // ── full-screen loading logo ──────────────────────────────────
-let waiting = null;
+let waiting = null, firstLoad = true;
 /** Show the black loading screen if the page hasn't appeared within `delay` ms. */
 export function loaderOn(delay = 300) {
   clearTimeout(waiting);
+  if (current.loaderShow === false) return;
   waiting = setTimeout(() => document.getElementById("boot")?.classList.remove("done"), delay);
 }
+/**
+ * Hide it again. When the site is first opened it stays up for at least the time set under
+ * Admin → Branding → Loading screen; moving between pages afterwards it only shows while a page is slow.
+ */
 export function loaderOff() {
   clearTimeout(waiting);
-  document.getElementById("boot")?.classList.add("done");
+  const hide = () => document.getElementById("boot")?.classList.add("done");
+  const left = firstLoad && current.loaderShow !== false ? (current.loaderMs || 0) - performance.now() : 0;
+  firstLoad = false;
+  if (left > 0) waiting = setTimeout(hide, left); else hide();
 }

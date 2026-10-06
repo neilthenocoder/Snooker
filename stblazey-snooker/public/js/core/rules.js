@@ -257,3 +257,18 @@ export function handicapStart(handicapsA, handicapsB) {
   const diff = sum(handicapsA) - sum(handicapsB);
   return { side: diff > 0 ? "a" : diff < 0 ? "b" : null, points: Math.abs(diff) };
 }
+
+/**
+ * What each side has on the board when a handicap frame starts: { a, b }.
+ *   "difference" (singles and team matches) — the higher handicap starts on the difference, the other on 0.
+ *   "each" (doubles) — each pair starts on its own total: +20 and -14 make a pair that starts on 6,
+ *   so if they then score 85 their frame score is 91. A total below zero starts below zero.
+ */
+export function handicapStarts(handicapsA, handicapsB, mode = "difference") {
+  const sum = (list) => list.reduce((n, h) => n + (Number(h) || 0), 0);
+  if (mode === "each") return { a: sum(handicapsA), b: sum(handicapsB) };
+  const s = handicapStart(handicapsA, handicapsB);
+  return { a: s.side === "a" ? s.points : 0, b: s.side === "b" ? s.points : 0 };
+}
+/** Which way a competition's handicaps work (see handicapStarts). */
+export const handicapMode = (competition) => (competition?.kind === "Doubles" ? "each" : "difference");

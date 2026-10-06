@@ -433,6 +433,84 @@ create table if not exists handicap_changes (
 );
 create index if not exists handicap_changes_player_idx on handicap_changes (player_id, created_at desc);
 
+-- v7: Rich's fifth round of feedback ----------------------------------
+-- Page layout per section: { "home": "auto" | "sidebar" | "full", "competitions": …, "fixtures": …, "league": …, "news": … }
+alter table settings add column if not exists page_layouts jsonb not null default '{}'::jsonb;
+-- The old single choice "side boxes underneath" becomes "full width" for every section.
+update settings set page_layouts = '{"home":"full","competitions":"full","fixtures":"full","league":"full","news":"full"}'::jsonb, sidebar_layout = 'right'
+  where sidebar_layout = 'below';
+-- Fonts: a pasted Google Fonts embed link (its fonts are then offered for headings and body text).
+alter table settings add column if not exists font_embed text;
+-- Loading screen: on/off, and the shortest time it stays up when the site is first opened.
+alter table settings add column if not exists loader_show boolean not null default true;
+alter table settings add column if not exists loader_seconds numeric not null default 0;
+-- News has its own menu button (and colour).
+alter table settings add column if not exists color_news text;
+-- The box at the top of the side column: latest results (or news, as before).
+alter table settings add column if not exists side_box_mode text not null default 'results';
+alter table settings add column if not exists side_box_title text;
+alter table settings add column if not exists side_box_count int not null default 5;
+alter table settings add column if not exists side_box_league uuid references leagues on delete set null;
+-- Announcements ticker at the top of the home page.
+alter table settings add column if not exists ticker_show boolean not null default true;
+alter table settings add column if not exists ticker_speed text not null default 'normal';
+create table if not exists announcements (
+  id uuid primary key default gen_random_uuid(),
+  text text not null,
+  url text,
+  sort int not null default 1,
+  is_active boolean not null default true,
+  starts_on date,
+  ends_on date,
+  created_at timestamptz not null default now()
+);
+-- Maintenance mode: visitors see a holding page; officers still see the site.
+alter table settings add column if not exists maintenance_on boolean not null default false;
+alter table settings add column if not exists maintenance_text text;
+-- News page: how many columns each category's articles are shown in (its place on the page is "sort").
+alter table categories add column if not exists columns int not null default 4;
+-- Handicap competitions: total points in a match (handicap starts included). They decide a match that is level on frames.
+alter table competition_matches add column if not exists points_a int;
+alter table competition_matches add column if not exists points_b int;
+
+-- Handicap doubles: a pair whose handicaps add up to less than zero starts a frame below zero, so a frame score can be negative.
+alter table competition_frames drop constraint if exists competition_frames_a_points_check;
+alter table competition_frames drop constraint if exists competition_frames_b_points_check;
+alter table competition_frames add constraint competition_frames_a_points_check check (a_points between -200 and 300);
+alter table competition_frames add constraint competition_frames_b_points_check check (b_points between -200 and 300);
+
+-- Roles & permissions: which parts of the dashboard each officer role may use.
+-- Only the Master Admin can change this (Admin → Roles & permissions); the Master Admin always has everything.
+-- Areas: matchnights, fixtures, league, handicaps, competitions, website, settings, people.
+create table if not exists role_permissions (
+  role text primary key,
+  areas text[] not null default '{}',
+  updated_at timestamptz not null default now()
+);
+insert into role_permissions (role, areas) values
+  ('league_admin',          array['matchnights','fixtures','league','handicaps','competitions','website','settings','people']),
+  ('competition_secretary', array['handicaps','competitions']),
+  ('league_secretary',      array['league','handicaps']),
+  ('committee_member',      array['website','settings']),
+  ('president',             array['website','settings']),
+  ('vice_chairman',         array['website','settings']),
+  ('chairman',              array['website','settings'])
+on conflict (role) do nothing;
+
+-- Activity log: who added, changed or removed what (Master Admin only). Filled in by triggers further down.
+create table if not exists audit_log (
+  id bigint generated always as identity primary key,
+  at timestamptz not null default now(),
+  actor_id uuid,
+  actor text,
+  action text not null,
+  table_name text not null,
+  row_id text,
+  label text,
+  changes jsonb
+);
+create index if not exists audit_log_at_idx on audit_log (at desc);
+
 -- One row per login. Created by the admin dashboard (Netlify Function).
 create table if not exists profiles (
   id uuid primary key references auth.users on delete cascade,
@@ -464,27 +542,35 @@ alter table profiles add constraint profiles_team_role_check check (team_role is
 -- ── permission helpers ──────────────────────────────────────────
 -- "security definer" lets these read profiles without tripping over
 -- the profiles table's own security rules.
+-- The Master Admin: always allowed everything, and the only one who can change roles & permissions.
+create or replace function public.is_master() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from profiles where id = auth.uid() and role = 'admin');
+$$;
+-- (Kept for older code: "admin" now means the Master Admin. Everyone else goes by can_manage().)
 create or replace function public.is_admin() returns boolean
 language sql stable security definer set search_path = public as $$
-  select exists (select 1 from profiles where id = auth.uid() and role in ('admin', 'league_admin'));
+  select public.is_master();
 $$;
 
--- Which part of the admin dashboard a login may change:
--- 'league', 'competitions' or 'website'. Admins may change everything.
+-- May this login use one part of the admin dashboard?
+-- The Master Admin: always. Everyone else: whatever the Master Admin has ticked for
+-- their role under Admin → Roles & permissions (the role_permissions table).
 create or replace function public.can_manage(area text) returns boolean
 language sql stable security definer set search_path = public as $$
-  select exists (select 1 from profiles where id = auth.uid() and (
-    role in ('admin', 'league_admin')
-    or (area = 'competitions' and role = 'competition_secretary')
-    or (area = 'league' and role = 'league_secretary')
-    or (area = 'website' and role in ('committee_member', 'president', 'vice_chairman', 'chairman'))
+  select exists (select 1 from profiles p where p.id = auth.uid() and (
+    p.role = 'admin'
+    or exists (select 1 from role_permissions rp where rp.role = p.role and can_manage.area = any(rp.areas))
   ));
 $$;
 
 -- Anyone with a part of the admin dashboard (they may upload pictures).
 create or replace function public.is_staff() returns boolean
 language sql stable security definer set search_path = public as $$
-  select public.can_manage('league') or public.can_manage('competitions') or public.can_manage('website');
+  select exists (select 1 from profiles p where p.id = auth.uid() and (
+    p.role = 'admin'
+    or exists (select 1 from role_permissions rp where rp.role = p.role and cardinality(rp.areas) > 0)
+  ));
 $$;
 
 -- Captain or vice captain of this team (by role, or an officer given team rights).
@@ -494,11 +580,11 @@ language sql stable security definer set search_path = public as $$
     and (role in ('captain', 'vice_captain') or team_role in ('captain', 'vice_captain')));
 $$;
 
--- Admins: any fixture. Captains / vice captains: their own team's
--- fixtures, and only until the result is approved.
+-- Whoever looks after match nights: any fixture. Captains / vice captains:
+-- their own team's fixtures, and only until the result is approved.
 create or replace function public.can_edit_fixture(fid uuid) returns boolean
 language sql stable security definer set search_path = public as $$
-  select public.is_admin() or exists (
+  select public.can_manage('matchnights') or exists (
     select 1 from fixtures f
     where f.id = fid
       and (public.is_captain_of(f.home_team_id) or public.is_captain_of(f.away_team_id))
@@ -514,13 +600,13 @@ begin
   if not public.can_edit_fixture(fid) then
     raise exception 'You are not allowed to change this fixture';
   end if;
-  if not public.is_admin() then
+  if not public.can_manage('matchnights') then
     if new_status = 'postponed' then
       if (select status from fixtures where id = fid) <> 'scheduled' then
         raise exception 'Only a match that has not started can be postponed';
       end if;
     elsif new_status not in ('in_progress', 'submitted') then
-      raise exception 'Only the league admin can set a fixture to %', new_status;
+      raise exception 'Only someone who looks after match nights can set a fixture to %', new_status;
     end if;
   end if;
   -- A result can't be submitted without a photo of the paper scorecard.
@@ -564,8 +650,12 @@ declare m competition_matches; mode text; w uuid;
 begin
   select * into m from competition_matches where id = mid;
   select draw_mode into mode from competitions where id = m.competition_id;
-  if mode = 'redraw' or m.score_a is null or m.score_b is null or m.score_a = m.score_b then return; end if;
-  w := case when m.score_a > m.score_b then m.entry_a else m.entry_b end;
+  if mode = 'redraw' or m.score_a is null or m.score_b is null then return; end if;
+  -- More frames wins; level on frames, the higher total points wins (handicap competitions).
+  w := case when m.score_a > m.score_b then m.entry_a
+            when m.score_b > m.score_a then m.entry_b
+            when coalesce(m.points_a, 0) > coalesce(m.points_b, 0) then m.entry_a
+            when coalesce(m.points_b, 0) > coalesce(m.points_a, 0) then m.entry_b end;
   if w is null then return; end if;
   if m.slot % 2 = 0 then
     update competition_matches set entry_a = w where competition_id = m.competition_id and round = m.round + 1 and slot = m.slot / 2;
@@ -577,21 +667,28 @@ $$;
 revoke all on function public.advance_winner(uuid) from public, anon, authenticated;
 
 -- Recalculate a competition match's score from its frames, and start or finish it.
+-- The total points of each side are kept too: in a handicap competition they decide
+-- a match that finishes level on frames.
 create or replace function public.sync_comp_match(mid uuid, finished boolean) returns void
 language plpgsql security definer set search_path = public as $$
-declare wa int; wb int;
+declare wa int; wb int; pa int; pb int; hc boolean;
 begin
   if not public.can_edit_comp_match(mid) then
     raise exception 'You are not allowed to change this match';
   end if;
-  select count(*) filter (where a_points > b_points), count(*) filter (where b_points > a_points)
-    into wa, wb from competition_frames where match_id = mid;
-  if finished and wa = wb then
+  select count(*) filter (where a_points > b_points), count(*) filter (where b_points > a_points),
+         coalesce(sum(a_points), 0), coalesce(sum(b_points), 0)
+    into wa, wb, pa, pb from competition_frames where match_id = mid;
+  select coalesce(c.handicap, false) into hc from competitions c join competition_matches m on m.competition_id = c.id where m.id = mid;
+  if finished and wa = wb and not (hc and pa <> pb) then
+    if hc then raise exception 'A knockout match needs a winner — the frames and the total points are both level'; end if;
     raise exception 'A knockout match needs a winner — the frames are level';
   end if;
   update competition_matches
      set score_a = case when wa + wb > 0 then wa end,
          score_b = case when wa + wb > 0 then wb end,
+         points_a = case when wa + wb > 0 then pa end,
+         points_b = case when wa + wb > 0 then pb end,
          status = case when finished then 'completed' when wa + wb > 0 then 'in_progress' else status end
    where id = mid;
   if finished then perform public.advance_winner(mid); end if;
@@ -655,6 +752,7 @@ grant execute on function public.sync_comp_match(uuid, boolean) to authenticated
 grant execute on function public.can_edit_comp_match(uuid) to anon, authenticated;
 grant execute on function public.set_fixture_status(uuid, text) to authenticated;
 grant execute on function public.is_admin() to anon, authenticated;
+grant execute on function public.is_master() to anon, authenticated;
 grant execute on function public.can_manage(text) to anon, authenticated;
 grant execute on function public.is_staff() to anon, authenticated;
 grant execute on function public.is_captain_of(uuid) to anon, authenticated;
@@ -675,13 +773,14 @@ drop trigger if exists players_log_handicap on players;
 create trigger players_log_handicap after update of handicap on players
   for each row when (old.handicap is distinct from new.handicap) execute function public.log_handicap();
 
--- The league secretary AND the competition secretary can adjust a handicap
--- without being able to change anything else about the player.
+-- Anyone whose role has the "handicaps" permission (by default the league secretary AND
+-- the competition secretary) can adjust a handicap without being able to change anything
+-- else about the player.
 create or replace function public.set_handicap(pid uuid, value int, note text default null) returns void
 language plpgsql security definer set search_path = public as $$
 begin
-  if not (public.can_manage('league') or public.can_manage('competitions')) then
-    raise exception 'Only the league or competition secretary can change a handicap';
+  if not public.can_manage('handicaps') then
+    raise exception 'Your login isn''t allowed to change handicaps';
   end if;
   if value is null or value < -200 or value > 200 then
     raise exception 'A handicap must be a whole number between -200 and 200';
@@ -697,8 +796,8 @@ create or replace function public.start_handicap_review() returns int
 language plpgsql security definer set search_path = public as $$
 declare n int;
 begin
-  if not (public.can_manage('league') or public.can_manage('competitions')) then
-    raise exception 'Only the league or competition secretary can start the handicap review';
+  if not public.can_manage('handicaps') then
+    raise exception 'Your login isn''t allowed to start the handicap review';
   end if;
   update players set last_handicap = handicap where last_handicap is distinct from handicap;
   get diagnostics n = row_count;
@@ -715,7 +814,7 @@ grant execute on function public.start_handicap_review() to authenticated;
 create or replace function public.set_match_photos(fid uuid, urls jsonb) returns void
 language plpgsql security definer set search_path = public as $$
 begin
-  if not (public.is_admin() or public.is_captain_of((select home_team_id from fixtures where id = fid))) then
+  if not (public.can_manage('matchnights') or public.is_captain_of((select home_team_id from fixtures where id = fid))) then
     raise exception 'Only the home team''s captain or vice captain can add match night photos';
   end if;
   if jsonb_typeof(urls) <> 'array' or jsonb_array_length(urls) > 12 or octet_length(urls::text) > 8000 then
@@ -836,30 +935,39 @@ grant execute on function public.signup_names(uuid) to anon, authenticated;
 do $$
 declare t text; area text;
 begin
-  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','frames','breaks','articles','pages','sponsors','profiles','competitions','competition_entries','competition_matches','categories','media','settings','competition_frames','competition_breaks','page_views'] loop
+  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','frames','breaks','articles','pages','sponsors','profiles','competitions','competition_entries','competition_matches','categories','media','settings','competition_frames','competition_breaks','page_views','announcements','role_permissions','audit_log'] loop
     execute format('alter table %I enable row level security', t);
     execute format('drop policy if exists "public read" on %I', t);
     execute format('drop policy if exists "admin write" on %I', t);
   end loop;
 
-  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','frames','breaks','pages','sponsors','competitions','competition_entries','competition_matches','categories','media','settings','competition_frames','competition_breaks'] loop
+  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','frames','breaks','pages','sponsors','competitions','competition_entries','competition_matches','categories','media','settings','competition_frames','competition_breaks','announcements','role_permissions'] loop
     execute format('create policy "public read" on %I for select using (true)', t);
   end loop;
 
-  -- Fixtures and logins: admins only.
-  foreach t in array array['fixtures','profiles'] loop
-    execute format('create policy "admin write" on %I for all using (public.is_admin()) with check (public.is_admin())', t);
-  end loop;
-  -- Everything else: admins, plus the officer role for that part of the dashboard.
+  -- Each table belongs to one part of the dashboard; can_manage() says who may change it
+  -- (the Master Admin, plus the roles ticked for that part under Admin → Roles & permissions).
+  -- Fixtures: whoever looks after fixtures, or match nights (rearranging a postponed match).
+  execute 'create policy "admin write" on fixtures for all using (public.can_manage(''fixtures'') or public.can_manage(''matchnights'')) with check (public.can_manage(''fixtures'') or public.can_manage(''matchnights''))';
+  -- Logins are only ever written by the logins function (netlify/functions/admin-users.mjs), which makes its
+  -- own checks. Directly, only the Master Admin may touch them — so nobody can promote themselves.
+  execute 'create policy "admin write" on profiles for all using (public.is_master()) with check (public.is_master())';
+  execute 'create policy "admin write" on role_permissions for all using (public.is_master()) with check (public.is_master())';
   foreach t in array array['seasons','leagues','venues','teams','players'] loop
     execute format('create policy "admin write" on %I for all using (public.can_manage(''league'')) with check (public.can_manage(''league''))', t);
   end loop;
   foreach t in array array['competitions','competition_entries','competition_matches','competition_frames','competition_breaks'] loop
     execute format('create policy "admin write" on %I for all using (public.can_manage(''competitions'')) with check (public.can_manage(''competitions''))', t);
   end loop;
-  foreach t in array array['articles','pages','sponsors','categories','settings','page_views'] loop
+  foreach t in array array['articles','pages','sponsors','categories','announcements'] loop
     execute format('create policy "admin write" on %I for all using (public.can_manage(''website'')) with check (public.can_manage(''website''))', t);
   end loop;
+  -- Site settings, branding and the visitor statistics.
+  foreach t in array array['settings','page_views'] loop
+    execute format('create policy "admin write" on %I for all using (public.can_manage(''settings'')) with check (public.can_manage(''settings''))', t);
+  end loop;
+  -- The activity log: read by the Master Admin only; written only by the triggers below.
+  execute 'create policy "public read" on audit_log for select using (public.is_master())';
   -- The image library is shared by everyone who can upload pictures.
   execute 'create policy "admin write" on media for all using (public.is_staff()) with check (public.is_staff())';
 end $$;
@@ -871,13 +979,13 @@ alter table handicap_changes enable row level security;
 drop policy if exists "admin write" on competition_signups;
 drop policy if exists "staff read" on handicap_changes;
 create policy "admin write" on competition_signups for all using (public.can_manage('competitions')) with check (public.can_manage('competitions'));
-create policy "staff read" on handicap_changes for select using (public.can_manage('league') or public.can_manage('competitions'));
+create policy "staff read" on handicap_changes for select using (public.can_manage('handicaps') or public.can_manage('league'));
 
 -- Unpublished articles are hidden from the public.
 create policy "public read" on articles for select using (is_published or public.can_manage('website'));
 
--- Logins: you can see your own profile; admins see everyone's. Emails are never public.
-create policy "public read" on profiles for select using (id = auth.uid() or public.is_admin());
+-- Logins: you can see your own profile; whoever manages logins sees everyone's. Emails are never public.
+create policy "public read" on profiles for select using (id = auth.uid() or public.can_manage('people'));
 
 -- Scorecards: captains (and admins) can add, change and remove frames/breaks for fixtures they may edit.
 drop policy if exists "captain write" on frames;
@@ -898,6 +1006,81 @@ create policy "captain write" on competition_breaks for all
 -- Statistics: anyone may record a page view; only the admin can read them.
 drop policy if exists "anyone insert" on page_views;
 create policy "anyone insert" on page_views for insert to anon, authenticated with check (true);
+
+-- ── activity log ────────────────────────────────────────────────
+-- Who did it: the logged-in person's name ("System" for the SQL editor and the logins function).
+create or replace function public.audit_actor() returns text
+language sql stable security definer set search_path = public as $$
+  select coalesce((select coalesce(nullif(full_name, ''), email) from profiles where id = auth.uid()), 'System');
+$$;
+-- A readable name for a row: "Bethel A v Bugle (22/09/2026)", a player's name, an article's title…
+create or replace function public.audit_label(t text, j jsonb) returns text
+language sql stable security definer set search_path = public as $$
+  select left(coalesce(
+    case when t = 'fixtures' then
+      coalesce((select name from teams where id = nullif(j->>'home_team_id', '')::uuid), '?') || ' v ' ||
+      coalesce((select name from teams where id = nullif(j->>'away_team_id', '')::uuid), '?') ||
+      coalesce(' (' || to_char((j->>'starts_at')::timestamptz at time zone 'Europe/London', 'DD/MM/YYYY') || ')', '') end,
+    case when t = 'settings' then 'Site settings' end,
+    case when t = 'role_permissions' then j->>'role' end,
+    nullif(j->>'name', ''), nullif(j->>'full_name', ''), nullif(j->>'title', ''), nullif(j->>'text', ''), j->>'id'), 140);
+$$;
+-- One line per changed or removed row, listing what changed.
+create or replace function public.audit_row() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare o jsonb; n jsonb; diff jsonb := '{}'::jsonb; k text;
+begin
+  if random() < 0.01 then delete from audit_log where at < now() - interval '1 year'; end if;
+  o := to_jsonb(old);
+  if tg_op = 'DELETE' then
+    insert into audit_log (actor_id, actor, action, table_name, row_id, label)
+    values (auth.uid(), public.audit_actor(), 'removed', tg_table_name, o->>'id', public.audit_label(tg_table_name, o));
+    return old;
+  end if;
+  n := to_jsonb(new);
+  for k in select key from jsonb_each(n) loop
+    if (n->k) is distinct from (o->k) and k not in ('updated_at', 'postponed_at') then
+      -- Short values are kept ("status: submitted → approved"); long ones (an article's text, a picture link) are just noted as changed.
+      diff := diff || jsonb_build_object(k,
+        case when length(coalesce((n->k)::text, '')) > 140 or length(coalesce((o->k)::text, '')) > 140
+             then 'null'::jsonb else jsonb_build_array(o->k, n->k) end);
+    end if;
+  end loop;
+  if diff <> '{}'::jsonb then
+    insert into audit_log (actor_id, actor, action, table_name, row_id, label, changes)
+    values (auth.uid(), public.audit_actor(), 'changed', tg_table_name, n->>'id', public.audit_label(tg_table_name, n), diff);
+  end if;
+  return new;
+end;
+$$;
+-- One line per "add" (a whole import or fixture list is one line: "Bethel A v Bugle… and 54 more").
+create or replace function public.audit_added() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare n int; names text; first_id text;
+begin
+  select count(*), string_agg(lbl, ', ') filter (where rn <= 3), min(id) filter (where rn = 1)
+    into n, names, first_id
+  from (select public.audit_label(tg_table_name, to_jsonb(a)) as lbl, to_jsonb(a)->>'id' as id, row_number() over () as rn from added a) s;
+  if n = 0 then return null; end if;
+  insert into audit_log (actor_id, actor, action, table_name, row_id, label, changes)
+  values (auth.uid(), public.audit_actor(), 'added', tg_table_name, case when n = 1 then first_id end,
+          case when n > 3 then names || ' and ' || (n - 3) || ' more' else names end,
+          case when n > 1 then jsonb_build_object('count', n) end);
+  return null;
+end;
+$$;
+revoke all on function public.audit_row() from public, anon, authenticated;
+revoke all on function public.audit_added() from public, anon, authenticated;
+do $$
+declare t text;
+begin
+  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','competitions','competition_entries','articles','pages','sponsors','categories','announcements','settings','role_permissions'] loop
+    execute format('drop trigger if exists audit_row on %I', t);
+    execute format('drop trigger if exists audit_added on %I', t);
+    execute format('create trigger audit_row after update or delete on %I for each row execute function public.audit_row()', t);
+    execute format('create trigger audit_added after insert on %I referencing new table as added for each statement execute function public.audit_added()', t);
+  end loop;
+end $$;
 
 -- ── live updates ────────────────────────────────────────────────
 do $$

@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Questrial&display=swap" rel="stylesheet">
   <!-- The loading screen's few rules are here as well as in the stylesheet, so it is black from the very first moment. -->
-  <style>.boot{position:fixed;inset:0;z-index:200;background:#000;display:grid;place-items:center}.boot img{width:min(180px,42vw);max-height:42vh}</style>
+  <style>.boot{position:fixed;inset:0;z-index:200;background:#000;display:grid;place-items:center}.boot img{width:min(180px,42vw);max-height:42vh}.boot.off{display:none}</style>
   <link rel="stylesheet" href="/css/style.css">
   <script type="module" src="/js/main.js"></script>
 </head>
@@ -20,15 +20,18 @@
   <div id="boot" class="boot" role="status" aria-label="Loading"><img src="/assets/logo.svg" alt=""></div>
   <script>
     try {
-      var b = JSON.parse(localStorage.getItem("sbdsl-brand") || "{}"), r = document.documentElement;
+      var b = JSON.parse(localStorage.getItem("sbdsl-brand") || "{}"), r = document.documentElement, boot = document.getElementById("boot");
       for (var k in (b.vars || {})) r.style.setProperty(k, b.vars[k]);
-      if (b.sidebar === "left" || b.sidebar === "below") r.classList.add("sidebar-" + b.sidebar);
+      if (b.sidebar === "left") r.classList.add("sidebar-left");
       if (b.sections !== false) r.classList.add("section-colors");
-      if (b.loader) document.querySelector("#boot img").src = b.loader;
+      if (b.loaderShow === false) boot.classList.add("off");
+      if (b.loader) boot.querySelector("img").src = b.loader;
     } catch (e) {}
   </script>
+  <div id="ticker"></div>
   <div id="site-header"></div>
-  <main id="view"></main>
+  <!-- The page itself, plus (when Admin → Branding gives a section a right sidebar) the standard side boxes. -->
+  <div id="shell"><main id="view"></main><div id="side"></div></div>
   <div id="site-footer"></div>
   <noscript><p class="wrap">This site needs JavaScript switched on to show fixtures and results.</p></noscript>
 </body>

@@ -271,7 +271,11 @@ export async function draws(el, { user } = {}) {
       if (row.entry_a && row.entry_a === row.entry_b) return toast("Someone can't play themselves", "error");
       if ((row.score_a == null) !== (row.score_b == null)) return toast("Enter both scores (or neither)", "error");
       if ("score_a" in row) row.status = row.score_a != null ? "completed" : "scheduled";
-      if (row.score_a != null && row.score_a === row.score_b) return toast("A knockout match needs a winner — scores can't be level", "error");
+      // Level on frames is only possible when the scorecard's total points decided it (handicap competitions).
+      const was = rows.find((r) => r.id === row.id);
+      const onPoints = was?.status === "completed" && was.score_a === row.score_a && was.score_b === row.score_b && was.points_a != null && was.points_a !== was.points_b;
+      if (row.score_a != null && row.score_a === row.score_b && !onPoints) return toast(c.handicap
+        ? "Level on frames: enter the frames on the Scorecard instead, so the total points can decide the winner." : "A knockout match needs a winner — scores can't be level", "error");
       t.disabled = true;
       await save("competition_matches", row);
       // Bracket draws: the winner moves straight into their next match.

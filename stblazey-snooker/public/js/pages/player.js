@@ -4,6 +4,7 @@ import { table, playerHistory, loadCompetitions, articles } from "../core/api.js
 import { playerRankings, frameWinner, breakPoints, EXT_PER_SEASON } from "../core/rules.js";
 import { answered } from "../core/cueview.js";
 import { buildBracket, competitionStandings } from "../core/bracket.js";
+import { listItems } from "../core/list-field.js";
 import { breadcrumb, panel, dataTable, avatar, teamLink, urls, gallery, articleCard, cueviewSection, handicapText, handicapMove } from "../core/components.js";
 import { setTitle, navigate, adminEdit } from "../core/router.js";
 import notFound from "./not-found.js";
@@ -64,7 +65,7 @@ export default async function player(view, { params }) {
   const teammates = allPlayers.filter((x) => x.team_id === p.team_id);
   // Past teams: worked out from results, plus anything typed in for the years before this website.
   const pastTeams = [...new Set([...seasonRows.map((r) => r.team).filter((t) => t && t !== "–" && t !== team?.name),
-    ...String(p.past_teams ?? "").split(/[,\n]/).map((t) => t.trim()).filter(Boolean)])];
+    ...listItems(p.past_teams)])];
   const bio = p.bio || p.cueview?.biography || "";
   const career = String(p.career_history ?? "").split("\n").map((x) => x.trim()).filter(Boolean);
   const playerNews = news.filter((a) => (a.player_ids ?? []).includes(p.id));

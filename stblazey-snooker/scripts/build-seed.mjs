@@ -8,7 +8,7 @@ const { tables } = buildSeed();
 // Order matters: parents before children. Logins (profiles) are created in the admin dashboard instead.
 const ORDER = ["seasons", "leagues", "venues", "teams", "players", "fixtures", "frames", "breaks",
   "competitions", "competition_entries", "competition_matches", "competition_frames", "competition_breaks", "competition_signups",
-  "categories", "articles", "pages", "sponsors", "media"];
+  "categories", "articles", "pages", "sponsors", "media", "announcements"];
 
 const lit = (v) => {
   if (v === null || v === undefined) return "null";

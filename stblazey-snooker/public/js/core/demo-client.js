@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────
 import { buildSeed } from "../demo/seed-data.js";
 
-const KEY = "sbdsl-demo-db-v6";
+const KEY = "sbdsl-demo-db-v7";
 const SESSION_KEY = "sbdsl-demo-session";
 const store = typeof localStorage !== "undefined" ? localStorage : (() => {
   const m = new Map();
@@ -84,8 +84,10 @@ class Query {
     } else if (this.action === "insert") {
       data = [].concat(this.payload).map((r) => ({ id: newId(), ...r }));
       rows.push(...data);
+      audit("added", this.table, data);
     } else if (this.action === "update") {
       data = rows.filter((r) => this.matches(r));
+      for (const r of data) audit("changed", this.table, [r], this.payload);
       // Mirrors the players_log_handicap trigger in supabase/schema.sql.
       if (this.table === "players" && "handicap" in this.payload)
         for (const r of data) if (r.handicap !== this.payload.handicap) logHandicap(r, this.payload.handicap, "");
@@ -93,11 +95,12 @@ class Query {
     } else if (this.action === "upsert") {
       data = [].concat(this.payload).map((r) => {
         const hit = rows.find((x) => this.conflict.every((c) => x[c] === r[c]));
-        if (hit) return Object.assign(hit, r);
-        const row = { id: newId(), ...r }; rows.push(row); return row;
+        if (hit) { audit("changed", this.table, [hit], r); return Object.assign(hit, r); }
+        const row = { id: newId(), ...r }; rows.push(row); audit("added", this.table, [row]); return row;
       });
     } else if (this.action === "delete") {
       data = rows.filter((r) => this.matches(r));
+      for (const r of data) audit("removed", this.table, [r]);
       state.tables[this.table] = rows.filter((r) => !this.matches(r));
       cascade(this.table, data);
     }
@@ -116,6 +119,33 @@ class Query {
 for (const op of Object.keys(OPS)) Query.prototype[op] = function (col, val) { this.filters.push([op, col, val]); return this; };
 
 const me = () => state.tables.profiles.find((p) => p.id === currentSession()?.user.id);
+
+// Mirrors the activity-log triggers in supabase/schema.sql (audit_row / audit_added).
+const AUDITED = new Set(["seasons", "leagues", "venues", "teams", "players", "fixtures", "competitions", "competition_entries", "articles", "pages", "sponsors", "categories", "announcements", "settings", "role_permissions"]);
+function auditLabel(table, r) {
+  const team = (id) => state.tables.teams.find((t) => t.id === id)?.name ?? "?";
+  if (table === "fixtures") return `${team(r.home_team_id)} v ${team(r.away_team_id)}${r.starts_at ? ` (${r.starts_at.slice(8, 10)}/${r.starts_at.slice(5, 7)}/${r.starts_at.slice(0, 4)})` : ""}`;
+  if (table === "settings") return "Site settings";
+  if (table === "role_permissions") return r.role;
+  return r.name || r.full_name || r.title || r.text || r.id;
+}
+function audit(action, table, rows, patch = null, force = false) {
+  if ((!AUDITED.has(table) && !force) || !rows.length) return;
+  const who = me();
+  let changes = null, label = rows.slice(0, 3).map((r) => auditLabel(table, r)).join(", ") + (rows.length > 3 ? ` and ${rows.length - 3} more` : "");
+  if (action === "added" && rows.length > 1) changes = { count: rows.length };
+  if (action === "changed") {
+    changes = {};
+    const short = (v) => v == null || JSON.stringify(v).length <= 140;
+    for (const [k, v] of Object.entries(patch ?? {})) {
+      if (JSON.stringify(rows[0][k] ?? null) === JSON.stringify(v ?? null) || ["updated_at", "postponed_at"].includes(k)) continue;
+      changes[k] = short(v) && short(rows[0][k]) ? [rows[0][k] ?? null, v ?? null] : null;
+    }
+    if (!Object.keys(changes).length) return;
+  }
+  (state.tables.audit_log ??= []).push({ id: (state.tables.audit_log.length || 0) + 1, at: new Date().toISOString(), actor_id: who?.id ?? null, actor: who?.full_name || who?.email || "System",
+    action, table_name: table, row_id: rows.length === 1 ? rows[0].id : null, label, changes });
+}
 function logHandicap(player, value, note) {
   (state.tables.handicap_changes ??= []).push({ id: newId(), player_id: player.id, old_handicap: player.handicap, new_handicap: value,
     note: note || null, changed_by: me()?.full_name ?? null, created_at: new Date().toISOString() });
@@ -171,11 +201,14 @@ export function demoAdminUsers(body) {
     const id = newId();
     state.users.push({ id, email: body.email, password: body.password });
     state.tables.profiles.push({ id, email: body.email, full_name: body.full_name, role: body.role, team_role: body.team_role || null, team_id: teamFor(body), player_id: body.player_id || null });
+    audit("added", "profiles", [{ id, name: `${body.full_name || body.email} (${body.role})` }], null, true);
   } else if (body.action === "update") {
     const p = state.tables.profiles.find((x) => x.id === body.id);
+    audit("changed", "profiles", [{ ...p, name: body.full_name || p.email }], { role: body.role, ...(body.password ? { password: "(new)" } : {}) }, true);
     Object.assign(p, { full_name: body.full_name, role: body.role, team_role: body.team_role || null, team_id: teamFor(body), player_id: body.player_id || null });
     if (body.password) state.users.find((u) => u.id === body.id).password = body.password;
   } else if (body.action === "delete") {
+    audit("removed", "profiles", [{ ...state.tables.profiles.find((x) => x.id === body.id), name: state.tables.profiles.find((x) => x.id === body.id)?.full_name }], null, true);
     state.users = state.users.filter((u) => u.id !== body.id);
     state.tables.profiles = state.tables.profiles.filter((p) => p.id !== body.id);
   }
@@ -190,6 +223,7 @@ export const demoClient = {
     if (name === "set_fixture_status") {
       const fx = state.tables.fixtures.find((f) => f.id === args.fid);
       if (args.new_status === "submitted" && !fx.scorecard_url) return { data: null, error: { message: "Upload a photo of the paper scorecard before submitting the result" } };
+      audit("changed", "fixtures", [fx], { status: args.new_status });
       fx.status = args.new_status;
       fx.postponed_at = fx.status === "postponed" ? (fx.postponed_at ?? new Date().toISOString()) : null;
       persist(); emit("fixtures", [fx]);
@@ -211,7 +245,7 @@ export const demoClient = {
     }
     if (name === "set_handicap") {
       const row = state.tables.players.find((p) => p.id === args.pid);
-      if (row.handicap !== args.value) { logHandicap(row, args.value, args.note); row.handicap = args.value; }
+      if (row.handicap !== args.value) { logHandicap(row, args.value, args.note); audit("changed", "players", [row], { handicap: args.value }); row.handicap = args.value; }
       persist(); emit("players", [row]);
       return { data: null, error: null };
     }
@@ -288,13 +322,17 @@ export const demoClient = {
       // Mirrors sync_comp_match() in supabase/schema.sql
       const frames = (state.tables.competition_frames ?? []).filter((f) => f.match_id === args.mid);
       const wa = frames.filter((f) => f.a_points > f.b_points).length, wb = frames.filter((f) => f.b_points > f.a_points).length;
-      if (args.finished && wa === wb) return { data: null, error: { message: "A knockout match needs a winner — the frames are level" } };
+      const pa = frames.reduce((n, f) => n + (f.a_points ?? 0), 0), pb = frames.reduce((n, f) => n + (f.b_points ?? 0), 0);
       const m = state.tables.competition_matches.find((x) => x.id === args.mid);
-      Object.assign(m, { score_a: wa + wb ? wa : null, score_b: wa + wb ? wb : null, status: args.finished ? "completed" : wa + wb ? "in_progress" : m.status });
+      const comp = state.tables.competitions.find((c) => c.id === m.competition_id);
+      // Level on frames: a handicap competition is decided on total points; otherwise there must be a winner.
+      if (args.finished && wa === wb && !(comp?.handicap && pa !== pb))
+        return { data: null, error: { message: comp?.handicap ? "A knockout match needs a winner — the frames and the total points are both level" : "A knockout match needs a winner — the frames are level" } };
+      Object.assign(m, { score_a: wa + wb ? wa : null, score_b: wa + wb ? wb : null, points_a: wa + wb ? pa : null, points_b: wa + wb ? pb : null,
+        status: args.finished ? "completed" : wa + wb ? "in_progress" : m.status });
       const changed = [m];
       // advance_winner(): bracket draws move the winner into the next round.
-      const comp = state.tables.competitions.find((c) => c.id === m.competition_id);
-      const w = args.finished && (wa > wb ? m.entry_a : m.entry_b);
+      const w = args.finished && ((wa > wb || (wa === wb && pa > pb)) ? m.entry_a : m.entry_b);
       if (w && comp?.draw_mode !== "redraw") {
         const next = state.tables.competition_matches.find((x) => x.competition_id === m.competition_id && x.round === m.round + 1 && x.slot === Math.floor(m.slot / 2));
         if (next) { next[m.slot % 2 ? "entry_b" : "entry_a"] = w; changed.push(next); }

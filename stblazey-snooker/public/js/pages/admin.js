@@ -17,6 +17,9 @@ import { statsPage } from "../admin/stats.js";
 import { importPage } from "../admin/import.js";
 import { handicapsPage } from "../admin/handicaps.js";
 import { entriesPage } from "../admin/entries.js";
+import { rolesPage } from "../admin/roles.js";
+import { activityPage } from "../admin/activity.js";
+import { backupPage } from "../admin/backup.js";
 
 // The dashboard menu. Each login only sees the sections its role allows
 // (see SECTION_AREA and canManage in core/auth.js — the database enforces the same).
@@ -26,9 +29,12 @@ const NAV = [
   ["League", [["leagues", "Leagues"], ["teams", "Teams"], ["players", "Players"], ["handicaps", "Handicaps"], ["venues", "Venues"], ["seasons", "Seasons"]]],
   ["Competitions", [["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws & results"]]],
   ["People", [["accounts", "Logins"]]],
-  ["Website", [["articles", "News"], ["categories", "News categories"], ["media", "Image library"], ["pages", "Info pages"], ["sponsors", "Sponsors"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["stats", "Statistics"]]],
+  ["Website", [["articles", "News"], ["categories", "News categories & layout"], ["announcements", "Announcements"], ["media", "Image library"], ["pages", "Info pages"], ["sponsors", "Sponsors"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["stats", "Statistics"]]],
+  // Only the Master Admin sees these.
+  ["Master Admin", [["roles", "Roles & permissions"], ["activity", "Activity log"], ["backup", "Backup"]]],
 ];
-const SPECIAL = { overview, results, generator, draws, media: mediaPage, stats: statsPage, import: importPage, handicaps: handicapsPage, entries: entriesPage };
+const SPECIAL = { overview, results, generator, draws, media: mediaPage, stats: statsPage, import: importPage, handicaps: handicapsPage, entries: entriesPage,
+  roles: rolesPage, activity: activityPage, backup: backupPage };
 // Menu items that show a red number when something is waiting.
 const COUNTS = { players: "New players to check", entries: "Entries waiting for payment" };
 
@@ -121,9 +127,9 @@ async function overview(el, { user }) {
     <p>Season: <b>${ctx.season?.name ?? "none — add one under Seasons"}</b>. Match nights: captains enter frames on their phones,
       press <b>Submit final result</b>, then you approve them under <a href="/admin/results" style="color:var(--red);font-weight:700">Results to approve</a>.
       Approved results are locked for captains; you can still edit them.</p>
-    <div class="btn-row"><a class="btn" href="/admin/results">Results to approve</a><a class="btn secondary" href="/admin/accounts">Manage logins</a>
-      <a class="btn blue" href="/admin/generator">Generate a season's fixtures</a>
-      <a class="btn green" href="/admin/leagues">Add a league</a><a class="btn ghost" href="/admin/draws">Competition draws</a></div>`);
+    <div class="btn-row"><a class="btn" href="/admin/results">Results to approve</a>
+      ${[["accounts", "secondary", "Manage logins"], ["generator", "blue", "Generate a season's fixtures"], ["leagues", "green", "Add a league"], ["draws", "ghost", "Competition draws"], ["roles", "ghost", "Roles & permissions"]]
+        .filter(([key]) => canOpenSection(user, key)).map(([key, cls, label]) => html`<a class="btn ${cls}" href="/admin/${key}">${label}</a>`)}</div>`);
 }
 
 // ── Results awaiting approval ──────────────────────────────────

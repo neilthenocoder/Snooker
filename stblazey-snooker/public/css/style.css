@@ -1116,14 +1116,7 @@ table.data tbody tr.imp-row-error td { background: #fdeef1 !important; }
 /* A white (League) header needs a line under it to stand apart from the white table below. */
 .section-colors #view[data-section="league"] .panel-head:not(.blue):not(.yellow) { box-shadow: inset 0 -3px 0 var(--ink), inset 0 0 0 1px var(--head-row); }
 .section-colors #view[data-section="league"] .tag { box-shadow: inset 0 -3px 0 var(--ink); }
-/* Page layout: side boxes on the left, or underneath a full-width page */
-@media (min-width: 1001px) {
-  .sidebar-left .layout { grid-template-columns: var(--sidebar) minmax(0, 1fr); }
-  .sidebar-left .layout > .sidebar { order: -1; }
-  .sidebar-below .layout { grid-template-columns: 1fr; }
-  .sidebar-below .layout > .sidebar { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; align-items: start; }
-  .sidebar-below .layout > .sidebar > * + * { margin-top: 0; }
-}
+/* Page layout: see the v7 block at the end (a sidebar on the left; full-width pages). */
 
 /* ── loading screen: black, with the logo pulsing in the middle ── */
 .boot { position: fixed; inset: 0; z-index: 200; background: #000; display: grid; place-items: center; transition: opacity .35s ease, visibility .35s; }
@@ -1272,3 +1265,135 @@ label.btn.busy::after { content: " …uploading"; }
   .hc-edit input { width: 70px; }
   .season-block { padding: 14px; }
 }
+
+
+/* ═════════════════════════════════════════════════════════════
+   v7 — Rich's fifth round of feedback
+   ═════════════════════════════════════════════════════════════ */
+/* The banner headline lines up with the text under it (its dark box used to push it 12px to the right). */
+.hero-text h2 { margin-left: -12px; }
+
+/* ── menu: News button, slightly smaller buttons when logged in, your name under My Team ── */
+:root { --nav-news: #fff; --nav-news-ink: #000; }
+.nav-news { background: var(--nav-news) !important; color: var(--nav-news-ink) !important; box-shadow: inset 1px 0 0 rgba(0,0,0,.2); }
+.section-colors #view[data-section="news"] { --accent: var(--nav-news); --accent-ink: var(--nav-news-ink); }
+.section-colors #view[data-section="news"] .panel-head:not(.blue):not(.yellow) { box-shadow: inset 0 -3px 0 var(--ink), inset 0 0 0 1px var(--head-row); }
+.section-colors #view[data-section="news"] .tag { box-shadow: inset 0 -3px 0 var(--ink); }
+.nav-who { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; line-height: 1; }
+.nav-who b { font-weight: inherit; }
+.nav-who small { font: 600 10px/1 var(--font-body); text-transform: none; letter-spacing: 0; opacity: .95; max-width: 138px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (min-width: 1001px) {
+  .main-nav.tight a, .main-nav.tight button { font-size: 17px; padding: 0 13px; }
+  .main-nav.tight-2 a, .main-nav.tight-2 button { font-size: 16px; padding: 0 10px; }
+  .main-nav.tight-2 .nav-live-btn::before { margin-right: 6px; }
+}
+@media (max-width: 1000px) { .nav-who { flex-direction: row; align-items: baseline; gap: 10px; } .nav-who small { max-width: none; font-size: 12px; } }
+
+/* ── announcements ticker (very top of the home page) ── */
+.ticker { display: flex; align-items: stretch; height: 34px; background: #111; color: #fff; font-size: 13px; border-bottom: 1px solid #333; }
+.ticker-label { flex: none; display: flex; align-items: center; padding: 0 12px; background: var(--red); font: 700 12px var(--font-head); text-transform: uppercase; letter-spacing: .05em; }
+.ticker-view { flex: 1; min-width: 0; overflow: hidden; }
+.ticker-track { display: flex; width: max-content; height: 100%; animation: tickerMove 40s linear infinite; }
+.ticker:hover .ticker-track, .ticker.paused .ticker-track { animation-play-state: paused; }
+/* Each copy of the list is at least a screen wide, so the loop never shows a gap. */
+.ticker-set { flex: none; display: flex; align-items: center; justify-content: space-around; min-width: 100vw; }
+.ticker-item { display: inline-flex; align-items: center; gap: 8px; padding: 0 26px; white-space: nowrap; font-weight: 600; color: #fff; }
+.ticker-item::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--yellow); }
+.ticker-item i { font-style: normal; color: var(--yellow); }
+a.ticker-item:hover { color: var(--yellow); text-decoration: underline; }
+.ticker-stop { flex: none; width: 40px; border: 0; border-left: 1px solid #333; background: #222; cursor: pointer; display: grid; place-items: center; }
+.ticker-stop:hover { background: #333; }
+.ticker-stop span { width: 10px; height: 12px; border-left: 3px solid #fff; border-right: 3px solid #fff; }
+.ticker.paused .ticker-stop span { width: 0; height: 0; border: 7px solid transparent; border-left: 11px solid #fff; border-right: 0; }
+@keyframes tickerMove { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .ticker-track { animation: none; } .ticker-view { overflow-x: auto; } .ticker-set[aria-hidden] { display: none; } }
+@media (max-width: 700px) { .ticker-label { display: none; } .ticker-item { padding: 0 18px; } }
+
+/* ── page layout per section (Admin → Branding → Page layout) ── */
+#shell { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+#side:empty { display: none; }
+@media (min-width: 1001px) {
+  /* A page with no side boxes of its own, in a section set to "Right sidebar": the standard boxes sit beside it. */
+  #shell.has-side { display: grid; grid-template-columns: minmax(0, 1fr) var(--sidebar); gap: 34px; align-items: start; width: 100%; max-width: var(--wrap); margin: 0 auto; padding: 0 16px; }
+  #shell.has-side > main .wrap { max-width: none; padding-left: 0; padding-right: 0; }
+  #shell.has-side > #side { padding: 36px 0 60px; }
+  .sidebar-left #shell.has-side { grid-template-columns: var(--sidebar) minmax(0, 1fr); }
+  .sidebar-left #shell.has-side > #side { order: -1; }
+  .sidebar-left .layout { grid-template-columns: var(--sidebar) minmax(0, 1fr); }
+  .sidebar-left .layout > .sidebar { order: -1; }
+  /* "Full width": a page's own side boxes move underneath it, in a row. */
+  #view[data-layout="full"] .layout { grid-template-columns: 1fr; }
+  #view[data-layout="full"] .layout > .sidebar { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; align-items: start; }
+  #view[data-layout="full"] .layout > .sidebar > * + * { margin-top: 0; }
+}
+@media (max-width: 1000px) {
+  #shell.has-side > main { padding-bottom: 24px; }
+  #shell.has-side > #side { padding: 0 16px 50px; }
+}
+
+/* ── side column: latest results; the all-results page ── */
+.res-list { display: grid; }
+.res-mini { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 3px 10px; align-items: center; padding: 9px 12px; border-top: 1px solid var(--head-row); font-size: 14px; line-height: 1.25; }
+.res-mini:first-child { border-top: 0; }
+.res-mini:hover { background: var(--row-alt); color: inherit; }
+.res-mini small { grid-column: 1 / -1; text-align: center; color: var(--muted); font-size: 11px; }
+.res-mini span:first-of-type { text-align: right; }
+.res-mini b { font: 700 14px var(--font-head); background: var(--ink); color: #fff; padding: 3px 8px; white-space: nowrap; }
+.res-mini .won { font-weight: 700; }
+.tag-link.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+@media (min-width: 701px) {
+  .res-list.wide .res-mini { grid-template-columns: 150px minmax(0, 1fr) auto minmax(0, 1fr); padding: 11px 14px; font-size: 15px; }
+  .res-list.wide .res-mini small { grid-column: 1; text-align: left; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+}
+
+/* ── handicaps: green for scratch and minus, red for plus; jump to a team ── */
+.hc-val { display: inline-block; min-width: 46px; padding: 2px 8px; border-radius: 4px; font-weight: 700; text-align: center; }
+.hc-val.minus { background: #d3f0d6; color: #07500d; }
+.hc-val.plus { background: #fcdbe2; color: #a10029; }
+.hc-move.up, .hc-move.down { color: #444; }
+.hc-bar { display: flex; flex-wrap: wrap; gap: 12px 26px; align-items: end; margin-bottom: 4px; }
+.hc-bar label { font-weight: 700; }
+.hc-bar select { display: block; width: auto; min-width: 240px; margin: 4px 0 0; }
+.hc-bar .hc-key { margin: 0 0 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.hc-bar .hc-key .hc-val { font-size: 12px; min-width: 0; }
+.hc-bar .hc-key .hc-val.plus, .hc-bar .hc-key .hc-move { margin-left: 10px; }
+.hc-team { scroll-margin-top: 14px; }
+.hc-team.flash > .panel { animation: hcFlash 1.8s ease-out; }
+@keyframes hcFlash { 0%, 45% { box-shadow: 0 0 0 5px var(--ink); } 100% { box-shadow: 0 0 0 0 transparent; } }
+
+/* ── news page: columns per category (Admin → News categories & layout) ── */
+@media (min-width: 1001px) {
+  .news-cols { grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); }
+  /* Fewer, wider columns get wide pictures instead of giant squares. */
+  .news-cols.few .card img, .news-cols.few .card .ph { aspect-ratio: 16 / 9; }
+}
+
+/* ── handicap scorecards: running total ── */
+.sc-totals { margin: 12px 0 0; text-align: center; font-weight: 700; }
+.sc-totals b { font-size: 18px; font-family: var(--font-head); }
+.sc-totals small { display: block; font-weight: 400; color: var(--muted); }
+.sc-total-row td { background: var(--head-row); font-weight: 700; padding: 9px 8px; }
+.sc-total-row .sc-points b { font: 700 18px var(--font-head); }
+
+/* ── "add as many as you like" fields (past teams) ── */
+.list-field { display: grid; gap: 8px; justify-items: start; margin-top: 5px; }
+.list-field [data-list-rows] { display: grid; gap: 6px; width: 100%; }
+.list-row { display: flex; gap: 6px; }
+.list-row input { flex: 1; margin: 0; }
+.list-row button { flex: none; width: 42px; border: 0; background: var(--head-row); font-size: 20px; line-height: 1; cursor: pointer; }
+.list-row button:hover { background: var(--red); color: #fff; }
+
+/* ── master admin: permissions grid, activity log ── */
+.perm-table td small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; }
+.perm-table input[type="checkbox"] { width: 20px; height: 20px; margin: 0; }
+.perm-table thead th.num { white-space: normal; font-size: 12px; line-height: 1.2; min-width: 84px; }
+.perm-notes p { margin: 0 0 8px; }
+.status.act-added { background: #d7f2d9; } .status.act-changed { background: #fff0c8; } .status.act-removed { background: var(--highlight); color: #a10029; }
+
+/* ── maintenance mode: the holding page visitors see ── */
+.holding { min-height: 62vh; display: grid; place-content: center; justify-items: center; gap: 16px; text-align: center; padding: 60px 20px; background: #111; color: #fff; }
+.holding img { width: 120px; }
+.holding h1 { margin: 0; }
+.holding p { margin: 0; max-width: 540px; font-size: 17px; }
+body.maintenance .main-nav > :not(.nav-login), body.maintenance .nav-search-m { display: none; }
+@media (max-width: 760px) { #admin-body .perm-table td.perm-part { display: block; text-align: left; background: var(--head-row); } }

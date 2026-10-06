@@ -93,13 +93,25 @@ export function buildBracket(entries, matchRows) {
 
 export const isEntry = (x) => x !== EMPTY && x !== PENDING && x != null;
 
+/**
+ * Who won a match row: "a", "b" or null. More frames wins. A finished match that is level on
+ * frames goes to the side with more points in total (handicap competitions — the points include
+ * the handicap starts). Mirrors advance_winner() in supabase/schema.sql.
+ */
+export function winnerSide(row) {
+  if (row?.score_a == null || row?.score_b == null) return null;
+  if (row.score_a !== row.score_b) return row.score_a > row.score_b ? "a" : "b";
+  if (row.status !== "completed" || row.points_a == null || row.points_b == null || row.points_a === row.points_b) return null;
+  return row.points_a > row.points_b ? "a" : "b";
+}
+
 function decide(a, b, row) {
-  const played = row.score_a != null && row.score_b != null && row.score_a !== row.score_b;
+  const played = winnerSide(row) !== null;
   if (a === EMPTY && b === EMPTY) return { winner: EMPTY, loser: EMPTY, isBye: true, played: false };
   if (a === EMPTY) return { winner: b, loser: EMPTY, isBye: true, played: false };
   if (b === EMPTY) return { winner: a, loser: EMPTY, isBye: true, played: false };
   if (a === PENDING || b === PENDING || !played) return { winner: PENDING, loser: PENDING, isBye: false, played: false };
-  const aWins = row.score_a > row.score_b;
+  const aWins = winnerSide(row) === "a";
   return { winner: aWins ? a : b, loser: aWins ? b : a, isBye: false, played: true };
 }
 

@@ -1,5 +1,6 @@
 // Turns raw season data into lookups and calculated tables (via rules.js).
-import { loadSeason, currentSeason } from "./api.js";
+import { loadSeason, currentSeason, settings, loadCompetitions } from "./api.js";
+import { buildBracket, winnerSide } from "./bracket.js";
 import { leagueTable, playerRankings, matchScore, isCounted } from "./rules.js";
 
 const byId = (rows) => new Map(rows.map((r) => [r.id, r]));
@@ -51,4 +52,24 @@ export async function seasonContext(seasonId) {
     }),
   };
   return ctx;
+}
+
+/** Every finished competition match, newest first: { when, title, home, away, score, href, won }. */
+export async function cupResults() {
+  const data = await loadCompetitions();
+  return data.competitions.flatMap((c) => {
+    const b = buildBracket(data.entries.filter((e) => e.competition_id === c.id), data.matches.filter((m) => m.competition_id === c.id));
+    const name = (id) => b.entryById.get(id)?.name ?? "?";
+    return b.rounds.flat().filter((m) => m.played && !m.isBye).map((m) => ({
+      when: m.row.starts_at, title: c.name, season_id: c.season_id, home: name(m.a), away: name(m.b), score: `${m.row.score_a} – ${m.row.score_b}`,
+      href: `/cup-match/${m.row.id}`, won: winnerSide(m.row) === "a" ? "h" : "a",
+    }));
+  }).sort((x, y) => String(y.when ?? "").localeCompare(String(x.when ?? "")));
+}
+
+/** What the side column's top box needs (see sideBox() in components.js). */
+export async function sideBoxData() {
+  const site = await settings();
+  const cups = ["cup", "both"].includes(site.side_box_mode) ? await cupResults().catch(() => []) : [];
+  return { site, cups };
 }

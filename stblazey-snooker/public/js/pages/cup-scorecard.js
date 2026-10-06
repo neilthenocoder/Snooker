@@ -5,6 +5,7 @@ import { buildBracket, roundName } from "../core/bracket.js";
 import { canEditCompMatch, canManage } from "../core/auth.js";
 import { scorecardEditor, breaksText } from "../core/scorecard-editor.js";
 import { breadcrumb, cupMatchInfo, urls } from "../core/components.js";
+import { handicapMode } from "../core/rules.js";
 import { setTitle, navigate } from "../core/router.js";
 import { mustLogin } from "./scorecard.js";
 import notFound from "./not-found.js";
@@ -70,6 +71,8 @@ export default async function cupScorecard(view, { params, user }) {
     unique: c.kind === "Team" ? "match" : "frame",
     // Handicap competitions: show each player's handicap and work out the start.
     handicap: c.handicap ? (id) => players.find((p) => p.id === id)?.handicap ?? 0 : null,
+    // Doubles: each pair starts on its two handicaps added together. A running total decides a match level on frames.
+    handicapMode: handicapMode(c), runningTotal: !!c.handicap,
     playerName: (id) => players.find((p) => p.id === id)?.full_name ?? "A player",
     frames: bundle.frames.map(toEditor),
     actions: [

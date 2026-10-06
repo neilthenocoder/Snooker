@@ -22,6 +22,9 @@ function entryHref(entry) {
   return null;
 }
 
+/** A finished match that was level on frames is decided on total points (handicap competitions). */
+const onPoints = (m) => (m.played && m.row.score_a === m.row.score_b ? `On points ${m.row.points_a}–${m.row.points_b}` : "");
+
 function teamRow(b, m, side) {
   const id = m[side];
   const score = m.row[side === "a" ? "score_a" : "score_b"];
@@ -37,7 +40,7 @@ function matchBox(b, m) {
   const when = m.row.starts_at ? `${fmtDate(m.row.starts_at)}` : "";
   const live = m.row.status === "in_progress";
   const inner = html`${teamRow(b, m, "a")}${teamRow(b, m, "b")}
-    ${when && !m.isBye ? html`<div class="br-meta">${live ? html`<span class="live-dot">Live</span> ` : ""}${when}</div>` : ""}`;
+    ${when && !m.isBye ? html`<div class="br-meta">${live ? html`<span class="live-dot">Live</span> ` : ""}${when}${onPoints(m) ? ` · ${onPoints(m)}` : ""}</div>` : ""}`;
   return m.row.id && !m.isBye
     ? html`<a class="br-match ${m.played ? "played" : ""} ${live ? "live" : ""}" href="/cup-match/${m.row.id}">${inner}</a>`
     : html`<div class="br-match ${m.isBye ? "bye" : ""}">${inner}</div>`;
@@ -98,7 +101,7 @@ export function roundCards(b, venueById, deadlines = {}) {
             <b>${m.row[side === "a" ? "score_a" : "score_b"] ?? "-"}</b></div>`;
         };
         return html`<div class="fx-card">${cell("a")}<div class="fx-v">v ${m.row.id ? html`<a class="fx-link" href="/cup-match/${m.row.id}">${m.row.status === "in_progress" ? "Live" : m.played ? "Scorecard" : "Match page"} →</a>` : ""}</div>${cell("b")}
-          <div class="fx-meta">${m.row.starts_at ? `${fmtDate(m.row.starts_at)} ${fmtTime(m.row.starts_at)}` : "Date TBC"}${v ? html` · <a href="${urls.venue(v)}">${v.name}</a>` : ""}</div></div>`;
+          <div class="fx-meta">${m.row.starts_at ? `${fmtDate(m.row.starts_at)} ${fmtTime(m.row.starts_at)}` : "Date TBC"}${v ? html` · <a href="${urls.venue(v)}">${v.name}</a>` : ""}${onPoints(m) ? html` · <b>${onPoints(m)}</b>` : ""}</div></div>`;
       })}</div>`;
   });
 }

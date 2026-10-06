@@ -3,6 +3,7 @@
 import { html, mount, $, readForm, toast, fmtDate, fmtTime, confirmBox } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { loadCompetitions, updateMyPlayer, addPlayerToTeam, seasonFrames, setFixtureStatus } from "../core/api.js";
+import { listField, wireListFields } from "../core/list-field.js";
 import { isCaptain, isMember, canEditFixture, canPostpone, canEditCompMatch, canAddMatchPhotos, changePassword, roleText } from "../core/auth.js";
 import { buildBracket, isEntry, roundName } from "../core/bracket.js";
 import { extCounts, EXT_PER_SEASON, POSTPONE_WEEKS, rearrangeBy } from "../core/rules.js";
@@ -152,8 +153,8 @@ function profileTab(el, { me }) {
       <label style="grid-column:1/-1">Bio<textarea name="bio" style="min-height:120px">${me.bio ?? ""}</textarea></label>
       <label style="grid-column:1/-1">Career history <span class="muted" style="font-weight:400">(one achievement per line, e.g. “2019 — League singles champion”)</span>
         <textarea name="career_history" style="min-height:120px">${me.career_history ?? ""}</textarea></label>
-      <label style="grid-column:1/-1">Past teams <span class="muted" style="font-weight:400">(teams you played for before, with years if you like)</span>
-        <input name="past_teams" value="${me.past_teams ?? ""}"></label>
+      <div class="field-label" style="grid-column:1/-1">Past teams <span class="muted" style="font-weight:400">(every team you've played for before — add as many as you like, with the years if you know them)</span>
+        ${listField("past_teams", me.past_teams, { add: "+ Add another past team", placeholder: "e.g. St Blazey A (2015–2019)" })}</div>
       <div class="field-label" style="grid-column:1/-1">Pictures
         <div class="gallery-field"><div class="gal-thumbs" data-pics></div>
           <div class="btn-row"><label class="btn small secondary">Add pictures<input type="file" accept="image/*" multiple hidden data-pics-upload></label></div></div></div>
@@ -165,6 +166,7 @@ function profileTab(el, { me }) {
     <div class="btn-row form-actions"><button class="btn">Save my profile</button></div>
   </form>`);
   drawPics();
+  wireListFields(el);
 
   el.addEventListener("change", async (e) => {
     try {

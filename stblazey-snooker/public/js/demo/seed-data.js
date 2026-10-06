@@ -201,7 +201,7 @@ export function buildSeed() {
     cueview_extra: "What advice would you give a club player?\nPlay the shot you know, not the shot you saw on TV.\n\nBest venue you've played at?\nThe Crucible — nothing else comes close.",
   });
   const categories = ["Match Reports", "Competitions", "League News", "League Meetings", "Cue View"]
-    .map((name, i) => ({ id: uuid(), name, sort: i + 1 }));
+    .map((name, i) => ({ id: uuid(), name, sort: i + 1, columns: 4 }));
 
   const pageDefs = [
     ["History", "A look back to the history of our league"],
@@ -248,7 +248,7 @@ export function buildSeed() {
     const entries = shuffled(entrants).map((e, i) => ({ id: uuid(), competition_id: comp.id, team_id: null, player_id: null, seed: i + 1, ...e }));
     competition_entries.push(...entries);
     const rows = makeDraw(entries.map((e) => e.id)).map((r) => ({
-      id: uuid(), competition_id: comp.id, score_a: null, score_b: null, notes: "",
+      id: uuid(), competition_id: comp.id, score_a: null, score_b: null, points_a: null, points_b: null, notes: "",
       starts_at: londonISO(addDays(firstDate, (r.round - 1) * 14), "19:30"), venue_id: pick(venues).id, ...r,
     }));
     // Each round has to be played by the Sunday after its match night.
@@ -327,7 +327,9 @@ export function buildSeed() {
     feature_show: true, feature_label: "NEW", feature_text: "Try our step-by-step scorecard — log in to find out more", feature_url: "/login", feature_bg: "#0b84e0",
     latest_news_mode: "not_banner", latest_news_category: "", latest_news_ids: [], latest_news_count: 1,
     entry_intro: "Enter this season's competitions here. It takes a minute: choose your name, tick the competitions you want, then pay the entry fee by bank transfer.",
-    section_colors: true, sidebar_layout: "right",
+    section_colors: true, sidebar_layout: "right", page_layouts: {}, font_embed: "", loader_show: true, loader_seconds: 0,
+    side_box_mode: "results", side_box_title: "", side_box_count: 5, side_box_league: null,
+    ticker_show: true, ticker_speed: "normal", maintenance_on: false, maintenance_text: "",
     bacs_details: "Account name: St Blazey & District Snooker League (placeholder)\nSort code: 00-00-00\nAccount number: 00000000", entry_pay_days: 7,
     facebook_url: "https://www.facebook.com/", x_url: "https://x.com/", instagram_url: "https://www.instagram.com/", youtube_url: "https://www.youtube.com/",
   }];
@@ -347,7 +349,7 @@ export function buildSeed() {
   }
 
   const profiles = [
-    { id: uuid(), email: "admin@demo.test", full_name: "League Admin", role: "admin", team_role: null, team_id: null, player_id: null },
+    { id: uuid(), email: "admin@demo.test", full_name: "Master Admin", role: "admin", team_role: null, team_id: null, player_id: null },
     { id: uuid(), email: "captain@demo.test", full_name: players[0].full_name, role: "captain", team_role: null, team_id: teams[0].id, player_id: players[0].id },
     { id: uuid(), email: "player@demo.test", full_name: players[7].full_name, role: "player", team_role: null, team_id: players[7].team_id, player_id: players[7].id },
     // An officer who also plays: competitions in the admin, plus captain rights for Bugle.
@@ -408,12 +410,25 @@ export function buildSeed() {
   if (photoMatch) photoMatch.gallery = [21, 22, 23].map(img);
   for (const a of articles) a.show_photos = true;
 
+  // Announcements for the ticker along the top of the home page.
+  const announcements = [
+    ["Entries are open for the Christmas Handicap Singles and the New Year Doubles — enter on the website", "/enter"],
+    ["The Christmas Handicap draw will be made live on this website — keep an eye on the Live button", "/competitions"],
+    ["Captains: remember to add your match night photos after each home match", ""],
+  ].map(([text, url], i) => ({ id: uuid(), text, url, sort: i + 1, is_active: true, starts_on: null, ends_on: null, created_at: "2026-10-01T09:00:00.000Z" }));
+  // What each officer role may use in the dashboard (the Master Admin can change it under Roles & permissions).
+  const role_permissions = [
+    ["league_admin", ["matchnights", "fixtures", "league", "handicaps", "competitions", "website", "settings", "people"]],
+    ["competition_secretary", ["handicaps", "competitions"]], ["league_secretary", ["league", "handicaps"]],
+    ["committee_member", ["website", "settings"]], ["president", ["website", "settings"]], ["vice_chairman", ["website", "settings"]], ["chairman", ["website", "settings"]],
+  ].map(([role, areas]) => ({ role, areas }));
+
   return {
     tables: {
       seasons: [season, prevSeason], leagues, venues, teams, players,
       fixtures, frames, breaks, articles, pages, sponsors, profiles,
       competitions, competition_entries, competition_matches, competition_frames, competition_breaks, competition_signups,
-      handicap_changes: [], categories, settings, media, page_views,
+      handicap_changes: [], categories, settings, media, page_views, announcements, role_permissions, audit_log: [],
     },
     demoUsers,
   };

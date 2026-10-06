@@ -1,5 +1,5 @@
 import { html, mount, $, $$, fmtDate, fmtTime, cssUrl, ukDay, todayUK } from "../core/dom.js";
-import { seasonContext } from "../core/context.js";
+import { seasonContext, sideBoxData } from "../core/context.js";
 import { articles, settings, upcomingMatches, loadCompetitions, subscribe, table } from "../core/api.js";
 import { matchScore, shieldHolder } from "../core/rules.js";
 import { buildBracket, isEntry } from "../core/bracket.js";
@@ -15,7 +15,7 @@ const CAROUSEL_MS = 4500;    // live strip: time before it moves on one card
 export default async function home(view) {
   setTitle("");
   adminEdit("settings", null, { label: "Edit home page" });
-  const [ctx, news, allComps, site] = await Promise.all([seasonContext(), articles(), competitionSummaries(), settings()]);
+  const [ctx, news, allComps, site, box] = await Promise.all([seasonContext(), articles(), competitionSummaries(), settings(), sideBoxData()]);
   const slides = news.filter((a) => a.featured).slice(0, Math.max(1, site.hero_count || 4));
   // This season's competitions (ones with no season set count as current).
   const comps = allComps.filter(({ c }) => !c.season_id || c.season_id === ctx.season?.id);
@@ -52,7 +52,7 @@ export default async function home(view) {
             : html`<div class="empty">No competitions yet.</div>`}
         </div>`, { color: "yellow", href: "/competitions" })}
       </div>
-      ${sidebar(ctx, latestNews(news, site, slides.map((a) => a.id)), { count: site.latest_news_count || 1 })}
+      ${sidebar(ctx, latestNews(news, site, slides.map((a) => a.id)), { count: site.latest_news_count || 1, box })}
     </div>`);
 
   // Rotate the banner articles (pauses while the mouse is over it).

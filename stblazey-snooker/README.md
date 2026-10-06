@@ -6,7 +6,9 @@ A fast, plain HTML/CSS/JavaScript website (no build step) with:
 - **Live extras**: the LIVE button pulses orange ("LIVE SOON") an hour before matches and green while they're on; green pop-ups announce frame wins, breaks and new players (the bell turns them on/off).
 - **Members' area** (My Team · Fixtures · Profile · User details · Competitions): captains and vice captains enter scorecards frame by frame on match night — a **step-by-step view made for phones**, or the classic full card. Each save updates the live page for everyone, straight away. Every player can have a login to edit **their own profile** (photo, bio, career history, pictures, CueView).
 - **Players**: an **Our Players** page (pick a team, see its players past and present) and player pages with bio, career history, past teams, pictures and **player news**. A **search** button in the menu finds players, teams, competitions, venues, news and pages.
-- **Roles**: Master Admin and League Admin (everything), Competition Secretary, League Secretary, and Committee Member / President / Vice Chairman / Chairman (website) — each sees only their own part of the dashboard, and any of them can also be given captain rights for their team.
+- **Roles & permissions**: the Master Admin decides, in a tick-box grid, what each officer role (League Admin, Competition Secretary, League Secretary, Committee Member, President, Vice Chairman, Chairman) can see and do. Each login only sees its own parts of the dashboard, and the database enforces it. Any officer can also be given captain rights for their team.
+- **Master Admin tools**: an **activity log** (who added, changed or removed what), a **backup** download, and **maintenance mode**.
+- **Home page extras**: an **announcements ticker** along the very top, and a **Latest Results** box in the side column with an all-results page (`/results`).
 - **CSV import**: bring in teams, players, old fixtures and results, or full scorecards from a spreadsheet (Admin → Import from CSV).
 - **Admin dashboard**: approve results, and manage fixtures, the fixture generator, leagues (and their weekly shield), teams, players (with CueView), venues, seasons, competitions (entrants, byes, draws — fixed bracket or redrawn every round — and results), logins, news and categories, an **image library**, info pages, sponsors, **site settings** (logo, favicon, banner, player/team of the week) and a **statistics** dashboard.
 - **Competition entry form** (`/enter`): players pick their name and the competitions they want, are shown the league's bank details and a pay-by date, and the entry waits for the competition secretary to confirm the payment.
@@ -56,7 +58,7 @@ Demo data lives only in your browser. **Admin → Reset sample data** starts it 
 
    ```sql
    insert into profiles (id, email, full_name, role)
-   select id, email, 'League Admin', 'admin' from auth.users where email = 'you@example.com';
+   select id, email, 'Master Admin', 'admin' from auth.users where email = 'you@example.com';
    ```
 
 ### c) Connect the website
@@ -122,7 +124,11 @@ Tables and rankings count **submitted** and **approved** results. To make tables
 
 **The weekly shield:** set each league's shield name and the holder at the start of the season under Admin → Leagues. From then on it's automatic: the holder's match each week is the shield match (shown on the scorecard and match page), and if they lose, the winners take it. The home page shows who holds it. Each shield has its own **history page** (`/shield/victory-league`, linked from the home page box, the league table and the League page): the current holders, who has won it most, and every shield match of the season in order.
 
-**Handicap competitions** (tick "Handicap competition" under Admin → Competitions): the scorecard shows each player's handicap and works out the head start for every frame — the difference between the two sides (in doubles, each pair's handicaps are added together). So 16 against −14 is a 30 start. Scores are entered **as they finish on the scoreboard, start included**; the site refuses a score lower than the start.
+**Handicap competitions** (tick "Handicap competition" under Admin → Competitions): the scorecard shows each player's handicap and works out the start for every frame. Scores are entered **as they finish on the scoreboard, start included**; the site refuses a score lower than the start.
+
+- **Singles and team matches:** the player with the higher handicap starts on the difference. 16 against −14 is a 30 start.
+- **Doubles:** each pair's two handicaps are added together, and that total is what the pair starts on. +20 and −14 start on 6, so if they then score 85 their frame score is 91. A pair whose total is below zero starts below zero (and can finish a frame below zero).
+- **Running total:** handicap scorecards show each side's total points so far (starts included), on the scorecard and on the public match page. If a match finishes **level on frames**, the side with the higher total goes through — the match page and the bracket say "on points". If the totals are level too, the site asks for a winner. (`handicapStarts()` in `rules.js`, `winnerSide()` in `bracket.js`.)
 
 **Plate competitions:** on a competition's Draws page press **Create … Plate**. Everyone who lost their first match (a first-round loser, or a second-round loser after a bye) is entered; press **Add those knocked out** again as more matches finish, then make the plate's draw like any other.
 
@@ -151,20 +157,48 @@ Each entry then waits under **Admin → Entries to approve** (a red number in th
 
 **Handicaps.** **Admin → Handicaps** lists every player with a box for their new handicap — type it and press Save. It's open to the **League Secretary and the Competition Secretary** (and the admins), and it changes only the handicap, not the rest of the player's profile. Every change is recorded with who made it, when, and an optional reason. For the **yearly review**, press **Start a new yearly review** first: today's figures are remembered as "last year", and from then on the public Handicaps page and player pages show a green ▲ or red ▼ with the difference beside anyone who has moved.
 
-## 3b. Who can do what
+## 3b. Who can do what — roles & permissions
 
-| Role | Admin dashboard | Also |
-|---|---|---|
-| **Master Admin**, **League Admin** | Everything | Only the Master Admin can create or change another Master Admin |
-| **Competition Secretary** | Competitions: entries to approve, draws (including live draws), scoring any cup match — and **Handicaps** | |
-| **League Secretary** | League: leagues, teams, players, **handicaps**, venues, seasons | |
-| **Committee Member**, **President**, **Vice Chairman**, **Chairman** | Website: news, pages, images, sponsors, **branding**, site settings, statistics | |
-| **Captain**, **Vice Captain** | – | Scorecards and postponing for their own team; match night photos for their **home** matches; their own profile |
-| **Player** | – | Their own profile only |
+The dashboard is split into eight parts. **Master Admin → Roles & permissions** is a grid of tick boxes: each officer role across, each part down. A tick lets that role see that part in their menu and change what's in it. The Master Admin always has everything and is the only one who can open the grid.
 
-Any officer who also plays can be given **Team rights** (Captain or Vice Captain) on their login, and then has a **My Team** button next to **Admin**. Results to approve, fixtures and logins stay with the Master Admin and League Admin. The database enforces all of this (`can_manage()` in `schema.sql`), so a section that isn't in someone's menu can't be changed by typing its address either.
+| Part | What it covers |
+|---|---|
+| **Match nights** | Approve results, edit any scorecard, rearrange postponed matches |
+| **Fixtures** | Add and edit fixtures, the fixture generator |
+| **League** | Leagues, teams, players, venues, seasons |
+| **Handicaps** | Change handicaps, run the yearly review |
+| **Competitions** | Competitions, entries to approve, draws, cup scorecards |
+| **News & website** | News, categories, announcements, info pages, sponsors, image library |
+| **Settings & branding** | Site settings, home page, branding, statistics |
+| **Logins** | Create, change and remove logins |
 
-When an admin or officer is logged in, public pages show an **Edit this page** button (bottom left) that opens the right part of the dashboard.
+What each role starts with (press **Put back the standard permissions** to return to this):
+
+| Role | Standard permissions |
+|---|---|
+| **Master Admin** | Everything, always — plus Roles & permissions, the Activity log and Backup |
+| **League Admin** | All eight parts |
+| **Competition Secretary** | Competitions, Handicaps |
+| **League Secretary** | League, Handicaps |
+| **Committee Member**, **President**, **Vice Chairman**, **Chairman** | News & website, Settings & branding |
+| **Captain**, **Vice Captain** | Not in the grid: scorecards, postponing and match night photos for their own team; their own profile |
+| **Player** | Not in the grid: their own profile only |
+
+Things worth knowing:
+
+- **It is enforced by the database**, not just hidden in the menu (`can_manage()` and the `role_permissions` table in `schema.sql`). A section that isn't ticked can't be changed by typing its address either.
+- **Logins:** someone with "Logins" ticked can only create or change logins for roles that are allowed no more than they are themselves, and never a Master Admin's. Only a Master Admin can make another Master Admin.
+- **Import from CSV** needs Fixtures, League and Match nights together, because an import writes to all three.
+- A change takes effect the next time that person opens the website or logs in.
+- Any officer who also plays can be given **Team rights** (Captain or Vice Captain) on their login, and then has a **My Team** button next to **Admin**.
+
+When an officer is logged in, public pages show an **Edit this page** button (bottom left) that opens the right part of the dashboard — only if their role includes it. The menu shows, in small print under **My Team** (or **Admin**), who is logged in and their club.
+
+### Master Admin tools
+
+- **Activity log** — every add, change and removal in the dashboard, with who did it and when: "Rich Pearson changed fixture Bethel A v Bugle — status: submitted → approved". A whole import or generated fixture list is one line. Scorecard frames aren't listed one by one; a match shows as its status changing. The database writes the log itself, so it can't be edited; entries are kept for a year. "System" means it was done outside the website (the Supabase SQL editor).
+- **Backup** — **Download full backup** saves one file with everything in the database (players, fixtures, scorecards, competitions, news, settings, logins' names and roles). Any single list can be downloaded as a spreadsheet (CSV) too. Passwords are never included, and the pictures themselves stay in Supabase Storage (the backup keeps their links). It's a copy for you to keep; it changes nothing on the site.
+- **Maintenance mode** (Website → Site settings) — visitors see a holding page with your message; anyone logged in still sees the whole site, and captains can still log in to enter results.
 
 ## 3c. Importing from a spreadsheet (CSV)
 
@@ -209,7 +243,8 @@ public/                     ← everything Netlify serves
       context.js            ← turns raw data into tables/rankings for pages
       components.js         ← ALL reusable tables, panels, cards, sidebar
       auth.js               ← login + "who can edit what" (UI side)
-      branding.js           ← turns Admin → Branding (colours, fonts, layout, loading logo) into CSS variables
+      branding.js           ← turns Admin → Branding (colours, fonts, page layouts, loading screen) into CSS variables
+      list-field.js         ← the "add as many as you like" field (past teams)
       dom.js                ← safe HTML helper, dates in UK time, toasts
       schedule.js           ← round-robin fixture generator + date helpers
       bracket.js            ← knockout draw + who-plays-whom logic (no HTML)
@@ -233,6 +268,9 @@ public/                     ← everything Netlify serves
       import.js             ← the Import from CSV screen
       handicaps.js          ← the Handicaps screen (quick changes, yearly review, change log)
       entries.js            ← Entries to approve (competition entry form)
+      roles.js              ← Roles & permissions grid (Master Admin)
+      activity.js           ← Activity log (Master Admin)
+      backup.js             ← Backup downloads (Master Admin)
     demo/seed-data.js       ← sample league (imaginary players)
 supabase/
   schema.sql                ← tables + security rules + image storage (safe to re-run)
@@ -261,8 +299,19 @@ For example, to add a "phone" field to venues, add one line to `RESOURCES.venues
 | Change a menu button's colour (and its section's headers) | Admin → Branding → Menu and section colours. Tick "Use my own colour" and pick; untick to go back to the standard one |
 | Stop sections using their menu colour for headers | Admin → Branding → untick "Colour-code each section" (headers go back to the main colour) |
 | Change the main colour or the page background | Admin → Branding → Other colours |
-| Change the fonts | Admin → Branding → Fonts (Google Fonts; to offer a different one, add its name to `FONTS` in `core/branding.js`) |
-| Put the side boxes on the left, or underneath a full-width page | Admin → Branding → Page layout |
+| Change the fonts | Admin → Branding → Fonts |
+| Give a part of the site a right sidebar, or make it full width | Admin → Branding → Page layout. One choice each for Home, Competitions, Fixtures, League and News: **Standard** (as designed), **Right sidebar on every page** (pages without side boxes get the standard ones), or **Full width on every page** (a page's own side boxes move underneath) |
+| Put sidebars on the left | Admin → Branding → Page layout → Which side a sidebar goes on |
+| Use a Google font that isn't in the lists | Admin → Branding → Fonts → paste the font's embed link from fonts.google.com ("Get font" → "Get embed code"). Its fonts join both lists straight away; choose them and Save |
+| Turn the loading screen off, or keep it up longer | Admin → Branding → Loading screen (on/off, and the minimum seconds it shows when the site is first opened) |
+| Change the order of the sections on the News page, or their columns | Admin → News categories & layout → Edit → "Position on the News page" and "Columns" |
+| Add, change or stop an announcement in the ticker | Admin → Announcements. The ticker's on/off switch and speed are in Site settings → Announcements ticker |
+| Choose what the side column's top box shows | Admin → Site settings → Side column: top box (latest league results, competition results, both, latest news, or nothing; heading; how many; one league) |
+| Decide what a role can see and do | Admin → Roles & permissions (Master Admin) |
+| See who changed something | Admin → Activity log (Master Admin) |
+| Download a backup | Admin → Backup (Master Admin) |
+| Take the public site down for a while | Admin → Site settings → Maintenance mode |
+| Add a player's past teams | Admin → Players → Edit → Past teams (**+ Add another past team**), or the player under My Team → Profile |
 | Open a competition for entries, set its fee | Admin → Competitions → Edit → Entry form |
 | Bank details and days allowed to pay | Admin → Site settings → Competition entry form |
 | Confirm someone has paid | Admin → Entries to approve → Paid — approve |
@@ -315,6 +364,8 @@ When you get new code files:
 - [ ] Test it: log in as one captain, then try to open another team's scorecard URL. It should say "Scorecard locked".
 - [ ] Test it: as a captain, try **Submit results** without a photo. It should be refused.
 - [ ] Test it: log in as an officer (e.g. a Committee Member) and open `/admin/fixtures`. It should say the login doesn't include that part.
+- [ ] Open **Roles & permissions** as the Master Admin and check each role only has what you want. Keep the number of Master Admins small.
+- [ ] Download a **backup** once the real data is in.
 - [ ] Test it: as the away captain, open a match page. There should be no "Add match night photos" button.
 - [ ] Test it: enter a competition on `/enter` without logging in, then check it appears under Admin → Entries to approve and nowhere on the public site except as a name "waiting for payment".
 - [ ] Give each captain their own login, and ask them to change their password under **My Team → User details**.
@@ -323,4 +374,4 @@ Players' names, scores and breaks are public, as they are on the current site. L
 
 The entry form is open to anyone (no login), like a paper form on a club noticeboard: someone could enter another player's name. Nothing happens until the competition secretary approves it, so a bogus entry is simply removed, or lapses on its own.
 
-**The loading screen.** While a page is loading, the screen is black with the logo pulsing in the middle (the loading logo from Admin → Branding, or the main logo). The colours and logo are remembered in each visitor's browser, so their second visit shows the right ones from the first instant.
+**The loading screen.** While a page is loading, the screen is black with the logo pulsing in the middle (the loading logo from Admin → Branding, or the main logo). It can be switched off, or made to stay up for a set number of seconds when the site is first opened (Admin → Branding → Loading screen). The colours and logo are remembered in each visitor's browser, so their second visit shows the right ones from the first instant.

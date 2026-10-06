@@ -1,5 +1,5 @@
 import { html, mount, paragraphs } from "../core/dom.js";
-import { seasonContext } from "../core/context.js";
+import { seasonContext, sideBoxData } from "../core/context.js";
 import { articles } from "../core/api.js";
 import { breadcrumb, sidebar, dataTable, panel, teamLink, urls, gallery, quoteBox, picture, fixturesTable, emblem } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
@@ -18,7 +18,7 @@ export function mapEmbed(v) {
 
 /** /venues (list) and /venue/:slug (one venue) share this module. */
 export default async function venue(view, { params }) {
-  const [ctx, news] = await Promise.all([seasonContext(), articles()]);
+  const [ctx, news, box] = await Promise.all([seasonContext(), articles(), sideBoxData()]);
 
   // A venue's emblem: its own, or the emblem of a team based there.
   const venueEmblem = (v) => emblem({ name: v.name, logo_url: v.logo_url || ctx.teams.find((t) => t.venue_id === v.id && t.logo_url)?.logo_url });
@@ -67,6 +67,6 @@ export default async function venue(view, { params }) {
       ], teams)) : ""}
       ${upcoming.length ? panel("Next matches here", fixturesTable(ctx, upcoming)) : ""}
     </div>
-    ${sidebar(ctx, news)}
+    ${sidebar(ctx, news, { box })}
   </div>`);
 }
