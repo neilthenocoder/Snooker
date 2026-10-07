@@ -77,6 +77,18 @@ export function parseScore(value) {
   const m = String(value ?? "").trim().match(/^(\d{1,2})\s*[-–:v]\s*(\d{1,2})$/);
   return m ? [Number(m[1]), Number(m[2])] : null;
 }
+/**
+ * The old website's way of writing the extra (Ext) player in a scorecard:
+ * "Ben Rothwell (Ext)" is Ben Rothwell playing a second frame as the extra player;
+ * "Extra Player" (or "Extra Player 2") is a stand-in nobody named. Returns { name, ext }.
+ */
+export function extraPlayer(raw) {
+  const text = String(raw ?? "").trim();
+  const m = text.match(/^(.*?)\s*\((?:ext|extra|extra player)\)$/i);
+  if (m) return { name: m[1].trim(), ext: true };
+  if (/^extra player(\s*\d+)?$/i.test(text)) return { name: "", ext: true };
+  return { name: text, ext: false };
+}
 const wholeNumber = (v) => (/^[+-]?\d+$/.test(String(v).trim()) ? Number(v) : null);
 const yes = (v) => /^(y|yes|true|1)$/i.test(String(v).trim());
 const no = (v) => /^(n|no|false|0)$/i.test(String(v).trim());
@@ -134,7 +146,7 @@ export const IMPORTS = {
       ["home", "Home", true, "Home team", ["hometeam"]],
       ["away", "Away", true, "Away team", ["awayteam", "visitors"]],
       ["frame", "Frame", true, "1, 2, 3…", ["frameno", "framenumber", "no"]],
-      ["home_player", "Home player", false, "Full name", ["homeplayername"]],
+      ["home_player", "Home player", false, "Full name. “Name (Ext)” = that player as the extra player; “Extra Player” = an unnamed stand-in", ["homeplayername"]],
       ["home_points", "Home points", true, "Points scored in the frame", ["homepts", "homeframescore"]],
       ["away_player", "Away player", false, "Full name", ["awayplayername"]],
       ["away_points", "Away points", true, "Points scored in the frame", ["awaypts", "awayframescore"]],
@@ -341,8 +353,12 @@ export function planImport(type, csv, data) {
         const sideTeam = (side) => [...teams.values()].find((t) => t.id === fixture[`${side}_team_id`]);
         const frame = { fixture_id: fixture.id, frame_no, home_points: pts[0], away_points: pts[1], home_player_id: null, away_player_id: null, home_ext: false, away_ext: false };
         for (const side of ["home", "away"]) {
-          const who = get(`${side}_player`) ? playerFor(get(`${side}_player`), sideTeam(side), notes) : null;
+          // "Name (Ext)" and "Extra Player" are how the old website wrote the extra player.
+          const typed = extraPlayer(get(`${side}_player`));
+          const who = typed.name ? playerFor(typed.name, sideTeam(side), notes) : null;
           frame[`${side}_player_id`] = who?.id ?? null;
+          frame[`${side}_ext`] = typed.ext;
+          if (typed.ext) notes.push(who ? `${who.full_name} as the extra player` : "an unnamed extra player");
           const values = parseBreaks(get(`${side}_breaks`));
           if (values === null) throw new Error(`can't read the ${side} breaks “${get(`${side}_breaks`)}” — use e.g. 34 or 34, 41`);
           if (values.length && !who) throw new Error(`the ${side} breaks need a player name`);

@@ -9,13 +9,15 @@
 //               image (upload / pick from library), gallery (several images),
 //               tags (pick several rows of another table, e.g. players),
 //               list (add as many short text items as you like, e.g. past teams),
+//               file (a PDF: upload it or paste a link), range (a slider between min and max),
 //               heading (a section title in the form, not a field)
 //  Section options: pageSize: 50 pages a long list with ‹ › arrows (otherwise the first 100 rows show),
 //               flag: { … } marks rows waiting to be looked at as NEW (see players).
 //  Options:     in: "column" stores the field inside a JSON column,
 //               store: "name" makes a ref save the name instead of the id,
 //               help: "…" shows a hint under the label,
-//               options: (row) => [...] works a select's choices out from the row being edited.
+//               options: (row) => [...] works a select's choices out from the row being edited,
+//               formatted: true on a textarea = headings, bullets and tables can be typed (core/markup.js) — adds the help line and a Preview button.
 //  Section hooks: validate(row) → problem text, beforeSave(row, refs), afterSave(), onInput(form, changedElement).
 // ─────────────────────────────────────────────────────────────
 import { adminUsers } from "../core/db.js";
@@ -23,7 +25,23 @@ import { STATUSES } from "../core/rules.js";
 import { CUEVIEW } from "../core/cueview.js";
 import { ROLE_LABEL, TEAM_ROLE_LABEL } from "../core/auth.js";
 import { refreshShell } from "../core/router.js";
-import { FONTS, LAYOUT_GROUPS, LAYOUT_LABELS, parseFontEmbed } from "../core/branding.js";
+import { FONTS, LAYOUT_GROUPS, LAYOUT_LABELS, TEXT_SIZES, parseFontEmbed } from "../core/branding.js";
+import { MEETING_KINDS, PLAYER_STATUS } from "../core/terms.js";
+
+/** Fill in an award's shown name from the player or team picked for it (unless a different name was typed). */
+function awardName(row, refs, prefix) {
+  const linked = refs.players.find((p) => p.id === row[`${prefix}_player_id`])?.full_name ?? refs.teams.find((t) => t.id === row[`${prefix}_team_id`])?.name;
+  const typed = row[`${prefix}_name`];
+  const isAuto = !typed || refs.players.some((p) => p.full_name === typed) || refs.teams.some((t) => t.name === typed);
+  return linked && isAuto ? linked : typed ?? null;
+}
+const awardSideFields = (prefix, label) => [
+  { type: "heading", label, help: "Pick a player or a team. Type a name only for a pair, or for someone who isn't in the players list." },
+  { name: `${prefix}_player_id`, label: "Player", type: "ref", ref: "players" },
+  { name: `${prefix}_team_id`, label: "Team", type: "ref", ref: "teams" },
+  { name: `${prefix}_name`, label: `Name as shown (filled in from the player or team — type here for a pair, e.g. “A. Smith & B. Jones”)`, short: label, type: "text", wide: true },
+  { name: `${prefix}_image_url`, label: `${label}'s picture (optional — otherwise the player's photo or the team's emblem is used)`, type: "image", folder: "awards", maxSize: 1200 },
+];
 
 /** The fonts in a pasted Google Fonts embed link (Admin → Branding → Fonts). */
 const pastedFonts = (text) => parseFontEmbed(text)?.families ?? [];
@@ -52,11 +70,11 @@ export const RESOURCES = {
     validate: (row) => (row.home_team_id === row.away_team_id ? "A team can't play itself."
       : (row.home_score == null) !== (row.away_score == null) ? "Enter both final scores, or leave both blank." : null),
     beforeSave: (row, refs) => ({ ...row, venue_id: row.venue_id || refs.teams.find((t) => t.id === row.home_team_id)?.venue_id || null }),
-    rowActions: [{ label: "Scorecard", href: (row) => `/scorecard/${row.id}` }],
+    rowActions: [{ label: "Scorecard", href: (row) => `/scorecard/${row.code || row.id}` }],
   },
   competitions: {
     label: "Competitions", table: "competitions", order: "sort", filters: ["season_id", "kind"],
-    columns: ["image_url", "name", "kind", "league_ids", "season_id", "entries_open"],
+    columns: ["trophy_url", "name", "kind", "league_ids", "season_id", "entries_open"],
     intro: "Create the competition here, then add its entrants, round deadlines and the draw under “Draws & results”. A plate competition (for those knocked out in the first round) is created from its main competition's Draws page.",
     fields: [
       { name: "name", label: "Competition name", type: "text", required: true },
@@ -69,7 +87,8 @@ export const RESOURCES = {
         help: "bracket = winners follow the fixed bracket. redraw = a fresh random draw is made every round." },
       { name: "best_of", label: "Frames per match (best of)", type: "number", default: 5 },
       { name: "sort", label: "Display order", type: "number", default: 1 },
-      { name: "image_url", label: "Picture (winner photo, trophy…)", type: "image", folder: "competitions", maxSize: 1200 },
+      { name: "image_url", label: "Picture (winner photo, venue… — the background of the competition's page)", type: "image", folder: "competitions", maxSize: 1200 },
+      { name: "trophy_url", label: "Trophy (a cut-out picture of the trophy: transparent PNG or SVG — shown wherever the competition appears; a placeholder cup is used until you add one)", short: "Trophy", type: "image", folder: "trophies", maxSize: 700 },
       { name: "info", label: "Competition information (rules, dates, format)", type: "textarea" },
       { name: "parent_id", label: "Plate competition of (leave empty for a normal competition)", type: "ref", ref: "competitions" },
       { type: "heading", label: "Entry form", help: "Tick “Open for entries” and the competition appears on the website's entry form (/enter). Entries wait under Competitions → Entries to approve until the fee has been paid. The bank details and the days allowed to pay are under Website → Site settings." },
@@ -93,19 +112,25 @@ export const RESOURCES = {
     ],
   },
   players: {
-    label: "Players", table: "players", order: "full_name", filters: ["team_id"],
+    label: "Players", table: "players", order: "full_name", filters: ["team_id", "status"],
     rowClass: (row) => (row.needs_review ? "todo-row" : ""),
     pageSize: 50,   // 50 players at a time, with ‹ › arrows to move through the rest
     // Players added by a captain are marked NEW and listed first until someone has looked at them:
     // saving the player, or pressing "Mark as checked", clears it.
     flag: { field: "needs_review", column: "full_name", tag: "NEW", clear: "Mark as checked",
       banner: (n) => `${n} new player${n > 1 ? "s were" : " was"} added by a captain — ${n > 1 ? "they are" : "shown"} at the top of the list, marked NEW. Press Edit to set the handicap (saving clears the mark), or just press “Mark as checked”.` },
-    columns: ["avatar_url", "full_name", "team_id", "position", "handicap"],
+    columns: ["avatar_url", "full_name", "team_id", "position", "handicap", "status"],
+    validate: (row) => (row.slug && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(row.slug) ? "The web address can only have small letters, numbers and dashes (e.g. sam-bolitho)." : null),
+    // "No team at the moment" means just that: the player leaves their team's list.
+    beforeSave: (row) => ({ ...row, team_id: row.status === "no_team" ? null : row.team_id }),
+    rowActions: [{ label: "View", href: (row) => `/player/${row.slug || row.id}` }],
     fields: [
       { name: "full_name", label: "Full name", type: "text", required: true },
       { name: "team_id", label: "Team", type: "ref", ref: "teams" },
       { name: "position", label: "Position", type: "select", options: ["Player", "Team Captain", "Vice Captain"], default: "Player" },
       { name: "handicap", label: "Handicap", type: "number", default: 0 },
+      { name: "status", label: "Status", type: "select", options: Object.keys(PLAYER_STATUS), labels: PLAYER_STATUS, default: "playing",
+        help: "“Not playing” and “No longer with us” take the player out of squad lists, scorecards and entry forms. Their results, breaks and profile page stay." },
       { name: "birth_date", label: "Birthday (optional)", type: "date" },
       { name: "avatar_url", label: "Photo (shown as a circle — square photos work best)", type: "image", folder: "players", maxSize: 600, round: true },
       { type: "heading", label: "Profile", help: "Players with a login can fill these in themselves under My Team → Profile." },
@@ -114,6 +139,11 @@ export const RESOURCES = {
       { name: "past_teams", label: "Past teams (add as many as you like, with years if known — teams played for on this website are added automatically)", type: "list",
         add: "+ Add another past team", placeholder: "e.g. St Blazey A (2015–2019)", suggest: "teams" },
       { name: "gallery", label: "Pictures", type: "gallery" },
+      { type: "heading", label: "In memoriam", help: "Only for a player whose status is “Sadly no longer with us”: they are listed on the “Sadly no longer with us” page (/in-memoriam) and their own page carries a tribute." },
+      { name: "died_on", label: "Date they died (optional — only the year is shown)", type: "date" },
+      { name: "memorial", label: "A few words of tribute (optional)", type: "textarea", rows: 3 },
+      { type: "heading", label: "Web address" },
+      { name: "slug", label: "Web address (auto — the end of /player/…; leave empty and it is made from the name)", type: "text", placeholder: "made from the name" },
       { type: "heading", label: "CueView interview", help: "Leave any question blank to hide it on the player's page." },
       { name: "cueview_featured", label: "Show this CueView on the home page", type: "checkbox" },
       ...CUEVIEW.map((q) => ({ name: q.key, in: "cueview", label: q.label, type: q.long ? "textarea" : q.options ? "select" : "text", options: q.options, wide: true })),
@@ -145,6 +175,7 @@ export const RESOURCES = {
       { name: "slug", label: "Web address (auto)", type: "slug", from: "name" },
       { name: "sort", label: "Display order", type: "number", default: 1 },
       { name: "logo_url", label: "League emblem (shown on the league's table page and the League page)", short: "Emblem", type: "image", folder: "teams", maxSize: 400 },
+      { name: "trophy_url", label: "League trophy (a cut-out picture: transparent PNG or SVG — shown beside the league's table and on presentation night; a placeholder cup is used until you add one)", short: "Trophy", type: "image", folder: "trophies", maxSize: 700 },
       { type: "heading", label: "Weekly shield", help: "Whoever holds the shield defends it every match night. If they lose, the winners take it." },
       { name: "shield_name", label: "Shield name (e.g. Victory Shield)", type: "text" },
       { name: "shield_team_id", label: "Holder at the start of the season", type: "ref", ref: "teams" },
@@ -228,46 +259,110 @@ export const RESOURCES = {
   },
   announcements: {
     label: "Announcements", table: "announcements", order: "sort", columns: ["text", "url", "sort", "is_active"],
-    intro: "Short announcements that scroll across the very top of the home page (the “ticker”). Visitors can stop it with the button on its right, and click an announcement that has a link. Switch the whole ticker on or off, and set its speed, under Website → Site settings.",
+    intro: "Short announcements that scroll across the very top of the home page (the “ticker”) and, if you like, through the feature box lower down. Visitors can stop the ticker with the button on its right, and click an announcement that has a link. Switch each place on or off, and set the speed, under Website → Site settings.",
     fields: [
       { name: "text", label: "Announcement (keep it short — one line)", short: "Announcement", type: "text", required: true, wide: true, placeholder: "Entries for the Christmas Handicap close on Friday" },
       { name: "url", label: "Link (optional — where it goes when clicked)", short: "Link", type: "text", placeholder: "/enter or https://…" },
       { name: "sort", label: "Order (1 = first)", short: "Order", type: "number", default: 1 },
       { name: "is_active", label: "Show this announcement", short: "Showing", type: "checkbox", default: true },
+      { name: "show_in_feature", label: "Also show it in the home page's feature box (the coloured strip under the four buttons)", type: "checkbox", default: true },
+      { name: "label", label: "Label in the feature box (leave empty for “Announcement”)", type: "text", placeholder: "Announcement" },
       { name: "starts_on", label: "Show from (optional)", type: "date" },
       { name: "ends_on", label: "Stop showing after (optional)", type: "date" },
     ],
     validate: (row) => (String(row.text ?? "").length > 160 ? "Please keep an announcement under 160 characters." : row.starts_on && row.ends_on && row.ends_on < row.starts_on ? "“Stop showing after” is before “Show from”." : null),
   },
   pages: {
-    label: "Info pages", table: "pages", order: "sort", columns: ["title", "sort", "show_in_league", "show_in_footer"],
-    intro: "Pages can appear as tiles on the League page (Rules, History, Help…), as links in the footer (Privacy Policy, Contact Us…), or both.",
+    label: "Info pages", table: "pages", order: "sort", columns: ["title", "sort", "show_in_league", "show_in_footer", "show_in_rules"],
+    intro: "Pages can appear as tiles on the League page (History, Help…), as links in the footer (Privacy Policy, Contact Us…), or both. Tick “Show on the Rules page” for each set of rules: they become the tabs of the Rules page (/rules), each with its own contents list.",
     fields: [
       { name: "title", label: "Title", type: "text", required: true },
       { name: "slug", label: "Web address (auto)", type: "slug", from: "title" },
       { name: "summary", label: "Tile text", type: "text" },
-      { name: "body", label: "Page text (blank line = new paragraph)", type: "textarea" },
+      { name: "body", label: "Page text", type: "textarea", rows: 16, formatted: true },
       { name: "gallery", label: "Picture gallery", type: "gallery" },
       { name: "sort", label: "Display order", type: "number", default: 1 },
       { name: "show_in_league", label: "Show as a tile on the League page", type: "checkbox", default: true },
       { name: "show_in_footer", label: "Show as a link in the footer", type: "checkbox" },
+      { name: "show_in_rules", label: "Show on the Rules page (/rules) as one of its tabs — e.g. “League rules” and “Rules of the game”", short: "Rules page", type: "checkbox" },
     ],
+    rowActions: [{ label: "View", href: (row) => (row.show_in_rules ? `/rules?p=${row.slug}` : `/page/${row.slug}`) }],
   },
   sponsors: {
-    label: "Sponsors", table: "sponsors", order: "sort", columns: ["name", "url", "sort"],
+    label: "Sponsors", table: "sponsors", order: "sort", columns: ["image_url", "name", "url", "sort"],
+    intro: "Each sponsor's banner at the bottom of every page opens that sponsor's own page on this website, written here. Their website is one click further on.",
     fields: [
       { name: "name", label: "Name", type: "text", required: true },
-      { name: "url", label: "Website", type: "text" },
+      { name: "url", label: "Their website", type: "text", placeholder: "https://…" },
       { name: "image_url", label: "Banner image (736×104 works well)", type: "image", folder: "sponsors", maxSize: 1000 },
       { name: "sort", label: "Display order", type: "number", default: 1 },
+      { type: "heading", label: "The sponsor's page", help: "What visitors see when they click the banner. Leave it all empty and the page simply thanks the sponsor and links to their website." },
+      { name: "about", label: "About the sponsor", type: "textarea", rows: 8, formatted: true },
+      { name: "photo_url", label: "Photo (their premises, van, team…)", type: "image", folder: "sponsors", maxSize: 1400 },
+      { name: "address", label: "Address", type: "text", wide: true },
+      { name: "phone", label: "Telephone", type: "text" },
+      { name: "email", label: "Email", type: "email" },
+      { name: "slug", label: "Web address (auto — the end of /sponsor/…; leave empty and it is made from the name)", type: "text", placeholder: "made from the name" },
     ],
+    validate: (row) => (row.slug && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(row.slug) ? "The web address can only have small letters, numbers and dashes." : null),
+    rowActions: [{ label: "View", href: (row) => `/sponsor/${row.slug || row.id}` }],
+  },
+  key_dates: {
+    label: "Key dates", table: "key_dates", order: "starts_on", columns: ["starts_on", "title", "competition_id", "is_active"],
+    intro: "The dates everyone needs to know — “20 October: round 1 of the Team Handicap starts”. The next few are shown in the Key dates box on the home page, and all of them appear on the calendar. A date drops off the home page by itself once it has passed. How many are shown (or whether the box shows at all) is under Website → Site settings.",
+    fields: [
+      { name: "starts_on", label: "Date", type: "date", required: true },
+      { name: "ends_on", label: "Until (optional — for something that lasts several days, e.g. the Christmas break)", short: "Until", type: "date" },
+      { name: "title", label: "What is happening (keep it short)", short: "Key date", type: "text", required: true, wide: true, placeholder: "Team Handicap: round 1 starts" },
+      { name: "details", label: "More detail (optional — a line of small print)", type: "text", wide: true, placeholder: "Matches to be played by Sunday 1 November" },
+      { name: "competition_id", label: "Competition (optional — the date then links to it and shows its trophy)", short: "Competition", type: "ref", ref: "competitions" },
+      { name: "url", label: "Link (optional — instead of the competition)", type: "text", placeholder: "/enter or https://…" },
+      { name: "is_active", label: "Show this date", short: "Showing", type: "checkbox", default: true },
+    ],
+    validate: (row) => (row.ends_on && row.ends_on < row.starts_on ? "“Until” is before the date." : null),
+  },
+  meetings: {
+    label: "Meetings", table: "meetings", order: "held_on", desc: true, filters: ["kind"], columns: ["held_on", "kind", "title", "venue", "is_published"],
+    intro: "The AGM and committee meetings, shown on the Meetings page (/meetings). Add a meeting before it happens (date, place, agenda) and it shows as the next meeting; afterwards, come back and add the minutes — typed in, or as a PDF.",
+    fields: [
+      { name: "kind", label: "Type of meeting", short: "Type", type: "select", options: MEETING_KINDS, labels: Object.fromEntries(MEETING_KINDS.map((k) => [k, k])), default: "Committee Meeting" },
+      { name: "held_on", label: "Date", type: "date", required: true },
+      { name: "time_text", label: "Time (as you want it shown)", type: "text", placeholder: "7.30pm" },
+      { name: "venue", label: "Where", type: "text", list: true, placeholder: "Bethel Social Club" },
+      { name: "title", label: "Title (optional — otherwise the type of meeting is used)", short: "Title", type: "text", wide: true, placeholder: "Annual General Meeting 2026" },
+      { name: "summary", label: "Agenda or a short summary", type: "textarea", rows: 5, formatted: true },
+      { name: "minutes", label: "Minutes (typed in — optional)", type: "textarea", rows: 14, formatted: true },
+      { name: "document_url", label: "Minutes or agenda as a PDF (optional)", type: "file", folder: "meetings" },
+      { name: "is_published", label: "Show on the website (untick to keep it as a draft only officers can see)", short: "On the website", type: "checkbox", default: true },
+    ],
+    rowActions: [{ label: "View", href: () => "/meetings" }],
+  },
+  awards: {
+    label: "Presentation awards", table: "awards", order: "sort", columns: ["trophy_url", "name", "winner_name", "runner_up_name", "sort"],
+    fields: [
+      { name: "name", label: "Award or trophy", short: "Award", type: "text", required: true, placeholder: "Victory League Highest Break" },
+      { name: "season_id", label: "Season", type: "ref", ref: "seasons", required: true },
+      { name: "sort", label: "Order on the page (1 = first)", short: "Order", type: "number", default: 1 },
+      { name: "trophy_url", label: "Trophy picture (a cut-out: transparent PNG or SVG. Leave empty to use the trophy of the competition or league below — or the placeholder cup)", short: "Trophy", type: "image", folder: "trophies", maxSize: 700 },
+      { type: "heading", label: "What it is for", help: "Optional. Linking the award lets “Fill in from the results” find the winner, and makes the award's name a link." },
+      { name: "competition_id", label: "Competition", type: "ref", ref: "competitions" },
+      { name: "league_id", label: "League", type: "ref", ref: "leagues" },
+      ...awardSideFields("winner", "Winner"),
+      ...awardSideFields("runner_up", "Runner-up"),
+      { type: "heading", label: "Small print" },
+      { name: "note", label: "Note (optional — e.g. “A break of 92” or “Presented by the Mills family”)", type: "text", wide: true },
+    ],
+    beforeSave: (row, refs) => ({ ...row, winner_name: awardName(row, refs, "winner"), runner_up_name: awardName(row, refs, "runner_up") }),
   },
   // Branding and Site settings are two forms on the same single row of the settings table.
   branding: {
     label: "Branding", table: "settings", order: "id", single: true, afterSave: () => refreshShell(),
     validate: (row) => (row.font_embed && !parseFontEmbed(row.font_embed) ? "That doesn't look like a Google Fonts embed link — it should contain an address starting https://fonts.googleapis.com/css2?family=…"
-      : row.loader_seconds != null && (row.loader_seconds < 0 || row.loader_seconds > 10) ? "The loading screen time must be between 0 and 10 seconds." : null),
-    beforeSave: (row) => ({ ...row, loader_seconds: row.loader_seconds ?? 0 }),
+      : row.loader_seconds != null && (row.loader_seconds < 0 || row.loader_seconds > 10) ? "The loading screen time must be between 0 and 10 seconds."
+      : Object.values(row.text_sizes ?? {}).some((v) => v !== "" && v != null && (v < 8 || v > 90)) ? "Text sizes must be between 8 and 90 pixels." : null),
+    // Empty text-size boxes are simply left out, so those sizes stay standard.
+    beforeSave: (row) => ({ ...row, loader_seconds: row.loader_seconds ?? 0,
+      text_sizes: Object.fromEntries(Object.entries(row.text_sizes ?? {}).filter(([, v]) => v !== "" && v != null)) }),
     // Pasting an embed link offers its fonts in the two lists at once (no need to save first).
     onInput: (form, target) => {
       if (target.name !== "font_embed") return;
@@ -287,7 +382,7 @@ export const RESOURCES = {
       { name: "color_competitions", label: "Competitions & Handicaps (standard: gold)", type: "color", optional: true, default: "#fbb61a" },
       { name: "color_fixtures", label: "Fixtures (standard: green)", type: "color", optional: true, default: "#0b8a12" },
       { name: "color_league", label: "League (standard: white)", type: "color", optional: true, default: "#ffffff" },
-      { name: "color_news", label: "News (standard: white)", type: "color", optional: true, default: "#ffffff" },
+      { name: "color_news", label: "News (standard: blue)", type: "color", optional: true, default: "#0088e0" },
       { name: "color_login", label: "Login & My Team (standard: red)", type: "color", optional: true, default: "#e8003d" },
       { name: "section_colors", label: "Colour-code each section: its table headers match its menu button", type: "checkbox", default: true },
       { type: "heading", label: "Other colours" },
@@ -299,6 +394,8 @@ export const RESOURCES = {
       { name: "font_embed", label: "Google Fonts embed link (optional)", type: "textarea", rows: 3,
         placeholder: '<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet">',
         help: "On fonts.google.com choose your font(s), press “Get font”, then “Get embed code”, and copy the code under “Embed code in the <head> of your html” (the @import version works too). Paste it here: the fonts in it appear in the two lists above straight away — choose them there, then Save." },
+      { type: "heading", label: "Text sizes", help: "The size of each kind of text, in pixels. Leave a box empty to keep the standard size (shown in grey). Phones keep their own smaller page titles and menu so nothing runs off the screen." },
+      ...TEXT_SIZES.map(([key, label, px]) => ({ name: key, in: "text_sizes", label, type: "number", min: 8, max: 90, placeholder: `${px} (standard)` })),
       { type: "heading", label: "Page layout", help: "For each part of the site: “Right sidebar” puts the side boxes (latest results, breaks, rankings) on the right of every page in it, and adds them to pages that don't normally have any. “Full width” lets every page use the whole width — a page's own side boxes move underneath it." },
       ...LAYOUT_GROUPS.map(([key, label]) => ({ name: key, in: "page_layouts", label, type: "select", options: ["auto", "sidebar", "full"], labels: LAYOUT_LABELS, default: "auto" })),
       { name: "sidebar_layout", label: "Which side a sidebar goes on", type: "select", options: ["right", "left"], default: "right", labels: { right: "Right (standard)", left: "Left" } },
@@ -330,6 +427,12 @@ export const RESOURCES = {
       { name: "feature_text", label: "Text", type: "text", wide: true, placeholder: "Try our step-by-step scorecard — log in to find out more" },
       { name: "feature_url", label: "Link (where it goes when clicked)", type: "text", placeholder: "/login or https://…" },
       { name: "feature_bg", label: "Background colour", type: "color", default: "#0b84e0" },
+      { name: "feature_announcements", label: "Also show the announcements in this box, after the text above (each one can be left out under Website → Announcements)", type: "checkbox", default: true },
+      { name: "feature_style", label: "When there is more than one message", type: "select", options: ["scroll", "rotate"], default: "scroll",
+        labels: { scroll: "Scroll across, like the ticker", rotate: "Show one at a time, changing every few seconds" } },
+      { type: "heading", label: "Home page: key dates", help: "The box of dates coming up. Add the dates themselves under Website → Key dates." },
+      { name: "key_dates_show", label: "Show the Key dates box (when there is at least one date coming up)", type: "checkbox", default: true },
+      { name: "key_dates_count", label: "How many dates to show", type: "number", default: 5, min: 1, max: 12 },
       { type: "heading", label: "Home page: Latest News box", help: "Only used when “Side column: top box” (further down) is set to Latest news. Choose what it shows, so it doesn't repeat what's in the banner." },
       { name: "latest_news_mode", label: "Show", type: "select", options: ["newest", "not_banner", "category", "picked"], default: "newest",
         labels: { newest: "The newest articles", not_banner: "The newest articles that aren't in the banner", category: "The newest articles from one category", picked: "The articles I choose below" } },
@@ -344,7 +447,10 @@ export const RESOURCES = {
       { name: "side_box_league", label: "Only this league (leave empty for every league)", type: "ref", ref: "leagues" },
       { type: "heading", label: "Announcements ticker", help: "The thin line of announcements that scrolls across the very top of the home page. Add the announcements themselves under Website → Announcements." },
       { name: "ticker_show", label: "Show the ticker on the home page (when there is at least one announcement)", type: "checkbox", default: true },
-      { name: "ticker_speed", label: "Speed", type: "select", options: ["slow", "normal", "fast"], default: "normal" },
+      { name: "ticker_pace", label: "Speed (1 = very slow, 3 = standard, 10 = fast — it also sets the speed of the feature box when that scrolls)", short: "Speed", type: "range", min: 1, max: 10, step: 1, default: 3 },
+      { type: "heading", label: "Celebrations", help: "When a result comes in with a new highest break, everyone who is on the website at that moment sees a burst of confetti in the ball colours and a card saying who made it. It shows once, lasts a few seconds and can be closed." },
+      { name: "celebrate_breaks", label: "Celebrate a new highest break", type: "select", options: ["season", "week", "off"], default: "season",
+        labels: { season: "When it is the highest of the season in its league or competition (standard)", week: "Also when it is the highest of the week", off: "Never" } },
       { type: "heading", label: "Competition entry form", help: "Shown to players at the end of the entry form (/enter). Which competitions are open is set on each competition." },
       { name: "entry_intro", label: "Introduction at the top of the form (optional)", type: "textarea", rows: 2 },
       { name: "bacs_details", label: "How to pay — the league's bank details (BACS)", type: "textarea", rows: 4,

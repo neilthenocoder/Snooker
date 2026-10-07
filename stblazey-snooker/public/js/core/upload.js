@@ -8,8 +8,8 @@ import { addToLibrary } from "./api.js";
 const MAX_BYTES = 5 * 1024 * 1024;
 
 /** Image library categories, and which one each upload folder files into. */
-export const MEDIA_CATEGORIES = ["General", "News", "Players", "Emblems & logos", "Venues", "Competitions", "Sponsors", "Galleries"];
-const FOLDER_CATEGORY = { news: "News", players: "Players", teams: "Emblems & logos", branding: "Emblems & logos", venues: "Venues", competitions: "Competitions", sponsors: "Sponsors", gallery: "Galleries" };
+export const MEDIA_CATEGORIES = ["General", "News", "Players", "Emblems & logos", "Trophies", "Venues", "Competitions", "Sponsors", "Galleries"];
+const FOLDER_CATEGORY = { news: "News", players: "Players", teams: "Emblems & logos", branding: "Emblems & logos", venues: "Venues", competitions: "Competitions", sponsors: "Sponsors", gallery: "Galleries", trophies: "Trophies", awards: "Trophies" };
 
 /**
  * library: true adds the picture to the admin's image library (admins only);
@@ -33,6 +33,23 @@ export async function uploadImage(file, { folder = "misc", maxSize = 1600, libra
   // Everything except scorecard photos goes into the image library for re-use.
   if (library) await addToLibrary({ url, path, name: file.name.slice(0, 120), category });
   return url;
+}
+
+/**
+ * A document (PDF) — meeting minutes, an agenda. Kept as it is, 5 MB at most.
+ * Returns its public link. In demo mode it is kept inside the browser, so only small files fit.
+ */
+export async function uploadFile(file, { folder = "files" } = {}) {
+  if (!file || file.type !== "application/pdf") throw new Error("Please choose a PDF file.");
+  if (file.size > MAX_BYTES) throw new Error("That PDF is over 5 MB — please save a smaller copy (most scanners have a “low quality” setting).");
+  if (DEMO_MODE) {
+    if (file.size > 400 * 1024) throw new Error("The demo keeps files in this browser, so it can only take a PDF under 400 KB. The live site takes up to 5 MB.");
+    return toDataUrl(file);
+  }
+  const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.pdf`;
+  const { error } = await db.storage.from("images").upload(path, file, { contentType: "application/pdf", cacheControl: "31536000" });
+  if (error) throw new Error(/row-level|unauthori/i.test(error.message) ? "You don't have permission to upload documents." : /mime|not supported/i.test(error.message) ? "The file store isn't set up for PDFs yet — run supabase/schema.sql again in Supabase." : error.message);
+  return db.storage.from("images").getPublicUrl(path).data.publicUrl;
 }
 
 async function resize(file, maxSize) {

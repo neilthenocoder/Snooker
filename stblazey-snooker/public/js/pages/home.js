@@ -1,21 +1,28 @@
 import { html, mount, $, $$, fmtDate, fmtTime, cssUrl, ukDay, todayUK } from "../core/dom.js";
+import { TICKER_PX } from "../core/branding.js";
+import { sideName, matchLabel } from "../core/live-score.js";
+import { openForEntry } from "./enter.js";
 import { seasonContext, sideBoxData } from "../core/context.js";
-import { articles, settings, upcomingMatches, loadCompetitions, subscribe, table } from "../core/api.js";
+import { articles, settings, upcomingMatches, loadCompetitions, subscribe, table, liveMatches } from "../core/api.js";
 import { matchScore, shieldHolder } from "../core/rules.js";
 import { buildBracket, isEntry } from "../core/bracket.js";
 import { answered, articleCueview } from "../core/cueview.js";
-import { leagueTablePanel, sidebar, panel, picture, urls, badge, avatar, articleThumb, shortName, latestNews } from "../core/components.js";
+import { leagueTablePanel, sidebar, panel, picture, urls, badge, avatar, articleThumb, shortName, latestNews, trophy } from "../core/components.js";
 import { SITE } from "../config.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import { competitionSummaries } from "./competitions.js";
 
 const ROTATE_MS = 7000;      // banner: time each article is shown
 const CAROUSEL_MS = 4500;    // live strip: time before it moves on one card
+const FEATURE_MS = 6000;     // feature box (when it shows one message at a time): time each one is shown
 
 export default async function home(view) {
   setTitle("");
   adminEdit("settings", null, { label: "Edit home page" });
-  const [ctx, news, allComps, site, box] = await Promise.all([seasonContext(), articles(), competitionSummaries(), settings(), sideBoxData()]);
+  const [ctx, news, allComps, site, box, notices, dates] = await Promise.all([seasonContext(), articles(), competitionSummaries(), settings(), sideBoxData(),
+    table("announcements", "sort").catch(() => []), table("key_dates", "starts_on").catch(() => [])]);
+  const today = todayUK();
+  const entering = openForEntry(allComps.map((x) => x.c));
   const slides = news.filter((a) => a.featured).slice(0, Math.max(1, site.hero_count || 4));
   // This season's competitions (ones with no season set count as current).
   const comps = allComps.filter(({ c }) => !c.season_id || c.season_id === ctx.season?.id);
@@ -42,13 +49,15 @@ export default async function home(view) {
           <a style="background:var(--blue)" href="/handicaps">Handicaps</a>
           <a style="background:var(--green)" href="/fixtures">Fixtures</a>
         </div>
-        ${featureBox(site)}
+        ${featureBox(site, notices, today)}
+        ${entering.length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${entering.map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
+        ${keyDates(site, dates, allComps.map((x) => x.c), today)}
         ${ctx.leagues.map((l) => leagueTablePanel(ctx, l, { limit: 10 }))}
         ${site.shields_show !== false ? shieldsBox(ctx) : ""}
         ${spotlights(ctx, site)}
         ${site.cueviews_show !== false ? cueviewBox(ctx, news) : ""}
         ${panel("Latest Competitions", html`<div class="list-rows" style="background:var(--cream)">
-          ${comps.length ? comps.map(({ c, season, progress }) => html`<a href="${urls.competition(c)}">${picture(c.image_url)}<div><strong>${c.name}</strong><small>${c.kind}${season ? ` · ${season.name}` : ""}</small>${progress}</div></a>`)
+          ${comps.length ? comps.map(({ c, season, progress }) => html`<a href="${urls.competition(c)}">${c.image_url ? picture(c.image_url) : html`<div class="ph trophy-ph">${trophy(c)}</div>`}<div><strong>${c.name}</strong><small>${c.kind}${season ? ` · ${season.name}` : ""}</small>${progress}</div></a>`)
             : html`<div class="empty">No competitions yet.</div>`}
         </div>`, { color: "yellow", href: "/competitions" })}
       </div>
@@ -71,7 +80,37 @@ export default async function home(view) {
   // Live & upcoming matches strip, updated live.
   const drawStrip = async () => mount($("[data-strip]", view), await liveStrip());
   await drawStrip();
-  const unsubscribe = subscribe(["fixtures", "frames", "competition_matches", "competitions"], drawStrip);
+  const unsubscribe = subscribe(["fixtures", "frames", "competition_matches", "competitions", "live_matches"], drawStrip);
+
+  // The feature box: scrolling like the ticker (at the ticker's speed), or one message at a time.
+  const feature = $("[data-feature]", view);
+  let featureTimer = null;
+  if (feature?.dataset.feature === "scroll") {
+    const track = $(".ticker-track", feature), sets = $$(".ticker-set", feature), once = sets[0].innerHTML;
+    const pace = Math.max(1, Math.min(10, Math.round(Number(site.ticker_pace) || 3)));
+    const setPace = () => {
+      // A short list is repeated until it is at least as wide as the box, so the loop never shows a gap.
+      for (const s of sets) s.innerHTML = once;
+      const times = Math.min(8, Math.ceil($(".ticker-view", feature).clientWidth / Math.max(1, sets[0].getBoundingClientRect().width)));
+      if (times > 1) for (const s of sets) s.innerHTML = once.repeat(times);
+      track.style.animationDuration = `${Math.max(8, Math.round(sets[0].getBoundingClientRect().width / TICKER_PX[pace - 1]))}s`;
+    };
+    setPace();
+    document.fonts?.ready.then(() => track.isConnected && setPace());
+  } else if (feature?.dataset.feature === "rotate") {
+    const items = $$(".feature-item", feature);
+    let at = 0, held = false;
+    feature.addEventListener("mouseenter", () => { held = true; });
+    feature.addEventListener("mouseleave", () => { held = false; });
+    feature.addEventListener("focusin", () => { held = true; });
+    feature.addEventListener("focusout", () => { held = false; });
+    featureTimer = setInterval(() => {
+      if (held || document.hidden) return;
+      items[at].classList.remove("on");
+      at = (at + 1) % items.length;
+      items[at].classList.add("on");
+    }, FEATURE_MS);
+  }
 
   // …which moves on one card at a time, then goes back to the start.
   const strip = $("[data-strip]", view);
@@ -99,7 +138,7 @@ export default async function home(view) {
   hint.addEventListener("click", () => window.scrollBy({ top: window.innerHeight * 0.8, behavior: "smooth" }));
   onScroll();
 
-  return () => { clearInterval(timer); clearInterval(carousel); unsubscribe(); window.removeEventListener("scroll", onScroll); };
+  return () => { clearInterval(timer); clearInterval(carousel); clearInterval(featureTimer); unsubscribe(); window.removeEventListener("scroll", onScroll); };
 }
 
 /** One banner article: headline, category and date, a small "continue reading" — all linking to the article. */
@@ -114,25 +153,77 @@ function heroSlide(a, on) {
   </div>`;
 }
 
-/** The coloured "NEW …" strip under the quick links (Admin → Site settings → Home page: feature box). */
-function featureBox(site) {
-  if (!site.feature_show || !site.feature_text) return "";
+/**
+ * The coloured strip under the quick links (Admin → Site settings → Home page: feature box).
+ * It carries the feature text with its pulsing label ("NEW") and — when "Also show the announcements"
+ * is ticked — the announcements too. One message: it just sits there. More than one: they scroll across
+ * like the ticker, or show one at a time (Site settings → "When there is more than one message").
+ */
+function featureBox(site, notices, today) {
+  if (!site.feature_show) return "";
+  const own = site.feature_text ? [{ label: site.feature_label, text: site.feature_text, url: site.feature_url || "", own: true }] : [];
+  const extra = site.feature_announcements === false ? [] : notices
+    .filter((a) => a.is_active !== false && a.show_in_feature !== false && a.text && (!a.starts_on || a.starts_on <= today) && (!a.ends_on || a.ends_on >= today))
+    .map((a) => ({ label: a.label || "Announcement", text: a.text, url: a.url || "" }));
+  const items = [...own, ...extra];
+  if (!items.length) return "";
   const bg = /^#[0-9a-f]{6}$/i.test(site.feature_bg ?? "") ? site.feature_bg : "#0b84e0";
   // Dark text on light colours, white on dark ones.
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(bg.slice(i, i + 2), 16));
   const light = (r * 299 + g * 587 + b * 114) / 1000 > 150;
-  const url = site.feature_url || "";
-  const external = /^https?:\/\//.test(url);
-  const inner = html`${site.feature_label ? html`<span class="feature-new">${site.feature_label}</span>` : ""}<span class="feature-text">${site.feature_text}</span>${url ? html`<span class="feature-go" aria-hidden="true">→</span>` : ""}`;
   const style = `background:${bg};color:${light ? "#1b0e06" : "#fff"}`;
-  return url ? html`<a class="feature-box" style="${style}" href="${url}" ${external ? html`target="_blank" rel="noopener"` : ""}>${inner}</a>`
-    : html`<div class="feature-box" style="${style}">${inner}</div>`;
+  const target = (url) => (/^https?:\/\//.test(url) ? html`target="_blank" rel="noopener"` : "");
+  const tag = (item, pulse = false) => (item.label ? html`<span class="feature-new ${pulse ? "" : "still"}">${item.label}</span>` : "");
+
+  if (items.length === 1) {
+    const [it] = items;
+    const inner = html`${tag(it, true)}<span class="feature-text">${it.text}</span>${it.url ? html`<span class="feature-go" aria-hidden="true">→</span>` : ""}`;
+    return it.url ? html`<a class="feature-box" style="${style}" href="${it.url}" ${target(it.url)}>${inner}</a>` : html`<div class="feature-box" style="${style}">${inner}</div>`;
+  }
+  if (site.feature_style === "rotate") {
+    return html`<div class="feature-box rotating" style="${style}" data-feature="rotate" role="region" aria-label="Announcements">
+      ${items.map((it, i) => { const inner = html`${tag(it, !!it.own)}<span class="feature-text">${it.text}</span>${it.url ? html`<span class="feature-go" aria-hidden="true">→</span>` : ""}`;
+        return it.url ? html`<a class="feature-item ${i ? "" : "on"}" href="${it.url}" ${target(it.url)}>${inner}</a>` : html`<div class="feature-item ${i ? "" : "on"}">${inner}</div>`; })}
+    </div>`;
+  }
+  // Scrolling: the first label stays put on the left; the messages pass by, each announcement with its own small label.
+  const one = (it) => { const inner = html`${it.own ? "" : tag(it)}${it.text}${it.url ? html`<i aria-hidden="true">→</i>` : ""}`;
+    return it.url ? html`<a class="ticker-item" href="${it.url}" ${target(it.url)}>${inner}</a>` : html`<span class="ticker-item">${inner}</span>`; };
+  return html`<div class="feature-box scrolling" style="${style}" data-feature="scroll" role="region" aria-label="Announcements">
+    ${own.length ? tag(own[0], true) : html`<span class="feature-new">Announcements</span>`}
+    <div class="ticker-view"><div class="ticker-track"><div class="ticker-set">${items.map(one)}</div><div class="ticker-set" aria-hidden="true">${items.map(one)}</div></div></div>
+  </div>`;
+}
+
+/**
+ * Key dates (Admin → Key dates): the next few dates everyone should know, as a row of date cards.
+ * A date leaves the box the day after it (or its last day) has passed.
+ */
+function keyDates(site, dates, competitions, today) {
+  if (site.key_dates_show === false) return "";
+  const list = dates.filter((d) => d.is_active !== false && (d.ends_on || d.starts_on) >= today)
+    .sort((a, b) => a.starts_on.localeCompare(b.starts_on)).slice(0, Math.max(1, site.key_dates_count || 5));
+  if (!list.length) return "";
+  const part = (iso, opts) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { timeZone: "UTC", ...opts });
+  const days = (iso) => Math.round((Date.parse(`${iso}T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) / 864e5);
+  const when = (d) => { const n = days(d.starts_on); return n <= 0 ? (d.ends_on && d.ends_on > today ? "On now" : "Today") : n === 1 ? "Tomorrow" : n < 14 ? `In ${n} days` : `In ${Math.round(n / 7)} weeks`; };
+  return panel("Key dates", html`<div class="key-dates">${list.map((d) => {
+    const comp = competitions.find((c) => c.id === d.competition_id);
+    const href = d.url || (comp ? urls.competition(comp) : "");
+    const inner = html`<time datetime="${d.starts_on}"><b>${part(d.starts_on, { day: "numeric" })}</b><span>${part(d.starts_on, { month: "short" })}</span><small>${part(d.starts_on, { weekday: "short" })}</small></time>
+      <div><strong>${d.title}</strong>
+        ${d.ends_on && d.ends_on !== d.starts_on ? html`<small>Until ${part(d.ends_on, { weekday: "short", day: "numeric", month: "short" })}</small>` : ""}
+        ${d.details ? html`<small>${d.details}</small>` : ""}
+        <em class="${days(d.starts_on) <= 1 ? "soon" : ""}">${when(d)}</em></div>
+      ${comp ? trophy(comp, "kd-trophy", { always: false }) : ""}`;
+    return href ? html`<a class="key-date" href="${href}" ${/^https?:\/\//.test(href) ? html`target="_blank" rel="noopener"` : ""}>${inner}</a>` : html`<div class="key-date">${inner}</div>`;
+  })}</div>`, { color: "yellow", foot: { href: "/calendar", label: "See everything on the calendar" } });
 }
 
 // ── live & upcoming strip ─────────────────────────────────────
 async function liveStrip() {
-  const [{ fixtures, comps, frames }, teams, leagues, compData, venues, players] = await Promise.all([
-    upcomingMatches(), table("teams", "name"), table("leagues", "sort"), loadCompetitions(), table("venues", "name"), table("players", "full_name"),
+  const [{ fixtures, comps, frames }, teams, leagues, compData, venues, players, boards] = await Promise.all([
+    upcomingMatches(), table("teams", "name"), table("leagues", "sort"), loadCompetitions(), table("venues", "name"), table("players", "full_name"), liveMatches().catch(() => []),
   ]);
   const team = new Map(teams.map((t) => [t.id, t]));
   const framesBy = new Map();
@@ -156,9 +247,15 @@ async function liveStrip() {
       return {
         when: m.starts_at, live: m.status === "in_progress", done: m.status === "completed", title: c.name,
         a: who(bm.a), b: who(bm.b),
-        score: { home: m.score_a ?? 0, away: m.score_b ?? 0 }, hasFrames: m.score_a != null, href: `/cup-match/${m.id}`, venue: venues.find((v) => v.id === m.venue_id),
+        score: { home: m.score_a ?? 0, away: m.score_b ?? 0 }, hasFrames: m.score_a != null, href: `/cup-match/${m.no ?? m.id}`, venue: venues.find((v) => v.id === m.venue_id),
       };
     }).filter(Boolean),
+    // Matches scored ball by ball (finals): on now, or set up with a date in the next three weeks.
+    ...boards.filter((m) => m.status === "live" || (m.status === "setup" && m.starts_at && Date.parse(m.starts_at) < Date.now() + 21 * 864e5)).map((m) => {
+      const who = (s) => { const p = players.find((x) => x.id === m[`player_${s}_id`]); return { name: sideName(m, s, players), player: p ?? {} }; };
+      return { when: m.started_at ?? m.starts_at, live: m.status === "live", done: false, title: matchLabel(m, compData.competitions), a: who("a"), b: who("b"),
+        score: { home: m.frames_a ?? 0, away: m.frames_b ?? 0 }, hasFrames: m.status === "live", href: urls.scoreboard(m), venue: { name: m.status === "live" ? "Ball by ball — watch live" : m.venue ?? "" } };
+    }),
     // Competition draws: one being made live now, one due soon, or one made in the last two days.
     ...compData.competitions.map((c) => {
       const dl = c.draw_live, entry = (id) => compData.entries.find((e) => e.id === id)?.name;

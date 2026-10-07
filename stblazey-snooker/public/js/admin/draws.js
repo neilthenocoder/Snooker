@@ -3,7 +3,7 @@ import { html, mount, $, toast, readForm, toLocalInput, fromLocalInput, fmtDate,
 import { table, save, remove, insertMany, loadCompetitions, replaceDraw } from "../core/api.js";
 import { buildBracket, makeDraw, shuffle, roundName, isEntry, redrawNextRound, winnerAdvance, firstMatchLosers, drawPlan, drawNextTie, PENDING } from "../core/bracket.js";
 import { slugify } from "../core/schedule.js";
-import { panel, dataTable, urls, shortName } from "../core/components.js";
+import { panel, dataTable, urls, shortName, isActivePlayer } from "../core/components.js";
 import { navigate } from "../core/router.js";
 import { friendly } from "./crud.js";
 
@@ -31,7 +31,8 @@ export async function draws(el, { user } = {}) {
   const openIds = new Set(open.map((l) => l.id));
   const okTeams = teams.filter((t) => openIds.has(t.league_id) && t.active !== false);
   const okTeamIds = new Set(okTeams.map((t) => t.id));
-  const okPlayers = players.filter((p) => okTeamIds.has(p.team_id));
+  // Players who can be entered: playing, and in one of those teams (or without a team, when every league can enter).
+  const okPlayers = players.filter((p) => isActivePlayer(p) && (okTeamIds.has(p.team_id) || (!p.team_id && !c.league_ids?.length)));
   const linkOptions = c.kind === "Team"
     ? html`<option value="">– no team link –</option>${okTeams.map((t) => html`<option value="team:${t.id}">${t.name}</option>`)}`
     : html`<option value="">– no player link –</option>${okPlayers.map((p) => html`<option value="player:${p.id}">${p.full_name} (${teams.find((t) => t.id === p.team_id)?.name ?? "no team"})</option>`)}`;
@@ -143,7 +144,7 @@ export async function draws(el, { user } = {}) {
           <td>${m.isBye ? "" : html`<input type="datetime-local" name="starts_at" value="${toLocalInput(m.row.starts_at)}">`}</td>
           <td>${m.isBye ? "" : html`<select name="venue_id"><option value="">–</option>${venues.map((v) => html`<option value="${v.id}" ${v.id === m.row.venue_id ? "selected" : ""}>${v.name}</option>`)}</select>`}</td>
           <td style="white-space:nowrap">${!m.row.id ? "" : html`<button class="btn small green" data-save-row>Save</button>
-            ${ready ? html`<a class="btn small ghost" href="/cup-scorecard/${m.row.id}">Scorecard</a>` : ""}`}</td>
+            ${ready ? html`<a class="btn small ghost" href="/cup-scorecard/${m.row.no ?? m.row.id}">Scorecard</a>` : ""}`}</td>
         </tr>`;
       })}</tbody></table></div>
       <p class="muted" style="padding:0 14px">Type a final score and press Save, or use <b>Scorecard</b> to score it frame by frame live (with breaks).

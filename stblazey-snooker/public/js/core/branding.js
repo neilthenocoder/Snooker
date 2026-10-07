@@ -28,6 +28,26 @@ const COLOURS = {
   color_background: ["--cream"],
 };
 
+/**
+ * Text sizes that can be set under Admin → Branding → Text sizes: [key, name, standard size in px, CSS variable].
+ * Leave one empty to keep the standard size. (Phones keep their own, smaller headings and menu.)
+ */
+export const TEXT_SIZES = [
+  ["body", "Normal text (paragraphs, lists)", 15, "--fs-body"],
+  ["h1", "Page titles (H1)", 38, "--fs-h1"],
+  ["h2", "Section headings (H2)", 22, "--fs-h2"],
+  ["h3", "Smaller headings (H3)", 20, "--fs-h3"],
+  ["panel", "Box headings (the coloured bars on tables and boxes)", 18, "--fs-panel"],
+  ["table", "Tables: rows", 14, "--fs-table"],
+  ["table_head", "Tables: column headings", 14, "--fs-table-head"],
+  ["nav", "Menu buttons", 18, "--fs-nav"],
+  ["button", "Buttons", 15, "--fs-button"],
+  ["prose", "Articles and info pages", 16, "--fs-prose"],
+];
+
+/** Ticker speed (Admin → Site settings → Announcements ticker): 1 = very slow … 10 = fast, in pixels a second. */
+export const TICKER_PX = [16, 24, 34, 46, 60, 76, 94, 114, 136, 160];
+
 const isHex = (v) => /^#[0-9a-f]{6}$/i.test(v ?? "");
 /** Black or white — whichever reads better on this colour. */
 export function inkOn(hex) {
@@ -71,6 +91,13 @@ function brandOf(site) {
   if (embed && [site.font_head, site.font_body].some((f) => mine.includes(f))) links.push(embed.url);
   if ([...FONTS.head, ...mine].includes(site.font_head)) vars["--font-head"] = `"${site.font_head}", "Arial", sans-serif`;
   if ([...FONTS.body, ...mine].includes(site.font_body)) vars["--font-body"] = `"${site.font_body}", "Helvetica Neue", Arial, system-ui, sans-serif`;
+  // Text sizes: only the ones that have been changed.
+  for (const [key, , , cssVar] of TEXT_SIZES) {
+    const n = Number(site.text_sizes?.[key]);
+    if (n >= 8 && n <= 90) vars[cssVar] = `${n}px`;
+  }
+  // Page titles shrink with the screen: keep that in step with the chosen size (38px ↔ 4vw as standard).
+  if (vars["--fs-h1"]) vars["--fs-h1-fluid"] = `${((parseFloat(vars["--fs-h1"]) / 38) * 4).toFixed(2)}vw`;
   const layouts = {};
   for (const [group] of LAYOUT_GROUPS) layouts[group] = ["sidebar", "full"].includes(site.page_layouts?.[group]) ? site.page_layouts[group] : "auto";
   return {
@@ -91,7 +118,7 @@ export const layoutFor = (group) => current.layouts?.[group] ?? "auto";
 export function paint(brand) {
   current = brand;
   const root = document.documentElement;
-  for (const name of [...Object.values(COLOURS).flat(), "--red-dark", "--font-head", "--font-body"]) root.style.removeProperty(name);
+  for (const name of [...Object.values(COLOURS).flat(), "--red-dark", "--font-head", "--font-body", "--fs-h1-fluid", ...TEXT_SIZES.map((t) => t[3])]) root.style.removeProperty(name);
   for (const [name, value] of Object.entries(brand.vars ?? {})) root.style.setProperty(name, value);
   root.classList.toggle("sidebar-left", brand.sidebar === "left");
   root.classList.toggle("section-colors", brand.sections !== false);

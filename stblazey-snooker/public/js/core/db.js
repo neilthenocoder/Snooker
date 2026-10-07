@@ -17,6 +17,19 @@ export async function run(query) {
   return data;
 }
 
+/** Call one of the site's Netlify Functions as the logged-in person. */
+export async function callFunction(name, body) {
+  const { data: { session } } = await db.auth.getSession();
+  const res = await fetch(`/.netlify/functions/${name}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token ?? ""}` },
+    body: JSON.stringify(body),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || `Request failed (${res.status})`);
+  return json;
+}
+
 /** Account management (needs the service key, so it runs on a Netlify Function). */
 export async function adminUsers(body) {
   if (DEMO_MODE) return demoAdminUsers(body);

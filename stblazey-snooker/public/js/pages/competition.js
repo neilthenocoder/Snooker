@@ -3,7 +3,7 @@ import { table, articles, loadCompetitions, subscribe, competitionBreaks, signup
 import { openForEntry } from "./enter.js";
 import { buildBracket, progressText, isEntry } from "../core/bracket.js";
 import { bracketView, wireBracket, roundCards, standingsTable } from "../core/bracket-view.js";
-import { breadcrumb, panel, urls, newsMini, topBreakPanel, dataTable, playerLink, shortName } from "../core/components.js";
+import { breadcrumb, panel, urls, newsMini, topBreakPanel, dataTable, playerLink, shortName, trophy } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import notFound from "./not-found.js";
 
@@ -55,7 +55,7 @@ export default async function competition(view, { params }) {
               </div>
               ${canEnter && c.entry_closes ? html`<p class="comp-link">Entries close on ${fmtDate(c.entry_closes)}.${waiting.length ? ` ${waiting.length} ${waiting.length === 1 ? "entry is" : "entries are"} waiting for payment to be confirmed.` : ""}</p>` : ""}
             </div>
-            ${champ ? html`<div class="comp-champ"><small>Champion</small>${champ.name}</div>` : ""}
+            <div class="comp-prize">${trophy(c, "comp-trophy")}${champ ? html`<div class="comp-champ"><small>Champion</small>${champ.name}</div>` : ""}</div>
           </div>
         </div>
       </section>

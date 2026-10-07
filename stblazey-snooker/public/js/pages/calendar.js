@@ -1,5 +1,6 @@
 // Fixture calendar: month grid (list on phones), filter by team,
 // and an .ics download so players can add their matches to their phone.
+// Key dates (Admin → Key dates) show on their day as all-day notes.
 import { html, mount, $, fmtTime, ukDay, todayUK } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { loadCompetitions, table } from "../core/api.js";
@@ -15,7 +16,7 @@ const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 export default async function calendar(view, { query }) {
   setTitle("Calendar");
   adminEdit("fixtures");
-  const [ctx, compData, venues] = await Promise.all([seasonContext(), loadCompetitions(), table("venues", "name")]);
+  const [ctx, compData, venues, keyDates] = await Promise.all([seasonContext(), loadCompetitions(), table("venues", "name"), table("key_dates", "starts_on").catch(() => [])]);
   let teamId = query.get("team") ?? "";
   let month = (query.get("month") ?? todayUK().slice(0, 7));
 
@@ -32,28 +33,36 @@ export default async function calendar(view, { query }) {
         const e = (id) => (isEntry(id) ? b.entryById.get(id) : null);
         const team = (x) => x?.team_id ?? ctx.player.get(x?.player_id)?.team_id;
         return {
-          id: m.row.id, when: m.row.starts_at, href: `/cup-match/${m.row.id}`, kind: "cup", status: m.row.status,
+          id: m.row.id, when: m.row.starts_at, href: `/cup-match/${m.row.no ?? m.row.id}`, kind: "cup", status: m.row.status,
           title: `${e(m.a)?.name ?? "TBC"} v ${e(m.b)?.name ?? "TBC"}`, sub: `${c.name} · ${roundName(m.round, b.totalRounds)}`,
           teams: [team(e(m.a)), team(e(m.b))].filter(Boolean), venue: venues.find((v) => v.id === m.row.venue_id)?.name,
         };
       });
     }),
+    ...keyDates.filter((d) => d.is_active !== false).map((d) => {
+      const comp = compData.competitions.find((c) => c.id === d.competition_id);
+      return { id: d.id, when: `${d.starts_on}T00:00:00.000Z`, day: d.starts_on, until: d.ends_on && d.ends_on > d.starts_on ? d.ends_on : null, allDay: true, kind: "key", status: "",
+        href: d.url || (comp ? urls.competition(comp) : "/calendar"), title: d.title, sub: [d.details, comp?.name].filter(Boolean).join(" · "), teams: [] };
+    }),
   ].filter((e) => e.status !== "postponed").sort((a, b) => a.when.localeCompare(b.when));
+  const dayOf = (e) => e.day ?? ukDay(e.when);
+  const shown = (e) => !teamId || e.allDay || e.teams.includes(teamId);
+  const longDay = (iso) => new Date(iso).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: SITE.timeZone });
 
   const draw = () => {
-    const mine = events.filter((e) => !teamId || e.teams.includes(teamId));
+    const mine = events.filter(shown);
     const [y, m] = month.split("-").map(Number);
     const first = `${month}-01`;
     const startDow = (new Date(`${first}T12:00:00Z`).getUTCDay() + 6) % 7; // Monday = 0
     const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
     const cells = Array.from({ length: Math.ceil((startDow + daysInMonth) / 7) * 7 }, (_, i) => addDays(first, i - startDow));
     const byDay = new Map();
-    for (const e of mine) (byDay.get(ukDay(e.when)) ?? byDay.set(ukDay(e.when), []).get(ukDay(e.when))).push(e);
+    for (const e of mine) (byDay.get(dayOf(e)) ?? byDay.set(dayOf(e), []).get(dayOf(e))).push(e);
     const shift = (n) => { const d = new Date(Date.UTC(y, m - 1 + n, 1)); return d.toISOString().slice(0, 7); };
     const today = todayUK();
-    const monthEvents = mine.filter((e) => ukDay(e.when).startsWith(month));
+    const monthEvents = mine.filter((e) => dayOf(e).startsWith(month));
     const ev = (e) => html`<a class="cal-ev ${e.kind} ${e.status === "in_progress" ? "live" : ""}" href="${e.href}" title="${e.sub}">
-      <b>${fmtTime(e.when)}</b> ${e.title}</a>`;
+      ${e.allDay ? "" : html`<b>${fmtTime(e.when)}</b> `}${e.title}</a>`;
 
     mount($("[data-cal]", view), html`
       <div class="cal-bar">
@@ -67,8 +76,8 @@ export default async function calendar(view, { query }) {
           <span class="cal-num">${Number(d.slice(8))}</span>${(byDay.get(d) ?? []).map(ev)}</div>`)}
       </div>
       <div class="cal-list">${monthEvents.length ? monthEvents.map((e) => html`<a class="cal-row ${e.kind}" href="${e.href}">
-          <span class="cal-date">${new Date(e.when).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: SITE.timeZone })}<b>${fmtTime(e.when)}</b></span>
-          <span><strong>${e.title}</strong><small>${e.sub}${e.venue ? ` · ${e.venue}` : ""}</small></span></a>`)
+          <span class="cal-date">${longDay(e.allDay ? `${e.day}T12:00:00Z` : e.when)}<b>${e.allDay ? "Key date" : fmtTime(e.when)}</b></span>
+          <span><strong>${e.title}</strong><small>${[e.sub, e.venue, e.until ? `until ${longDay(`${e.until}T12:00:00Z`)}` : ""].filter(Boolean).join(" · ")}</small></span></a>`)
         : html`<div class="empty">No matches this month${teamId ? " for this team" : ""}.</div>`}</div>`);
     history.replaceState(null, "", `/calendar?${new URLSearchParams({ ...(teamId ? { team: teamId } : {}), month })}`);
   };
@@ -80,7 +89,7 @@ export default async function calendar(view, { query }) {
       <label style="font-weight:700">Show matches for
         <select data-team><option value="">All teams</option>${ctx.leagues.map((l) => html`<optgroup label="${l.name}">${ctx.teamsIn(l.id).map((t) => html`<option value="${t.id}" ${t.id === teamId ? "selected" : ""}>${t.name}</option>`)}</optgroup>`)}</select></label>
       <button class="btn small blue" data-ics>Add to my phone calendar (.ics)</button>
-      <span class="cal-key"><i class="league"></i>League <i class="cup"></i>Cup</span>
+      <span class="cal-key"><i class="league"></i>League <i class="cup"></i>Cup${keyDates.length ? html` <i class="key"></i>Key date` : ""}</span>
     </div>
     <div data-cal></div>
   </div>`);
@@ -90,7 +99,7 @@ export default async function calendar(view, { query }) {
   const onClick = (e) => {
     const mBtn = e.target.closest("[data-month]");
     if (mBtn) { month = mBtn.dataset.month; draw(); }
-    if (e.target.closest("[data-ics]")) downloadIcs(events.filter((x) => (!teamId || x.teams.includes(teamId)) && Date.parse(x.when) > Date.now() - 864e5), teamId ? ctx.team.get(teamId)?.name : "All matches");
+    if (e.target.closest("[data-ics]")) downloadIcs(events.filter((x) => shown(x) && Date.parse(x.when) > Date.now() - 864e5), teamId ? ctx.team.get(teamId)?.name : "All matches");
   };
   view.addEventListener("click", onClick);
   return () => view.removeEventListener("click", onClick);   // the page container is reused, so tidy up
@@ -101,9 +110,12 @@ function downloadIcs(events, label) {
   const stamp = (iso) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
   const esc = (s) => String(s ?? "").replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\n/g, "\\n");
   const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//St Blazey Snooker//Fixtures//EN", "CALSCALE:GREGORIAN", `X-WR-CALNAME:${esc(`${label} – ${SITE.name}`)}`];
+  const dayStamp = (day, add = 0) => addDays(day, add).replace(/-/g, "");
   for (const e of events) {
     lines.push("BEGIN:VEVENT", `UID:${e.id}@stblazey-snooker`, `DTSTAMP:${stamp(new Date().toISOString())}`,
-      `DTSTART:${stamp(e.when)}`, `DTEND:${stamp(new Date(Date.parse(e.when) + 3 * 3600e3).toISOString())}`,
+      // Key dates are all-day entries (the end day is the day after the last one, as calendars expect).
+      ...(e.allDay ? [`DTSTART;VALUE=DATE:${dayStamp(e.day)}`, `DTEND;VALUE=DATE:${dayStamp(e.until ?? e.day, 1)}`]
+        : [`DTSTART:${stamp(e.when)}`, `DTEND:${stamp(new Date(Date.parse(e.when) + 3 * 3600e3).toISOString())}`]),
       `SUMMARY:${esc(e.title)}`, `DESCRIPTION:${esc(e.sub)}`, ...(e.venue ? [`LOCATION:${esc(e.venue)}`] : []),
       `URL:${location.origin}${e.href}`, "END:VEVENT");
   }

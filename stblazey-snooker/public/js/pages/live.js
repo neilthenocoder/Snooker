@@ -1,6 +1,7 @@
 import { html, mount, fmtTime, todayUK, ukDay } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
-import { subscribe, table } from "../core/api.js";
+import { subscribe, table, liveMatches } from "../core/api.js";
+import { sideName, matchLabel } from "../core/live-score.js";
 import { breadcrumb, panel, dataTable, statusBadge, urls } from "../core/components.js";
 import { frameWinner } from "../core/rules.js";
 import { setTitle, adminEdit } from "../core/router.js";
@@ -9,7 +10,8 @@ export default async function live(view) {
   setTitle("Live scores");
   adminEdit("results");
   const draw = async () => {
-    const [ctx, competitions] = await Promise.all([seasonContext(), table("competitions", "sort")]);
+    const [ctx, competitions, boards, everyone] = await Promise.all([seasonContext(), table("competitions", "sort"), liveMatches().catch(() => []), table("players", "full_name")]);
+    const onTable = boards.filter((m) => m.status === "live");
     const liveDraws = competitions.filter((c) => c.draw_live?.status === "live");
     const today = todayUK();
     const games = ctx.fixtures.filter((f) => f.status === "in_progress" || ukDay(f.starts_at) === today);
@@ -24,6 +26,7 @@ export default async function live(view) {
       <h1>Live scores</h1>
       <p class="muted">Scores update automatically as captains save each frame — no need to refresh.</p>
       ${liveDraws.map((c) => html`<a class="live-draw-note" href="/draw/${c.slug}"><span class="live-dot">Live</span> The <b>${c.name}</b> draw is being made now — watch it →</a>`)}
+      ${onTable.map((m) => html`<a class="live-draw-note" href="${urls.scoreboard(m)}"><span class="live-dot">Live</span> <b>${sideName(m, "a", everyone)} ${m.frames_a ?? 0} – ${m.frames_b ?? 0} ${sideName(m, "b", everyone)}</b> (${matchLabel(m, competitions)}) — ball by ball on the scoreboard →</a>`)}
       ${games.length ? html`<div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(340px,1fr))">${games.map((fx) => {
         const s = ctx.scoreOf(fx);
         const home = ctx.team.get(fx.home_team_id), away = ctx.team.get(fx.away_team_id);
@@ -38,9 +41,9 @@ export default async function live(view) {
             { label: "", cell: (f) => `${f.home_points ?? ""}-${f.away_points ?? ""}`, cls: "num" },
             { label: "Away", cell: (f) => who(fx, f, "away"), cls: "live-name" },
           ], ctx.framesOf(fx.id).filter((f) => !f.legacy), { empty: "Waiting for the first frame…" })}`);
-      })}</div>` : html`<div class="empty">No matches being played right now. Match nights are usually Tuesdays from 19:30.</div>`}
+      })}</div>` : onTable.length ? "" : html`<div class="empty">No matches being played right now. Match nights are usually Tuesdays from 19:30.</div>`}
     </div>`);
   };
   await draw();
-  return subscribe(["frames", "breaks", "fixtures", "competitions"], draw);
+  return subscribe(["frames", "breaks", "fixtures", "competitions", "live_matches"], draw);
 }

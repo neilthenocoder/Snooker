@@ -1,6 +1,6 @@
 import { html, mount, $, toast } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
-import { loadFixture, saveScorecard, setFixtureStatus, seasonFrames, setScorecardPhoto, addPlayerToTeam } from "../core/api.js";
+import { loadFixture, saveScorecard, setFixtureStatus, seasonFrames, setScorecardPhoto, addPlayerToTeam, sendResultEmail } from "../core/api.js";
 import { extCounts, isShieldMatch } from "../core/rules.js";
 import { canEditFixture, isAdmin } from "../core/auth.js";
 import { uploadImage } from "../core/upload.js";
@@ -46,9 +46,15 @@ export default async function scorecard(view, { params, user }) {
     home_player_id: f.a[0].player_id, away_player_id: f.b[0].player_id, home_ext: !!f.a[0].ext, away_ext: !!f.b[0].ext,
   });
   const playerOption = (p) => ({ id: p.id, name: `${p.full_name}${p.position === "Team Captain" ? " (c)" : p.position === "Vice Captain" ? " (vc)" : ""}` });
+  // Who can be picked: the team's squad today, plus anyone already on this card (someone who has since left, say).
+  const squad = (teamId, side) => {
+    const list = ctx.playersOf(teamId);
+    const onCard = bundle.frames.map((f) => ctx.player.get(f[`${side}_player_id`])).filter((p) => p && !list.includes(p));
+    return [...list, ...new Set(onCard)].map(playerOption);
+  };
   const sides = {
-    a: { name: home?.name, team: home, options: ctx.playersOf(fx.home_team_id).map(playerOption) },
-    b: { name: away?.name, team: away, options: ctx.playersOf(fx.away_team_id).map(playerOption) },
+    a: { name: home?.name, team: home, options: squad(fx.home_team_id, "home") },
+    b: { name: away?.name, team: away, options: squad(fx.away_team_id, "away") },
   };
   const myTeam = admin ? null : user.profile.team_id;
   const back = admin ? "/admin/results" : "/my/fixtures";
@@ -87,7 +93,11 @@ export default async function scorecard(view, { params, user }) {
       if (action === "view") return navigate(urls.match(fx));
       await saveScorecard(fx.id, frames.map(fromEditor), breaks);
       const target = { progress: fx.status === "scheduled" ? "in_progress" : fx.status, submit: "submitted", approve: "approved", postponed: "postponed" }[action];
-      if (target && target !== fx.status) { await setFixtureStatus(fx.id, target); fx.status = target; mount($("[data-status]", view), statusBadge(target)); }
+      if (target && target !== fx.status) {
+        await setFixtureStatus(fx.id, target); fx.status = target; mount($("[data-status]", view), statusBadge(target));
+        // The results secretary gets an email as soon as a card is submitted (Admin → Result emails).
+        if (target === "submitted") sendResultEmail(fx.id);
+      }
       if (action === "submit" && !admin) navigate(back);
       if (["approve", "postponed"].includes(action)) navigate(location.pathname, { replace: true });
     },

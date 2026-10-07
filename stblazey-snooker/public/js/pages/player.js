@@ -7,27 +7,32 @@ import { buildBracket, competitionStandings } from "../core/bracket.js";
 import { listItems } from "../core/list-field.js";
 import { breadcrumb, panel, dataTable, avatar, teamLink, urls, gallery, articleCard, cueviewSection, handicapText, handicapMove } from "../core/components.js";
 import { setTitle, navigate, adminEdit } from "../core/router.js";
+import { PLAYER_TAG } from "../core/terms.js";
+import { lifeYears } from "./memoriam.js";
 import notFound from "./not-found.js";
 
 export default async function player(view, { params }) {
-  const [ctx, allPlayers, seasons, leagues, history, comps, news] = await Promise.all([
-    seasonContext(), table("players", "full_name"), table("seasons", "name"), table("leagues", "sort"),
-    playerHistory(params.id), loadCompetitions(), articles(),
-  ]);
-  const p = allPlayers.find((x) => x.id === params.id);
+  // The address is the player's short name (/player/sam-bolitho); the old long ids still work.
+  const allPlayers = await table("players", "full_name");
+  const p = allPlayers.find((x) => x.slug === params.id) ?? allPlayers.find((x) => x.id === params.id);
   if (!p) return notFound(view);
+  if (p.slug && params.id !== p.slug) history.replaceState(null, "", `${urls.player(p)}${location.search}${location.hash}`);
+  const [ctx, seasons, leagues, playerPast, comps, news] = await Promise.all([
+    seasonContext(), table("seasons", "name"), table("leagues", "sort"),
+    playerHistory(p.id), loadCompetitions(), articles(),
+  ]);
   setTitle(p.full_name);
   adminEdit("players", p.id);
 
   const team = ctx.team.get(p.team_id);
   const league = team && ctx.league.get(team.league_id);
   const rank = league ? ctx.rankings(league.id).find((r) => r.player.id === p.id) : null;
-  const fixtureById = new Map(history.fixtures.map((f) => [f.id, f]));
+  const fixtureById = new Map(playerPast.fixtures.map((f) => [f.id, f]));
   const teamName = (id) => ctx.team.get(id)?.name ?? "–";
 
   // One row per season + league, using the same maths as the rankings (rules.js).
   const groups = new Map();
-  for (const fr of history.frames) {
+  for (const fr of playerPast.frames) {
     const fx = fixtureById.get(fr.fixture_id);
     if (!fx) continue;
     const key = `${fx.season_id}|${fx.league_id}`;
@@ -36,13 +41,13 @@ export default async function player(view, { params }) {
     (g.frames.get(fx.id) ?? g.frames.set(fx.id, []).get(fx.id)).push(fr);
   }
   const seasonRows = [...groups.values()].map((g) => {
-    const [r] = playerRankings([p], [...g.fixtures.values()], g.frames, history.breaks.filter((b) => g.fixtures.has(b.fixture_id)));
+    const [r] = playerRankings([p], [...g.fixtures.values()], g.frames, playerPast.breaks.filter((b) => g.fixtures.has(b.fixture_id)));
     const frames = [...g.frames.values()].flat();
     const side = (fr) => (fr.home_player_id === p.id ? "home" : "away");
     return {
       ...g, played: r?.played ?? 0, won: r?.won ?? 0, lost: r?.lost ?? 0, pts: r?.pts ?? 0, breakPts: r?.breakPts ?? 0,
       scored: frames.reduce((n, fr) => n + (Number(fr[`${side(fr)}_points`]) || 0), 0),
-      best: Math.max(0, ...history.breaks.filter((b) => g.fixtures.has(b.fixture_id)).map((b) => b.value)),
+      best: Math.max(0, ...playerPast.breaks.filter((b) => g.fixtures.has(b.fixture_id)).map((b) => b.value)),
       team: teamName(frames[0] && fixtureById.get(frames[0].fixture_id)?.[`${side(frames[0])}_team_id`]),
     };
   }).sort((a, b) => (b.season?.name ?? "").localeCompare(a.season?.name ?? ""));
@@ -50,7 +55,7 @@ export default async function player(view, { params }) {
   const pct = (w, n) => (n ? `${Math.round((w / n) * 100)}%` : "–");
 
   // Frame-by-frame history, newest first.
-  const frameRows = history.frames.map((fr) => ({ fr, fx: fixtureById.get(fr.fixture_id), side: fr.home_player_id === p.id ? "home" : "away" }))
+  const frameRows = playerPast.frames.map((fr) => ({ fr, fx: fixtureById.get(fr.fixture_id), side: fr.home_player_id === p.id ? "home" : "away" }))
     .filter((x) => x.fx).sort((a, b) => b.fx.starts_at.localeCompare(a.fx.starts_at) || a.fr.frame_no - b.fr.frame_no);
   const opp = (x) => ctx.player.get(x.fr[`${x.side === "home" ? "away" : "home"}_player_id`]) ?? allPlayers.find((q) => q.id === x.fr[`${x.side === "home" ? "away" : "home"}_player_id`]);
 
@@ -63,6 +68,7 @@ export default async function player(view, { params }) {
 
   const age = p.birth_date ? Math.floor((Date.now() - new Date(p.birth_date)) / 3.15576e10) : null;
   const teammates = allPlayers.filter((x) => x.team_id === p.team_id);
+  const gone = p.status === "deceased", tag = PLAYER_TAG[p.status];
   // Past teams: worked out from results, plus anything typed in for the years before this website.
   const pastTeams = [...new Set([...seasonRows.map((r) => r.team).filter((t) => t && t !== "–" && t !== team?.name),
     ...listItems(p.past_teams)])];
@@ -74,21 +80,21 @@ export default async function player(view, { params }) {
   const facts = [
     ["Position", p.position],
     ["Handicap", html`${handicapText(p.handicap)}${handicapMove(p)}`],
-    ["Current team", team ? teamLink(team) : "–"],
+    [gone || p.status === "not_playing" ? "Team" : "Current team", team ? teamLink(team) : "–"],
     ...(pastTeams.length ? [["Past teams", pastTeams.join(", ")]] : []),
     ["League", league ? html`<a href="${urls.standings(league)}">${league.name}</a>` : "–"],
     ...(myComps.length ? [["Competitions", myComps.map((x) => x.c.name).join(", ")]] : []),
     ["Seasons", [...new Set(seasonRows.map((r) => r.season?.name).filter(Boolean))].sort().join(", ") || "–"],
     ...(p.cueview?.hand ? [["Left or right handed", p.cueview.hand]] : []),
-    ["Extra (Ext) games this season", `${extThisSeason} of ${EXT_PER_SEASON}`],
-    ...(p.birth_date ? [["Birthday", fmtDate(p.birth_date)], ["Age", age]] : []),
+    ...(gone || p.status === "not_playing" ? [] : [["Extra (Ext) games this season", `${extThisSeason} of ${EXT_PER_SEASON}`]]),
+    ...(gone ? (lifeYears(p) ? [["Years", lifeYears(p)]] : []) : p.birth_date ? [["Birthday", fmtDate(p.birth_date)], ["Age", age]] : []),
   ];
 
   mount(view, html`<div class="wrap stack">
     <div>
       ${breadcrumb([["Home", "/"], ["Our Players", team ? `/players?team=${team.slug}` : "/players"], [p.full_name]])}
       <div class="player-head">
-        <h1>${rank ? html`<span class="rank-badge" title="${league.name} ranking">${rank.pos}</span>` : ""}${p.full_name}</h1>
+        <h1>${rank && !gone ? html`<span class="rank-badge" title="${league.name} ranking">${rank.pos}</span>` : ""}${p.full_name}${tag && !gone ? html` <span class="status plain player-status">${tag}</span>` : ""}</h1>
         <div class="toolbar" style="margin:0">
           <label style="font-weight:700">Team
             <select data-team-filter><option value="">All teams</option>${ctx.teams.map((t) => html`<option value="${t.id}" ${t.id === p.team_id ? "selected" : ""}>${t.name}</option>`)}</select></label>
@@ -98,7 +104,11 @@ export default async function player(view, { params }) {
       </div>
     </div>
 
-    <div class="player-card">
+    ${gone ? html`<div class="mem-banner"><p class="mem-banner-h">Sadly no longer with us${lifeYears(p) ? html` <span>${lifeYears(p)}</span>` : ""}</p>
+      ${p.memorial ? html`<p>${p.memorial}</p>` : html`<p>${p.full_name} is remembered by everyone in the league. Their record stays here.</p>`}
+      <a href="/in-memoriam">Sadly no longer with us: remembering the league's players</a></div>` : ""}
+
+    <div class="player-card ${gone ? "in-memory" : ""}">
       ${avatar(p, "player-photo")}
       <dl class="facts">${facts.map(([k, v]) => html`<div><dt>${k}</dt><dd>${v}</dd></div>`)}</dl>
     </div>
@@ -143,7 +153,7 @@ export default async function player(view, { params }) {
         { label: "Date", cell: (b) => { const fx = fixtureById.get(b.fixture_id) ?? ctx.fixture.get(b.fixture_id); return fx ? html`<a href="${urls.match(fx)}">${fmtDate(fx.starts_at)}</a>` : "–"; } },
         { label: "Break", cell: (b) => b.value, cls: "num strong" },
         { label: "Points", cell: (b) => breakPoints(b.value) || "–", cls: "num" },
-      ], [...history.breaks].sort((a, b) => b.value - a.value), { empty: "No breaks recorded yet." }))}
+      ], [...playerPast.breaks].sort((a, b) => b.value - a.value), { empty: "No breaks recorded yet." }))}
       ${panel("Competitions", dataTable([
         { label: "Competition", cell: (x) => html`<a href="${urls.competition(x.c)}">${x.c.name}</a>` },
         { label: "Result", cell: (x) => x.standing?.status ?? "–" },

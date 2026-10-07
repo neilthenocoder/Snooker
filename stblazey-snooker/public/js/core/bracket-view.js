@@ -42,7 +42,7 @@ function matchBox(b, m) {
   const inner = html`${teamRow(b, m, "a")}${teamRow(b, m, "b")}
     ${when && !m.isBye ? html`<div class="br-meta">${live ? html`<span class="live-dot">Live</span> ` : ""}${when}${onPoints(m) ? ` · ${onPoints(m)}` : ""}</div>` : ""}`;
   return m.row.id && !m.isBye
-    ? html`<a class="br-match ${m.played ? "played" : ""} ${live ? "live" : ""}" href="/cup-match/${m.row.id}">${inner}</a>`
+    ? html`<a class="br-match ${m.played ? "played" : ""} ${live ? "live" : ""}" href="/cup-match/${m.row.no ?? m.row.id}">${inner}</a>`
     : html`<div class="br-match ${m.isBye ? "bye" : ""}">${inner}</div>`;
 }
 
@@ -100,7 +100,7 @@ export function roundCards(b, venueById, deadlines = {}) {
             ${href ? html`<a href="${href}">${name}</a>` : html`<span>${name}</span>`}
             <b>${m.row[side === "a" ? "score_a" : "score_b"] ?? "-"}</b></div>`;
         };
-        return html`<div class="fx-card">${cell("a")}<div class="fx-v">v ${m.row.id ? html`<a class="fx-link" href="/cup-match/${m.row.id}">${m.row.status === "in_progress" ? "Live" : m.played ? "Scorecard" : "Match page"} →</a>` : ""}</div>${cell("b")}
+        return html`<div class="fx-card">${cell("a")}<div class="fx-v">v ${m.row.id ? html`<a class="fx-link" href="/cup-match/${m.row.no ?? m.row.id}">${m.row.status === "in_progress" ? "Live" : m.played ? "Scorecard" : "Match page"} →</a>` : ""}</div>${cell("b")}
           <div class="fx-meta">${m.row.starts_at ? `${fmtDate(m.row.starts_at)} ${fmtTime(m.row.starts_at)}` : "Date TBC"}${v ? html` · <a href="${urls.venue(v)}">${v.name}</a>` : ""}${onPoints(m) ? html` · <b>${onPoints(m)}</b>` : ""}</div></div>`;
       })}</div>`;
   });

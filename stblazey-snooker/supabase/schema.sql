@@ -511,6 +511,202 @@ create table if not exists audit_log (
 );
 create index if not exists audit_log_at_idx on audit_log (at desc);
 
+-- v8: Rich's sixth round of feedback ----------------------------------
+-- Ticker speed: 1 (very slow) to 10 (fast). The old slow / normal / fast choice is carried over once.
+alter table settings add column if not exists ticker_pace int not null default 3;
+update settings set ticker_pace = case ticker_speed when 'slow' then 2 else 5 end, ticker_speed = 'normal' where ticker_speed in ('slow', 'fast');
+-- Text sizes (Admin → Branding): { "body": 15, "h1": 38, "h2": 22, "h3": 20, "table": 14, "nav": 18, … } in pixels; missing = standard.
+alter table settings add column if not exists text_sizes jsonb not null default '{}'::jsonb;
+-- Confetti when a new highest break arrives: 'off', 'season' (a league's or competition's best of the season) or 'week' (best of the week too).
+alter table settings add column if not exists celebrate_breaks text not null default 'season';
+-- The home page feature box can also show the announcements, one after another.
+alter table settings add column if not exists feature_announcements boolean not null default true;
+-- More than one message in the feature box: 'scroll' across like the ticker, or 'rotate' (one at a time).
+alter table settings add column if not exists feature_style text not null default 'scroll';
+alter table announcements add column if not exists label text;
+alter table announcements add column if not exists show_in_feature boolean not null default true;
+-- Key dates box on the home page.
+alter table settings add column if not exists key_dates_show boolean not null default true;
+alter table settings add column if not exists key_dates_count int not null default 5;
+create table if not exists key_dates (
+  id uuid primary key default gen_random_uuid(),
+  starts_on date not null,
+  ends_on date,
+  title text not null,
+  details text,
+  url text,
+  competition_id uuid references competitions on delete set null,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+-- Trophies: a picture for each league and competition (a transparent PNG or an SVG), shown wherever that league or competition is.
+alter table leagues add column if not exists trophy_url text;
+alter table competitions add column if not exists trophy_url text;
+-- Presentation night: one row per trophy / award for a season, with its winner and runner-up.
+create table if not exists awards (
+  id uuid primary key default gen_random_uuid(),
+  season_id uuid references seasons on delete cascade,
+  name text not null,
+  sort int not null default 1,
+  trophy_url text,
+  league_id uuid references leagues on delete set null,
+  competition_id uuid references competitions on delete set null,
+  winner_name text,
+  winner_player_id uuid references players on delete set null,
+  winner_team_id uuid references teams on delete set null,
+  winner_image_url text,
+  runner_up_name text,
+  runner_up_player_id uuid references players on delete set null,
+  runner_up_team_id uuid references teams on delete set null,
+  runner_up_image_url text,
+  note text,
+  created_at timestamptz not null default now()
+);
+create index if not exists awards_season_idx on awards (season_id, sort);
+-- AGM and committee meetings.
+create table if not exists meetings (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null default 'Committee Meeting',
+  held_on date not null,
+  time_text text,
+  title text,
+  venue text,
+  summary text,
+  minutes text,
+  document_url text,
+  is_published boolean not null default true,
+  created_at timestamptz not null default now()
+);
+-- Info pages can be shown on the Rules page (/rules), each as its own tab.
+alter table pages add column if not exists show_in_rules boolean not null default false;
+-- Sponsors have their own page (/sponsor/<slug>).
+alter table sponsors add column if not exists slug text;
+alter table sponsors add column if not exists about text;
+alter table sponsors add column if not exists phone text;
+alter table sponsors add column if not exists email text;
+alter table sponsors add column if not exists address text;
+alter table sponsors add column if not exists photo_url text;
+-- Players: whether they are playing, and a memorial for those no longer with us.
+alter table players add column if not exists status text not null default 'playing';
+alter table players drop constraint if exists players_status_check;
+alter table players add constraint players_status_check check (status in ('playing', 'not_playing', 'no_team', 'deceased'));
+alter table players add column if not exists died_on date;
+alter table players add column if not exists memorial text;
+-- Short web addresses: /player/sam-bolitho, /match/2627-14, /cup-match/27 (the long ones still work).
+alter table players add column if not exists slug text;
+alter table fixtures add column if not exists code text;
+create sequence if not exists competition_match_no_seq;
+alter table competition_matches add column if not exists no bigint;
+-- Whoever makes a draw needs to be able to take the next number.
+grant usage, select on sequence public.competition_match_no_seq to authenticated;
+alter table competition_matches alter column no set default nextval('competition_match_no_seq');
+-- The results secretary is emailed once when a captain submits a card (netlify/functions/result-email.mjs).
+alter table fixtures add column if not exists submitted_email_at timestamptz;
+-- Who that email goes to. Kept apart from "settings" because that table is public and these are private addresses.
+create table if not exists private_settings (
+  id int primary key default 1 check (id = 1),
+  results_email_on boolean not null default false,
+  results_email_to text,
+  updated_at timestamptz not null default now()
+);
+insert into private_settings (id) values (1) on conflict (id) do nothing;
+-- Live scoreboard: a match scored ball by ball by an admin (finals night). "state" holds the frame being played.
+create table if not exists live_matches (
+  id uuid primary key default gen_random_uuid(),
+  no bigint generated by default as identity,
+  title text,
+  competition_id uuid references competitions on delete set null,
+  round_name text,
+  player_a_id uuid references players on delete set null,
+  player_b_id uuid references players on delete set null,
+  name_a text,
+  name_b text,
+  best_of int not null default 9 check (best_of between 1 and 35),
+  status text not null default 'setup' check (status in ('setup', 'live', 'finished')),
+  frames_a int not null default 0,
+  frames_b int not null default 0,
+  state jsonb not null default '{}'::jsonb,
+  venue text,
+  starts_at timestamptz,
+  started_at timestamptz,
+  finished_at timestamptz,
+  created_by text,
+  updated_at timestamptz not null default now()
+);
+create unique index if not exists live_matches_no_key on live_matches (no);
+
+-- "Sam Bolitho" → "sam-bolitho"
+create or replace function public.slugify(t text) returns text
+language sql immutable as $$
+  -- Accents are flattened (Zoë → zoe) and apostrophes dropped (O'Brien → obrien); anything else becomes a dash.
+  select trim(both '-' from regexp_replace(
+    translate(regexp_replace(lower(coalesce(t, '')), '[''’`]', '', 'g'), 'àáâãäåçèéêëìíîïñòóôõöùúûüýÿ', 'aaaaaaceeeeiiiinooooouuuuyy'),
+    '[^a-z0-9]+', '-', 'g'));
+$$;
+-- …and "sam-bolitho-2" if someone already has that one.
+create or replace function public.unique_slug(tbl text, base text, self uuid) returns text
+language plpgsql as $$
+declare s text := coalesce(nullif(public.slugify(base), ''), 'item'); candidate text; n int := 1; taken boolean;
+begin
+  candidate := s;
+  loop
+    execute format('select exists (select 1 from %I where slug = $1 and id is distinct from $2)', tbl) into taken using candidate, self;
+    exit when not taken;
+    n := n + 1;
+    candidate := s || '-' || n;
+  end loop;
+  return candidate;
+end;
+$$;
+-- Fills in an empty slug from the column named in the trigger (it never changes one that is already set, so links keep working).
+create or replace function public.set_slug() returns trigger
+language plpgsql as $$
+begin
+  if coalesce(new.slug, '') = '' then
+    perform pg_advisory_xact_lock(hashtext('slug:' || tg_table_name));
+    new.slug := public.unique_slug(tg_table_name, to_jsonb(new) ->> tg_argv[0], new.id);
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists players_set_slug on players;
+create trigger players_set_slug before insert or update on players for each row execute function public.set_slug('full_name');
+drop trigger if exists sponsors_set_slug on sponsors;
+create trigger sponsors_set_slug before insert or update on sponsors for each row execute function public.set_slug('name');
+
+-- "2026-2027" → "2627": the start of every match code in that season.
+create or replace function public.season_code(sid uuid) returns text
+language sql stable as $$
+  select coalesce((select string_agg(right(r.m[1], 2), '' order by r.ord)
+                   from regexp_matches((select name from seasons where id = sid), '(\d{4})', 'g') with ordinality as r(m, ord)), 's');
+$$;
+-- Each new fixture gets the next number of its season: 2627-01, 2627-02, …
+create or replace function public.assign_fixture_code() returns trigger
+language plpgsql as $$
+declare prefix text; n int;
+begin
+  if coalesce(new.code, '') <> '' then return new; end if;
+  prefix := public.season_code(new.season_id);
+  perform pg_advisory_xact_lock(hashtext('fixture_code:' || prefix));
+  select coalesce(max((regexp_match(code, '-(\d+)$'))[1]::int), 0) + 1 into n from fixtures where code like prefix || '-%';
+  new.code := prefix || '-' || lpad(n::text, greatest(2, length(n::text)), '0');   -- 01 … 99, 100, 101 …
+  return new;
+end;
+$$;
+drop trigger if exists fixtures_assign_code on fixtures;
+create trigger fixtures_assign_code before insert on fixtures for each row execute function public.assign_fixture_code();
+
+-- A card that is sent back to the captain (submitted → in progress / scheduled) can be emailed again when it is re-submitted.
+create or replace function public.reset_result_email() returns trigger
+language plpgsql as $$
+begin
+  if old.status = 'submitted' and new.status in ('scheduled', 'in_progress') then new.submitted_email_at := null; end if;
+  return new;
+end;
+$$;
+drop trigger if exists fixtures_reset_result_email on fixtures;
+create trigger fixtures_reset_result_email before update on fixtures for each row execute function public.reset_result_email();
+
 -- One row per login. Created by the admin dashboard (Netlify Function).
 create table if not exists profiles (
   id uuid primary key references auth.users on delete cascade,
@@ -935,13 +1131,13 @@ grant execute on function public.signup_names(uuid) to anon, authenticated;
 do $$
 declare t text; area text;
 begin
-  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','frames','breaks','articles','pages','sponsors','profiles','competitions','competition_entries','competition_matches','categories','media','settings','competition_frames','competition_breaks','page_views','announcements','role_permissions','audit_log'] loop
+  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','frames','breaks','articles','pages','sponsors','profiles','competitions','competition_entries','competition_matches','categories','media','settings','competition_frames','competition_breaks','page_views','announcements','role_permissions','audit_log','key_dates','awards','meetings','live_matches','private_settings'] loop
     execute format('alter table %I enable row level security', t);
     execute format('drop policy if exists "public read" on %I', t);
     execute format('drop policy if exists "admin write" on %I', t);
   end loop;
 
-  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','frames','breaks','pages','sponsors','competitions','competition_entries','competition_matches','categories','media','settings','competition_frames','competition_breaks','announcements','role_permissions'] loop
+  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','frames','breaks','pages','sponsors','competitions','competition_entries','competition_matches','categories','media','settings','competition_frames','competition_breaks','announcements','role_permissions','key_dates','awards','live_matches'] loop
     execute format('create policy "public read" on %I for select using (true)', t);
   end loop;
 
@@ -966,6 +1162,17 @@ begin
   foreach t in array array['settings','page_views'] loop
     execute format('create policy "admin write" on %I for all using (public.can_manage(''settings'')) with check (public.can_manage(''settings''))', t);
   end loop;
+  -- Key dates and presentation-night awards: whoever looks after the website or the competitions.
+  foreach t in array array['key_dates','awards'] loop
+    execute format('create policy "admin write" on %I for all using (public.can_manage(''website'') or public.can_manage(''competitions'')) with check (public.can_manage(''website'') or public.can_manage(''competitions''))', t);
+  end loop;
+  -- Meetings: the website team; unpublished ones are hidden from the public.
+  execute 'create policy "admin write" on meetings for all using (public.can_manage(''website'')) with check (public.can_manage(''website''))';
+  execute 'create policy "public read" on meetings for select using (is_published or public.can_manage(''website''))';
+  -- The live scoreboard: whoever looks after competitions or match nights.
+  execute 'create policy "admin write" on live_matches for all using (public.can_manage(''competitions'') or public.can_manage(''matchnights'')) with check (public.can_manage(''competitions'') or public.can_manage(''matchnights''))';
+  -- Who gets the result emails: private (settings & branding only).
+  execute 'create policy "admin write" on private_settings for all using (public.can_manage(''settings'')) with check (public.can_manage(''settings''))';
   -- The activity log: read by the Master Admin only; written only by the triggers below.
   execute 'create policy "public read" on audit_log for select using (public.is_master())';
   -- The image library is shared by everyone who can upload pictures.
@@ -1023,6 +1230,7 @@ language sql stable security definer set search_path = public as $$
       coalesce(' (' || to_char((j->>'starts_at')::timestamptz at time zone 'Europe/London', 'DD/MM/YYYY') || ')', '') end,
     case when t = 'settings' then 'Site settings' end,
     case when t = 'role_permissions' then j->>'role' end,
+    case when t = 'meetings' then coalesce(nullif(j->>'title', ''), j->>'kind') || ' (' || to_char((j->>'held_on')::date, 'DD/MM/YYYY') || ')' end,
     nullif(j->>'name', ''), nullif(j->>'full_name', ''), nullif(j->>'title', ''), nullif(j->>'text', ''), j->>'id'), 140);
 $$;
 -- One line per changed or removed row, listing what changed.
@@ -1039,7 +1247,7 @@ begin
   end if;
   n := to_jsonb(new);
   for k in select key from jsonb_each(n) loop
-    if (n->k) is distinct from (o->k) and k not in ('updated_at', 'postponed_at') then
+    if (n->k) is distinct from (o->k) and k not in ('updated_at', 'postponed_at', 'code', 'slug', 'submitted_email_at') then
       -- Short values are kept ("status: submitted → approved"); long ones (an article's text, a picture link) are just noted as changed.
       diff := diff || jsonb_build_object(k,
         case when length(coalesce((n->k)::text, '')) > 140 or length(coalesce((o->k)::text, '')) > 140
@@ -1074,7 +1282,7 @@ revoke all on function public.audit_added() from public, anon, authenticated;
 do $$
 declare t text;
 begin
-  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','competitions','competition_entries','articles','pages','sponsors','categories','announcements','settings','role_permissions'] loop
+  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','competitions','competition_entries','articles','pages','sponsors','categories','announcements','settings','role_permissions','key_dates','awards','meetings'] loop
     execute format('drop trigger if exists audit_row on %I', t);
     execute format('drop trigger if exists audit_added on %I', t);
     execute format('create trigger audit_row after update or delete on %I for each row execute function public.audit_row()', t);
@@ -1082,11 +1290,30 @@ begin
   end loop;
 end $$;
 
+-- ── v8: give existing rows their short web addresses ────────────
+-- (Done down here, after the activity log has been told to ignore these columns.)
+update players set slug = slug where coalesce(slug, '') = '';
+update sponsors set slug = slug where coalesce(slug, '') = '';
+create unique index if not exists players_slug_key on players (slug);
+create unique index if not exists sponsors_slug_key on sponsors (slug);
+with numbered as (
+  select f.id, public.season_code(f.season_id) as prefix,
+         row_number() over (partition by public.season_code(f.season_id) order by f.starts_at, f.id) as rn
+  from fixtures f where coalesce(f.code, '') = ''),
+top as (
+  select public.season_code(season_id) as prefix, max((regexp_match(code, '-(\d+)$'))[1]::int) as n
+  from fixtures where coalesce(code, '') <> '' group by 1)
+update fixtures f set code = numbered.prefix || '-' || lpad((coalesce(top.n, 0) + numbered.rn)::text, greatest(2, length((coalesce(top.n, 0) + numbered.rn)::text)), '0')
+  from numbered left join top on top.prefix = numbered.prefix where f.id = numbered.id;
+create unique index if not exists fixtures_code_key on fixtures (code);
+update competition_matches set no = nextval('competition_match_no_seq') where no is null;
+create unique index if not exists competition_matches_no_key on competition_matches (no);
+
 -- ── live updates ────────────────────────────────────────────────
 do $$
 declare t text;
 begin
-  foreach t in array array['fixtures','frames','breaks','players','competition_matches','competition_frames','competition_breaks','competitions'] loop
+  foreach t in array array['fixtures','frames','breaks','players','competition_matches','competition_frames','competition_breaks','competitions','live_matches'] loop
     begin
       execute format('alter publication supabase_realtime add table %I', t);
     exception when duplicate_object then null;
@@ -1096,9 +1323,9 @@ end $$;
 
 -- ── image uploads (Supabase Storage) ────────────────────────────
 -- A public "images" bucket: anyone can view pictures; admins and league
--- officers can upload or delete them. Max 5 MB, images only.
+-- officers can upload or delete them. Max 5 MB; images, plus PDFs (meeting minutes).
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('images', 'images', true, 5242880, array['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'])
+values ('images', 'images', true, 5242880, array['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'application/pdf'])
 on conflict (id) do update set public = true, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists "images admin insert" on storage.objects;

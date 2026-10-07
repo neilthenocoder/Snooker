@@ -15,6 +15,11 @@ A fast, plain HTML/CSS/JavaScript website (no build step) with:
 - **Live draws**: a competition's draw can be made live on the website, one tie at a time, with a named witness.
 - **Branding**: logo, loading logo, the colour of each menu button and its section, fonts and page layout are all set in the dashboard.
 - **Season archive & roll of honour** (`/archive`): every season's champions, top player and highest break, with its full tables and breaks a click away.
+- **Finals night**: a **live scoreboard** scored ball by ball from a phone or tablet (Admin → Live scoreboard), watched live at `/scoreboard`.
+- **End of season**: a **presentation night** page with every trophy, winner and runner-up (`/presentation`) and a **season review** worked out from the results (`/season-review`).
+- **League information**: **key dates** on the home page and calendar, a **Rules** page with tabs, a contents list and proper tables and sub-bullets (`/rules`), **AGM and committee meetings** with minutes (`/meetings`), a page for each **sponsor**, and **Sadly no longer with us** (`/in-memoriam`).
+- **Result emails**: the results secretary is emailed as soon as a captain submits a card (through Resend — see section 3f).
+- **Short web addresses**: `/match/2627-14`, `/player/sam-bolitho`, `/cup-match/27`.
 - **Automatic calculations**: league tables (P/W/L/F/A/Pts), player rankings (5 pts per frame won plus break points), highest breaks and all breaks.
 
 It runs in **demo mode** out of the box, using sample data saved in your browser, so you can deploy it to Netlify and click around before setting up a database.
@@ -100,6 +105,14 @@ Then, in Netlify, go to **Site configuration → Environment variables** and add
 
 Redeploy once after adding the variables. Now log in at `/login` and create captain logins under **Admin → Logins**.
 
+Result emails need one more variable (and a second once the league's domain is verified) — see **section 3f**:
+
+| Key | Value | "Contains secret values"? |
+|---|---|---|
+| `RESEND_API_KEY` | your Resend API key (starts `re_`) | **Yes.** Tick it |
+| `RESULTS_EMAIL_FROM` | e.g. `St Blazey Snooker League <results@mail.your-domain.co.uk>` — only after the domain is verified in Resend | No |
+| `SITE_URL` | optional: the website's address, used for the links in the email (otherwise the address the captain is on is used) | No |
+
 ---
 
 ## 3. Match night: how it works
@@ -163,13 +176,13 @@ The dashboard is split into eight parts. **Master Admin → Roles & permissions*
 
 | Part | What it covers |
 |---|---|
-| **Match nights** | Approve results, edit any scorecard, rearrange postponed matches |
+| **Match nights** | Approve results, edit any scorecard, rearrange postponed matches, score a match on the live scoreboard |
 | **Fixtures** | Add and edit fixtures, the fixture generator |
 | **League** | Leagues, teams, players, venues, seasons |
 | **Handicaps** | Change handicaps, run the yearly review |
-| **Competitions** | Competitions, entries to approve, draws, cup scorecards |
-| **News & website** | News, categories, announcements, info pages, sponsors, image library |
-| **Settings & branding** | Site settings, home page, branding, statistics |
+| **Competitions** | Competitions, entries to approve, draws, cup scorecards, live scoreboard, presentation awards, key dates |
+| **News & website** | News, categories, announcements, key dates, meetings, info pages and rules, sponsors, presentation awards, image library |
+| **Settings & branding** | Site settings, home page, branding, result emails, statistics |
 | **Logins** | Create, change and remove logins |
 
 What each role starts with (press **Put back the standard permissions** to return to this):
@@ -189,6 +202,7 @@ Things worth knowing:
 - **It is enforced by the database**, not just hidden in the menu (`can_manage()` and the `role_permissions` table in `schema.sql`). A section that isn't ticked can't be changed by typing its address either.
 - **Logins:** someone with "Logins" ticked can only create or change logins for roles that are allowed no more than they are themselves, and never a Master Admin's. Only a Master Admin can make another Master Admin.
 - **Import from CSV** needs Fixtures, League and Match nights together, because an import writes to all three.
+- Some sections belong to two parts, and either one is enough: the **live scoreboard** (Competitions or Match nights), **presentation awards** and **key dates** (Competitions or News & website).
 - A change takes effect the next time that person opens the website or logs in.
 - Any officer who also plays can be given **Team rights** (Captain or Vice Captain) on their login, and then has a **My Team** button next to **Admin**.
 
@@ -210,6 +224,91 @@ When an officer is logged in, public pages show an **Edit this page** button (bo
 4. **Full scorecards** — `Season, League, Date, Home, Away, Frame, Home player, Home points, Away player, Away points, Home breaks, Away breaks`. One row per frame: this is what gives players their history, rankings and breaks for old seasons.
 
 Dates are day-first (`24/09/2019`). Column order doesn't matter and extra columns are ignored. Importing the same file twice is safe. Old competitions aren't imported — create those under Admin → Competitions and type the results into the draw.
+
+In a scorecard file, a player written as `Ben Rothwell (Ext)` is Ben Rothwell playing as the extra player, and `Extra Player` is a frame with no named player — that is how the old website wrote them.
+
+**The real 2026-27 season** is in `real-data/2026-27/`, collected from the old website: 19 teams, 153 players with handicaps, all 162 fixtures, and the 26 matches played so far frame by frame. Its own `README.md` has the steps and `NOTES-from-the-old-site.md` lists everything odd that was found. In short: clear the sample league (a one-off — see the warning in section 7), add the two leagues and the 2026-2027 season, then import `teams.csv`, `players.csv`, `fixtures.csv` and `frames.csv` in that order.
+
+## 3d. Finals night: the live scoreboard
+
+For a final (or any match worth watching), one person scores it ball by ball and everyone else watches the score move.
+
+1. **Admin → Live scoreboard → Set up a match.** Choose the competition (optional), a round or title ("Final"), the two players — start typing and pick **any player from any team**, or type a name that isn't in the list — and the number of frames: best of 1, 3, 5, 7 or **9 (first to 5)**. A date and time shows it as "coming up" on the website.
+2. Press **Score it**, then the name of whoever breaks off. The match is now **Live**: the menu's Live button turns green and it appears in the home page strip.
+3. Press a **ball** each time one is potted. The pad adds the points to the player at the table, keeps the break, counts the reds and shows the points left ("needs snookers" when it comes to it). **End of break** passes the table to the other player. **Foul: 4 / 5 / 6 / 7 away** gives the points to the opponent. **Free ball potted** scores the ball "on" without taking a ball off the table.
+4. **Undo** takes back the last press — as many times as needed, even ending a frame by mistake. **Put something right** has ±1 for either player and for the reds (a red potted on a foul stays down: −1). Tapping a player's name puts them at the table.
+5. **End the frame** when it's over (or **Frame conceded: to …**). The players take turns to break. The match ends by itself when someone has enough frames.
+
+Visitors open **`/scoreboard`** (also linked from the League page, the Live page and the home page strip). It needs no refreshing. On a laptop: keys **1–7** pot a ball, **Space** ends the break, **Backspace** undoes.
+
+The scoreboard is a broadcast, not the official record: afterwards, enter the frame scores on the competition's scorecard as usual so the draw moves on. Who can use it: anyone with **Competitions** or **Match nights** in Roles & permissions.
+
+## 3e. Presentation night, key dates, meetings, rules and sponsors
+
+**Presentation awards** (Admin → Presentation awards). One list per season. **Add the standard list** creates the league's 22 awards in order (the two leagues, Bill Toms, Doubles, Singles, Rees Singles, Handicap Doubles, Seniors, Team Handicap, Team Pairs, Willie Thomas, Gordon Boynton Trophy, Shootout, the highest breaks, the Melville Mills Award, players of the year, rankings winners and Rest of the League) and carries each trophy picture over from the season before. **Fill in from the results** works out every winner and runner-up the results can give — league titles, highest breaks, rankings winners and knockout competitions that have been played to a finish — and never touches an award that already has a winner. The rest are yours: pick a player or a team, or type a pair's names. Each award has a trophy picture, and a picture for the winner and the runner-up (otherwise the player's photo or the team's emblem is used). The list is in `STANDARD_AWARDS` in `public/js/core/awards.js`.
+
+- **`/presentation`** shows the trophies and winners; **`/season-review`** is the season at a glance — the honours board, the numbers, each league's top three, top players and breaks, and the competition winners — and needs nothing typed in.
+
+**Trophies.** A league (Admin → Leagues), a competition (Admin → Competitions) and an award can each have a trophy picture: a cut-out works best — a **transparent PNG or an SVG**. It shows beside the league's table, on the competition's page and card, in key dates, on the scoreboard and on presentation night. Until one is uploaded a gold placeholder cup stands in (`public/assets/trophy.svg`).
+
+**Key dates** (Admin → Key dates): "20 October — round 1 of the Team Handicap starts". The next few show in the **Key dates** box on the home page and every one is on the calendar (and in the phone-calendar download). A date drops off by itself the day after it has passed. How many show — or whether the box shows at all — is in Site settings.
+
+**Meetings** (Admin → Meetings → `/meetings`): add the AGM or a committee meeting before it happens (date, time, place, agenda) and it shows as the next meeting; afterwards add the minutes, typed in or as a **PDF** (5 MB at most). Untick "Show on the website" to keep a draft.
+
+**Rules** (`/rules`): every info page ticked **Show on the Rules page** becomes a tab — for example "League Rules" and "Rules of the Game" — with a contents list made from its headings and a Print button.
+
+**Formatted text.** Rules, info pages, minutes and sponsor pages are typed as plain text with a few marks (the form shows them, and has a **Preview** button):
+
+```
+# Heading                 ## Sub-heading
+- bullet                  (two spaces first)  - sub-bullet
+1. numbered               (two spaces first)  a. lettered sub-item
+| Column | Column |       a table: one row per line, the first row is the headings
+**bold**  *italic*  [link text](https://…)
+```
+
+**Sponsors.** Each banner at the bottom of the site opens that sponsor's own page (`/sponsor/…`), written under Admin → Sponsors: about them, a photo, address, phone, email and a button to their website.
+
+**Player status** (Admin → Players → Status): *Playing*, *No team at the moment* (still in entry forms and the handicap list, in no team's squad), *Not playing* and *Sadly no longer with us*. The last two leave squad lists, scorecards and entry forms; results, breaks and the player's page stay. Players marked *Sadly no longer with us* are remembered on **`/in-memoriam`**, with the years and a few words of tribute if you add them.
+
+**Celebrations.** When a break comes in that is the new highest of the season in its league or competition, everyone on the site at that moment sees a few seconds of confetti in the ball colours and a card saying who made it. Site settings → Celebrations switches it off, or adds the highest break of the week. Visitors who ask their device for reduced motion get the card without the confetti.
+
+**Announcements in the feature box.** The coloured strip on the home page shows its own text and, when "Also show the announcements" is ticked, the announcements as well — scrolling like the ticker, or one at a time. The ticker's **speed** is a slider from 1 to 10.
+
+**Text sizes** (Admin → Branding → Text sizes): the size in pixels of page titles, headings, box headings, tables, the menu, buttons and normal text. An empty box keeps the standard size.
+
+## 3f. Result emails (Resend)
+
+When a captain presses **Submit results**, the website can email the results secretary: the score, every frame, the breaks, who submitted it, a link to the photo and a button to **Results to approve**. One email per submitted card. Emails are sent through [Resend](https://resend.com) by a small server function (`netlify/functions/result-email.mjs`); the free plan (100 emails a day, 3,000 a month) is far more than a league needs.
+
+**First, a test — about ten minutes, no domain needed**
+
+1. Create a free account at <https://resend.com>, signing up with **the email address you want the test to arrive at**.
+2. In Resend → **API Keys → Create API Key** ("Sending access" is enough). Copy it — it starts `re_` and is shown once.
+3. In Netlify → **Site configuration → Environment variables**, add `RESEND_API_KEY` with that key and tick **Contains secret values**. Then **Deploys → Trigger deploy**.
+4. On the website: **Admin → Result emails**. In **Send to** type the email address of your Resend account, press **Save**, then **Send a test email**. It arrives from `onboarding@resend.dev` within a minute (look in spam the first time).
+5. For the real thing: tick **Send an email when a scorecard is submitted**, Save, then log in as a captain and submit a card. The email arrives; pressing Submit twice doesn't send two.
+
+Until a domain is verified, Resend only delivers to the address of the Resend account itself. Any other address gets the message "Resend is still in test mode…" under the test button — that's the signal to do the next part.
+
+**Then, the real domain — so it can email Rich and anyone else**
+
+1. In Resend → **Domains → Add Domain**. Resend recommends a subdomain, for example `mail.stblazeydistrictsnooker.co.uk`, so the emails' reputation is kept apart from the main domain.
+2. Resend shows a short list of **DNS records** (they prove the league owns the domain: SPF and DKIM). Add each one exactly as shown, wherever the domain's DNS is managed — the company the domain was bought from, or Netlify if the domain uses Netlify DNS. Don't change or remove any record that is already there.
+3. Back in Resend press **Verify**. It usually takes a few minutes, sometimes a few hours.
+4. In Netlify add `RESULTS_EMAIL_FROM`, for example `St Blazey Snooker League <results@mail.stblazeydistrictsnooker.co.uk>` — the part after the `@` must be the domain you verified. Optionally add `SITE_URL` (the website's address). Trigger a deploy.
+5. In **Admin → Result emails** put the results secretary's address in **Send to** (one per line, up to 10), Save, and **Send a test email** again. Under the button it now says who it went to and which address it came from.
+
+Handing over: the Resend account should end up belonging to the league. Either create it with a league email address from the start, or add Rich to the Resend team later and make a fresh API key (then replace `RESEND_API_KEY` in Netlify and delete the old key in Resend).
+
+Good to know: the addresses are kept in a private table that visitors and captains can't read. An email problem never stops a result being submitted. If a card is sent back to the captain and submitted again, the email is sent again.
+
+## 3g. Short web addresses
+
+- A match is `/match/2627-14`: the season (2026-27) and a running number, given when the fixture is created. Existing fixtures were numbered in date order.
+- A player is `/player/sam-bolitho`; two players with the same name become `sam-bolitho` and `sam-bolitho-2`. The address can be changed under Admin → Players → Web address.
+- A cup match is `/cup-match/27`, a scoreboard match `/scoreboard/4`, a sponsor `/sponsor/their-name`.
+- **Old links keep working**: the long addresses open the same page and the address bar changes to the short one.
 
 ---
 
@@ -233,7 +332,7 @@ If Rich confirms a different team rule (for example 3 points for a win), change 
 public/                     ← everything Netlify serves
   index.html                ← the only HTML page (the app shell)
   css/style.css             ← all styling; colours are variables at the top
-  assets/                   ← logo.svg, avatar.svg, hero.jpg (home page photo)
+  assets/                   ← logo.svg, avatar.svg, trophy.svg (placeholder cup), hero.jpg (home page photo)
   js/
     config.js               ← Supabase keys + site name  ← EDIT THIS
     main.js                 ← header, footer, and which page to show for each URL
@@ -243,7 +342,12 @@ public/                     ← everything Netlify serves
       context.js            ← turns raw data into tables/rankings for pages
       components.js         ← ALL reusable tables, panels, cards, sidebar
       auth.js               ← login + "who can edit what" (UI side)
-      branding.js           ← turns Admin → Branding (colours, fonts, page layouts, loading screen) into CSS variables
+      branding.js           ← turns Admin → Branding (colours, fonts, text sizes, page layouts, loading screen) into CSS variables
+      markup.js             ← formatted text: headings, bullets, sub-bullets and tables typed as plain text (rules, minutes, info pages)
+      live-score.js         ← the rules for scoring a match ball by ball (no HTML, no database)
+      awards.js             ← the presentation awards: the standard list and what the results say the winners are
+      celebrate.js          ← confetti and card for a new highest break
+      terms.js              ← lists of words used in more than one place (meeting types, player statuses)
       list-field.js         ← the "add as many as you like" field (past teams)
       dom.js                ← safe HTML helper, dates in UK time, toasts
       schedule.js           ← round-robin fixture generator + date helpers
@@ -271,6 +375,9 @@ public/                     ← everything Netlify serves
       roles.js              ← Roles & permissions grid (Master Admin)
       activity.js           ← Activity log (Master Admin)
       backup.js             ← Backup downloads (Master Admin)
+      awards.js             ← Presentation awards (the season list and its two tools)
+      scoreboard.js         ← Live scoreboard: setting a match up and the ball-by-ball control pad
+      emails.js             ← Result emails: who gets them, and the test button
     demo/seed-data.js       ← sample league (imaginary players)
 supabase/
   schema.sql                ← tables + security rules + image storage (safe to re-run)
@@ -279,6 +386,10 @@ supabase/
   add-richard-pearson.sql   ← adds Rich as a player (run once)
 netlify/functions/
   admin-users.mjs           ← creates/updates/deletes logins (server-side)
+  result-email.mjs          ← emails the results secretary when a card is submitted (through Resend)
+netlify/lib/
+  result-email-template.mjs ← what that email says
+real-data/2026-27/          ← the real season collected from the old website, ready to import (see its README)
 netlify.toml                ← Netlify settings (publish folder, URL routing, headers)
 ```
 
@@ -305,7 +416,20 @@ For example, to add a "phone" field to venues, add one line to `RESOURCES.venues
 | Use a Google font that isn't in the lists | Admin → Branding → Fonts → paste the font's embed link from fonts.google.com ("Get font" → "Get embed code"). Its fonts join both lists straight away; choose them and Save |
 | Turn the loading screen off, or keep it up longer | Admin → Branding → Loading screen (on/off, and the minimum seconds it shows when the site is first opened) |
 | Change the order of the sections on the News page, or their columns | Admin → News categories & layout → Edit → "Position on the News page" and "Columns" |
-| Add, change or stop an announcement in the ticker | Admin → Announcements. The ticker's on/off switch and speed are in Site settings → Announcements ticker |
+| Add, change or stop an announcement in the ticker | Admin → Announcements. The ticker's on/off switch and speed (1–10) are in Site settings → Announcements ticker |
+| Show (or stop showing) announcements in the home page's feature box | Admin → Site settings → Home page: feature box → "Also show the announcements" and "When there is more than one message". One announcement can be left out under Announcements → Edit |
+| Add a key date | Admin → Key dates |
+| Upload a trophy picture | Admin → Leagues / Competitions / Presentation awards → Edit → Trophy (transparent PNG or SVG) |
+| Set up presentation night | Admin → Presentation awards → choose the season → Add the standard list → Fill in from the results → fill in the rest |
+| Score a final ball by ball | Admin → Live scoreboard |
+| Add the minutes of a meeting | Admin → Meetings → Edit → Minutes (typed) or the PDF |
+| Add or change the rules | Admin → Info pages & rules → tick "Show on the Rules page" on each set of rules |
+| Write a sponsor's page | Admin → Sponsors → Edit → The sponsor's page |
+| Mark a player as not playing, without a team, or no longer with us | Admin → Players → Edit → Status |
+| Change the size of headings, tables or the menu | Admin → Branding → Text sizes |
+| Switch the highest-break confetti off (or add "of the week") | Admin → Site settings → Celebrations |
+| Choose who is emailed when a card is submitted | Admin → Result emails |
+| Change the News menu button's colour | Admin → Branding → Menu and section colours → News (standard: blue) |
 | Choose what the side column's top box shows | Admin → Site settings → Side column: top box (latest league results, competition results, both, latest news, or nothing; heading; how many; one league) |
 | Decide what a role can see and do | Admin → Roles & permissions (Master Admin) |
 | See who changed something | Admin → Activity log (Master Admin) |
@@ -354,13 +478,15 @@ When you get new code files:
 1. **Keep your own `public/js/config.js`.** The new copy has empty keys, so don't overwrite yours.
 2. Replace the other files in your repo, then commit and push. Netlify redeploys on its own.
 3. If `supabase/schema.sql` changed, run it again in the SQL Editor. It only adds what's missing and never deletes your data.
+   Each new function also needs its environment variables in Netlify (result emails: `RESEND_API_KEY` — section 3f).
 4. **Don't run `seed.sql` or `remove-sample-data.sql` again.** An update never needs them. `remove-sample-data.sql` deletes the sample players, teams, venues and articles — together with any photos, emblems or details you attached to them — and `seed.sql` puts back blank ones. Only use them if you deliberately want to reset the sample league.
 5. Netlify redeploys the logins function on its own when you push — nothing to do there.
 
 ## 8. Security checklist before launch
 
 - [ ] Public sign-ups turned **off** in Supabase (step 2a.4).
-- [ ] `SUPABASE_SERVICE_ROLE_KEY` is only in Netlify environment variables, never in any file.
+- [ ] `SUPABASE_SERVICE_ROLE_KEY` and `RESEND_API_KEY` are only in Netlify environment variables, never in any file.
+- [ ] Test it: Admin → Result emails → Send a test email arrives; then submit a card as a captain and check the email.
 - [ ] Test it: log in as one captain, then try to open another team's scorecard URL. It should say "Scorecard locked".
 - [ ] Test it: as a captain, try **Submit results** without a photo. It should be refused.
 - [ ] Test it: log in as an officer (e.g. a Committee Member) and open `/admin/fixtures`. It should say the login doesn't include that part.

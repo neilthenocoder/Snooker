@@ -6,7 +6,7 @@ import { html, mount, fmtDate } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { table, loadCompetitions } from "../core/api.js";
 import { buildBracket } from "../core/bracket.js";
-import { breadcrumb, panel, dataTable, teamLink, playerLink, urls, shortName, emblem } from "../core/components.js";
+import { breadcrumb, panel, dataTable, teamLink, playerLink, urls, shortName, emblem, trophy } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 
 export default async function archive(view) {
@@ -72,7 +72,7 @@ export default async function archive(view) {
       return html`<section class="season-block">
         <h2>${ctx.season.name}${ctx.season.id === current?.id ? html` <span class="status in_progress">this season</span>` : ""}</h2>
         ${mine.length ? html`<div class="season-leagues">${mine.map((l) => html`<div class="season-league">
-          <h4 class="with-emblem">${l.league.logo_url ? emblem(l.league) : ""}${l.league.name}</h4>
+          <h4 class="with-emblem">${trophy(l.league, "tiny", { always: false })}${l.league.logo_url ? emblem(l.league) : ""}${l.league.name}</h4>
           <dl>
             <dt>${l.live ? "Leading" : "Champions"}</dt><dd>${teamLink(l.first.team, true)} <small class="muted">${l.first.pts} pts</small></dd>
             ${l.second ? html`<dt>${l.live ? "Second" : "Runners-up"}</dt><dd>${teamLink(l.second.team)} <small class="muted">${l.second.pts} pts</small></dd>` : ""}
@@ -87,7 +87,8 @@ export default async function archive(view) {
           </div></div>`)}</div>` : html`<p class="muted">No league results recorded for this season.</p>`}
         ${cups.length ? html`<div class="season-cups"><b>Competitions</b>${cups.map(({ c, winner }) => html`<a href="${urls.competition(c)}">${c.name}<span>${winner ? `Winner: ${winner}` : "In progress"}</span></a>`)}</div>` : ""}
         <div class="btn-row"><a class="btn small secondary" href="/fixtures${q(ctx)}">Fixtures &amp; results ${ctx.season.name}</a>
-          ${cups.length ? html`<a class="btn small ghost" href="/competitions${q(ctx)}">Competitions ${ctx.season.name}</a>` : ""}</div>
+          ${cups.length ? html`<a class="btn small ghost" href="/competitions${q(ctx)}">Competitions ${ctx.season.name}</a>` : ""}
+          <a class="btn small ghost" href="/presentation${q(ctx)}">Trophies &amp; winners</a><a class="btn small ghost" href="/season-review${q(ctx)}">Season review</a></div>
       </section>`; })}
   </div>`);
 }

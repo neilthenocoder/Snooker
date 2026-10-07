@@ -2,7 +2,7 @@
 import { html, mount, $ } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { teamPlayerHistory } from "../core/api.js";
-import { breadcrumb, badge, urls, personCard as playerCard } from "../core/components.js";
+import { breadcrumb, badge, urls, personCard as playerCard, isActivePlayer } from "../core/components.js";
 import { setTitle, navigate, adminEdit } from "../core/router.js";
 
 export default async function players(view, { query }) {
@@ -27,7 +27,7 @@ export default async function players(view, { query }) {
     // Past players: anyone who has played a frame for this team but isn't in it now.
     const everPlayed = await teamPlayerHistory(team.id);
     const current = ctx.playersOf(team.id);
-    const past = ctx.players.filter((p) => p.team_id !== team.id && everPlayed.has(p.id));
+    const past = ctx.players.filter((p) => (p.team_id !== team.id || !isActivePlayer(p)) && everPlayed.has(p.id));
     mount(view, html`<div class="wrap">
       ${breadcrumb([["Home", "/"], ["Our League", "/league"], ["Our Players", "/players"], [team.name]])}
       <div class="player-head" style="margin-bottom:14px"><h1>${badge(team)} ${team.name}</h1>${picker}</div>

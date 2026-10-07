@@ -1,7 +1,7 @@
 import { html, mount } from "../core/dom.js";
 import { table, loadCompetitions } from "../core/api.js";
 import { buildBracket, progressText } from "../core/bracket.js";
-import { breadcrumb, picture, urls, shortName } from "../core/components.js";
+import { breadcrumb, picture, urls, shortName, trophy } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import { openForEntry } from "./enter.js";
 
@@ -36,7 +36,7 @@ export default async function competitions(view, { query }) {
       <select data-season-picker>${choices.map((s) => html`<option value="${s.id}" ${s.id === season?.id ? "selected" : ""}>${s.name}${s.id === current?.id ? " (this season)" : ""}</option>`)}</select></label>` : ""}
     ${openForEntry(all.map((x) => x.c)).length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${openForEntry(all.map((x) => x.c)).map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
     ${list.length ? html`<div class="cards">${list.map(({ c, progress, parent, openTo }) => html`<a class="card" href="${urls.competition(c)}">
-      ${picture(c.image_url, c.name)}
+      <div class="card-pic">${c.image_url ? picture(c.image_url, c.name) : html`<div class="ph"></div>`}${trophy(c, "card-trophy")}</div>
       <div><h4>${c.name}</h4><small>${[c.kind, c.handicap ? "Handicap" : "", openTo ? `${openTo} only` : "", parent ? `Plate of the ${parent.name}` : "", openForEntry([c]).length ? "Entries open" : ""].filter(Boolean).join(" · ")}</small>
         <span class="status ${progress.startsWith("Winner") ? "approved" : "submitted"}">${progress}</span></div>
     </a>`)}</div>` : html`<div class="empty box">No competitions for ${season?.name ?? "this season"} yet.</div>`}

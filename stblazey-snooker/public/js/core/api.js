@@ -2,7 +2,8 @@
 //  DATA ACCESS — every read and write the site makes goes through
 //  here. Pages never talk to the database directly.
 // ─────────────────────────────────────────────────────────────
-import { db, run } from "./db.js";
+import { db, run, callFunction } from "./db.js";
+import { DEMO_MODE } from "../config.js";
 import { withLegacyFrames } from "./rules.js";
 
 const PAGE = 1000;           // Supabase returns at most 1000 rows per request
@@ -85,10 +86,12 @@ export function loadSeason(seasonId) {
   return cache.get(key);
 }
 
-/** One fixture with its frames and breaks. */
-export async function loadFixture(id) {
-  const fixture = await run(db.from("fixtures").select("*").eq("id", id).maybeSingle());
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** One fixture with its frames and breaks. `ref` is its short code (2627-14) or its long id. */
+export async function loadFixture(ref) {
+  const fixture = await run(db.from("fixtures").select("*").eq(UUID.test(ref) ? "id" : "code", ref).maybeSingle());
   if (!fixture) return null;
+  const id = fixture.id;
   const [frames, breaks] = await Promise.all([
     run(db.from("frames").select("*").eq("fixture_id", id).order("frame_no")),
     run(db.from("breaks").select("*").eq("fixture_id", id).order("frame_no")),
@@ -216,9 +219,12 @@ export async function seasonFrames(seasonId) {
 }
 
 // ── competition scorecards ───────────────────────────────────────
-export async function loadCompMatch(id) {
-  const match = await run(db.from("competition_matches").select("*").eq("id", id).maybeSingle());
+/** `ref` is the match's short number (27) or its long id. */
+export async function loadCompMatch(ref) {
+  const byNo = /^\d+$/.test(String(ref));
+  const match = await run(db.from("competition_matches").select("*").eq(byNo ? "no" : "id", byNo ? Number(ref) : ref).maybeSingle());
   if (!match) return null;
+  const id = match.id;
   const [frames, breaks] = await Promise.all([
     run(db.from("competition_frames").select("*").eq("match_id", id).order("frame_no")),
     run(db.from("competition_breaks").select("*").eq("match_id", id).order("frame_no")),
@@ -381,3 +387,26 @@ export async function saveRolePermissions(rows) {
 export const auditLog = (limit = 500) => run(db.from("audit_log").select("*").order("at", { ascending: false }).limit(limit));
 /** Every row of one table, for the backup download. */
 export const allRows = (tableName) => selectAll(() => db.from(tableName).select("*"));
+
+// ── live scoreboard (ball by ball) ───────────────────────────────
+export const liveMatches = () => run(db.from("live_matches").select("*").order("updated_at", { ascending: false }));
+/** `ref` is the scoreboard's short number or its long id. */
+export async function loadLiveMatch(ref) {
+  const byNo = /^\d+$/.test(String(ref));
+  return run(db.from("live_matches").select("*").eq(byNo ? "no" : "id", byNo ? Number(ref) : ref).maybeSingle());
+}
+
+// ── result emails ────────────────────────────────────────────────
+/** Who gets the email when a captain submits a card (officers with Settings only). */
+export const privateSettings = () => run(db.from("private_settings").select("*").eq("id", 1).maybeSingle());
+/** Ask the server to email the results secretary about a submitted card. Never throws: an email problem must not stop a result. */
+export async function sendResultEmail(fixtureId) {
+  if (DEMO_MODE) return { demo: true };
+  try { return await callFunction("result-email", { action: "submitted", fixture_id: fixtureId }); }
+  catch (err) { console.warn("Result email not sent:", err.message); return { error: err.message }; }
+}
+/** Send a test email to the addresses saved in the dashboard. */
+export async function testResultEmail() {
+  if (DEMO_MODE) throw new Error("Emails are only sent on the live site — the demo has no email service.");
+  return callFunction("result-email", { action: "test" });
+}

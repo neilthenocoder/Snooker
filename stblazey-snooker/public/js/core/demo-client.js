@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────
 import { buildSeed } from "../demo/seed-data.js";
 
-const KEY = "sbdsl-demo-db-v7";
+const KEY = "sbdsl-demo-db-v8";
 const SESSION_KEY = "sbdsl-demo-session";
 const store = typeof localStorage !== "undefined" ? localStorage : (() => {
   const m = new Map();
@@ -83,7 +83,7 @@ class Query {
       data = data.slice(this.from, this.to + 1);
     } else if (this.action === "insert") {
       data = [].concat(this.payload).map((r) => ({ id: newId(), ...r }));
-      rows.push(...data);
+      for (const r of data) { rows.push(r); shortAddress(this.table, r); }
       audit("added", this.table, data);
     } else if (this.action === "update") {
       data = rows.filter((r) => this.matches(r));
@@ -91,12 +91,12 @@ class Query {
       // Mirrors the players_log_handicap trigger in supabase/schema.sql.
       if (this.table === "players" && "handicap" in this.payload)
         for (const r of data) if (r.handicap !== this.payload.handicap) logHandicap(r, this.payload.handicap, "");
-      data.forEach((r) => Object.assign(r, this.payload));
+      data.forEach((r) => { Object.assign(r, this.payload); shortAddress(this.table, r); });
     } else if (this.action === "upsert") {
       data = [].concat(this.payload).map((r) => {
         const hit = rows.find((x) => this.conflict.every((c) => x[c] === r[c]));
         if (hit) { audit("changed", this.table, [hit], r); return Object.assign(hit, r); }
-        const row = { id: newId(), ...r }; rows.push(row); audit("added", this.table, [row]); return row;
+        const row = { id: newId(), ...r }; rows.push(row); shortAddress(this.table, row); audit("added", this.table, [row]); return row;
       });
     } else if (this.action === "delete") {
       data = rows.filter((r) => this.matches(r));
@@ -107,6 +107,7 @@ class Query {
     // Mirrors the stamp_postponed trigger in supabase/schema.sql.
     if (this.table === "fixtures" && ["insert", "update", "upsert"].includes(this.action))
       for (const f of data) f.postponed_at = f.status === "postponed" ? (f.postponed_at ?? new Date().toISOString()) : null;
+    if (this.table === "live_matches" && this.action !== "select" && this.action !== "delete") for (const m of data) m.updated_at = new Date().toISOString();
     if (this.action !== "select") { persist(); emit(this.table, data, { insert: "INSERT", delete: "DELETE" }[this.action] ?? "UPDATE"); }
     data = clone(data);
     if (this.one) {
@@ -120,13 +121,35 @@ for (const op of Object.keys(OPS)) Query.prototype[op] = function (col, val) { t
 
 const me = () => state.tables.profiles.find((p) => p.id === currentSession()?.user.id);
 
+// Mirrors the short-address triggers in supabase/schema.sql: a fixture's code (2627-14), a player's or
+// sponsor's slug (sam-bolitho, made unique with -2, -3…), and the running numbers of cup and scoreboard matches.
+const slugOf = (text) => String(text ?? "").toLowerCase().replace(/['’`]/g, "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+function shortAddress(table, row) {
+  const rows = state.tables[table] ?? [];
+  if (table === "fixtures" && !row.code) {
+    const name = state.tables.seasons.find((s) => s.id === row.season_id)?.name ?? "";
+    const years = name.match(/\d{4}/g) ?? [];
+    const prefix = years.length >= 2 ? years[0].slice(2) + years[1].slice(2) : years.length ? years[0].slice(2) : "s";
+    const n = Math.max(0, ...rows.filter((f) => f.code?.startsWith(`${prefix}-`)).map((f) => Number(f.code.split("-").pop()) || 0)) + 1;
+    row.code = `${prefix}-${String(n).padStart(2, "0")}`;
+  }
+  if (["players", "sponsors"].includes(table) && !row.slug) {
+    const base = slugOf(row.full_name ?? row.name) || "item";
+    let slug = base;
+    for (let n = 2; rows.some((r) => r !== row && r.slug === slug); n++) slug = `${base}-${n}`;
+    row.slug = slug;
+  }
+  if (["competition_matches", "live_matches"].includes(table) && row.no == null) row.no = Math.max(0, ...rows.map((r) => Number(r.no) || 0)) + 1;
+}
+
 // Mirrors the activity-log triggers in supabase/schema.sql (audit_row / audit_added).
-const AUDITED = new Set(["seasons", "leagues", "venues", "teams", "players", "fixtures", "competitions", "competition_entries", "articles", "pages", "sponsors", "categories", "announcements", "settings", "role_permissions"]);
+const AUDITED = new Set(["seasons", "leagues", "venues", "teams", "players", "fixtures", "competitions", "competition_entries", "articles", "pages", "sponsors", "categories", "announcements", "settings", "role_permissions", "key_dates", "awards", "meetings"]);
 function auditLabel(table, r) {
   const team = (id) => state.tables.teams.find((t) => t.id === id)?.name ?? "?";
   if (table === "fixtures") return `${team(r.home_team_id)} v ${team(r.away_team_id)}${r.starts_at ? ` (${r.starts_at.slice(8, 10)}/${r.starts_at.slice(5, 7)}/${r.starts_at.slice(0, 4)})` : ""}`;
   if (table === "settings") return "Site settings";
   if (table === "role_permissions") return r.role;
+  if (table === "meetings") return r.title || r.kind || "Meeting";
   return r.name || r.full_name || r.title || r.text || r.id;
 }
 function audit(action, table, rows, patch = null, force = false) {
@@ -138,7 +161,7 @@ function audit(action, table, rows, patch = null, force = false) {
     changes = {};
     const short = (v) => v == null || JSON.stringify(v).length <= 140;
     for (const [k, v] of Object.entries(patch ?? {})) {
-      if (JSON.stringify(rows[0][k] ?? null) === JSON.stringify(v ?? null) || ["updated_at", "postponed_at"].includes(k)) continue;
+      if (JSON.stringify(rows[0][k] ?? null) === JSON.stringify(v ?? null) || ["updated_at", "postponed_at", "code", "slug", "submitted_email_at"].includes(k)) continue;
       changes[k] = short(v) && short(rows[0][k]) ? [rows[0][k] ?? null, v ?? null] : null;
     }
     if (!Object.keys(changes).length) return;
@@ -156,6 +179,7 @@ const CASCADES = {
   fixtures: [["frames", "fixture_id"], ["breaks", "fixture_id"]],
   competitions: [["competition_entries", "competition_id"], ["competition_matches", "competition_id"], ["competition_signups", "competition_id"]],
   players: [["handicap_changes", "player_id"]],
+  seasons: [["awards", "season_id"]],
   competition_matches: [["competition_frames", "match_id"], ["competition_breaks", "match_id"]],
 };
 function cascade(table, deleted) {
@@ -314,8 +338,9 @@ export const demoClient = {
       // Players added by a captain are flagged for the admin to check.
       const who = state.tables.profiles.find((p) => p.id === currentSession()?.user.id);
       const staff = ["admin", "league_admin", "league_secretary"].includes(who?.role);
-      const row = { id: newId(), full_name: args.p_name, team_id: args.p_team, position: "Player", handicap: 0, avatar_url: "", birth_date: null, cueview: {}, cueview_featured: false, bio: "", career_history: "", past_teams: "", gallery: [], needs_review: !staff };
-      state.tables.players.push(row); persist(); emit("players", [row], "INSERT");
+      const row = { id: newId(), full_name: args.p_name, team_id: args.p_team, position: "Player", handicap: 0, avatar_url: "", birth_date: null, cueview: {}, cueview_featured: false, bio: "", career_history: "", past_teams: "", gallery: [], needs_review: !staff,
+        status: "playing", died_on: null, memorial: "" };
+      state.tables.players.push(row); shortAddress("players", row); persist(); emit("players", [row], "INSERT");
       return { data: row.id, error: null };
     }
     if (name === "sync_comp_match") {

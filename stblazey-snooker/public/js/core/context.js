@@ -38,7 +38,8 @@ export async function seasonContext(seasonId) {
     fixturesIn: (leagueId) => raw.fixtures.filter((f) => f.league_id === leagueId),
     fixturesFor: (teamId) => raw.fixtures.filter((f) => f.home_team_id === teamId || f.away_team_id === teamId),
     playersIn: (leagueId) => { const t = new Set(ctx.teamsIn(leagueId).map((x) => x.id)); return raw.players.filter((p) => t.has(p.team_id)); },
-    playersOf: (teamId) => raw.players.filter((p) => p.team_id === teamId),
+    // A team's squad today: not those who have stopped playing or are no longer with us (their results still count above).
+    playersOf: (teamId) => raw.players.filter((p) => p.team_id === teamId && !["not_playing", "deceased"].includes(p.status)),
 
     standings: (leagueId) => once(`st:${leagueId}`, () =>
       leagueTable(ctx.teamsIn(leagueId), ctx.fixturesIn(leagueId), framesByFixture)),
@@ -62,7 +63,7 @@ export async function cupResults() {
     const name = (id) => b.entryById.get(id)?.name ?? "?";
     return b.rounds.flat().filter((m) => m.played && !m.isBye).map((m) => ({
       when: m.row.starts_at, title: c.name, season_id: c.season_id, home: name(m.a), away: name(m.b), score: `${m.row.score_a} – ${m.row.score_b}`,
-      href: `/cup-match/${m.row.id}`, won: winnerSide(m.row) === "a" ? "h" : "a",
+      href: `/cup-match/${m.row.no ?? m.row.id}`, won: winnerSide(m.row) === "a" ? "h" : "a",
     }));
   }).sort((x, y) => String(y.when ?? "").localeCompare(String(x.when ?? "")));
 }

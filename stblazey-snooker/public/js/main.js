@@ -5,14 +5,15 @@
 // ─────────────────────────────────────────────────────────────
 import { SITE, DEMO_MODE } from "./config.js";
 import { html, mount, $, ukDay, toast } from "./core/dom.js";
-import { applyBranding, loaderOn, loaderOff, layoutFor } from "./core/branding.js";
+import { applyBranding, loaderOn, loaderOff, layoutFor, TICKER_PX } from "./core/branding.js";
 import { getUser, signOut, isStaff, isMember, canOpenSection, roleText } from "./core/auth.js";
 import { seasonContext, sideBoxData } from "./core/context.js";
 import { sidebar } from "./core/components.js";
 import { openSearch } from "./core/search.js";
-import { table, invalidate, settings, nearbyMatches, subscribe, trackPageView, articles } from "./core/api.js";
+import { table, invalidate, settings, nearbyMatches, subscribe, trackPageView, articles, liveMatches } from "./core/api.js";
 import { liveState } from "./core/rules.js";
-import { notificationsOn, setNotifications, startNotifications, stopNotifications } from "./core/notify.js";
+import { notificationsOn, setNotifications, startNotifications } from "./core/notify.js";
+import { urls } from "./core/components.js";
 import { setNavigator, setShellRefresher, takeEditTarget } from "./core/router.js";
 
 const ROUTES = [
@@ -36,6 +37,14 @@ const ROUTES = [
   ["/competition/:slug", "competition"],
   ["/live", "live"],
   ["/results", "results"],
+  ["/presentation", "presentation"],
+  ["/season-review", "presentation"],
+  ["/in-memoriam", "memoriam"],
+  ["/meetings", "meetings"],
+  ["/rules", "rules"],
+  ["/sponsor/:slug", "sponsor"],
+  ["/scoreboard", "scoreboard"],
+  ["/scoreboard/:id", "scoreboard"],
   ["/calendar", "calendar"],
   ["/cup-match/:id", "cup-match"],
   ["/cup-scorecard/:id", "cup-scorecard"],
@@ -53,17 +62,17 @@ const ROUTES = [
 // Which part of the site each page belongs to. Its headers take that menu button's colour
 // (Admin → Branding → "Colour-code each section").
 const SECTION = {
-  competitions: "competitions", competition: "competitions", "cup-match": "competitions", handicaps: "competitions", enter: "competitions", draw: "competitions",
+  competitions: "competitions", competition: "competitions", "cup-match": "competitions", handicaps: "competitions", enter: "competitions", draw: "competitions", scoreboard: "competitions",
   fixtures: "fixtures", team: "fixtures", match: "fixtures", calendar: "fixtures", live: "fixtures", results: "fixtures",
   league: "league", standings: "league", shield: "league", archive: "league", players: "league", player: "league",
-  venues: "league", venue: "league", page: "league",
+  venues: "league", venue: "league", page: "league", presentation: "league", memoriam: "league", meetings: "league", rules: "league", sponsor: "league",
   news: "news", article: "news",
   login: "login", my: "login", scorecard: "login", "cup-scorecard": "login",
 };
 // Page layout (Admin → Branding → Page layout) is chosen for these parts of the site.
 const LAYOUT_GROUP = (page) => (page === "home" ? "home" : ["competitions", "fixtures", "league", "news"].includes(SECTION[page]) ? SECTION[page] : null);
 // Pages that never get the standard side boxes added (they need the full width, or are a short form).
-const NO_SIDE = new Set(["calendar", "enter", "draw", "not-found"]);
+const NO_SIDE = new Set(["calendar", "enter", "draw", "not-found", "scoreboard", "presentation"]);
 
 function match(path) {
   const parts = path.replace(/\/+$/, "").split("/").filter(Boolean);
@@ -88,15 +97,19 @@ const SOCIAL = [
   ["youtube_url", "YouTube", html`<path d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.5 2.5 0 0 0 2.4 7.2C2 8.8 2 12 2 12s0 3.2.4 4.8a2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8c.4-1.6.4-4.8.4-4.8s0-3.2-.4-4.8ZM10 15V9l5.2 3Z"/>`],
 ];
 const LIVE_LABEL = { live: "Live", soon: "Live soon", idle: "Live" };
+const logoutIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5v-2H5V5h5Zm6.6 4.6-1.4 1.4 2 2H9v2h8.2l-2 2 1.4 1.4L21 12Z"/></svg>`;
 
 /** Recolour the LIVE button (orange "LIVE SOON" an hour before, green while matches are on). */
 async function refreshLive() {
-  const [{ fixtures, comps }, competitions] = await Promise.all([
-    nearbyMatches(36).catch(() => ({ fixtures: [], comps: [] })), table("competitions", "sort").catch(() => [])]);
+  const [{ fixtures, comps }, competitions, boards] = await Promise.all([
+    nearbyMatches(36).catch(() => ({ fixtures: [], comps: [] })), table("competitions", "sort").catch(() => []), liveMatches().catch(() => [])]);
+  // A match being scored ball by ball counts as well.
+  const scored = boards.filter((m) => m.status === "live" || (m.status === "setup" && m.starts_at))
+    .map((m) => ({ starts_at: m.started_at ?? m.starts_at, status: m.status === "live" ? "in_progress" : "scheduled" }));
   // A competition draw counts too: "live soon" before it, "live" while it's being made.
   const draws = competitions.filter((c) => c.draw_live?.status === "live" || (!c.draw_live && c.draw_at))
     .map((c) => ({ starts_at: c.draw_live?.started_at ?? c.draw_at, status: c.draw_live ? "in_progress" : "scheduled" }));
-  const state = liveState([...fixtures, ...comps, ...draws], Date.now(), ukDay);
+  const state = liveState([...fixtures, ...comps, ...draws, ...scored], Date.now(), ukDay);
   const btn = $(".nav-live-btn");
   if (!btn) return;
   btn.className = `nav-live nav-live-btn state-${state}`;
@@ -136,10 +149,10 @@ async function drawHeader() {
         <a class="nav-league" href="/league">League</a>
         <a class="nav-news" href="/news">News</a>
         ${account}
-        ${user ? html`<button class="nav-live" data-logout>Logout</button>` : ""}
         <a class="nav-live nav-live-btn state-idle" href="/live">Live</a>
         <button class="nav-live nav-bell" data-bell aria-label="Live notifications">${bell}</button>
         <button class="nav-live nav-search" data-search-open aria-label="Search">${searchIcon}<span>Search</span></button>
+        ${user ? html`<button class="nav-live nav-logout" data-logout aria-label="Log out" title="Log out">${logoutIcon}<span>Log out</span></button>` : ""}
       </nav>
     </div></header>`);
   const icon = document.querySelector("link[rel=icon]");
@@ -156,7 +169,7 @@ async function drawFooter() {
   const links = pages.filter((p) => p.show_in_footer);
   mount($("#site-footer"), html`<footer class="site-footer"><div class="wrap">
     ${sponsors.length ? html`<h3 class="foot-h">Principal Partners</h3>
-      <div class="sponsors">${sponsors.map((s) => html`<a href="${s.url || "#"}" ${s.url ? html`target="_blank" rel="noopener"` : ""}>${s.image_url ? html`<img src="${s.image_url}" alt="${s.name}">` : s.name}</a>`)}</div>` : ""}
+      <div class="sponsors">${sponsors.map((s) => html`<a href="${urls.sponsor(s)}" title="About ${s.name}">${s.image_url ? html`<img src="${s.image_url}" alt="${s.name}">` : s.name}</a>`)}</div>` : ""}
     <h3 class="foot-h">#SBDS</h3>
     ${socials.length ? html`<div class="socials">${socials.map(([key, name, icon]) => html`<a href="${site[key]}" target="_blank" rel="noopener" aria-label="${name}" title="${name}">
       <svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></a>`)}</div>` : ""}
@@ -166,7 +179,6 @@ async function drawFooter() {
 }
 
 // ── announcements ticker (home page only) ──────────────────────
-const TICKER_SPEED = { slow: 0.32, normal: 0.22, fast: 0.14 };   // seconds per character
 async function drawTicker(show) {
   const box = $("#ticker");
   if (!show) return mount(box, "");
@@ -175,14 +187,18 @@ async function drawTicker(show) {
   const items = rows.filter((a) => a.is_active !== false && a.text && (!a.starts_on || a.starts_on <= today) && (!a.ends_on || a.ends_on >= today));
   if (site.ticker_show === false || !items.length) return mount(box, "");
   const one = (a) => (a.url ? html`<a class="ticker-item" href="${a.url}" ${/^https?:/.test(a.url) ? html`target="_blank" rel="noopener"` : ""}>${a.text}<i>→</i></a>` : html`<span class="ticker-item">${a.text}</span>`);
-  const seconds = Math.max(12, Math.round(items.reduce((n, a) => n + a.text.length + 8, 0) * (TICKER_SPEED[site.ticker_speed] ?? TICKER_SPEED.normal)));
   // The list is written twice so the loop has no gap; the copy is hidden from screen readers.
   mount(box, html`<div class="ticker" role="region" aria-label="Announcements">
     <span class="ticker-label">Announcements</span>
-    <div class="ticker-view"><div class="ticker-track" style="animation-duration:${seconds}s">
+    <div class="ticker-view"><div class="ticker-track">
       <div class="ticker-set">${items.map(one)}</div><div class="ticker-set" aria-hidden="true">${items.map(one)}</div></div></div>
     <button type="button" class="ticker-stop" data-ticker-stop aria-pressed="false" aria-label="Stop the announcements moving" title="Stop / start"><span></span></button>
   </div>`);
+  // The speed is set from how wide the announcements really are, so a short list doesn't race across a wide screen.
+  const track = $(".ticker-track", box), pace = Math.max(1, Math.min(10, Math.round(Number(site.ticker_pace) || 3)));
+  const setPace = () => { track.style.animationDuration = `${Math.max(8, Math.round($(".ticker-set", box).getBoundingClientRect().width / TICKER_PX[pace - 1]))}s`; };
+  setPace();
+  document.fonts?.ready.then(() => track.isConnected && setPace());
 }
 
 /**
@@ -301,7 +317,6 @@ document.addEventListener("click", async (e) => {
     const on = !notificationsOn();
     setNotifications(on);
     drawBell();
-    if (on) startNotifications(); else stopNotifications();
     toast(on ? "Live notifications on" : "Live notifications off");
     return;
   }
@@ -332,6 +347,7 @@ window.addEventListener("scroll", () => toTop.classList.toggle("show", window.sc
 
 // Keep the LIVE button current: every minute, and whenever a match changes.
 setInterval(refreshLive, 60e3);
-subscribe(["fixtures", "competition_matches", "competitions"], refreshLive);
-if (notificationsOn()) startNotifications();
+subscribe(["fixtures", "competition_matches", "competitions", "live_matches"], refreshLive);
+// Always listening: the pop-ups obey the bell, the highest-break celebration obeys Admin → Site settings.
+startNotifications();
 

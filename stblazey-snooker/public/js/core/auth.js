@@ -48,13 +48,13 @@ export const TEAM_ROLE_LABEL = { captain: "Captain", vice_captain: "Vice Captain
  * is enforced by the database: can_manage() in supabase/schema.sql.
  */
 export const AREAS = [
-  ["matchnights", "Match nights", "Approve results, edit any scorecard, rearrange postponed matches"],
+  ["matchnights", "Match nights", "Approve results, edit any scorecard, rearrange postponed matches, score a match on the live scoreboard"],
   ["fixtures", "Fixtures", "Add and edit fixtures, the fixture generator"],
   ["league", "League", "Leagues, teams, players, venues, seasons"],
   ["handicaps", "Handicaps", "Change handicaps, run the yearly review"],
-  ["competitions", "Competitions", "Competitions, entries to approve, draws, cup scorecards"],
-  ["website", "News & website", "News, categories, announcements, info pages, sponsors, image library"],
-  ["settings", "Settings & branding", "Site settings, home page, branding, statistics"],
+  ["competitions", "Competitions", "Competitions, entries to approve, draws, cup scorecards, live scoreboard, presentation awards, key dates"],
+  ["website", "News & website", "News, categories, announcements, key dates, meetings, info pages and rules, sponsors, presentation awards, image library"],
+  ["settings", "Settings & branding", "Site settings, home page, branding, result emails, statistics"],
   ["people", "Logins", "Create, change and remove logins (never a Master Admin's)"],
 ];
 const ALL_AREAS = AREAS.map(([key]) => key);
@@ -69,7 +69,8 @@ export const DEFAULT_AREAS = {
 };
 /**
  * Which area each admin section belongs to. "master" = Master Admin only;
- * an array = every one of those areas is needed (importing writes to all three).
+ * an array = every one of those areas is needed (importing writes to all three);
+ * { any: [...] } = any one of them is enough.
  */
 export const SECTION_AREA = {
   overview: "matchnights", results: "matchnights",
@@ -77,6 +78,8 @@ export const SECTION_AREA = {
   leagues: "league", teams: "league", players: "league", venues: "league", seasons: "league",
   handicaps: "handicaps",
   competitions: "competitions", entries: "competitions", draws: "competitions",
+  scoreboard: { any: ["competitions", "matchnights"] }, awards: { any: ["website", "competitions"] }, key_dates: { any: ["website", "competitions"] },
+  meetings: "website", emails: "settings",
   accounts: "people", roles: "master", activity: "master", backup: "master",
   articles: "website", categories: "website", announcements: "website", media: "website", pages: "website", sponsors: "website",
   branding: "settings", settings: "settings", stats: "settings",
@@ -96,6 +99,7 @@ export const canOpenSection = (user, section) => {
   const need = SECTION_AREA[section];
   if (!need) return false;
   if (need === "master") return isMaster(user);
+  if (need.any) return need.any.some((area) => canManage(user, area));
   return [need].flat().every((area) => canManage(user, area));
 };
 /** Captain or vice captain of a team — by role, or an officer who was given team rights. */

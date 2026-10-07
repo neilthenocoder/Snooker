@@ -4,7 +4,7 @@
 // been paid (Admin → Entries to approve). Unpaid entries lapse on their pay-by date.
 import { html, mount, toast, fmtDate, paragraphs } from "../core/dom.js";
 import { table, loadCompetitions, settings, enterCompetitions } from "../core/api.js";
-import { breadcrumb, shortName } from "../core/components.js";
+import { breadcrumb, shortName, isActivePlayer } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 
 /** Competitions that can be entered today. */
@@ -17,9 +17,11 @@ const pounds = (fee) => Number(String(fee ?? "").match(/\d+(?:\.\d+)?/)?.[0] ?? 
 export default async function enter(view, { query }) {
   setTitle("Enter a competition");
   adminEdit("entries", null, { href: "/admin/entries", label: "Entries to approve" });
-  const [data, players, teams, leagues, site] = await Promise.all([
+  const [data, everyone, teams, leagues, site] = await Promise.all([
     loadCompetitions(), table("players", "full_name"), table("teams", "name"), table("leagues", "sort"), settings(),
   ]);
+  // Only people who are playing can enter (not those who have stopped, or are no longer with us).
+  const players = everyone.filter(isActivePlayer);
   const open = openForEntry(data.competitions);
   const state = { step: 1, teamId: "", playerId: "", contact: "", picked: new Set(), partners: {}, made: null };
   const wanted = open.find((c) => c.slug === query.get("c"));

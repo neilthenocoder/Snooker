@@ -238,10 +238,10 @@ async function competitionsTab(el, { ctx, user, team, me }) {
   mount(el, html`${panel(`Cup matches for ${team?.name ?? "you"}`, dataTable([
       { label: "Date", cell: ({ m }) => (m.row.starts_at ? `${fmtDate(m.row.starts_at)} ${fmtTime(m.row.starts_at)}` : "TBC") },
       { label: "Competition", cell: ({ c, b, m }) => html`<a href="${urls.competition(c)}">${c.name}</a> <small class="muted">${roundName(m.round, b.totalRounds)}</small>` },
-      { label: "Match", cell: ({ b, m }) => html`<a href="/cup-match/${m.row.id}">${name(b, m.a)} v ${name(b, m.b)}</a>` },
+      { label: "Match", cell: ({ b, m }) => html`<a href="/cup-match/${m.row.no ?? m.row.id}">${name(b, m.a)} v ${name(b, m.b)}</a>` },
       { label: "Score", cell: ({ m }) => (m.row.score_a != null ? `${m.row.score_a} - ${m.row.score_b}` : "–"), cls: "num" },
       { label: "", cell: ({ b, m }) => (isEntry(m.a) && isEntry(m.b) && canEditCompMatch(user, m.row, [b.entryById.get(m.a), b.entryById.get(m.b)], ctx.players)
-        ? html`<a class="btn small" href="/cup-scorecard/${m.row.id}">${m.row.score_a != null ? "Update scorecard" : "Score this match"}</a>`
+        ? html`<a class="btn small" href="/cup-scorecard/${m.row.no ?? m.row.id}">${m.row.score_a != null ? "Update scorecard" : "Score this match"}</a>`
         : statusBadge(m.row.status ?? "scheduled")) },
     ], rows, { empty: "No cup matches for your team yet." }))}
     <a class="btn ghost" href="/competitions" style="align-self:start">All competitions</a>`);

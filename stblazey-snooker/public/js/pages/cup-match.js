@@ -19,7 +19,7 @@ export default async function cupMatch(view, { params, user }) {
     const { c } = info;
     const nameA = info.a?.name ?? "To be decided", nameB = info.b?.name ?? "To be decided";
     setTitle(`${nameA} vs ${nameB}`);
-    if (info.a && info.b) adminEdit("draws", null, { href: `/cup-scorecard/${match.id}`, label: "Edit scorecard" });
+    if (info.a && info.b) adminEdit("draws", null, { href: `/cup-scorecard/${match.no ?? match.id}`, label: "Edit scorecard" });
     // Handicap competitions: who gets a head start in each frame, and how many.
     const hc = (id) => players.find((p) => p.id === id)?.handicap ?? 0;
     const sideIds = (f, s) => [f[`${s}_player_id`], f[`${s}_player2_id`]].filter(Boolean);
@@ -58,7 +58,7 @@ export default async function cupMatch(view, { params, user }) {
           ? html` · level on frames, so <b>${winnerSide(match) === "a" ? nameA : nameB}</b> go through on total points` : level ? " · level on frames — the higher total wins" : ""}</div>` : ""}
         ${venue ? html`<div class="mh-foot"><a href="${urls.venue(venue)}">${venue.name}</a></div>` : ""}
       </div>
-      ${info.a && info.b && canEditCompMatch(user, match, [info.a, info.b], players) ? html`<div class="btn-row"><a class="btn" href="/cup-scorecard/${match.id}">${frames.length ? "Update scorecard" : "Start scoring"}</a></div>` : ""}
+      ${info.a && info.b && canEditCompMatch(user, match, [info.a, info.b], players) ? html`<div class="btn-row"><a class="btn" href="/cup-scorecard/${match.no ?? match.id}">${frames.length ? "Update scorecard" : "Start scoring"}</a></div>` : ""}
       ${panel("Frame by frame", dataTable([
         { label: "Frame", cell: (f) => f.frame_no, cls: "num" },
         { label: nameA, cell: (f) => html`<span class="${f.a_points > f.b_points ? "strong" : ""}">${sidePlayers(f, "a")}</span>`, cls: "right" },

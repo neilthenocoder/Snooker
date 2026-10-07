@@ -13,6 +13,8 @@ export default async function match(view, { params, user }) {
     const bundle = await loadFixture(params.id);
     if (!bundle) return notFound(view);
     const { fixture: fx, frames, breaks } = bundle;
+    // Keep the short address in the bar (/match/2627-14) even when an old long link was followed.
+    if (fx.code && params.id !== fx.code) history.replaceState(null, "", `${urls.match(fx)}${location.search}${location.hash}`);
     const ctx = await seasonContext(fx.season_id);
     const home = ctx.team.get(fx.home_team_id), away = ctx.team.get(fx.away_team_id);
     const title = `${home?.name} vs ${away?.name}`;

@@ -3,18 +3,33 @@
 import { html, fmtDate, fmtTime } from "./dom.js";
 
 // ── URLs (one place to change the site's link structure) ──────
+// Matches, cup matches and players have short addresses (/match/2627-14, /cup-match/27, /player/sam-bolitho);
+// the long id is the fallback for rows made before those existed, and old links keep working.
 export const urls = {
   team: (t) => `/team/${t.slug}`,
   venue: (v) => `/venue/${v.slug}`,
-  match: (fx) => `/match/${fx.id}`,
-  scorecard: (fx) => `/scorecard/${fx.id}`,
+  match: (fx) => `/match/${fx.code || fx.id}`,
+  scorecard: (fx) => `/scorecard/${fx.code || fx.id}`,
+  cupMatch: (m) => `/cup-match/${m.no ?? m.id}`,
+  cupScorecard: (m) => `/cup-scorecard/${m.no ?? m.id}`,
+  scoreboard: (m) => `/scoreboard/${m.no ?? m.id}`,
+  sponsor: (s) => `/sponsor/${s.slug || s.id}`,
   article: (a) => `/news/${a.slug}`,
   standings: (l) => `/standings/${l.slug}`,
   page: (p) => `/page/${p.slug}`,
-  player: (p) => `/player/${p.id}`,
+  player: (p) => `/player/${p.slug || p.id}`,
   competition: (c) => `/competition/${c.slug}`,
   shield: (l) => `/shield/${l.slug}`,
 };
+
+/** Is this player in the current squad lists? (Not for those who have stopped playing or have died.) */
+export const isActivePlayer = (p) => !["not_playing", "deceased"].includes(p?.status);
+/**
+ * The trophy picture of a league, competition or award (Admin → Edit → Trophy). Until one is uploaded
+ * a placeholder cup stands in — pass { always: false } for small spots that should stay empty instead.
+ */
+export const trophy = (thing, cls = "", { always = true } = {}) => (thing?.trophy_url || always
+  ? html`<img class="trophy ${cls} ${thing?.trophy_url ? "" : "placeholder"}" src="${thing?.trophy_url || "/assets/trophy.svg"}" alt="${thing?.trophy_url ? `${thing?.name ?? ""} trophy` : ""}" loading="lazy">` : "");
 
 export const shortName = (league) => league.short_name || league.name.replace(/ League$/i, "");
 
@@ -115,7 +130,7 @@ export function leagueTablePanel(ctx, league, { limit = Infinity, highlightTeamI
     { label: "A", cell: (r) => r.a, cls: "num" },
     { label: "P", cell: (r) => r.pts, cls: "num strong" },
   ], rows, { highlight: top, empty: "No teams in this league yet." });
-  return panel(`${league.name} Table`, table, {
+  return panel(html`${trophy(league, "tiny", { always: false })}${league.name} Table`, table, {
     foot: Number.isFinite(limit) ? { href: urls.standings(league), label: "View full table" } : null,
   });
 }

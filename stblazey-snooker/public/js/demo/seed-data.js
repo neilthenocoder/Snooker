@@ -6,6 +6,9 @@
 
 import { slugify, londonISO, roundRobin, addDays } from "../core/schedule.js";
 import { makeDraw, buildBracket } from "../core/bracket.js";
+import { leagueTable, withLegacyFrames } from "../core/rules.js";
+import { STANDARD_AWARDS, linkAward, competitionFinal } from "../core/awards.js";
+import * as board from "../core/live-score.js";
 
 const uuid = (() => {
   let n = 0;
@@ -329,7 +332,8 @@ export function buildSeed() {
     entry_intro: "Enter this season's competitions here. It takes a minute: choose your name, tick the competitions you want, then pay the entry fee by bank transfer.",
     section_colors: true, sidebar_layout: "right", page_layouts: {}, font_embed: "", loader_show: true, loader_seconds: 0,
     side_box_mode: "results", side_box_title: "", side_box_count: 5, side_box_league: null,
-    ticker_show: true, ticker_speed: "normal", maintenance_on: false, maintenance_text: "",
+    ticker_show: true, ticker_speed: "normal", ticker_pace: 3, maintenance_on: false, maintenance_text: "",
+    text_sizes: {}, celebrate_breaks: "season", feature_announcements: true, feature_style: "scroll", key_dates_show: true, key_dates_count: 5,
     bacs_details: "Account name: St Blazey & District Snooker League (placeholder)\nSort code: 00-00-00\nAccount number: 00000000", entry_pay_days: 7,
     facebook_url: "https://www.facebook.com/", x_url: "https://x.com/", instagram_url: "https://www.instagram.com/", youtube_url: "https://www.youtube.com/",
   }];
@@ -415,7 +419,8 @@ export function buildSeed() {
     ["Entries are open for the Christmas Handicap Singles and the New Year Doubles — enter on the website", "/enter"],
     ["The Christmas Handicap draw will be made live on this website — keep an eye on the Live button", "/competitions"],
     ["Captains: remember to add your match night photos after each home match", ""],
-  ].map(([text, url], i) => ({ id: uuid(), text, url, sort: i + 1, is_active: true, starts_on: null, ends_on: null, created_at: "2026-10-01T09:00:00.000Z" }));
+  ].map(([text, url], i) => ({ id: uuid(), text, url, sort: i + 1, is_active: true, starts_on: null, ends_on: null, created_at: "2026-10-01T09:00:00.000Z",
+    label: i === 0 ? "Entries open" : "", show_in_feature: i < 2 }));
   // What each officer role may use in the dashboard (the Master Admin can change it under Roles & permissions).
   const role_permissions = [
     ["league_admin", ["matchnights", "fixtures", "league", "handicaps", "competitions", "website", "settings", "people"]],
@@ -423,12 +428,188 @@ export function buildSeed() {
     ["committee_member", ["website", "settings"]], ["president", ["website", "settings"]], ["vice_chairman", ["website", "settings"]], ["chairman", ["website", "settings"]],
   ].map(([role, areas]) => ({ role, areas }));
 
+  // ── Wave 6 samples ──
+  const day = (n) => inDays(n).slice(0, 10);
+  // Short web addresses: /match/2627-14, /player/sam-bolitho, /cup-match/27, /sponsor/…
+  for (const s of [season, prevSeason]) {
+    const prefix = s.name.match(/\d{4}/g).map((y) => y.slice(2)).join("");
+    fixtures.filter((f) => f.season_id === s.id).sort((a, b) => a.starts_at.localeCompare(b.starts_at) || a.id.localeCompare(b.id))
+      .forEach((f, i) => Object.assign(f, { code: `${prefix}-${String(i + 1).padStart(2, "0")}`, submitted_email_at: null }));
+  }
+  competition_matches.forEach((m, i) => { m.no = i + 1; });
+  players.forEach((p) => Object.assign(p, { status: "playing", died_on: null, memorial: "", slug: slugify(p.full_name) }));
+  sponsors.forEach((sp, i) => Object.assign(sp, { slug: slugify(sp.name), phone: "", email: "", address: "", photo_url: "",
+    about: i ? "" : "## About Sponsor 1\n\nPlaceholder text about this sponsor — who they are, what they do and how they support the league. Write it in Admin → Sponsors.\n\n- Family-run business in St Blazey\n- Sponsor of the Victory League since 2019\n\n**Mention the league** when you call in." }));
+  for (const row of [...leagues, ...competitions]) row.trophy_url = "";
+
+  // Player statuses: one who has stopped playing, one without a team, and two who are remembered on /in-memoriam.
+  players[40].status = "not_playing";
+  const extraPlayer = (full_name, team_id, more) => { const p = { id: uuid(), full_name, team_id, position: "Player", handicap: 10, avatar_url: "", birth_date: null, cueview: {}, cueview_featured: false,
+    bio: "", career_history: "", past_teams: "", gallery: [], needs_review: false, last_handicap: 10, status: "playing", died_on: null, memorial: "", slug: slugify(full_name), ...more }; players.push(p); return p; };
+  extraPlayer("Jim Polkinghorne (placeholder)", null, { status: "no_team", past_teams: JSON.stringify(["Pelynt (2019–2025)"]) });
+  extraPlayer("Bill Trevaskis (placeholder)", teams[0].id, { status: "deceased", birth_date: "1948-03-02", died_on: "2024-11-18",
+    memorial: "A league stalwart for over forty years, a fine break-builder and a gentleman at the table. Placeholder tribute — edit in Admin → Players." });
+  extraPlayer("Arthur Penhale (placeholder)", teams[12].id, { status: "deceased", died_on: "2023-06-05", past_teams: JSON.stringify(["Bethel B", "Luxulyan A"]) });
+
+  // The rules: two info pages ticked "Show on the Rules page" become the tabs of /rules.
+  for (const pg of pages) pg.show_in_rules = false;
+  Object.assign(pages.find((pg) => pg.slug === "rules"), { title: "League Rules", slug: "league-rules", summary: "How the league is run: matches, points, postponements and handicaps", show_in_rules: true, show_in_league: false,
+    body: `Placeholder rules — replace them with the league's own in Admin → Info pages & rules.
+
+# 1. Match nights
+- League matches are played on **Tuesday evenings**, starting at 7.30pm.
+- A match is **five frames**, each between one player from each team.
+  - A player plays one frame only.
+  - The home captain names their first player; the away captain replies.
+- A team that is a player short may use an **extra (Ext) player** — each player may do this once a season.
+
+# 2. Points
+## 2.1 Team points
+The league table is decided on frames won: one point for every frame.
+
+## 2.2 Player rankings
+| Achievement | Ranking points |
+| Frame won | 5 |
+| Break of 30–39 | 3 |
+| Break of 40–49 | 4 |
+| Break of 50–59 | 5 |
+| Each further 10 | +1, up to 14 |
+
+# 3. Results
+1. The home captain enters the scorecard on the website on the night.
+2. A photo of the signed paper card must be added before the result is submitted.
+3. The results secretary approves each result. Until then it does not count in the tables.
+
+# 4. Postponements
+- A captain may postpone a match **before it starts** by telling the opposing captain and the league secretary.
+- A postponed match must be re-arranged **within three weeks**.
+  - Both captains see the date it must be played by on their My Team page.
+  - Matches not played in time are referred to the committee.
+
+# 5. Handicaps
+- Handicaps are reviewed once a year by the handicap committee.
+- In handicap singles and team competitions, the player with the higher handicap starts the frame with the difference.
+- In handicap doubles, each pair starts on the total of its two handicaps.` });
+  pages.push({ id: uuid(), title: "Rules of the Game", slug: "rules-of-the-game", summary: "The rules of snooker in brief", sort: pages.length + 1, show_in_footer: false, show_in_league: false, show_in_rules: true, gallery: [],
+    body: `A short guide — placeholder text. The full rules are published by the [WPBSA](https://wpbsa.com/rules/).
+
+# The balls
+| Ball | Points |
+| Red | 1 |
+| Yellow | 2 |
+| Green | 3 |
+| Brown | 4 |
+| Blue | 5 |
+| Pink | 6 |
+| Black | 7 |
+
+# A break
+1. Pot a red, then a colour, then a red, and so on.
+2. While reds remain, each colour goes back on its spot.
+3. When the last red has gone, the colours are potted in order: yellow to black.
+
+# Fouls
+- A foul gives the opponent **at least four points**.
+  - More if the ball “on”, or the ball hit or potted by mistake, is worth more: blue 5, pink 6, black 7.
+- Common fouls:
+  - Missing the ball “on”
+  - Potting the white
+  - Touching a ball with anything other than the tip of the cue
+- After a foul that leaves a snooker, the player may be given a **free ball**.
+
+# The end of a frame
+- A frame ends when the black is potted or fouled with the scores different, or when a player concedes.
+- If the scores are level after the black, the black is **re-spotted**.` });
+
+  // Meetings (/meetings): past ones with minutes, and the next one.
+  const meetings = [
+    ["AGM", "2026-07-21", "7.30pm", "Annual General Meeting 2026", "Bethel Social Club", "The league's annual general meeting: officers' reports, election of officers and proposals for the 2026-27 season.",
+      "## Present\n32 members, representing 17 of the 19 teams.\n\n## 1. Apologies\nReceived from two clubs.\n\n## 2. Officers' reports\n- **Chairman:** thanked the clubs for a well-run season.\n- **Treasurer:** the accounts were presented and accepted.\n  - Entry fees stay the same for 2026-27.\n\n## 3. Election of officers\n| Post | Elected |\n| Chairman | Placeholder Name |\n| League Secretary | Placeholder Name |\n| Competition Secretary | Placeholder Name |\n\n## 4. Proposals\n1. Results to be entered on the website on the night — **carried**.\n2. Postponed matches to be played within three weeks — **carried**.\n\nPlaceholder minutes — replace them in Admin → Meetings."],
+    ["Committee Meeting", "2026-09-08", "7.30pm", "", "St Blazey Football Club", "Fixtures for 2026-27 approved; competition dates agreed.", "- Fixtures for both leagues approved.\n- Competition entry forms to open on the website.\n- Presentation night: date to be confirmed."],
+    ["AGM", "2025-07-22", "7.30pm", "Annual General Meeting 2025", "Bethel Social Club", "Officers' reports and elections for the 2025-26 season.", ""],
+    ["Committee Meeting", day(20), "7.30pm", "", "St Blazey Football Club", "- Christmas Handicap: the draw\n- Presentation night: date and venue\n- Any other business", ""],
+  ].map(([kind, held_on, time_text, title, venue, summary, minutes]) => ({ id: uuid(), kind, held_on, time_text, title, venue, summary, minutes, document_url: "", is_published: true, created_at: "2026-10-01T09:00:00.000Z" }));
+
+  // Key dates for the home page (always a few days ahead, so the demo never runs out).
+  const key_dates = [
+    [4, null, "Team Handicap: round 1 starts", "Matches to be played by the following Sunday", competitions[0].id, ""],
+    [14, null, "Entries close: Christmas Handicap Singles and New Year Doubles", "", null, "/enter"],
+    [16, null, "Christmas Handicap draw — live on this website, 7.30pm", "", xmas.id, ""],
+    [20, null, "Committee meeting", "St Blazey Football Club, 7.30pm", null, "/meetings"],
+    [70, 84, "Mid-season break: no league matches", "", null, ""],
+  ].map(([from, to, title, details, competition_id, url]) => ({ id: uuid(), starts_on: day(from), ends_on: to ? day(to) : null, title, details, url, competition_id, is_active: true, created_at: "2026-10-01T09:00:00.000Z" }));
+
+  // Presentation night for last season: the standard awards, with the winners the results give and placeholders for the rest.
+  const prevFx = fixtures.filter((f) => f.season_id === prevSeason.id);
+  const prevFrames = new Map();
+  for (const fr of withLegacyFrames(prevFx, [])) (prevFrames.get(fr.fixture_id) ?? prevFrames.set(fr.fixture_id, []).get(fr.fixture_id)).push(fr);
+  const prevComps = competitions.filter((c) => c.season_id === prevSeason.id);
+  const inLeague = (l) => players.filter((p) => p.status === "playing" && teams.find((t) => t.id === p.team_id)?.league_id === l.id);
+  const blank = { winner_name: null, winner_player_id: null, winner_team_id: null, winner_image_url: "", runner_up_name: null, runner_up_player_id: null, runner_up_team_id: null, runner_up_image_url: "", note: "" };
+  const ofP = (prefix, p) => (p ? { [`${prefix}_name`]: p.full_name, [`${prefix}_player_id`]: p.id } : {});
+  const ofT = (prefix, t) => (t ? { [`${prefix}_name`]: t.name, [`${prefix}_team_id`]: t.id } : {});
+  const awards = STANDARD_AWARDS.map((name, i) => {
+    const link = linkAward(name, leagues, prevComps), league = leagues.find((l) => l.id === link.league_id), comp = prevComps.find((c) => c.id === link.competition_id);
+    const pool = league ? inLeague(league) : players.filter((p) => p.status === "playing");
+    const a = pool[(i * 7 + 3) % pool.length], b = pool[(i * 11 + 20) % pool.length], c = pool[(i * 5 + 31) % pool.length], d = pool[(i * 13 + 44) % pool.length];
+    let who;
+    if (comp) { const f = competitionFinal(comp, { entries: competition_entries, matches: competition_matches });
+      who = { ...ofP("winner", players.find((p) => p.id === f?.winner?.player_id)), ...ofP("runner_up", players.find((p) => p.id === f?.runnerUp?.player_id)) }; }
+    else if (league && name === league.name) {
+      const rows = leagueTable(teams.filter((t) => t.league_id === league.id), prevFx.filter((f) => f.league_id === league.id), prevFrames);
+      who = { ...ofT("winner", rows[0].team), ...ofT("runner_up", rows[1].team), note: `${rows[0].pts} points from ${rows[0].p} matches`, winner_image_url: img(31 + i) };
+    } else if (league && /Highest Break/.test(name)) {
+      const ids = new Set(prevFx.filter((f) => f.league_id === league.id).map((f) => f.id));
+      const best = breaks.filter((x) => ids.has(x.fixture_id)).sort((x, y) => y.value - x.value);
+      const second = best.find((x) => x.player_id !== best[0]?.player_id);
+      who = { ...ofP("winner", players.find((p) => p.id === best[0]?.player_id)), ...ofP("runner_up", players.find((p) => p.id === second?.player_id)), note: best[0] ? `A break of ${best[0].value}` : "" };
+    } else if (/Doubles|Pairs/.test(name) && !/Team/.test(name)) who = { winner_name: `${a.full_name} & ${b.full_name}`, runner_up_name: `${c.full_name} & ${d.full_name}` };
+    else if (/Team|Rest of the League/.test(name)) { const ts = teams.filter((t) => !league || t.league_id === league.id); who = { ...ofT("winner", ts[(i + 2) % ts.length]), ...ofT("runner_up", ts[(i + 5) % ts.length]) }; }
+    else who = { ...ofP("winner", a), ...ofP("runner_up", c) };
+    return { id: uuid(), season_id: prevSeason.id, name, sort: i + 1, trophy_url: "", ...link, ...blank, ...who, created_at: "2026-06-01T09:00:00.000Z" };
+  });
+
+  // Live scoreboard: last season's Bill Toms final (finished), a match on the table right now, and a final still to come.
+  const playFrame = (m, want) => {
+    for (let tries = 0; tries < 80; tries++) {
+      let x = m;
+      for (let visit = 0; visit < 500; visit++) {
+        const f = x.state.frame, sit = board.situation(f);
+        if (sit.remaining === 0 || (sit.snookers && sit.ahead === want && sit.lead - sit.remaining > 14)) break;
+        if (rand() < (f.striker === want ? 0.74 : 0.5)) { const on = board.ballOn(f); x = board.pot(x, on === "red" ? 1 : on === "colour" ? pick([7, 7, 6, 5, 5, 4, 2]) : on); }
+        else x = board.endBreak(x);
+      }
+      const f = x.state.frame;
+      if (want === "a" ? f.a > f.b : f.b > f.a) return board.endFrame(x, want);
+    }
+    return board.endFrame(m, want);
+  };
+  const liveRow = (no, more) => ({ id: uuid(), no, title: null, competition_id: null, round_name: null, player_a_id: null, player_b_id: null, name_a: null, name_b: null, best_of: 9,
+    status: "setup", frames_a: 0, frames_b: 0, state: {}, venue: null, starts_at: null, started_at: null, finished_at: null, created_by: "Master Admin", updated_at: new Date().toISOString(), ...more });
+  const billToms = competitions.find((c) => c.name === "Bill Toms");
+  const btFinal = competitionFinal(billToms, { entries: competition_entries, matches: competition_matches });
+  const btRow = competition_matches.filter((m) => m.competition_id === billToms.id).sort((x, y) => y.round - x.round)[0];
+  // Side "a" on the scoreboard is the winner; they take the last frame.
+  let done = board.start(liveRow(1, { competition_id: billToms.id, round_name: "Final", player_a_id: btFinal.winner.player_id, player_b_id: btFinal.runnerUp.player_id, best_of: 5,
+    venue: "Bethel Social Club", starts_at: btRow.starts_at }), "a");
+  const need = Math.max(btRow.score_a, btRow.score_b), lost = Math.min(btRow.score_a, btRow.score_b);
+  for (const w of [...shuffled([...Array(need - 1).fill("a"), ...Array(lost).fill("b")]), "a"]) done = playFrame(done, w);
+  Object.assign(done, { started_at: btRow.starts_at, finished_at: new Date(Date.parse(btRow.starts_at) + 2.5 * 3600e3).toISOString(), updated_at: btRow.starts_at });
+  let now = board.start(liveRow(2, { title: "Champion of Champions", round_name: "Champion of Champions", player_a_id: players[0].id, player_b_id: players[13].id, best_of: 9, venue: "Bethel Social Club" }), "a");
+  for (const w of ["a", "b", "a"]) now = playFrame(now, w);
+  for (let visit = 0; visit < 17; visit++) { const f = now.state.frame; if (rand() < 0.62) { const on = board.ballOn(f); now = board.pot(now, on === "red" ? 1 : on === "colour" ? pick([7, 6, 5, 7, 4]) : on); } else now = board.endBreak(now); }
+  Object.assign(now, { started_at: inDays(-0.035), finished_at: null });
+  const reesSingles = competitions.find((c) => c.name === "Rees Singles");
+  const live_matches = [done, now, liveRow(3, { competition_id: reesSingles.id, round_name: "Final", player_a_id: reesPlayers[2].id, player_b_id: reesPlayers[9].id, best_of: 7,
+    venue: "Tregonissey Social Club", starts_at: londonISO(day(9), "19:30") })];
+
   return {
     tables: {
       seasons: [season, prevSeason], leagues, venues, teams, players,
       fixtures, frames, breaks, articles, pages, sponsors, profiles,
       competitions, competition_entries, competition_matches, competition_frames, competition_breaks, competition_signups,
       handicap_changes: [], categories, settings, media, page_views, announcements, role_permissions, audit_log: [],
+      key_dates, awards, meetings, live_matches, private_settings: [{ id: 1, results_email_on: false, results_email_to: "" }],
     },
     demoUsers,
   };

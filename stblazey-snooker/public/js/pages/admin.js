@@ -20,6 +20,9 @@ import { entriesPage } from "../admin/entries.js";
 import { rolesPage } from "../admin/roles.js";
 import { activityPage } from "../admin/activity.js";
 import { backupPage } from "../admin/backup.js";
+import { awardsPage } from "../admin/awards.js";
+import { scoreboardPage } from "../admin/scoreboard.js";
+import { emailsPage } from "../admin/emails.js";
 
 // The dashboard menu. Each login only sees the sections its role allows
 // (see SECTION_AREA and canManage in core/auth.js — the database enforces the same).
@@ -27,14 +30,14 @@ const NAV = [
   ["Match nights", [["overview", "Overview"], ["results", "Results to approve"]]],
   ["Fixtures", [["fixtures", "All fixtures"], ["generator", "Fixture generator"], ["import", "Import from CSV"]]],
   ["League", [["leagues", "Leagues"], ["teams", "Teams"], ["players", "Players"], ["handicaps", "Handicaps"], ["venues", "Venues"], ["seasons", "Seasons"]]],
-  ["Competitions", [["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws & results"]]],
+  ["Competitions", [["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws & results"], ["scoreboard", "Live scoreboard"], ["awards", "Presentation awards"]]],
   ["People", [["accounts", "Logins"]]],
-  ["Website", [["articles", "News"], ["categories", "News categories & layout"], ["announcements", "Announcements"], ["media", "Image library"], ["pages", "Info pages"], ["sponsors", "Sponsors"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["stats", "Statistics"]]],
+  ["Website", [["articles", "News"], ["categories", "News categories & layout"], ["announcements", "Announcements"], ["key_dates", "Key dates"], ["meetings", "Meetings"], ["media", "Image library"], ["pages", "Info pages & rules"], ["sponsors", "Sponsors"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["emails", "Result emails"], ["stats", "Statistics"]]],
   // Only the Master Admin sees these.
   ["Master Admin", [["roles", "Roles & permissions"], ["activity", "Activity log"], ["backup", "Backup"]]],
 ];
 const SPECIAL = { overview, results, generator, draws, media: mediaPage, stats: statsPage, import: importPage, handicaps: handicapsPage, entries: entriesPage,
-  roles: rolesPage, activity: activityPage, backup: backupPage };
+  roles: rolesPage, activity: activityPage, backup: backupPage, awards: awardsPage, scoreboard: scoreboardPage, emails: emailsPage };
 // Menu items that show a red number when something is waiting.
 const COUNTS = { players: "New players to check", entries: "Entries waiting for payment" };
 

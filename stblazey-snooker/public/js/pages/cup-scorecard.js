@@ -4,7 +4,7 @@ import { loadCompMatch, loadCompetitions, saveCompScorecard, table } from "../co
 import { buildBracket, roundName } from "../core/bracket.js";
 import { canEditCompMatch, canManage } from "../core/auth.js";
 import { scorecardEditor, breaksText } from "../core/scorecard-editor.js";
-import { breadcrumb, cupMatchInfo, urls } from "../core/components.js";
+import { breadcrumb, cupMatchInfo, urls, isActivePlayer } from "../core/components.js";
 import { handicapMode } from "../core/rules.js";
 import { setTitle, navigate } from "../core/router.js";
 import { mustLogin } from "./scorecard.js";
@@ -22,7 +22,7 @@ export default async function cupScorecard(view, { params, user }) {
   if (!canEditCompMatch(user, match, [info.a, info.b], players)) {
     return mount(view, html`<div class="wrap"><h1>Scorecard locked</h1>
       <div class="notice error">Only the league admin, the competition secretary, or a captain of a team in this match can score it — and captains only until it's finished.</div>
-      <a class="btn" href="/cup-match/${match.id}">View the match</a></div>`);
+      <a class="btn" href="/cup-match/${match.no ?? match.id}">View the match</a></div>`);
   }
   const { c } = info;
   setTitle(`Scorecard: ${info.a.name} vs ${info.b.name}`);
@@ -35,9 +35,10 @@ export default async function cupScorecard(view, { params, user }) {
   // entrant's own team first, then everyone else.
   const options = (e) => {
     const home = playerTeam(e);
-    const mine = players.filter((p) => p.team_id === home?.id).map((p) => ({ id: p.id, name: p.full_name, group: home?.name }));
+    const pickable = players.filter((p) => isActivePlayer(p) || p.id === e.player_id);
+    const mine = pickable.filter((p) => p.team_id === home?.id).map((p) => ({ id: p.id, name: p.full_name, group: home?.name }));
     if (c.kind === "Team") return mine;
-    const rest = players.filter((p) => p.team_id !== home?.id).map((p) => ({ id: p.id, name: p.full_name, group: team(p.team_id)?.name ?? "Other" }));
+    const rest = pickable.filter((p) => p.team_id !== home?.id).map((p) => ({ id: p.id, name: p.full_name, group: team(p.team_id)?.name ?? "Other" }));
     return [...mine, ...rest];
   };
   // Singles: the entrant plays every frame, so fill them in.
@@ -82,7 +83,7 @@ export default async function cupScorecard(view, { params, user }) {
       { key: "view", label: "View match page", cls: "ghost", skipChecks: true, quiet: true },
     ],
     async onSave(frames, breaks, action) {
-      if (action === "view") return navigate(`/cup-match/${match.id}`);
+      if (action === "view") return navigate(`/cup-match/${match.no ?? match.id}`);
       await saveCompScorecard(match.id, frames.map(fromEditor), breaks, action === "finish");
       if (action === "finish") navigate(canManage(user, "competitions") ? `/admin/draws?c=${c.id}` : urls.competition(c));
     },

@@ -8,7 +8,9 @@ const { tables } = buildSeed();
 // Order matters: parents before children. Logins (profiles) are created in the admin dashboard instead.
 const ORDER = ["seasons", "leagues", "venues", "teams", "players", "fixtures", "frames", "breaks",
   "competitions", "competition_entries", "competition_matches", "competition_frames", "competition_breaks", "competition_signups",
-  "categories", "articles", "pages", "sponsors", "media", "announcements"];
+  "categories", "articles", "pages", "sponsors", "media", "announcements", "key_dates", "awards", "meetings", "live_matches"];
+// The database numbers cup and scoreboard matches itself (so its counters stay right): leave the sample numbers out.
+for (const name of ["competition_matches", "live_matches"]) tables[name] = tables[name].map(({ no, ...row }) => row);
 
 const lit = (v) => {
   if (v === null || v === undefined) return "null";

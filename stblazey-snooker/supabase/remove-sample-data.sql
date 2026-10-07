@@ -47,6 +47,11 @@ delete from articles where id::text like '00000000-0000-4000-8000-%';
 delete from pages    where id::text like '00000000-0000-4000-8000-%';
 delete from sponsors where id::text like '00000000-0000-4000-8000-%';
 delete from media    where id::text like '00000000-0000-4000-8000-%';
+delete from announcements where id::text like '00000000-0000-4000-8000-%';
+delete from key_dates    where id::text like '00000000-0000-4000-8000-%';
+delete from meetings     where id::text like '00000000-0000-4000-8000-%';
+delete from awards       where id::text like '00000000-0000-4000-8000-%';
+delete from live_matches where id::text like '00000000-0000-4000-8000-%';
 -- Home page boxes that pointed at sample players/teams are emptied automatically.
 
 commit;

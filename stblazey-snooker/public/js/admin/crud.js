@@ -6,7 +6,8 @@ import { html, mount, $, toast, fmtDate, fmtTime, toLocalInput, fromLocalInput }
 import { table, save, remove, invalidate } from "../core/api.js";
 import { slugify } from "../core/schedule.js";
 import { dataTable, panel } from "../core/components.js";
-import { uploadImage } from "../core/upload.js";
+import { uploadImage, uploadFile } from "../core/upload.js";
+import { markup, MARKUP_HELP } from "../core/markup.js";
 import { pickImage, uploadFiles } from "./picker.js";
 import { listField, wireListFields, listItems } from "../core/list-field.js";
 
@@ -68,7 +69,16 @@ function input(field, row, refs, rows) {
   switch (field.type) {
     case "textarea": return html`<textarea ${a(attrs)} placeholder="${field.placeholder ?? ""}" style="${field.rows ? `min-height:${field.rows * 24}px` : ""}">${value}</textarea>`;
     case "checkbox": return html`<input type="checkbox" ${a(attrs)} ${value ? "checked" : ""}>`;
-    case "number": return html`<input type="number" ${a(attrs)} value="${value}" ${a(["min", "max", "step"].filter((k) => field[k] != null).map((k) => `${k}="${field[k]}"`).join(" "))}>`;
+    case "range": return html`<span class="range-field"><input type="range" ${a(attrs)} value="${value || field.default || field.min || 0}" ${a(["min", "max", "step"].filter((k) => field[k] != null).map((k) => `${k}="${field[k]}"`).join(" "))} data-range>
+      <output>${value || field.default || field.min || 0}</output></span>`;
+    case "file": return html`<div class="file-field">
+      <div class="btn-row">
+        <label class="btn small secondary">Upload a PDF<input type="file" accept="application/pdf" hidden data-file-upload="${name}" data-folder="${field.folder ?? "files"}"></label>
+        <a class="btn small ghost ${value ? "" : "hidden"}" href="${value}" target="_blank" rel="noopener" data-file-open="${name}">Open it</a>
+        <button type="button" class="btn small ghost" data-file-clear="${name}">Remove</button>
+      </div>
+      <input type="text" ${a(attrs)} value="${value}" placeholder="…or paste a link to the document" data-file-url></div>`;
+    case "number": return html`<input type="number" ${a(attrs)} value="${value}" placeholder="${field.placeholder ?? ""}" ${a(["min", "max", "step"].filter((k) => field[k] != null).map((k) => `${k}="${field[k]}"`).join(" "))}>`;
     case "list": return listField(name, value, { add: field.add, placeholder: field.placeholder ?? "", suggestions: field.suggest ? (refs[field.suggest] ?? []).map(labelOf) : [] });
     case "date": return html`<input type="date" ${a(attrs)} value="${String(value).slice(0, 10)}">`;
     case "datetime": return html`<input type="datetime-local" ${a(attrs)} value="${toLocalInput(value)}">`;
@@ -122,7 +132,7 @@ function collect(form, res, editing) {
     if (!el || el.disabled) continue;
     let v = f.type === "checkbox" ? el.checked : el.value.trim();
     if (f.type === "color" && f.optional && !form.querySelector(`[data-own-color="${key(f)}"]`)?.checked) v = "";
-    if (f.type === "number") v = v === "" ? null : Number(v);
+    if (["number", "range"].includes(f.type)) v = v === "" ? null : Number(v);
     else if (f.type === "datetime") v = fromLocalInput(v);
     else if (["gallery", "tags"].includes(f.type)) v = JSON.parse(v || "[]");
     else if (f.type !== "checkbox" && v === "") v = null;
@@ -145,7 +155,12 @@ function formFields(res, editing, refs, rows) {
     const help = f.help ? html`<small class="help">${f.help}</small>` : "";
     if (f.type === "checkbox") return html`<label class="check">${input(f, editing, refs, rows)}${f.label}</label>`;
     // Image and gallery fields contain their own buttons, so they sit in a <div> rather than a <label>.
-    if (["image", "gallery", "tags", "list"].includes(f.type)) return html`<div class="field-label" style="grid-column:1/-1">${caption}${help}${input(f, editing, refs, rows)}</div>`;
+    if (["image", "gallery", "tags", "list", "file"].includes(f.type)) return html`<div class="field-label" style="grid-column:1/-1">${caption}${help}${input(f, editing, refs, rows)}</div>`;
+    // Formatted text: the typing help underneath, and a button to see how it will look.
+    if (f.formatted) return html`<div class="field-label formatted-field" style="grid-column:1/-1"><label>${caption}${help}${input(f, editing, refs, rows)}</label>
+      <small class="help">${MARKUP_HELP}</small>
+      <button type="button" class="btn small ghost" data-preview-markup="${key(f)}">Preview</button>
+      <div class="markup-preview prose rich" data-markup-preview="${key(f)}" hidden></div></div>`;
     if (f.type === "color" && f.optional) return html`<div class="field-label">${caption}${help}${input(f, editing, refs, rows)}</div>`;
     return html`<label style="${f.type === "textarea" || f.wide ? "grid-column:1/-1" : ""}">${caption}${help}${input(f, editing, refs, rows)}</label>`;
   });
@@ -253,6 +268,12 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
     const img = $(`[data-preview="${name}"]`, form());
     img.src = url; img.classList.toggle("hidden", !url);
   };
+  // File fields (a PDF): the link goes in the text box, and the "Open it" button follows it.
+  const setFile = (name, url) => {
+    form().elements[name].value = url;
+    const open = $(`[data-file-open="${name}"]`, form());
+    open.href = url; open.classList.toggle("hidden", !url);
+  };
   // Gallery fields keep their list of links as JSON in a hidden input.
   const galleryList = (name) => JSON.parse(form().elements[name].value || "[]");
   const setGallery = (name, urls) => {
@@ -282,6 +303,16 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
       if (urls.length) { setGallery(name, [...galleryList(name), ...urls]); toast("Pictures added — press Save to keep them"); }
       return;
     }
+    const doc = e.target.closest("[data-file-upload]");
+    if (doc) {
+      if (!doc.files[0]) return;
+      const label = doc.closest("label");
+      label.firstChild.textContent = "Uploading…";
+      try { setFile(doc.dataset.fileUpload, await uploadFile(doc.files[0], { folder: doc.dataset.folder })); toast("Document uploaded — press Save to keep it"); }
+      catch (err) { toast(err.message, "error"); }
+      finally { label.firstChild.textContent = "Upload a PDF"; doc.value = ""; }
+      return;
+    }
     const input = e.target.closest("[data-upload]");
     if (!input?.files[0]) return;
     const label = input.closest("label");
@@ -296,6 +327,10 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
     // A section can react while its form is being filled in (res.onInput — e.g. Branding offers a pasted font straight away).
     if (form()?.contains(e.target)) res.onInput?.(form(), e.target);
     if (e.target.matches("[data-image-url]")) setImage(e.target.name, e.target.value.trim());
+    if (e.target.matches("[data-file-url]")) setFile(e.target.name, e.target.value.trim());
+    if (e.target.matches("[data-range]")) e.target.nextElementSibling.textContent = e.target.value;
+    // A formatted box that is being previewed keeps its preview up to date.
+    if (e.target.matches("textarea")) { const pv = form()?.querySelector(`[data-markup-preview="${e.target.name}"]`); if (pv && !pv.hidden) mount(pv, markup(e.target.value)); }
     // Picking a colour means you want your own.
     if (e.target.type === "color") { const own = form()?.querySelector(`[data-own-color="${e.target.name}"]`); if (own) own.checked = true; }
     if (e.target.matches("[data-search]")) { search = e.target.value.trim().toLowerCase(); page = 0; drawList(); }
@@ -307,6 +342,13 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
     if (t.matches("[data-new]")) { editing = { ...filters }; drawForm(); }
     if (t.matches("[data-cancel]")) { editing = null; drawForm(); }
     if (t.matches("[data-clear-image]")) setImage(t.dataset.clearImage, "");
+    if (t.matches("[data-file-clear]")) setFile(t.dataset.fileClear, "");
+    if (t.matches("[data-preview-markup]")) {
+      const pv = $(`[data-markup-preview="${t.dataset.previewMarkup}"]`, form());
+      pv.hidden = !pv.hidden;
+      t.textContent = pv.hidden ? "Preview" : "Hide the preview";
+      if (!pv.hidden) mount(pv, markup(form().elements[t.dataset.previewMarkup].value));
+    }
     if (t.matches("[data-library]")) {
       const url = await pickImage({ folder: t.dataset.folder, maxSize: Number(t.dataset.max) });
       if (url) setImage(t.dataset.library, url);
