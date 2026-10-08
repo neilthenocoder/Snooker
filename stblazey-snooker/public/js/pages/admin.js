@@ -1,6 +1,6 @@
 import { html, mount, $, toast, readForm, fmtDate, fmtTime, fromLocalInput } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
-import { table, insertMany, setFixtureStatus, save, invalidate, signups } from "../core/api.js";
+import { table, insertMany, setFixtureStatus, save, invalidate, signups, cueviewSubmissions } from "../core/api.js";
 import { isStaff, canOpenSection, isMember } from "../core/auth.js";
 import { rearrangeBy, POSTPONE_WEEKS } from "../core/rules.js";
 import { resetDemo } from "../core/db.js";
@@ -23,23 +23,42 @@ import { backupPage } from "../admin/backup.js";
 import { awardsPage } from "../admin/awards.js";
 import { scoreboardPage } from "../admin/scoreboard.js";
 import { emailsPage } from "../admin/emails.js";
+import { cueviewsPage } from "../admin/cueviews.js";
 
 // The dashboard menu. Each login only sees the sections its role allows
 // (see SECTION_AREA and canManage in core/auth.js — the database enforces the same).
 const NAV = [
   ["Match nights", [["overview", "Overview"], ["results", "Results to approve"]]],
-  ["Fixtures", [["fixtures", "All fixtures"], ["generator", "Fixture generator"], ["import", "Import from CSV"]]],
-  ["League", [["leagues", "Leagues"], ["teams", "Teams"], ["players", "Players"], ["handicaps", "Handicaps"], ["venues", "Venues"], ["seasons", "Seasons"]]],
+  ["Fixtures", [["fixtures", "All fixtures"], ["byes", "Bye weeks"], ["generator", "Fixture generator"], ["import", "Import from CSV"]]],
+  ["League", [["leagues", "Leagues"], ["teams", "Teams"], ["players", "Players"], ["cueviews", "CueViews to approve"], ["handicaps", "Handicaps"], ["venues", "Venues"], ["seasons", "Seasons"]]],
   ["Competitions", [["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws & results"], ["scoreboard", "Live scoreboard"], ["awards", "Presentation awards"]]],
   ["People", [["accounts", "Logins"]]],
-  ["Website", [["articles", "News"], ["categories", "News categories & layout"], ["announcements", "Announcements"], ["key_dates", "Key dates"], ["meetings", "Meetings"], ["media", "Image library"], ["pages", "Info pages & rules"], ["sponsors", "Sponsors"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["emails", "Result emails"], ["stats", "Statistics"]]],
+  ["Website", [["articles", "News"], ["categories", "News categories"], ["announcements", "Announcements"], ["key_dates", "Key dates"], ["meetings", "Meetings"], ["media", "Image library"], ["pages", "Info pages & rules"], ["merchandise", "Merchandise"], ["sponsors", "Sponsors"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["emails", "Result emails"], ["stats", "Statistics"]]],
   // Only the Master Admin sees these.
   ["Master Admin", [["roles", "Roles & permissions"], ["activity", "Activity log"], ["backup", "Backup"]]],
 ];
 const SPECIAL = { overview, results, generator, draws, media: mediaPage, stats: statsPage, import: importPage, handicaps: handicapsPage, entries: entriesPage,
-  roles: rolesPage, activity: activityPage, backup: backupPage, awards: awardsPage, scoreboard: scoreboardPage, emails: emailsPage };
+  roles: rolesPage, activity: activityPage, backup: backupPage, awards: awardsPage, scoreboard: scoreboardPage, emails: emailsPage, cueviews: cueviewsPage };
 // Menu items that show a red number when something is waiting.
-const COUNTS = { players: "New players to check", entries: "Entries waiting for payment" };
+const COUNTS = { players: "New players to check", entries: "Entries waiting for payment", cueviews: "CueViews waiting to be checked" };
+const COUNT_WORD = { players: "new", entries: "waiting", cueviews: "waiting" };
+// A small picture for each group of the menu.
+const ico = (d) => html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
+const GROUP_ICON = {
+  "Match nights": ico("M9 2h6a2 2 0 0 1 2 2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2-2Zm0 2v2h6V4Zm1.6 13.4 6-6L15.2 10l-4.6 4.6-1.8-1.8-1.4 1.4Z"),
+  Fixtures: ico("M7 2h2v2h6V2h2v2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2Zm12 8H5v10h14ZM7 12h4v4H7Z"),
+  League: ico("M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm1 5v3h5V9Zm7 0v3h7V9Zm-7 5v4h5v-4Zm7 0v4h7v-4Z"),
+  Competitions: ico("M7 3h10v2h4v3a4 4 0 0 1-4.2 4A5 5 0 0 1 13 15.9V19h3v2H8v-2h3v-3.1A5 5 0 0 1 7.2 12 4 4 0 0 1 3 8V5h4Zm0 4H5v1a2 2 0 0 0 2 2Zm10 3a2 2 0 0 0 2-2V7h-2Z"),
+  People: ico("M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"),
+  Website: ico("M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6v2h3v2H7v-2h3v-2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm0 2v10h16V6Z"),
+  "Master Admin": ico("M12 2 4 5v6c0 5 3.4 9.3 8 11 4.6-1.7 8-6 8-11V5Zm-1.2 13.4-3.3-3.3 1.4-1.4 1.9 1.9 4.3-4.3 1.4 1.4Z"),
+  "My team": ico("m12 2.6 2.9 6 6.5.9-4.7 4.6 1.1 6.5-5.8-3.1-5.8 3.1 1.1-6.5L2.6 9.5l6.5-.9Z"),
+  Demo: ico("M12 5V2L7.5 6.5 12 11V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7Z"),
+};
+const logoutIcon = ico("M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5v-2H5V5h5Zm6.6 4.6-1.4 1.4 2 2H9v2h8.2l-2 2 1.4 1.4L21 12Z");
+// Which groups of the menu are folded away (remembered on this device).
+const FOLD_KEY = "sbdsl-admin-folded";
+const folded = () => { try { return new Set(JSON.parse(localStorage.getItem(FOLD_KEY) || "[]")); } catch { return new Set(); } };
 
 export default async function admin(view, { params, user, query }) {
   if (!user) return mustLogin(view);
@@ -52,6 +71,7 @@ export default async function admin(view, { params, user, query }) {
   const section = params.section || first;
   const title = NAV.flatMap(([, items]) => items).find(([k]) => k === section)?.[1] ?? "Admin";
   setTitle(`Admin – ${title}`);
+  const closed = folded();
   const count = (key) => (COUNTS[key] ? html` <span class="nav-count" data-count="${key}" title="${COUNTS[key]}" hidden></span>` : "");
 
   mount(view, html`<div class="wrap wide">
@@ -61,14 +81,58 @@ export default async function admin(view, { params, user, query }) {
       <select data-admin-jump>${nav.map(([group, items]) => html`<optgroup label="${group}">
         ${items.map(([key, label]) => html`<option value="${key}" data-label="${label}" ${key === section ? "selected" : ""}>${label}</option>`)}</optgroup>`)}</select></label>
     <div class="admin">
-      <nav class="admin-nav">${nav.map(([group, items]) => html`<div class="group">${group}</div>
-        ${items.map(([key, label]) => html`<a href="/admin/${key}" class="${key === section ? "active" : ""}">${label}${count(key)}</a>`)}`)}
-        ${isMember(user) ? html`<div class="group">My team</div><a href="/my">My Team area</a>` : ""}
-        ${DEMO_MODE ? html`<div class="group">Demo</div><a href="#" data-reset-demo>Reset sample data</a>` : ""}
+      <nav class="admin-nav" aria-label="Admin menu">
+        <label class="admin-find">${ico("M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2Zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12Z")}
+          <input type="search" placeholder="Find in the menu…" data-admin-find aria-label="Find in the menu" autocomplete="off"></label>
+        ${[...nav, ...(isMember(user) ? [["My team", [["/my", "My Team area"]]]] : []), ...(DEMO_MODE ? [["Demo", [["#reset", "Reset sample data"]]]] : [])].map(([group, items]) => {
+          const here = items.some(([key]) => key === section), shut = !here && closed.has(group);
+          return html`<section class="nav-group ${here ? "has-active" : ""} ${shut ? "shut" : ""}" data-group="${group}">
+            <button type="button" class="nav-group-head" aria-expanded="${shut ? "false" : "true"}"><span class="nav-ico">${GROUP_ICON[group] ?? ""}</span><span>${group}</span><small>${items.length}</small><i class="chev" aria-hidden="true"></i></button>
+            <div class="nav-items">${items.map(([key, label]) => (key === "#reset" ? html`<a href="#" data-reset-demo>${label}</a>`
+              : key.startsWith("/") ? html`<a href="${key}">${label}</a>`
+              : html`<a href="/admin/${key}" class="${key === section ? "active" : ""}" ${key === section ? html`aria-current="page"` : ""}>${label}${count(key)}</a>`))}</div>
+          </section>`; })}
+        <p class="admin-none" hidden>Nothing in the menu matches.</p>
+        <button type="button" class="admin-logout" data-logout>${logoutIcon}<span>Log out</span></button>
       </nav>
       <div id="admin-body"></div>
     </div>
+    <button type="button" class="admin-logout admin-logout-m" data-logout>${logoutIcon}<span>Log out</span></button>
   </div>`);
+
+  // Fold a group away or open it again (the group you are in always starts open).
+  const menu = $(".admin-nav", view);
+  // A long menu scrolls inside its own column: start with the page you are on in view.
+  const here = $("a.active", menu);
+  if (here && here.offsetTop + here.offsetHeight > menu.clientHeight) menu.scrollTop = here.offsetTop - menu.clientHeight / 2;
+  menu.addEventListener("click", (e) => {
+    const head = e.target.closest(".nav-group-head");
+    if (!head) return;
+    const group = head.parentElement, shut = group.classList.toggle("shut");
+    head.setAttribute("aria-expanded", String(!shut));
+    const now = folded(); now[shut ? "add" : "delete"](group.dataset.group);
+    try { localStorage.setItem(FOLD_KEY, JSON.stringify([...now])); } catch { /* not remembered */ }
+  });
+  // Type a few letters to find a page of the dashboard; Enter opens the first one found.
+  const find = $("[data-admin-find]", view);
+  find.addEventListener("input", () => {
+    const q = find.value.trim().toLowerCase();
+    let any = false;
+    for (const group of menu.querySelectorAll(".nav-group")) {
+      const whole = !q || group.dataset.group.toLowerCase().includes(q);
+      let shown = 0;
+      for (const a of group.querySelectorAll(".nav-items a")) { const hit = whole || a.textContent.toLowerCase().includes(q); a.classList.toggle("nav-hide", !hit); if (hit) shown++; }
+      group.classList.toggle("nav-hide", !shown);
+      group.classList.toggle("finding", !!q);
+      any ||= shown > 0;
+    }
+    $(".admin-none", view).hidden = any;
+  });
+  find.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    const first = menu.querySelector(".nav-group:not(.nav-hide) .nav-items a:not(.nav-hide)");
+    if (first && find.value.trim()) { e.preventDefault(); first.click(); }
+  });
 
   $("[data-reset-demo]")?.addEventListener("click", async (e) => {
     e.preventDefault();
@@ -85,12 +149,13 @@ export default async function admin(view, { params, user, query }) {
     const waiting = {
       players: canOpenSection(user, "players") ? (await table("players", "full_name")).filter((p) => p.needs_review).length : 0,
       entries: canOpenSection(user, "entries") ? (await signups().catch(() => [])).filter((r) => r.status === "pending").length : 0,
+      cueviews: canOpenSection(user, "cueviews") ? (await cueviewSubmissions().catch(() => [])).filter((r) => r.status === "pending").length : 0,
     };
     for (const [key, n] of Object.entries(waiting)) {
       const badge = $(`[data-count="${key}"]`, view);
       if (badge) { badge.textContent = n; badge.hidden = !n; }
       const opt = $(`[data-admin-jump] option[value="${key}"]`, view);
-      if (opt) opt.textContent = `${opt.dataset.label}${n ? ` (${n} ${key === "players" ? "new" : "waiting"})` : ""}`;
+      if (opt) opt.textContent = `${opt.dataset.label}${n ? ` (${n} ${COUNT_WORD[key]})` : ""}`;
     }
   };
   drawCounts();
@@ -103,7 +168,7 @@ export default async function admin(view, { params, user, query }) {
   if (RESOURCES[section]) {
     const current = (await table("seasons", "name")).find((s) => s.is_current);
     return crud(body, RESOURCES[section], {
-      preset: section === "fixtures" && current ? { season_id: current.id } : {},
+      preset: ["fixtures", "byes"].includes(section) && current ? { season_id: current.id } : {},
       editId: query.get("edit"), user, onChange: drawCounts,
     });
   }
@@ -187,7 +252,8 @@ async function generator(el) {
   const ctx = await seasonContext();
   const nextTuesday = (() => { const d = new Date(); d.setDate(d.getDate() + ((9 - d.getDay()) % 7 || 7)); return d.toISOString().slice(0, 10); })();
   mount(el, html`<div class="notice">Creates a full round-robin for one league: every team plays every other team, home and away.
-    Venues come from each home team. You can edit or postpone any fixture afterwards.</div>
+    Venues come from each home team. You can edit or postpone any fixture afterwards.
+    A league with an odd number of teams gets a <b>bye week</b> for the team left without a match each night (Fixtures → Bye weeks).</div>
   <form class="form" id="gen-form"><div class="grid-2">
     <label>Season<select name="season_id">${[...ctx.seasons].reverse().map((s) => html`<option value="${s.id}" ${s.id === ctx.season?.id ? "selected" : ""}>${s.name}</option>`)}</select></label>
     <label>League<select name="league_id">${ctx.leagues.map((l) => html`<option value="${l.id}">${l.name} (${ctx.teamsIn(l.id).length} teams)</option>`)}</select></label>
@@ -208,14 +274,19 @@ async function generator(el) {
     const rounds = roundRobin(teams.map((t) => t.id));
     const used = v.double ? rounds : rounds.slice(0, rounds.length / 2);
     let date = v.start;
-    return used.flatMap((pairs, i) => {
+    const byes = [];
+    const list = used.flatMap((pairs, i) => {
       if (i > 0) date = addDays(date, v.gap);
       while (skip.has(date)) date = addDays(date, v.gap);
+      // With an odd number of teams, whoever isn't in a pair that night has a bye week.
+      const playing = new Set(pairs.flat());
+      for (const t of teams) if (!playing.has(t.id)) byes.push({ season_id: v.season_id, league_id: v.league_id, team_id: t.id, bye_on: date });
       return pairs.map(([home, away]) => ({
         season_id: v.season_id, league_id: v.league_id, home_team_id: home, away_team_id: away,
         venue_id: ctx.team.get(home)?.venue_id ?? null, starts_at: londonISO(date, v.time), status: "scheduled", notes: "",
       }));
     });
+    return Object.assign(list, { byes });
   };
 
   const preview = () => {
@@ -223,6 +294,7 @@ async function generator(el) {
     const v = readForm($("#gen-form"));
     const existing = v.season_id === ctx.season?.id ? ctx.fixturesIn(v.league_id).length : 0;
     mount($("#gen-preview"), html`${existing ? html`<div class="notice error">This league already has ${existing} fixtures this season — creating more will add duplicates.</div>` : ""}
+      ${list.byes.length ? html`<div class="notice">An odd number of teams: ${list.byes.length} bye weeks will be added too, one team each night.</div>` : ""}
       ${panel(`Preview: ${list.length} fixtures`, dataTable([
         { label: "Date", cell: (f) => `${fmtDate(f.starts_at)} ${fmtTime(f.starts_at)}` },
         { label: "Home", cell: (f) => ctx.team.get(f.home_team_id)?.name },
@@ -238,8 +310,9 @@ async function generator(el) {
     try {
       const list = preview();
       if (!confirm(`Create ${list.length} fixtures?`)) return;
-      await insertMany("fixtures", list);
-      toast(`${list.length} fixtures created`);
+      await insertMany("fixtures", [...list]);
+      if (list.byes.length) await insertMany("byes", list.byes);
+      toast(`${list.length} fixtures created${list.byes.length ? ` and ${list.byes.length} bye weeks` : ""}`);
       navigate("/admin/fixtures");
     } catch (err) { toast(err.message, "error"); }
   });

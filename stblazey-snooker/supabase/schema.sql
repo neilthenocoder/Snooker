@@ -635,6 +635,18 @@ create table if not exists live_matches (
 );
 create unique index if not exists live_matches_no_key on live_matches (no);
 
+-- Bye weeks. A league with an odd number of teams gives one team a free week on each match night.
+-- A bye is not a match: no opponent, no scorecard, and it never counts in a table. It is only shown in fixture lists.
+create table if not exists byes (
+  id uuid primary key default gen_random_uuid(),
+  season_id uuid not null references seasons on delete cascade,
+  league_id uuid references leagues on delete cascade,
+  team_id uuid not null references teams on delete cascade,
+  bye_on date not null,
+  unique (season_id, team_id, bye_on)
+);
+create index if not exists byes_season_idx on byes (season_id, bye_on);
+
 -- "Sam Bolitho" → "sam-bolitho"
 create or replace function public.slugify(t text) returns text
 language sql immutable as $$
@@ -1131,13 +1143,13 @@ grant execute on function public.signup_names(uuid) to anon, authenticated;
 do $$
 declare t text; area text;
 begin
-  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','frames','breaks','articles','pages','sponsors','profiles','competitions','competition_entries','competition_matches','categories','media','settings','competition_frames','competition_breaks','page_views','announcements','role_permissions','audit_log','key_dates','awards','meetings','live_matches','private_settings'] loop
+  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','frames','breaks','articles','pages','sponsors','profiles','competitions','competition_entries','competition_matches','categories','media','settings','competition_frames','competition_breaks','page_views','announcements','role_permissions','audit_log','key_dates','awards','meetings','live_matches','private_settings','byes'] loop
     execute format('alter table %I enable row level security', t);
     execute format('drop policy if exists "public read" on %I', t);
     execute format('drop policy if exists "admin write" on %I', t);
   end loop;
 
-  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','frames','breaks','pages','sponsors','competitions','competition_entries','competition_matches','categories','media','settings','competition_frames','competition_breaks','announcements','role_permissions','key_dates','awards','live_matches'] loop
+  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','frames','breaks','pages','sponsors','competitions','competition_entries','competition_matches','categories','media','settings','competition_frames','competition_breaks','announcements','role_permissions','key_dates','awards','live_matches','byes'] loop
     execute format('create policy "public read" on %I for select using (true)', t);
   end loop;
 
@@ -1145,6 +1157,8 @@ begin
   -- (the Master Admin, plus the roles ticked for that part under Admin → Roles & permissions).
   -- Fixtures: whoever looks after fixtures, or match nights (rearranging a postponed match).
   execute 'create policy "admin write" on fixtures for all using (public.can_manage(''fixtures'') or public.can_manage(''matchnights'')) with check (public.can_manage(''fixtures'') or public.can_manage(''matchnights''))';
+  -- Bye weeks go with the fixture list.
+  execute 'create policy "admin write" on byes for all using (public.can_manage(''fixtures'')) with check (public.can_manage(''fixtures''))';
   -- Logins are only ever written by the logins function (netlify/functions/admin-users.mjs), which makes its
   -- own checks. Directly, only the Master Admin may touch them — so nobody can promote themselves.
   execute 'create policy "admin write" on profiles for all using (public.is_master()) with check (public.is_master())';
@@ -1228,6 +1242,9 @@ language sql stable security definer set search_path = public as $$
       coalesce((select name from teams where id = nullif(j->>'home_team_id', '')::uuid), '?') || ' v ' ||
       coalesce((select name from teams where id = nullif(j->>'away_team_id', '')::uuid), '?') ||
       coalesce(' (' || to_char((j->>'starts_at')::timestamptz at time zone 'Europe/London', 'DD/MM/YYYY') || ')', '') end,
+    case when t = 'byes' then
+      coalesce((select name from teams where id = nullif(j->>'team_id', '')::uuid), '?') || ' bye week' ||
+      coalesce(' (' || to_char((j->>'bye_on')::date, 'DD/MM/YYYY') || ')', '') end,
     case when t = 'settings' then 'Site settings' end,
     case when t = 'role_permissions' then j->>'role' end,
     case when t = 'meetings' then coalesce(nullif(j->>'title', ''), j->>'kind') || ' (' || to_char((j->>'held_on')::date, 'DD/MM/YYYY') || ')' end,
@@ -1282,13 +1299,175 @@ revoke all on function public.audit_added() from public, anon, authenticated;
 do $$
 declare t text;
 begin
-  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','competitions','competition_entries','articles','pages','sponsors','categories','announcements','settings','role_permissions','key_dates','awards','meetings'] loop
+  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','competitions','competition_entries','articles','pages','sponsors','categories','announcements','settings','role_permissions','key_dates','awards','meetings','byes'] loop
     execute format('drop trigger if exists audit_row on %I', t);
     execute format('drop trigger if exists audit_added on %I', t);
     execute format('create trigger audit_row after update or delete on %I for each row execute function public.audit_row()', t);
     execute format('create trigger audit_added after insert on %I referencing new table as added for each statement execute function public.audit_added()', t);
   end loop;
 end $$;
+
+-- ── v10: My Snooker, scoreboard → draw, merchandise, CueView form ──
+-- My Snooker (/myteam): a logged-in person's own page about one team. They choose the team
+-- (it need not be the team their login belongs to) and can switch the page off again.
+alter table profiles add column if not exists my_team_id uuid references teams on delete set null;
+alter table profiles add column if not exists my_snooker boolean not null default true;
+create or replace function public.set_my_snooker(p_team uuid, p_on boolean) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception 'Please log in first'; end if;
+  if p_team is not null and not exists (select 1 from teams where id = p_team) then
+    raise exception 'That team is not on the website';
+  end if;
+  update profiles set my_team_id = p_team, my_snooker = coalesce(p_on, true) where id = auth.uid();
+end;
+$$;
+revoke all on function public.set_my_snooker(uuid, boolean) from public, anon;
+grant execute on function public.set_my_snooker(uuid, boolean) to authenticated;
+
+-- Live scoreboard → the draw. A scoreboard match can be tied to a match in a competition's draw
+-- (live_matches.comp_match_id). Each time a frame ends the draw is brought up to date from the
+-- scoreboard, and when the match ends the result is final and the winner goes through — nobody
+-- has to type the frames in again. If the scorer presses Undo after the last frame, the winner
+-- is taken back out of the next round (as long as that round hasn't started).
+alter table live_matches add column if not exists comp_match_id uuid references competition_matches on delete set null;
+create or replace function public.scoreboard_to_draw(lid uuid) returns text
+language plpgsql security definer set search_path = public as $$
+declare l live_matches; m competition_matches; nxt competition_matches; mode text; w uuid; frames jsonb; pa int; pb int;
+begin
+  if not (public.can_manage('competitions') or public.can_manage('matchnights')) then
+    raise exception 'You are not allowed to change this match';
+  end if;
+  select * into l from live_matches where id = lid;
+  if not found or l.comp_match_id is null then return 'none'; end if;
+  select * into m from competition_matches where id = l.comp_match_id;
+  if not found then return 'none'; end if;
+  select draw_mode into mode from competitions where id = m.competition_id;
+
+  -- The match had finished and is being re-opened: take its winner back out of the next round.
+  if m.status = 'completed' and l.status <> 'finished' and coalesce(mode, 'bracket') <> 'redraw' then
+    w := case when m.score_a > m.score_b then m.entry_a when m.score_b > m.score_a then m.entry_b end;
+    select * into nxt from competition_matches where competition_id = m.competition_id and round = m.round + 1 and slot = m.slot / 2;
+    if found and w is not null then
+      if nxt.score_a is not null or nxt.status <> 'scheduled' then
+        raise exception 'The next round of the draw has already started, so this result cannot be taken back from the scoreboard. Change it under Draws & results.';
+      end if;
+      if m.slot % 2 = 0 then update competition_matches set entry_a = null where id = nxt.id and entry_a = w;
+      else update competition_matches set entry_b = null where id = nxt.id and entry_b = w; end if;
+    end if;
+  end if;
+
+  -- The frames played so far, exactly as the scoreboard has them (and each player's best break of 30 or more in a frame).
+  frames := case when jsonb_typeof(l.state->'frames') = 'array' then l.state->'frames' else '[]'::jsonb end;
+  delete from competition_frames where match_id = m.id;
+  delete from competition_breaks where match_id = m.id;
+  insert into competition_frames (match_id, frame_no, a_player_id, b_player_id, a_points, b_points)
+    select m.id, (f->>'no')::int, l.player_a_id, l.player_b_id,
+           greatest(least(coalesce((f->>'a')::int, 0), 300), 0), greatest(least(coalesce((f->>'b')::int, 0), 300), 0)
+    from jsonb_array_elements(frames) f;
+  insert into competition_breaks (match_id, frame_no, player_id, value)
+    select m.id, (f->>'no')::int, l.player_a_id, (f->>'high_a')::int from jsonb_array_elements(frames) f
+     where l.player_a_id is not null and coalesce((f->>'high_a')::int, 0) between 30 and 155
+    union all
+    select m.id, (f->>'no')::int, l.player_b_id, (f->>'high_b')::int from jsonb_array_elements(frames) f
+     where l.player_b_id is not null and coalesce((f->>'high_b')::int, 0) between 30 and 155;
+  select coalesce(sum(a_points), 0), coalesce(sum(b_points), 0) into pa, pb from competition_frames where match_id = m.id;
+
+  -- The score is the frames WON on the scoreboard (a conceded frame counts for whoever was given it).
+  update competition_matches
+     set score_a = case when coalesce(l.frames_a, 0) + coalesce(l.frames_b, 0) > 0 then l.frames_a end,
+         score_b = case when coalesce(l.frames_a, 0) + coalesce(l.frames_b, 0) > 0 then l.frames_b end,
+         points_a = case when coalesce(l.frames_a, 0) + coalesce(l.frames_b, 0) > 0 then pa end,
+         points_b = case when coalesce(l.frames_a, 0) + coalesce(l.frames_b, 0) > 0 then pb end,
+         status = case when l.status = 'finished' then 'completed' when l.status = 'live' then 'in_progress' else 'scheduled' end
+   where id = m.id;
+  if l.status = 'finished' then
+    perform public.advance_winner(m.id);
+    return 'finished';
+  end if;
+  return 'updated';
+end;
+$$;
+revoke all on function public.scoreboard_to_draw(uuid) from public, anon;
+grant execute on function public.scoreboard_to_draw(uuid) to authenticated;
+
+-- Merchandise (/merchandise): what the league sells, with a price as you want it shown. Nothing is paid for on the website.
+create table if not exists merchandise (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  price text,
+  description text,
+  options text,
+  image_url text,
+  url text,
+  sort int not null default 1,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+alter table settings add column if not exists merch_intro text;
+alter table settings add column if not exists merch_how text;
+alter table merchandise enable row level security;
+drop policy if exists "public read" on merchandise;
+drop policy if exists "admin write" on merchandise;
+create policy "public read" on merchandise for select using (is_active or public.can_manage('website'));
+create policy "admin write" on merchandise for all using (public.can_manage('website')) with check (public.can_manage('website'));
+
+-- CueViews sent in on the website's form (/cueview). They wait here until someone who looks after
+-- the players checks them, picks whose profile they belong to and approves them. Never public.
+create table if not exists cueview_submissions (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid references players on delete set null,
+  name text not null,
+  team text,
+  answers jsonb not null default '{}'::jsonb,
+  bio text,
+  contact text,
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  created_at timestamptz not null default now(),
+  decided_at timestamptz
+);
+alter table cueview_submissions enable row level security;
+drop policy if exists "admin write" on cueview_submissions;
+create policy "admin write" on cueview_submissions for all using (public.can_manage('league')) with check (public.can_manage('league'));
+-- Anyone can send one in (like a paper form): this checks it is a sensible size and files it as "waiting".
+create or replace function public.submit_cueview(p_player uuid, p_name text, p_team text, p_answers jsonb, p_bio text default null, p_contact text default null) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare new_id uuid; who text;
+begin
+  who := nullif(btrim(coalesce((select full_name from players where id = p_player), p_name, '')), '');
+  if who is null then raise exception 'Please choose or type your name'; end if;
+  if jsonb_typeof(coalesce(p_answers, '{}'::jsonb)) <> 'object' then raise exception 'The answers could not be read'; end if;
+  if length(who) > 80 or octet_length(coalesce(p_answers, '{}'::jsonb)::text) > 12000 or length(coalesce(p_bio, '')) > 3000 or length(coalesce(p_contact, '')) > 200 then
+    raise exception 'That is too much text — please shorten your answers';
+  end if;
+  if not exists (select 1 from jsonb_each_text(coalesce(p_answers, '{}'::jsonb)) a where btrim(a.value) <> '') and btrim(coalesce(p_bio, '')) = '' then
+    raise exception 'Please answer at least one question';
+  end if;
+  if (select count(*) from cueview_submissions where status = 'pending') >= 300 then
+    raise exception 'The form is busy at the moment — please try again later';
+  end if;
+  insert into cueview_submissions (player_id, name, team, answers, bio, contact)
+  values (p_player, who, nullif(btrim(coalesce(p_team, '')), ''), coalesce(p_answers, '{}'::jsonb), nullif(btrim(coalesce(p_bio, '')), ''), nullif(btrim(coalesce(p_contact, '')), ''))
+  returning id into new_id;
+  return new_id;
+end;
+$$;
+grant execute on function public.submit_cueview(uuid, text, text, jsonb, text, text) to anon, authenticated;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['merchandise'] loop
+    execute format('drop trigger if exists audit_row on %I', t);
+    execute format('drop trigger if exists audit_added on %I', t);
+    execute format('create trigger audit_row after update or delete on %I for each row execute function public.audit_row()', t);
+    execute format('create trigger audit_added after insert on %I referencing new table as added for each statement execute function public.audit_added()', t);
+  end loop;
+end $$;
+
+-- The shields' real names (only where they still have the sample ones).
+update leagues set shield_name = 'Victory League Runabout Shield' where slug = 'victory-league' and coalesce(shield_name, '') in ('', 'Victory Shield');
+update leagues set shield_name = 'Rees Memorial League Runabout Shield' where slug = 'rees-memorial-league' and coalesce(shield_name, '') in ('', 'Rees Shield');
 
 -- ── v8: give existing rows their short web addresses ────────────
 -- (Done down here, after the activity log has been told to ignore these columns.)

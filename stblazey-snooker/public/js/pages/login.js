@@ -11,7 +11,7 @@ export default async function login(view, { user }) {
     ${breadcrumb([["Home", "/"], ["Login"]])}
     <h1>Log in</h1>
     ${DEMO_MODE ? html`<div class="notice demo-logins"><b>Demo logins</b> — click one to fill it in:
-      ${[["Master Admin", "admin@demo.test", "admin123"], ["Captain (Bethel A)", "captain@demo.test", "captain123"], ["Player", "player@demo.test", "player123"],
+      ${[["Master Admin", "admin@demo.test", "admin123"], ["Captain (Bethel A)", "captain@demo.test", "captain123"], ["Player", "player@demo.test", "player123"], ["Player (not linked to anyone)", "fan@demo.test", "fan12345"],
          ["Competition Secretary + Captain", "compsec@demo.test", "compsec123"], ["Committee Member", "committee@demo.test", "committee123"]]
         .map(([who, email, pw]) => html`<button type="button" data-demo="${email}|${pw}"><b>${who}</b> ${email} / ${pw}</button>`)}</div>` : ""}
     <form class="form" id="login-form">
@@ -19,7 +19,7 @@ export default async function login(view, { user }) {
       <label>Email<input name="email" type="email" autocomplete="username" required></label>
       <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
       <button class="btn" type="submit">Log in</button>
-      <p class="muted" style="font-size:13px;margin-bottom:0">Accounts are created by the league secretary. Forgotten your password? Ask them to reset it.</p>
+      <p class="muted" style="font-size:13px;margin-bottom:0">Accounts are created by the league secretary. Players: your login opens <b>My Snooker</b>, your own page for your team. Forgotten your password? Ask them to reset it.</p>
     </form>
   </div>`);
 

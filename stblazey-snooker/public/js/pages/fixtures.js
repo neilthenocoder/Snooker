@@ -9,7 +9,7 @@ export default async function fixtures(view, { query }) {
   setTitle(title);
   adminEdit("fixtures");
   mount(view, html`<div class="wrap">
-    ${breadcrumb([["Home", "/"], ["Our League", "/league"], [`${ctx.season?.name} Season`], [title]])}
+    ${breadcrumb([["Home", "/"], ["Our League", "/league"], ["Seasons", "/seasons"], [`${ctx.season?.name} Season`, urls.season(ctx.season)], [title]])}
     <h1>${title}</h1>
     ${seasonPicker(ctx)}
     ${ctx.leagues.map((l) => html`<h3>${l.name}</h3>

@@ -82,3 +82,34 @@ Everything in the CSV files was read from the site with WebFetch. Nothing was fi
 - The 2025-26 Victory League table lists 9 teams (Bethel A, Tregonissey A, Luxulyan A, St Blazey B, St Neot, Mevagissey A, Mevagissey B, Pelynt, Bethel D), so team line-ups and divisions change between seasons (Bethel D is in the Rees league this season; Luxulyan B is described on the site as a Rees league newcomer).
 - The numbers of matches per past season were not counted, because the REST events route is empty and each season would need its team pages reading one by one.
 - Competition terms on the site (cups): Bill Toms, Doubles, Gordon Boynton Trophy, Handicap Doubles, Rees League Singles, Seniors, Singles, Snooker Shoot-Out, Team Handicap, Team Pairs, Willie Thomas.
+
+## 9. Second pass, 08/10/2026: players, CueViews and checks (read with a real browser, straight from the site's own records)
+
+What changed in this pass: every player record on the old site was read through its REST API (514 records), all 183 match pages of 2026-27 were re-read, and everything was compared with Rich's own fixtures-and-results document of 8 October.
+
+**Checks that came out clean**
+- frames.csv agrees with the live match pages for all 26 played matches: 130 frames, 10 breaks, no differences.
+- fixtures.csv agrees with Rich's document for all 162 fixtures (date, home, away, venue, score).
+- The team of every one of the 153 players in players.csv is the "current team" on that player's live record.
+- League tables rebuilt from the files match the old site for all 19 teams (played, won, lost, frames for and against, points).
+- Player rankings rebuilt from the files match the old site for every player with points: 45 in the Victory League, 34 in the Rees.
+- All ten breaks match.
+
+**To check with Rich**
+1. **Extra (Ext) frames and rankings. ANSWERED by Rich, October 2026: "an Ext frame only gets the 1 point for the frame win, NOT points for a break and NOT ranking points." That is what the website does, so nothing changed.** On the old site an extra frame is recorded against a shadow "(Ext)" record, so it counts for the team and not for the player. The rankings prove it: Ben Rothwell has 10 points (two wins) although he also won as Bugle's opponent's extra on 22/09, and Oliver Watson has none although he won as the extra on 29/09. The new site now does the same (`extCountsForRanking` in rules.js). Until this pass it counted them for the player.
+2. **League positions when teams are level.** The old site gives teams level on points the same position (Mevagissey C and Tregonissey B are both 5th). The new site splits them on matches won, then frame difference, and only shares a position when all three are level — so Mevagissey C is 5th and Tregonissey B 6th. The figures in the table are identical.
+3. **The 155 people without a team.** The old site holds 321 records of real people: 153 are in a 2026-27 team, the rest have "Unassigned Team" (or no team). They are in `players-without-a-team.csv` and come in as "No team at the moment", so their handicaps stay on record and they can be put into a team in one step. If the league would rather not carry them, delete that file's rows before building the SQL, or set them to "Not playing" in Admin → Players.
+4. **Likely duplicates among them** (each pair is two separate records on the old site, both brought across): Rich Wilkinson / Richard Wilkinson (both 35); Matt Pearce / Matthew Pearce (both 50); Martin Isted / Martin Insted (both 55); Mo Rescorla (40) / Mo Roscorla (60); Dave McClaren (45) / Dave McLaren (no handicap); David Roberts (60, whose old web address is "darren-roberts") beside Darren Roberts of St Blazey A (25).
+5. **No handicap on record** (brought in as 0, which reads as scratch — please set them): in teams, Andre Koranteng, Peter Harford, Edward Barkhuysen, Simon Yeo; without a team, Alan Meades, Chris McAvoy, Dan Tynan, Dave McLaren, Dave Willis, James Raggatt, Lee Oxenham, Martin Kitt, Mike Byard, Richard Ware, Robert Gascogne, Robert Maddams, Ryan Tonkin, Steve Knight, Tom Hawken, Trevor Pearce.
+   Simon Yeo's record has "50" typed in the box for "most memorable match": probably his handicap in the wrong box. It was not used as either.
+6. **Richard Pearson has two records.** "Richard Pearson (Admin)" (Tregonissey A, 7) is the registered one, but its CueView is test text ("Blah blah h blah", "Me"). The other "Richard Pearson" (no team, 10) has a full set of real answers. cueviews.json uses the real answers for the one Richard Pearson on the new site (if he already has a CueView there, it is left alone).
+7. **Shield holders.** Who held each shield when the season started could not be found on the old site (its "Current Runabout Shield Holders" box is empty), so the sample holders are cleared rather than guessed. Set them in Admin → Leagues.
+8. **Competitions.** The 11 competitions come in with the notes from their pages ("Home player to contact by…") but without draws. Bill Toms, Seniors and Willie Thomas print handicaps beside the names and say "Away player receives 5 extra points": they are set as handicap competitions and the 5 points stay in the notes, not in the maths. Team Pairs (set as Doubles) and GB Trophy (set as Other) have no draw on the old site yet — check their type.
+
+**CueViews.** 20 records have any answers; 17 are used (cueviews.json). Left out: the "(Admin)" test answers (item 6), Simon Yeo's "50" (item 5), and Chris Brown's only entry (League: "Rees"). "Left or right handed" answers were tidied to Left / Right / Both ("Lefty", "Southpaw", "r/h", "Right handed"); Andrew Kitt's "Neither" was left out. Everything else is word for word, checked by checksum against the site.
+
+**Photos.** Almost every player picture on the old site is one of 40 stock cartoons. Four are real photographs and need adding by hand (Admin → Players → Edit → Photo): Joshua Bristow, John Daniell, Mark Cockayne and Richard Pearson.
+
+**Bye weeks.** Rich's document lists the Rees league's 18 byes as matches against "Bye". They are in byes.csv as a team and a date, and show as "Bye week" in that team's fixtures and on the calendar. They are not matches and count for nothing.
+
+**The match with no result.** Bethel D v Mevagissey C (06/10/2026) is blank in Rich's document as well. On the old site its page has five players a side, all on 0. It is a fixture with no scorecard: it shows its time, counts for nothing, and Rich or a captain enters the card when it is played.

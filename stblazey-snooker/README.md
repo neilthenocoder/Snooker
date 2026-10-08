@@ -5,7 +5,8 @@ A fast, plain HTML/CSS/JavaScript website (no build step) with:
 - **Public site**: home page with a rotating news banner, live & upcoming match strip, league tables, shield holders, player/team of the week and CueViews; fixtures and results, a **calendar** (with phone-calendar download), team pages, **player pages with CueView**, match scorecards, venues with maps and galleries, news with weekly round-ups, **knockout competitions with a live bracket and live cup scorecards**, standings, handicaps and a **Live** page.
 - **Live extras**: the LIVE button pulses orange ("LIVE SOON") an hour before matches and green while they're on; green pop-ups announce frame wins, breaks and new players (the bell turns them on/off).
 - **Members' area** (My Team · Fixtures · Profile · User details · Competitions): captains and vice captains enter scorecards frame by frame on match night — a **step-by-step view made for phones**, or the classic full card. Each save updates the live page for everyone, straight away. Every player can have a login to edit **their own profile** (photo, bio, career history, pictures, CueView).
-- **Players**: an **Our Players** page (pick a team, see its players past and present) and player pages with bio, career history, past teams, pictures and **player news**. A **search** button in the menu finds players, teams, competitions, venues, news and pages.
+- **Players**: an **Our Players** page (pick a team, see its players past and present) and player pages with bio, career history, past teams, pictures and **player news**.
+- **Seasons** (`/seasons`): a page for every season with tiles for its Breaks, Competitions, Fixtures & Results, Handicaps, League Tables and Rankings, and a page per league for the breaks, the player rankings and the table. A **search** button in the menu finds players, teams, competitions, venues, news and pages.
 - **Roles & permissions**: the Master Admin decides, in a tick-box grid, what each officer role (League Admin, Competition Secretary, League Secretary, Committee Member, President, Vice Chairman, Chairman) can see and do. Each login only sees its own parts of the dashboard, and the database enforces it. Any officer can also be given captain rights for their team.
 - **Master Admin tools**: an **activity log** (who added, changed or removed what), a **backup** download, and **maintenance mode**.
 - **Home page extras**: an **announcements ticker** along the very top, and a **Latest Results** box in the side column with an all-results page (`/results`).
@@ -18,6 +19,8 @@ A fast, plain HTML/CSS/JavaScript website (no build step) with:
 - **Finals night**: a **live scoreboard** scored ball by ball from a phone or tablet (Admin → Live scoreboard), watched live at `/scoreboard`.
 - **End of season**: a **presentation night** page with every trophy, winner and runner-up (`/presentation`) and a **season review** worked out from the results (`/season-review`).
 - **League information**: **key dates** on the home page and calendar, a **Rules** page with tabs, a contents list and proper tables and sub-bullets (`/rules`), **AGM and committee meetings** with minutes (`/meetings`), a page for each **sponsor**, and **Sadly no longer with us** (`/in-memoriam`).
+- **My Snooker** (`/myteam`): a player's login opens their own page — their team's next match, results, fixtures, breaks, handicaps and place in the table (section 3h).
+- **Merchandise** (`/merchandise`) and a **CueView form** (`/cueview`) that players fill in themselves and the league approves (section 3i).
 - **Result emails**: the results secretary is emailed as soon as a captain submits a card (through Resend — see section 3f).
 - **Short web addresses**: `/match/2627-14`, `/player/sam-bolitho`, `/cup-match/27`.
 - **Automatic calculations**: league tables (P/W/L/F/A/Pts), player rankings (5 pts per frame won plus break points), highest breaks and all breaks.
@@ -195,7 +198,7 @@ What each role starts with (press **Put back the standard permissions** to retur
 | **League Secretary** | League, Handicaps |
 | **Committee Member**, **President**, **Vice Chairman**, **Chairman** | News & website, Settings & branding |
 | **Captain**, **Vice Captain** | Not in the grid: scorecards, postponing and match night photos for their own team; their own profile |
-| **Player** | Not in the grid: their own profile only |
+| **Player** | Not in the grid, and no tools: **My Snooker**, their own page for the team they follow (section 3h). Linked to a player profile, they can also edit that profile |
 
 Things worth knowing:
 
@@ -227,7 +230,7 @@ Dates are day-first (`24/09/2019`). Column order doesn't matter and extra column
 
 In a scorecard file, a player written as `Ben Rothwell (Ext)` is Ben Rothwell playing as the extra player, and `Extra Player` is a frame with no named player — that is how the old website wrote them.
 
-**The real 2026-27 season** is in `real-data/2026-27/`, collected from the old website: 19 teams, 153 players with handicaps, all 162 fixtures, and the 26 matches played so far frame by frame. Its own `README.md` has the steps and `NOTES-from-the-old-site.md` lists everything odd that was found. In short: clear the sample league (a one-off — see the warning in section 7), add the two leagues and the 2026-2027 season, then import `teams.csv`, `players.csv`, `fixtures.csv` and `frames.csv` in that order.
+**The real 2026-27 season** is in `real-data/2026-27/`, collected from the old website: 19 teams, 153 players in teams (plus 155 the old site lists without a team), the players' CueView answers, all 162 fixtures, the 18 bye weeks and the 26 matches played so far frame by frame. **`supabase/real-season-2026-27.sql` puts all of it in, in one go** — it takes the sample players, fixtures and results out, keeps the teams, venues and leagues (with their emblems), and loads the real season. Run `supabase/schema.sql` first, then that file, once. The folder's own `README.md` has the detail and `NOTES-from-the-old-site.md` lists everything odd that was found. (The same files can still be brought in by hand through Admin → Import from CSV.)
 
 ## 3d. Finals night: the live scoreboard
 
@@ -241,7 +244,14 @@ For a final (or any match worth watching), one person scores it ball by ball and
 
 Visitors open **`/scoreboard`** (also linked from the League page, the Live page and the home page strip). It needs no refreshing. On a laptop: keys **1–7** pot a ball, **Space** ends the break, **Backspace** undoes.
 
-The scoreboard is a broadcast, not the official record: afterwards, enter the frame scores on the competition's scorecard as usual so the draw moves on. Who can use it: anyone with **Competitions** or **Match nights** in Roles & permissions.
+**The result goes into the draw by itself.** When you set the match up, choose the competition and then **Match in the draw**: the list shows every match of that competition's draw whose two players are known (singles and doubles; a team competition keeps its own scorecard). Choosing one fills in the players, the round and the number of frames. From then on:
+
+- the draw shows the match as in progress, and the frame score is written in each time a frame ends;
+- when the match is won, the result, every frame score and each player's breaks of 30 or more are in the draw, and the winner goes through to the next round — nobody types the scorecard in afterwards;
+- **Undo** after the last frame takes the result back out of the draw again (unless the next round has already started: then change it under Draws & results);
+- a frame that was **conceded** counts for the player it was given to, with the points as they stood.
+
+A match scored without a link (a friendly, an exhibition) changes nothing in any draw. Forgot to link it? **All matches → Details → Match in the draw**: the draw is brought up to date as soon as you save. Who can use the scoreboard: anyone with **Competitions** or **Match nights** in Roles & permissions.
 
 ## 3e. Presentation night, key dates, meetings, rules and sponsors
 
@@ -308,9 +318,35 @@ Good to know: the addresses are kept in a private table that visitors and captai
 - A match is `/match/2627-14`: the season (2026-27) and a running number, given when the fixture is created. Existing fixtures were numbered in date order.
 - A player is `/player/sam-bolitho`; two players with the same name become `sam-bolitho` and `sam-bolitho-2`. The address can be changed under Admin → Players → Web address.
 - A cup match is `/cup-match/27`, a scoreboard match `/scoreboard/4`, a sponsor `/sponsor/their-name`.
+- A season is `/seasons/2026-2027`; its lists are `/seasons/2026-2027/rankings/victory-league`, `…/breaks/…` and `…/league-tables/…`.
 - **Old links keep working**: the long addresses open the same page and the address bar changes to the short one.
 
 ---
+
+## 3h. My Snooker: a player's own page
+
+Modelled on "My Sport" on the BBC website. A **Player** login has no tools; it gets one thing, **My Snooker**.
+
+- **Making the login:** Admin → People → Logins → Add new, role **Player**, as for any other login. It does **not** have to be linked to a player or a team. (Link it to a player profile only if that person should also edit their own photo, bio and CueView.)
+- **What the player sees:** after logging in they land on **`/myteam`**: the team's next match, league position, last five results, every game played with its frame-by-frame page, the fixtures to come (with bye weeks), the squad with handicaps and ranking points, the team's breaks and the league table with their team picked out. If the login is linked to a player, their own season figures are there too.
+- **Choosing the team:** a login that is linked to a team starts with that team. One that isn't is asked to choose a team the first time.
+- **Back to the normal site:** the **Normal home page** button at the top of the page. On the home page a dark bar, **My Snooker: back to my page**, takes them back. The menu button says **My Snooker**.
+- **Their dashboard** (`/my`) has one control, the **My Snooker** tab: switch it on or off, change the team, or **Reset**. Switched off, they simply get the normal home page after logging in. (They can also change their password under User details.)
+- **When they come back later** still logged in, the site opens on their page once per visit; after that Home is the normal home page.
+
+Captains and vice captains keep their **My Team** area as before. Where it is in the code: `pages/myteam.js`, the My Snooker tab in `pages/my.js`, `homeFor()` in `core/auth.js`, and `set_my_snooker()` in `schema.sql` (the only thing a player's login may change).
+
+## 3i. Merchandise, and the CueView form
+
+**Merchandise** (`/merchandise`, a tile on the League page). Admin → Website → **Merchandise**: each item has a name, a price as you want it shown ("£18", "from £12"), a picture, a description, options with commas between them ("S, M, L, XL") and an optional link to order it. Untick "Show on the website" to hide one for now. Nothing is paid for on the website: write who to speak to and how to pay under Site settings → **Merchandise page** → "How to order".
+
+**CueViews** can reach a player's page in three ways:
+
+1. **The form on the website** (`/cueview`, linked from the League page and from every player page that has no CueView yet). The player picks their name, answers as many questions as they like and sends it. It does **not** appear straight away.
+2. **Admin → League → CueViews to approve** (a red number in the menu shows how many are waiting). Read it, check **whose profile** it belongs to — it is already chosen if the name matches a player — and press **Approve**: the answers go onto that player's page. Answers they left empty do not wipe what is already there. **Remove** throws it away.
+3. As before: a player with a login linked to their profile edits it themselves (My area → Profile), and an officer can type it in under Admin → Players.
+
+Visitors cannot upload pictures on the form (only people with a login can), and nothing a visitor sends is public until it is approved.
 
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
@@ -318,9 +354,11 @@ Good to know: the addresses are kept in a private table that visitors and captai
 |---|---|
 | Team league points | 1 point per frame won (a 3–2 win = 3 pts, a 2–3 loss = 2 pts, matching the current site) |
 | Player ranking points | 5 per frame won, plus break points |
+| Extra (Ext) frames | The team gets its 1 point for the frame win. The player gets nothing for it: no ranking points, no break points, and it is not in their frames played (`extCountsForRanking`). As on the old website, and confirmed by Rich (October 2026) |
 | Break points | 30–39 = 3, 40–49 = 4, … 140 and over = 14 (below 30 = 0) |
 | Highest break allowed | 155 (`MAX_BREAK`) |
-| Table order | Points, then wins, then frame difference; tied teams share a position |
+| Table order | Points, then wins, then frame difference; teams level on all three share a position |
+| Bye weeks | A league with an odd number of teams: one team has no match each night. Shown in that team's fixtures and on the calendar; never counted. Admin → Bye weeks (the fixture generator adds them) |
 
 If Rich confirms a different team rule (for example 3 points for a win), change the one line inside `teamMatchPoints()`. The whole site follows automatically.
 
@@ -362,7 +400,7 @@ public/                     ← everything Netlify serves
       db.js                 ← picks real Supabase or the demo database
       demo-client.js        ← the in-browser demo database
       router.js             ← navigate() / setTitle() for pages
-    pages/                  ← one small file per page (home, team, match, …)
+    pages/                  ← one small file per page (home, team, match, seasons, players, myteam, merchandise, cueview, …)
     admin/
       resources.js          ← describes each admin section (add a field = add a line)
       crud.js               ← one list/search/form engine used by every section
@@ -376,12 +414,14 @@ public/                     ← everything Netlify serves
       activity.js           ← Activity log (Master Admin)
       backup.js             ← Backup downloads (Master Admin)
       awards.js             ← Presentation awards (the season list and its two tools)
-      scoreboard.js         ← Live scoreboard: setting a match up and the ball-by-ball control pad
+      scoreboard.js         ← Live scoreboard: setting a match up, the ball-by-ball control pad, and writing the result into the draw
+      cueviews.js           ← CueViews to approve (sent in on the /cueview form)
       emails.js             ← Result emails: who gets them, and the test button
     demo/seed-data.js       ← sample league (imaginary players)
 supabase/
   schema.sql                ← tables + security rules + image storage (safe to re-run)
   seed.sql                  ← optional sample data (generated: npm run seed)
+  real-season-2026-27.sql   ← the real 2026-27 season: sample league out, real one in (generated: npm run real-season)
   remove-sample-data.sql    ← deletes the sample data again
   add-richard-pearson.sql   ← adds Rich as a player (run once)
 netlify/functions/
@@ -389,7 +429,10 @@ netlify/functions/
   result-email.mjs          ← emails the results secretary when a card is submitted (through Resend)
 netlify/lib/
   result-email-template.mjs ← what that email says
-real-data/2026-27/          ← the real season collected from the old website, ready to import (see its README)
+real-data/2026-27/          ← the real season collected from the old website (see its README)
+scripts/
+  build-seed.mjs            ← writes supabase/seed.sql from the sample data
+  build-real-season.mjs     ← writes supabase/real-season-2026-27.sql from real-data/2026-27/
 netlify.toml                ← Netlify settings (publish folder, URL routing, headers)
 ```
 
@@ -415,7 +458,10 @@ For example, to add a "phone" field to venues, add one line to `RESOURCES.venues
 | Put sidebars on the left | Admin → Branding → Page layout → Which side a sidebar goes on |
 | Use a Google font that isn't in the lists | Admin → Branding → Fonts → paste the font's embed link from fonts.google.com ("Get font" → "Get embed code"). Its fonts join both lists straight away; choose them and Save |
 | Turn the loading screen off, or keep it up longer | Admin → Branding → Loading screen (on/off, and the minimum seconds it shows when the site is first opened) |
-| Change the order of the sections on the News page, or their columns | Admin → News categories & layout → Edit → "Position on the News page" and "Columns" |
+| Change the order of the tabs on the News page | Admin → News categories → Edit → "Position" (1 = first). The cards themselves are in `public/js/pages/news.js` (12 at a time: `PAGE`) |
+| Add, change or hide something on the Merchandise page | Admin → Website → Merchandise; the words at the top and "How to order" are under Site settings → Merchandise page |
+| Change the CueView questions | `public/js/core/cueview.js` — the public form, the profile form and the player page all follow |
+| Give a player a login | Admin → People → Logins → Add new → Role: Player (no player or team needed) |
 | Add, change or stop an announcement in the ticker | Admin → Announcements. The ticker's on/off switch and speed (1–10) are in Site settings → Announcements ticker |
 | Show (or stop showing) announcements in the home page's feature box | Admin → Site settings → Home page: feature box → "Also show the announcements" and "When there is more than one message". One announcement can be left out under Announcements → Edit |
 | Add a key date | Admin → Key dates |
@@ -441,7 +487,9 @@ For example, to add a "phone" field to venues, add one line to `RESOURCES.venues
 | Confirm someone has paid | Admin → Entries to approve → Paid — approve |
 | Make a draw live | Admin → Draws & results → Live draw |
 | Change a handicap / start the yearly review | Admin → Handicaps |
-| See past seasons | League → Season archive (`/archive`), or the Season list on any table, fixtures or competitions page |
+| See past seasons | League → Seasons (`/seasons`) for each season's own pages; League → Season archive (`/archive`) for the roll of honour |
+| Add or move a bye week | Admin → Fixtures → Bye weeks |
+| Let extra (Ext) frames count for the player's ranking | `extCountsForRanking` in `public/js/core/rules.js` |
 | Change the home page banner photo | Admin → Site settings & home page → Home page banner background |
 | Choose which news rotates in the banner | Admin → News → tick "Show in the home page banner" (newest 4 are shown; change the number in Site settings) |
 | Player / team of the week, CueViews on the home page | Admin → Site settings & home page; pick CueViews under Players → "Show this CueView on the home page" |
@@ -479,8 +527,8 @@ When you get new code files:
 2. Replace the other files in your repo, then commit and push. Netlify redeploys on its own.
 3. If `supabase/schema.sql` changed, run it again in the SQL Editor. It only adds what's missing and never deletes your data.
    Each new function also needs its environment variables in Netlify (result emails: `RESEND_API_KEY` — section 3f).
-4. **Don't run `seed.sql` or `remove-sample-data.sql` again.** An update never needs them. `remove-sample-data.sql` deletes the sample players, teams, venues and articles — together with any photos, emblems or details you attached to them — and `seed.sql` puts back blank ones. Only use them if you deliberately want to reset the sample league.
-5. Netlify redeploys the logins function on its own when you push — nothing to do there.
+4. **Don't run `seed.sql`, `remove-sample-data.sql` or `real-season-2026-27.sql` again.** An update never needs them. `real-season-2026-27.sql` puts the season back as it was on 8 October 2026, so a second run would wipe every result entered on the website since. `remove-sample-data.sql` deletes the sample players, teams, venues and articles — together with any photos, emblems or details you attached to them — and `seed.sql` puts back blank ones. Only use them if you deliberately want to reset the sample league.
+5. Netlify redeploys the logins function on its own when you push — nothing to do there. If you upload by drag and drop instead, upload the **whole project folder** (not only `public`), or the functions are not updated.
 
 ## 8. Security checklist before launch
 

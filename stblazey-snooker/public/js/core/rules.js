@@ -9,6 +9,10 @@ export const RULES = {
   frameWinPoints: 5,          // ranking points a player earns per frame won
   breakMinimum: 30,           // breaks below this earn no ranking points
   maxBreakPoints: 14,         // 140–147 = 14 points
+  // A frame played as the team's extra (Ext) player counts for the team's score, but not towards
+  // that player's own ranking points, frames played or break points (as on the league's old website).
+  // Set to true if the league decides extra frames should count for the player too.
+  extCountsForRanking: false,
   // Which fixture statuses count towards tables and rankings.
   // Add "in_progress" here if you want tables to move live during the evening.
   countedStatuses: ["submitted", "approved"],
@@ -33,6 +37,7 @@ export function teamMatchPoints({ framesFor }) {
 /** Plain-English summary shown on the standings page — update it if you change the rules. */
 export const RULES_TEXT = `Team points: 1 per frame won. Player ranking: ${RULES.frameWinPoints} points per frame won, ` +
   `plus break points (${RULES.breakMinimum}–39 = 3, 40–49 = 4 … up to ${RULES.maxBreakPoints} for 140+). ` +
+  `${RULES.extCountsForRanking ? "" : "A frame played as the extra (Ext) player counts for the team, not for the player's ranking. "}` +
   `Only ${RULES.countedStatuses.join(" and ")} results count.`;
 
 /** "home" | "away" | null (frame not finished / not entered). */
@@ -81,14 +86,17 @@ export function leagueTable(teams, fixtures, framesByFixture) {
 export function playerRankings(players, fixtures, framesByFixture, breaks) {
   const counted = new Set(fixtures.filter(isCounted).map((f) => f.id));
   const rows = new Map(players.map((p) => [p.id, { player: p, name: p.full_name, played: 0, won: 0, lost: 0, breakPts: 0, pts: 0 }]));
+  // Frames played as the extra player: left out of the player's own figures (see RULES.extCountsForRanking).
+  const asExtra = new Set();
   for (const [fixtureId, frames] of framesByFixture) {
     if (!counted.has(fixtureId)) continue;
     for (const fr of frames) {
       const w = frameWinner(fr);
-      if (!w) continue;
       for (const side of ["home", "away"]) {
-        const r = rows.get(fr[`${side}_player_id`]);
-        if (!r) continue;
+        const pid = fr[`${side}_player_id`];
+        if (fr[`${side}_ext`] && !RULES.extCountsForRanking) { asExtra.add(`${fixtureId}|${fr.frame_no}|${pid}`); continue; }
+        const r = rows.get(pid);
+        if (!r || !w) continue;
         r.played++;
         side === w ? r.won++ : r.lost++;
       }
@@ -96,7 +104,7 @@ export function playerRankings(players, fixtures, framesByFixture, breaks) {
   }
   for (const b of breaks) {
     const r = rows.get(b.player_id);
-    if (r && counted.has(b.fixture_id)) r.breakPts += breakPoints(b.value);
+    if (r && counted.has(b.fixture_id) && !asExtra.has(`${b.fixture_id}|${b.frame_no}|${b.player_id}`)) r.breakPts += breakPoints(b.value);
   }
   for (const r of rows.values()) r.pts = r.won * RULES.frameWinPoints + r.breakPts;
   return [...rows.values()]

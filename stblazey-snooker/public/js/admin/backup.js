@@ -10,11 +10,11 @@ import { SITE } from "../config.js";
 // [table, what it is]. Statistics (page views) and the activity log are left out: they aren't needed to rebuild the site.
 const TABLES = [
   ["seasons", "Seasons"], ["leagues", "Leagues"], ["venues", "Venues"], ["teams", "Teams"], ["players", "Players (profiles, handicaps, CueViews)"],
-  ["fixtures", "Fixtures and results"], ["frames", "Scorecards: frames"], ["breaks", "Scorecards: breaks"],
+  ["fixtures", "Fixtures and results"], ["byes", "Bye weeks"], ["frames", "Scorecards: frames"], ["breaks", "Scorecards: breaks"],
   ["competitions", "Competitions"], ["competition_entries", "Competition entrants"], ["competition_matches", "Competition draws and results"],
   ["competition_frames", "Competition scorecards: frames"], ["competition_breaks", "Competition scorecards: breaks"], ["competition_signups", "Entry-form entries"],
   ["handicap_changes", "Handicap changes"], ["categories", "News categories"], ["articles", "News articles"], ["announcements", "Announcements"],
-  ["pages", "Info pages"], ["sponsors", "Sponsors"], ["media", "Image library (the list of pictures)"], ["settings", "Site settings and branding"],
+  ["pages", "Info pages"], ["sponsors", "Sponsors"], ["merchandise", "Merchandise"], ["cueview_submissions", "CueViews sent in on the form"], ["media", "Image library (the list of pictures)"], ["settings", "Site settings and branding"],
   ["profiles", "Logins (names, roles, teams — no passwords)"], ["role_permissions", "Roles & permissions"],
 ];
 const stamp = () => new Date().toISOString().slice(0, 10);

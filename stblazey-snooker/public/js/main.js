@@ -6,7 +6,7 @@
 import { SITE, DEMO_MODE } from "./config.js";
 import { html, mount, $, ukDay, toast } from "./core/dom.js";
 import { applyBranding, loaderOn, loaderOff, layoutFor, TICKER_PX } from "./core/branding.js";
-import { getUser, signOut, isStaff, isMember, canOpenSection, roleText } from "./core/auth.js";
+import { getUser, signOut, isStaff, isMember, isPlainPlayer, mySnookerOn, canOpenSection, roleText } from "./core/auth.js";
 import { seasonContext, sideBoxData } from "./core/context.js";
 import { sidebar } from "./core/components.js";
 import { openSearch } from "./core/search.js";
@@ -30,6 +30,10 @@ const ROUTES = [
   ["/standings/:slug", "standings"],
   ["/shield/:slug", "shield"],
   ["/archive", "archive"],
+  ["/seasons", "seasons"],
+  ["/seasons/:season", "seasons"],
+  ["/seasons/:season/:section", "seasons"],
+  ["/seasons/:season/:section/:league", "seasons"],
   ["/enter", "enter"],
   ["/draw/:slug", "draw"],
   ["/handicaps", "handicaps"],
@@ -52,6 +56,9 @@ const ROUTES = [
   ["/login", "login"],
   ["/my", "my"],
   ["/my/:tab", "my"],
+  ["/myteam", "myteam"],
+  ["/merchandise", "merchandise"],
+  ["/cueview", "cueview"],
   ["/captain", "my"],
   ["/players", "players"],
   ["/scorecard/:id", "scorecard"],
@@ -64,15 +71,16 @@ const ROUTES = [
 const SECTION = {
   competitions: "competitions", competition: "competitions", "cup-match": "competitions", handicaps: "competitions", enter: "competitions", draw: "competitions", scoreboard: "competitions",
   fixtures: "fixtures", team: "fixtures", match: "fixtures", calendar: "fixtures", live: "fixtures", results: "fixtures",
-  league: "league", standings: "league", shield: "league", archive: "league", players: "league", player: "league",
+  league: "league", standings: "league", shield: "league", archive: "league", seasons: "league", players: "league", player: "league",
   venues: "league", venue: "league", page: "league", presentation: "league", memoriam: "league", meetings: "league", rules: "league", sponsor: "league",
+  merchandise: "league", cueview: "league",
   news: "news", article: "news",
-  login: "login", my: "login", scorecard: "login", "cup-scorecard": "login",
+  login: "login", my: "login", myteam: "login", scorecard: "login", "cup-scorecard": "login",
 };
 // Page layout (Admin → Branding → Page layout) is chosen for these parts of the site.
 const LAYOUT_GROUP = (page) => (page === "home" ? "home" : ["competitions", "fixtures", "league", "news"].includes(SECTION[page]) ? SECTION[page] : null);
 // Pages that never get the standard side boxes added (they need the full width, or are a short form).
-const NO_SIDE = new Set(["calendar", "enter", "draw", "not-found", "scoreboard", "presentation"]);
+const NO_SIDE = new Set(["calendar", "enter", "draw", "not-found", "scoreboard", "presentation", "cueview"]);
 
 function match(path) {
   const parts = path.replace(/\/+$/, "").split("/").filter(Boolean);
@@ -134,8 +142,12 @@ async function drawHeader() {
   const club = user?.profile?.team_id ? (await table("teams", "name").catch(() => [])).find((t) => t.id === user.profile.team_id)?.name : "";
   const who = user ? [...new Set([user.profile?.full_name || user.email, club || (member ? "" : roleText(user.profile))].filter(Boolean))].join(" · ") : "";
   const tagged = (label) => html`<span class="nav-who"><b>${label}</b><small>${who}</small></span>`;
+  // A player's login has no tools: its button is My Snooker (their own page), or their dashboard if they turned it off.
+  const plain = isPlainPlayer(user);
   const account = !user ? html`<a class="nav-login" href="/login">Login</a>`
-    : html`${staff ? html`<a class="nav-login" href="/admin">${member ? "Admin" : tagged("Admin")}</a>` : ""}${member ? html`<a class="nav-login nav-my" href="/my">${tagged("My Team")}</a>` : ""}`;
+    : html`${staff ? html`<a class="nav-login" href="/admin">${member ? "Admin" : tagged("Admin")}</a>` : ""}${plain
+      ? html`<a class="nav-login nav-my" href="${mySnookerOn(user) ? "/myteam" : "/my"}">${tagged("My Snooker")}</a>`
+      : member ? html`<a class="nav-login nav-my" href="/my">${tagged("My Team")}</a>` : ""}`;
   mount($("#site-header"), html`
     ${DEMO_MODE ? html`<div class="demo-banner">Demo mode — sample data saved in this browser only. Add your Supabase keys in js/config.js to go live.</div>` : ""}
     <header class="site-header"><div class="wrap">
@@ -152,7 +164,7 @@ async function drawHeader() {
         <a class="nav-live nav-live-btn state-idle" href="/live">Live</a>
         <button class="nav-live nav-bell" data-bell aria-label="Live notifications">${bell}</button>
         <button class="nav-live nav-search" data-search-open aria-label="Search">${searchIcon}<span>Search</span></button>
-        ${user ? html`<button class="nav-live nav-logout" data-logout aria-label="Log out" title="Log out">${logoutIcon}<span>Log out</span></button>` : ""}
+        ${user ? html`<button class="nav-logout" data-logout aria-label="Log out" title="Log out">${logoutIcon}<span>Log out</span></button>` : ""}
       </nav>
     </div></header>`);
   const icon = document.querySelector("link[rel=icon]");
@@ -229,6 +241,8 @@ function holdingPage(view, site) {
 
 // ── routing ────────────────────────────────────────────────────
 let cleanup = null;
+// Set by the My Snooker page (pages/myteam.js) the first time it is shown in this visit.
+const mySnookerSeen = () => { try { return !!sessionStorage.getItem("sbds-my-snooker-seen"); } catch { return true; } };
 
 async function navigate(path, { replace = false } = {}) {
   if (path !== location.pathname + location.search + location.hash)
@@ -258,6 +272,9 @@ async function renderRoute() {
   trackPageView(location.pathname);
   try {
     const [mod, user, site] = await Promise.all([import(`./pages/${page}.js`), getUser(), settings()]);
+    // My Snooker: a player who is still logged in starts on their own page when they come to the site.
+    // Once they have seen it (this visit), Home is the normal home page.
+    if (page === "home" && isPlainPlayer(user) && mySnookerOn(user) && !mySnookerSeen()) return navigate("/myteam", { replace: true });
     document.body.classList.toggle("maintenance", !!site.maintenance_on && !user);
     drawTicker(page === "home" && !(site.maintenance_on && !user));
     if (site.maintenance_on && !user && page !== "login") return holdingPage(view, site);
@@ -299,7 +316,8 @@ function openLightbox(url) {
 document.addEventListener("click", async (e) => {
   const a = e.target.closest("a[href]");
   if (e.target.closest("[data-logout]")) {
-    await signOut(); await drawHeader(); return navigate("/");
+    await signOut(); try { sessionStorage.removeItem("sbds-my-snooker-seen"); } catch { /* nothing stored */ }
+    await drawHeader(); return navigate("/");
   }
   if (e.target.closest(".nav-toggle")) { $(".main-nav").classList.toggle("open"); return; }
   if (e.target.closest("[data-to-top]")) return window.scrollTo({ top: 0, behavior: "smooth" });

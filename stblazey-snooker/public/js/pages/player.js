@@ -128,6 +128,8 @@ export default async function player(view, { params }) {
     ${p.gallery?.length ? html`<section><h3 style="margin-top:0">Pictures</h3>${gallery(p.gallery)}</section>` : ""}
 
     ${cueviewSection(p.full_name, cueview.filter((q) => q.key !== "hand"))}
+    ${cueview.filter((q) => q.key !== "hand").length ? "" : html`<a class="cv-invite" href="/cueview?player=${p.slug || p.id}"><b>Is this you?</b>
+      <span>${p.full_name.split(" ")[0]} has no CueView yet. Answer a few questions about your snooker and it goes on this page.</span><i>Send in your CueView →</i></a>`}
 
     <div class="stats">
       ${[["Frames played", total.played], ["Frames won", total.won], ["Win rate", pct(total.won, total.played)],

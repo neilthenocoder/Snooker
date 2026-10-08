@@ -1,24 +1,34 @@
-// The logged-in area for captains, vice captains and players:
-//   My Team · Fixtures · Profile · User details · Competitions
+// The logged-in area ("dashboard") for captains, vice captains and players.
+//   Captains and vice captains:  My Team · Fixtures · Profile · User details · Competitions
+//   Players:                     My Snooker · (Profile and Competitions, if the login is linked to a player or team) · User details
+// A player's login has no tools: the one thing they control here is My Snooker (their own page, /myteam).
 import { html, mount, $, readForm, toast, fmtDate, fmtTime, confirmBox } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
-import { loadCompetitions, updateMyPlayer, addPlayerToTeam, seasonFrames, setFixtureStatus } from "../core/api.js";
+import { loadCompetitions, updateMyPlayer, addPlayerToTeam, seasonFrames, setFixtureStatus, setMySnooker } from "../core/api.js";
 import { listField, wireListFields } from "../core/list-field.js";
-import { isCaptain, isMember, canEditFixture, canPostpone, canEditCompMatch, canAddMatchPhotos, changePassword, roleText } from "../core/auth.js";
+import { isCaptain, isMember, isPlainPlayer, mySnookerOn, mySnookerTeamId, refreshUser, canEditFixture, canPostpone, canEditCompMatch, canAddMatchPhotos, changePassword, roleText } from "../core/auth.js";
 import { buildBracket, isEntry, roundName } from "../core/bracket.js";
 import { extCounts, EXT_PER_SEASON, POSTPONE_WEEKS, rearrangeBy } from "../core/rules.js";
 import { CUEVIEW } from "../core/cueview.js";
 import { uploadImage } from "../core/upload.js";
 import { breadcrumb, panel, dataTable, fixturesTable, urls, statusBadge, playerLink, avatar, badge } from "../core/components.js";
-import { setTitle, navigate } from "../core/router.js";
+import { setTitle, navigate, refreshShell } from "../core/router.js";
 import { mustLogin } from "./scorecard.js";
 
-const TABS = [["team", "My Team"], ["fixtures", "Fixtures"], ["profile", "Profile"], ["details", "User details"], ["competitions", "Competitions"]];
+const LABEL = { snooker: "My Snooker", team: "My Team", fixtures: "Fixtures", profile: "Profile", details: "User details", competitions: "Competitions" };
+/** The tabs this login gets. */
+function tabsFor(user) {
+  if (!isPlainPlayer(user)) return ["team", "fixtures", "profile", "details", "competitions"];
+  const p = user.profile ?? {};
+  return ["snooker", ...(p.player_id ? ["profile"] : []), ...(p.player_id || p.team_id ? ["competitions"] : []), "details"];
+}
+const logoutIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5v-2H5V5h5Zm6.6 4.6-1.4 1.4 2 2H9v2h8.2l-2 2 1.4 1.4L21 12Z"/></svg>`;
 
 export default async function my(view, { params, user }) {
   if (!user) return mustLogin(view);
   if (!isMember(user)) return navigate("/admin", { replace: true });   // officers with no team or player link
-  const tab = TABS.some(([k]) => k === params.tab) ? params.tab : "team";
+  const TABS = tabsFor(user).map((k) => [k, LABEL[k]]);
+  const tab = TABS.some(([k]) => k === params.tab) ? params.tab : TABS[0][0];
   const ctx = await seasonContext();
   const team = ctx.team.get(user.profile?.team_id);
   const me = ctx.player.get(user.profile?.player_id);
@@ -31,7 +41,8 @@ export default async function my(view, { params, user }) {
       <div><h1>${user.profile?.full_name || user.email}</h1>
         <p>${roleText(user.profile)}${team ? html` · ${team.name}` : ""}</p></div>
     </div>
-    <nav class="tabs" aria-label="My area">${TABS.map(([k, label]) => html`<a href="/my/${k}" class="${k === tab ? "on" : ""}">${label}</a>`)}</nav>
+    <nav class="tabs" aria-label="My area">${TABS.map(([k, label]) => html`<a href="/my/${k}" class="${k === tab ? "on" : ""}">${label}</a>`)}
+      <button type="button" class="tab-logout" data-logout>${logoutIcon}Log out</button></nav>
     <div class="stack" data-tab></div>
   </div>`);
 
@@ -48,7 +59,7 @@ export default async function my(view, { params, user }) {
     try { await setFixtureStatus(fx.id, "postponed"); toast("Match postponed"); navigate(location.pathname, { replace: true }); }
     catch (err) { toast(err.message, "error"); }
   });
-  const sections = { team: teamTab, fixtures: fixturesTab, profile: profileTab, details: detailsTab, competitions: competitionsTab };
+  const sections = { snooker: snookerTab, team: teamTab, fixtures: fixturesTab, profile: profileTab, details: detailsTab, competitions: competitionsTab };
   return sections[tab](body, { ctx, user, team, me });
 }
 
@@ -66,6 +77,46 @@ function postponedNotices(ctx, team) {
 }
 
 const noTeam = html`<div class="notice error">Your login isn't linked to a team yet. Please contact the league secretary.</div>`;
+
+// ── My Snooker (the one thing a player's login controls) ───────
+function snookerTab(el, { ctx, user, team }) {
+  const on = mySnookerOn(user);
+  const chosen = user.profile?.my_team_id || "";
+  const showing = ctx.team.get(mySnookerTeamId(user));
+  mount(el, html`
+    <div class="ms-card ${on ? "on" : "off"}">
+      <div class="ms-card-head">
+        <div><small>My Snooker</small><h2>${on ? (showing ? showing.name : "Choose your team") : "Switched off"}</h2></div>
+        ${on ? html`<a class="btn green" href="/myteam">Open my page</a>` : ""}
+      </div>
+      <p>${on ? html`When you log in you go straight to your own page: ${showing ? html`<b>${showing.name}</b>'s` : "your team's"} next match, results, fixtures, breaks and handicaps.
+        The normal home page is always one press away.` : html`You see the normal home page when you log in. Switch My Snooker back on whenever you like — nothing is lost.`}</p>
+      <form class="form ms-form-set" data-snooker>
+        <label class="ms-switch"><input type="checkbox" name="on" ${on ? "checked" : ""}><span class="ms-slider" aria-hidden="true"></span>
+          <span><b>Use My Snooker</b><small>Show my own page when I log in</small></span></label>
+        <label>Team to follow
+          <select name="team"><option value="">${team ? `My own team (${team.name})` : "Choose a team…"}</option>
+            ${ctx.leagues.map((l) => html`<optgroup label="${l.name}">${ctx.teamsIn(l.id).map((t) => html`<option value="${t.id}" ${t.id === chosen ? "selected" : ""}>${t.name}</option>`)}</optgroup>`)}</select></label>
+        <div class="btn-row form-actions"><button class="btn">Save</button>
+          <button type="button" class="btn ghost" data-reset>Reset</button></div>
+        <p class="muted" style="margin:0;font-size:13px"><b>Reset</b> puts My Snooker back as it was when your login was made: switched on, ${team ? `following ${team.name}` : "with no team chosen"}.</p>
+      </form>
+    </div>`);
+  const save = async (teamId, turnOn, message) => {
+    try {
+      await setMySnooker(teamId, turnOn);
+      await refreshUser(); await refreshShell();
+      toast(message);
+      navigate("/my/snooker", { replace: true });
+    } catch (err) { toast(err.message, "error"); }
+  };
+  $("[data-snooker]", el).addEventListener("submit", (e) => {
+    e.preventDefault();
+    const f = e.target.elements;
+    save(f.team.value || null, f.on.checked, f.on.checked ? "My Snooker saved" : "My Snooker switched off");
+  });
+  $("[data-reset]", el).addEventListener("click", () => save(null, true, "My Snooker reset"));
+}
 
 // ── My Team ────────────────────────────────────────────────────
 async function teamTab(el, { ctx, user, team }) {
@@ -122,6 +173,7 @@ function fixturesTab(el, { ctx, user, team }) {
       A photo of the paper scorecard is needed before a result can be submitted. A match that hasn't started can be postponed here.
       <b>Home matches:</b> press <b>Photos</b> to add match night pictures — they show on the match page and in that week's news report.</p>` : ""}
     ${panel(`${team.name} fixtures ${ctx.season?.name ?? ""}`, fixturesTable(ctx, ctx.fixturesFor(team.id), {
+      byes: ctx.byesFor(team.id),
       actions: (f) => canEditFixture(user, f)
         ? html`<span class="btn-row" style="flex-wrap:nowrap"><a class="btn small" href="${urls.scorecard(f)}">${ctx.hasResult(f) ? "Edit scorecard" : "Enter scorecard"}</a>
             ${canPostpone(user, f) && f.status === "scheduled" ? html`<button type="button" class="btn small ghost" data-postpone="${f.id}">Postpone</button>` : ""}

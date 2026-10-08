@@ -16,6 +16,8 @@ export const urls = {
   sponsor: (s) => `/sponsor/${s.slug || s.id}`,
   article: (a) => `/news/${a.slug}`,
   standings: (l) => `/standings/${l.slug}`,
+  // A season's own pages: /seasons/2026-2027, /seasons/2026-2027/rankings/victory-league …
+  season: (s, section = "", league = null) => `/seasons/${encodeURIComponent(s?.name ?? "")}${section ? `/${section}` : ""}${league ? `/${league.slug}` : ""}`,
   page: (p) => `/page/${p.slug}`,
   player: (p) => `/player/${p.slug || p.id}`,
   competition: (c) => `/competition/${c.slug}`,
@@ -256,20 +258,26 @@ export function resultText(ctx, fx) {
   return `${s.home} - ${s.away}`;
 }
 
-/** Full fixtures table used on team pages and in the captain area. */
-export function fixturesTable(ctx, fixtures, { actions } = {}) {
+/**
+ * Full fixtures table used on team pages and in the captain area.
+ * `byes` are that team's bye weeks (ctx.byesFor): each shows as a line on its date, with no match behind it.
+ */
+export function fixturesTable(ctx, fixtures, { actions, byes = [] } = {}) {
+  const rows = [...fixtures, ...byes.map((b) => ({ ...b, bye: true, starts_at: `${b.bye_on}T12:00:00Z` }))]
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   return dataTable([
     { label: "Date", cell: (f) => fmtDate(f.starts_at) },
-    { label: "Fixtures", cell: (f) => html`<a href="${urls.match(f)}">${ctx.team.get(f.home_team_id)?.name} vs ${ctx.team.get(f.away_team_id)?.name}</a>` },
-    { label: "Results", cell: (f) => html`${resultText(ctx, f)}${f.status === "in_progress" ? html` <span class="live-dot">Live</span>` : ""}` },
+    { label: "Fixtures", cell: (f) => (f.bye ? html`<span class="bye-row">${ctx.team.get(f.team_id)?.name} <b>Bye week</b></span>`
+      : html`<a href="${urls.match(f)}">${ctx.team.get(f.home_team_id)?.name} vs ${ctx.team.get(f.away_team_id)?.name}</a>`) },
+    { label: "Results", cell: (f) => (f.bye ? "–" : html`${resultText(ctx, f)}${f.status === "in_progress" ? html` <span class="live-dot">Live</span>` : ""}`) },
     { label: "League", cell: (f) => ctx.league.get(f.league_id)?.name, cls: "hide-sm" },
     { label: "Season", cell: () => ctx.season?.name, cls: "hide-sm" },
     { label: "Venue", cell: (f) => { const v = ctx.venue.get(f.venue_id); return v ? html`<a href="${urls.venue(v)}">${v.name}</a>` : "–"; }, cls: "hide-sm" },
     actions
-      ? { label: "", cell: actions }
-      : { label: "Article", cell: (f) => html`<a href="${urls.match(f)}">${ctx.hasResult(f) ? "Recap" : "Preview"}</a>` },
+      ? { label: "", cell: (f) => (f.bye ? "" : actions(f)) }
+      : { label: "Article", cell: (f) => (f.bye ? "No match" : html`<a href="${urls.match(f)}">${ctx.hasResult(f) ? "Recap" : "Preview"}</a>`) },
     { label: "Postponed", cell: (f) => (f.status === "postponed" ? "Yes" : "-"), cls: "hide-sm" },
-  ], fixtures, { empty: "No fixtures for this season yet." });
+  ], rows, { rowClass: (f) => (f.bye ? "is-bye" : ""), empty: "No fixtures for this season yet." });
 }
 
 /** Compact Home / Results / Away table (team history, past meetings). */

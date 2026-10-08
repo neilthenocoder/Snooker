@@ -12,7 +12,7 @@ export default async function standings(view, { params, query }) {
   setTitle(`${league.name} ${ctx.season?.name}`);
   adminEdit("leagues", league.id);
   mount(view, html`<div class="wrap stack">
-    <div>${breadcrumb([["Home", "/"], ["Our League", "/league"], [league.name]])}
+    <div>${breadcrumb([["Home", "/"], ["Our League", "/league"], ["Seasons", "/seasons"], [`${ctx.season?.name} Season`, urls.season(ctx.season)], [league.name]])}
     <div class="title-trophy">${trophy(league)}<div>
       <h1 class="with-emblem">${league.logo_url ? emblem(league) : ""}${league.name} ${ctx.season?.name}</h1>${seasonPicker(ctx)}</div></div></div>
     ${leagueTablePanel(ctx, league)}

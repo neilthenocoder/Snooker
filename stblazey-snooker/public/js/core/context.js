@@ -37,6 +37,8 @@ export async function seasonContext(seasonId) {
     }),
     fixturesIn: (leagueId) => raw.fixtures.filter((f) => f.league_id === leagueId),
     fixturesFor: (teamId) => raw.fixtures.filter((f) => f.home_team_id === teamId || f.away_team_id === teamId),
+    // The weeks a team sits out (a league with an odd number of teams). Not matches: they count for nothing.
+    byesFor: (teamId) => (raw.byes ?? []).filter((b) => b.team_id === teamId),
     playersIn: (leagueId) => { const t = new Set(ctx.teamsIn(leagueId).map((x) => x.id)); return raw.players.filter((p) => t.has(p.team_id)); },
     // A team's squad today: not those who have stopped playing or are no longer with us (their results still count above).
     playersOf: (teamId) => raw.players.filter((p) => p.team_id === teamId && !["not_playing", "deceased"].includes(p.status)),

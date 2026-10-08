@@ -365,6 +365,60 @@ export const demoClient = {
       persist(); emit("competition_matches", changed);
       return { data: null, error: null };
     }
+    if (name === "set_my_snooker") {
+      // Mirrors set_my_snooker(): only your own login's two My Snooker choices.
+      const me = state.tables.profiles.find((p) => p.id === currentSession()?.user.id);
+      if (!me) return { data: null, error: { message: "Please log in first" } };
+      Object.assign(me, { my_team_id: args.p_team || null, my_snooker: args.p_on ?? true });
+      persist();
+      return { data: null, error: null };
+    }
+    if (name === "submit_cueview") {
+      // Mirrors submit_cueview(): anyone can send one in; it waits for an officer.
+      const t = state.tables, list = (t.cueview_submissions ??= []);
+      const who = (t.players.find((p) => p.id === args.p_player)?.full_name ?? args.p_name ?? "").trim();
+      if (!who) return { data: null, error: { message: "Please choose or type your name" } };
+      if (!Object.values(args.p_answers ?? {}).some((v) => String(v ?? "").trim()) && !String(args.p_bio ?? "").trim())
+        return { data: null, error: { message: "Please answer at least one question" } };
+      const row = { id: newId(), player_id: args.p_player || null, name: who, team: (args.p_team ?? "").trim() || null, answers: args.p_answers ?? {},
+        bio: (args.p_bio ?? "").trim() || null, contact: (args.p_contact ?? "").trim() || null, status: "pending", created_at: new Date().toISOString(), decided_at: null };
+      list.push(row); persist(); emit("cueview_submissions", [row], "INSERT");
+      return { data: row.id, error: null };
+    }
+    if (name === "scoreboard_to_draw") {
+      // Mirrors scoreboard_to_draw() in supabase/schema.sql.
+      const t = state.tables, l = (t.live_matches ?? []).find((x) => x.id === args.lid);
+      const m = l?.comp_match_id && t.competition_matches.find((x) => x.id === l.comp_match_id);
+      if (!m) return { data: "none", error: null };
+      const comp = t.competitions.find((c) => c.id === m.competition_id);
+      const next = () => t.competition_matches.find((x) => x.competition_id === m.competition_id && x.round === m.round + 1 && x.slot === Math.floor(m.slot / 2));
+      const changed = [m];
+      if (m.status === "completed" && l.status !== "finished" && comp?.draw_mode !== "redraw") {
+        const w = m.score_a > m.score_b ? m.entry_a : m.score_b > m.score_a ? m.entry_b : null, n = next();
+        if (n && w) {
+          if (n.score_a != null || (n.status ?? "scheduled") !== "scheduled")
+            return { data: null, error: { message: "The next round of the draw has already started, so this result cannot be taken back from the scoreboard. Change it under Draws & results." } };
+          const key = m.slot % 2 ? "entry_b" : "entry_a";
+          if (n[key] === w) { n[key] = null; changed.push(n); }
+        }
+      }
+      const frames = Array.isArray(l.state?.frames) ? l.state.frames : [];
+      t.competition_frames = (t.competition_frames ?? []).filter((f) => f.match_id !== m.id)
+        .concat(frames.map((f) => ({ id: newId(), match_id: m.id, frame_no: f.no, a_player_id: l.player_a_id, a_player2_id: null, b_player_id: l.player_b_id, b_player2_id: null, a_points: f.a ?? 0, b_points: f.b ?? 0 })));
+      t.competition_breaks = (t.competition_breaks ?? []).filter((b) => b.match_id !== m.id)
+        .concat(frames.flatMap((f) => [["a", l.player_a_id], ["b", l.player_b_id]].filter(([s, pid]) => pid && (f[`high_${s}`] ?? 0) >= 30)
+          .map(([s, pid]) => ({ id: newId(), match_id: m.id, frame_no: f.no, player_id: pid, value: f[`high_${s}`] }))));
+      const played = (l.frames_a ?? 0) + (l.frames_b ?? 0) > 0;
+      Object.assign(m, { score_a: played ? l.frames_a : null, score_b: played ? l.frames_b : null,
+        points_a: played ? frames.reduce((n, f) => n + (f.a ?? 0), 0) : null, points_b: played ? frames.reduce((n, f) => n + (f.b ?? 0), 0) : null,
+        status: l.status === "finished" ? "completed" : l.status === "live" ? "in_progress" : "scheduled" });
+      if (l.status === "finished" && comp?.draw_mode !== "redraw") {
+        const w = m.score_a > m.score_b ? m.entry_a : m.score_b > m.score_a ? m.entry_b : null, n = next();
+        if (n && w) { n[m.slot % 2 ? "entry_b" : "entry_a"] = w; changed.push(n); }
+      }
+      persist(); emit("competition_matches", changed);
+      return { data: l.status === "finished" ? "finished" : "updated", error: null };
+    }
     return { data: null, error: { message: `Unknown function ${name}` } };
   },
   channel() {

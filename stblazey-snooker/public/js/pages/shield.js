@@ -12,7 +12,7 @@ export default async function shield(view, { params, query }) {
   const ctx = await seasonContext(query.get("season"));
   const league = ctx.leagues.find((l) => l.slug === params.slug);
   if (!league) return notFound(view);
-  const name = league.shield_name || `${shortName(league)} Shield`;
+  const name = league.shield_name || `${league.name} Runabout Shield`;
   setTitle(`${name} ${ctx.season?.name ?? ""}`);
   adminEdit("leagues", league.id);
 

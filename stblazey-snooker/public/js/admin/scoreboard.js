@@ -2,8 +2,12 @@
 // the competition, best of 1–9 frames), then press a button for every ball potted, foul and
 // end of break. Each press is saved straight away and everyone watching /scoreboard/<no>
 // sees the score move. The scoring rules are in core/live-score.js; this file is the buttons.
+// A match that is in a competition's draw can be linked to it ("Match in the draw"): the frame
+// scores, the breaks and the result then go into the draw by themselves, and the winner goes
+// through to the next round — nobody has to type the scorecard in afterwards.
 import { html, mount, $, toast, fmtDate, fmtTime, toLocalInput, fromLocalInput, confirmBox } from "../core/dom.js";
-import { table, save, remove, liveMatches, loadLiveMatch } from "../core/api.js";
+import { table, save, remove, liveMatches, loadLiveMatch, loadCompetitions, scoreboardToDraw } from "../core/api.js";
+import { buildBracket, isEntry, roundName } from "../core/bracket.js";
 import * as score from "../core/live-score.js";
 import { panel, dataTable, urls } from "../core/components.js";
 import { ballDot } from "../pages/scoreboard.js";
@@ -15,7 +19,21 @@ const snap = (m) => ({ status: m.status, frames_a: m.frames_a, frames_b: m.frame
 
 export async function scoreboardPage(el, { user } = {}) {
   const [players, competitions, venues] = await Promise.all([table("players", "full_name"), table("competitions", "sort"), table("venues", "name")]);
-  const look = { players, competitions };
+  /**
+   * The matches in a competition's draw that could be scored here: both players known, not a bye.
+   * (Team competitions are played over several frames by different players, so they keep their scorecard.)
+   */
+  async function drawMatches(competitionId, keep = null) {
+    const comp = competitions.find((c) => c.id === competitionId);
+    if (!comp || comp.kind === "Team") return [];
+    const data = await loadCompetitions();
+    const entries = data.entries.filter((e) => e.competition_id === comp.id);
+    const b = buildBracket(entries, data.matches.filter((x) => x.competition_id === comp.id));
+    return b.rounds.flat().filter((x) => x.row.id && !x.isBye && isEntry(x.a) && isEntry(x.b) && (x.row.status !== "completed" || x.row.id === keep))
+      .map((x) => ({ id: x.row.id, round: roundName(x.round, b.totalRounds), a: b.entryById.get(x.a), b: b.entryById.get(x.b), best_of: comp.best_of, done: x.row.status === "completed" }));
+  }
+  /** What to put in a player box for a draw entry: the player's own name if the entry is one player. */
+  const entryText = (entry) => players.find((p) => p.id === entry?.player_id)?.full_name ?? entry?.name ?? "";
   const nameOf = (m, s) => score.sideName(m, s, players);
   let stopKeys = () => {};
   const open = (id) => { history.replaceState(null, "", id ? `/admin/scoreboard?m=${id}` : "/admin/scoreboard"); return id ? pad(id) : list(); };
@@ -25,6 +43,11 @@ export async function scoreboardPage(el, { user } = {}) {
     stopKeys();
     const all = await liveMatches();
     const form = editing ?? { best_of: 9 };
+    let ties = await drawMatches(form.competition_id, form.comp_match_id);
+    const isTeam = (id) => competitions.find((c) => c.id === id)?.kind === "Team";
+    const tieOptions = (chosen, compId = form.competition_id) => html`<option value="">${ties.length ? "– not in the draw (a friendly, or enter it by hand) –"
+      : !compId ? "– choose the competition first –" : isTeam(compId) ? "– team matches keep their own scorecard –" : "– no match in this competition's draw is ready to play –"}</option>
+      ${ties.map((t) => html`<option value="${t.id}" ${t.id === chosen ? "selected" : ""}>${t.round}: ${t.a.name} v ${t.b.name}</option>`)}`;
     const typed = (side) => (form[`player_${side}_id`] ? players.find((p) => p.id === form[`player_${side}_id`])?.full_name : form[`name_${side}`]) ?? "";
     mount(el, html`
       <div class="notice">For finals and big matches: one person sits by the table with a phone or tablet and presses a button for every ball. Visitors watch the score go up on the
@@ -34,6 +57,8 @@ export async function scoreboardPage(el, { user } = {}) {
         <div class="grid-2">
           <label>Competition <span class="muted" style="font-weight:400">(optional)</span>
             <select name="competition_id"><option value="">– none –</option>${competitions.map((c) => html`<option value="${c.id}" ${c.id === form.competition_id ? "selected" : ""}>${c.name}</option>`)}</select></label>
+          <label>Match in the draw <span class="muted" style="font-weight:400">(choose it and the result goes into the draw by itself)</span>
+            <select name="comp_match_id" data-sb-tie>${tieOptions(form.comp_match_id)}</select></label>
           <label>Round or title <input type="text" name="round_name" value="${form.round_name ?? ""}" placeholder="Final"></label>
           <label>Player A <span class="muted" style="font-weight:400">(start typing — any player from any team, or type a name that isn't in the list)</span>
             <input type="text" name="a" list="sb-players" value="${typed("a")}" required autocomplete="off"></label>
@@ -51,7 +76,7 @@ export async function scoreboardPage(el, { user } = {}) {
       <div style="height:22px"></div>
       ${panel("Matches", dataTable([
         { label: "No.", cell: (m) => m.no ?? "–", cls: "num" },
-        { label: "Match", cell: (m) => html`<b>${nameOf(m, "a")} v ${nameOf(m, "b")}</b><br><small class="muted">${score.matchLabel(m, competitions)} · best of ${m.best_of}</small>` },
+        { label: "Match", cell: (m) => html`<b>${nameOf(m, "a")} v ${nameOf(m, "b")}</b><br><small class="muted">${score.matchLabel(m, competitions)} · best of ${m.best_of}${m.comp_match_id ? html` · <span class="in-draw">in the draw</span>` : ""}</small>` },
         { label: "Score", cell: (m) => `${m.frames_a ?? 0} – ${m.frames_b ?? 0}`, cls: "num strong" },
         { label: "", cell: (m) => (m.status === "live" ? html`<span class="live-dot">Live</span>` : html`<span class="status ${m.status === "finished" ? "approved" : "submitted"}">${m.status === "finished" ? `Finished ${fmtDate(m.finished_at)}` : m.starts_at ? `${fmtDate(m.starts_at)} ${fmtTime(m.starts_at)}` : "Not started"}</span>`) },
         { label: "", cls: "right", cell: (m) => html`<span class="btn-row" style="justify-content:flex-end;flex-wrap:nowrap">
@@ -61,19 +86,40 @@ export async function scoreboardPage(el, { user } = {}) {
           <button type="button" class="btn small" data-sb-delete="${m.id}">Delete</button></span>` },
       ], all, { empty: "No matches yet — set one up above.", rowClass: (m) => (m.status === "live" ? "live-row" : "") }))}`);
 
-    $("[data-sb-form]", el).onsubmit = async (e) => {
+    // Choosing a competition lists its draw; choosing a match from the draw fills in the rest.
+    const formEl = $("[data-sb-form]", el);
+    formEl.elements.competition_id.onchange = async (e) => {
+      ties = await drawMatches(e.target.value);
+      mount(formEl.elements.comp_match_id, tieOptions(null, e.target.value));
+    };
+    formEl.elements.comp_match_id.onchange = (e) => {
+      const t = ties.find((x) => x.id === e.target.value);
+      if (!t) return;
+      const f = formEl.elements;
+      f.a.value = entryText(t.a); f.b.value = entryText(t.b); f.round_name.value = t.round;
+      if (BEST_OF.includes(t.best_of)) f.best_of.value = String(t.best_of);
+    };
+    formEl.onsubmit = async (e) => {
       e.preventDefault();
       const f = e.target.elements;
+      const tie = ties.find((x) => x.id === f.comp_match_id.value);
+      const taken = tie && all.find((x) => x.comp_match_id === tie.id && x.id !== editing?.id);
+      if (taken) return toast("That match from the draw already has a scoreboard: open it from the list below", "error");
       const pick = (text) => players.find((p) => p.full_name.toLowerCase() === text.trim().toLowerCase());
       const a = pick(f.a.value), b = pick(f.b.value);
       if (a && b && a.id === b.id) return toast("Player A and Player B are the same person", "error");
       const row = {
         ...(editing ? { id: editing.id } : { status: "setup", frames_a: 0, frames_b: 0, state: {}, created_by: user?.profile?.full_name ?? null }),
-        competition_id: f.competition_id.value || null, round_name: f.round_name.value.trim() || null,
+        competition_id: f.competition_id.value || null, comp_match_id: tie?.id ?? null, round_name: f.round_name.value.trim() || null,
         player_a_id: a?.id ?? null, name_a: a ? null : f.a.value.trim(), player_b_id: b?.id ?? null, name_b: b ? null : f.b.value.trim(),
         best_of: Number(f.best_of.value), starts_at: fromLocalInput(f.starts_at.value), venue: f.venue.value.trim() || null, updated_at: new Date().toISOString(),
       };
-      try { const saved = await save("live_matches", row); toast(editing ? "Saved" : "Match created"); editing ? list() : open(saved.id); }
+      try {
+        const saved = await save("live_matches", row);
+        // A match already being scored that has just been linked: bring the draw up to date now.
+        if (editing && saved.comp_match_id && editing.status !== "setup") await scoreboardToDraw(saved.id);
+        toast(editing ? "Saved" : "Match created"); editing ? list() : open(saved.id);
+      }
       catch (err) { toast(friendly(err), "error"); }
     };
     el.onclick = async (e) => {
@@ -99,9 +145,20 @@ export async function scoreboardPage(el, { user } = {}) {
     const remember = () => { try { sessionStorage.setItem(KEY, JSON.stringify(undo.slice(-120))); } catch {} };
     // Presses are saved one after another, in the order they were made.
     let queue = Promise.resolve(), failed = false;
+    // What the draw was last told: the frames finished and whether the match is on or over. Balls potted
+    // in the middle of a frame change nothing in the draw, so they are not sent.
+    const drawKey = (x) => `${x.status}|${x.frames_a ?? 0}|${x.frames_b ?? 0}|${(x.state?.frames ?? []).map((f) => `${f.a}-${f.b}-${f.winner}`).join(",")}`;
+    let sent = m.comp_match_id ? drawKey(m) : null, drawNote = "";
     const push = () => {
       const row = { id: m.id, ...snap(m), updated_at: new Date().toISOString() };
+      const key = m.comp_match_id ? drawKey(m) : null, toDraw = key !== sent, frames = (m.frames_a ?? 0) + (m.frames_b ?? 0);
+      sent = key;
       queue = queue.then(() => save("live_matches", row)).then(() => { failed = false; }, (err) => { if (!failed) toast(`Not saved: ${friendly(err)}`, "error"); failed = true; });
+      if (toDraw) queue = queue.then(() => (failed ? null : scoreboardToDraw(row.id))).then((outcome) => {
+        if (!outcome || outcome === "none") return;
+        drawNote = "";
+        if (outcome === "finished") toast("Result written into the draw"); else if (frames) toast("Frame scores written into the draw");
+      }, (err) => { drawNote = friendly(err); toast(`The draw was not updated: ${drawNote}`, "error"); if (m.status === "finished") draw(); });
     };
     const apply = (next) => {
       if (next === m) return false;
@@ -121,7 +178,7 @@ export async function scoreboardPage(el, { user } = {}) {
       const fixOpen = !!$(".pad-fix", el)?.open;      // the corrections box stays open while it is being used
       mount(el, html`<div class="pad">
         <div class="pad-top"><button type="button" class="btn small ghost" data-pad-back>‹ All matches</button>
-          <span><b>${score.matchLabel(m, competitions)}</b> · best of ${m.best_of}</span>
+          <span><b>${score.matchLabel(m, competitions)}</b> · best of ${m.best_of}${m.comp_match_id ? html` · <span class="in-draw">in the draw</span>` : ""}</span>
           <a class="btn small secondary" href="${urls.scoreboard(m)}" target="_blank" rel="noopener">Open the public scoreboard</a></div>
 
         ${m.status === "setup" ? html`<div class="pad-start box">
@@ -157,7 +214,12 @@ export async function scoreboardPage(el, { user } = {}) {
           </div>` : ""}
 
         ${m.status === "finished" ? html`<div class="notice ok"><b>${name[score.matchWinner(m)]} wins ${Math.max(m.frames_a, m.frames_b)}–${Math.min(m.frames_a, m.frames_b)}.</b>
-            The scoreboard page now shows the final score. ${m.competition_id ? html`To put the result into the competition's draw, enter the frame scores on that match's scorecard as usual (<a href="/admin/draws?c=${m.competition_id}" style="font-weight:700">Draws &amp; results</a>).` : ""}</div>
+            The scoreboard page now shows the final score.
+            ${m.comp_match_id ? (drawNote ? html`<br><b>The draw was not updated:</b> ${drawNote}`
+                : html`<br>The result, every frame score and the breaks of 30 or more have been <b>written into the competition's draw</b>, and the winner has gone through to the next round
+                  (<a href="/admin/draws?c=${m.competition_id}" style="font-weight:700">Draws &amp; results</a>). Pressing Undo takes it back out again.`)
+              : m.competition_id ? html`<br>This match was not linked to the draw, so the draw has not changed. To link it: <b>All matches → Details → Match in the draw</b> — the result is then written in straight away.
+                  Or enter it by hand under <a href="/admin/draws?c=${m.competition_id}" style="font-weight:700">Draws &amp; results</a>.` : ""}</div>
           <div class="btn-row"><button type="button" class="btn ghost" data-undo ${undo.length ? "" : "disabled"}>Undo — the match isn't over</button></div>` : ""}
 
         ${(m.state?.frames ?? []).length ? html`<div style="height:18px"></div>${panel("Frames so far", dataTable([

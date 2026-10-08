@@ -9,8 +9,8 @@ insert into seasons (id, name, is_current) values
 on conflict do nothing;
 
 insert into leagues (id, name, slug, short_name, sort, shield_name, shield_team_id, logo_url, trophy_url) values
-  ('00000000-0000-4000-8000-000000000003', 'Victory League', 'victory-league', 'Victory', 1, 'Victory Shield', null, '', ''),
-  ('00000000-0000-4000-8000-000000000004', 'Rees Memorial League', 'rees-memorial-league', 'Rees', 2, 'Rees Shield', null, '', '')
+  ('00000000-0000-4000-8000-000000000003', 'Victory League', 'victory-league', 'Victory', 1, 'Victory League Runabout Shield', null, '', ''),
+  ('00000000-0000-4000-8000-000000000004', 'Rees Memorial League', 'rees-memorial-league', 'Rees', 2, 'Rees Memorial League Runabout Shield', null, '', '')
 on conflict do nothing;
 
 insert into venues (id, name, slug, description, address, phone, email, contact_name, map_url, quote, image_url, logo_url, gallery) values

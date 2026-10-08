@@ -28,7 +28,12 @@ export default async function handicaps(view) {
     ${ctx.leagues.map((l) => html`<h3>${l.name}</h3><div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))">
       ${ctx.teamsIn(l.id).map((t) => html`<div class="hc-team" id="hc-${t.slug}">${panel(t.name, dataTable(cols, ctx.playersOf(t.id), { empty: "No players listed." }))}</div>`)}
     </div>`)}
-    ${loose.length ? html`<h3>No team at the moment</h3><div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))">
+    ${loose.length > 20 ? html`<h3>No team at the moment</h3>
+      <details class="hc-loose"><summary><b>${loose.length} players</b> on the league's books without a team this season <span class="muted">— show their handicaps</span></summary>
+        <div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))">
+          ${[0, 1, 2].map((i) => loose.slice(Math.ceil((loose.length * i) / 3), Math.ceil((loose.length * (i + 1)) / 3))).map((part) => html`<div class="hc-team">${panel(`${part[0]?.full_name.split(" ")[0]} to ${part.at(-1)?.full_name.split(" ")[0]}`, dataTable(cols, part))}</div>`)}
+        </div></details>`
+    : loose.length ? html`<h3>No team at the moment</h3><div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))">
       <div class="hc-team">${panel("Players without a team", dataTable(cols, loose))}</div></div>` : ""}
   </div>`);
 

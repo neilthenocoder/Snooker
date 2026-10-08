@@ -16,7 +16,7 @@ export default async function team(view, { params, query }) {
   const players = ctx.playersOf(team.id);
 
   mount(view, html`<div class="wrap">
-    ${breadcrumb([["Home", "/"], ["Our League", "/league"], [`${ctx.season?.name} Season`], [`Fixtures & Results ${seasonShort(ctx.season)}`, `/fixtures?season=${ctx.season?.id}`], [title]])}
+    ${breadcrumb([["Home", "/"], ["Our League", "/league"], ["Seasons", "/seasons"], [`${ctx.season?.name} Season`, urls.season(ctx.season)], [`Fixtures & Results ${seasonShort(ctx.season)}`, `/fixtures?season=${ctx.season?.id}`], [title]])}
     <h1 class="with-emblem">${badge(team)}${title}</h1>
     <div class="grid-2" style="margin-bottom:22px">
       <div class="box">
@@ -28,6 +28,6 @@ export default async function team(view, { params, query }) {
     <h3 style="margin-top:0">Squad</h3>
     ${players.length ? html`<div class="people squad">${players.map((p) => personCard(p, p.position === "Player" ? "" : p.position))}</div>` : html`<div class="empty box">No players listed yet.</div>`}
     <div style="height:26px"></div>
-    ${panel(team.name, fixturesTable(ctx, ctx.fixturesFor(team.id)))}
+    ${panel(team.name, fixturesTable(ctx, ctx.fixturesFor(team.id), { byes: ctx.byesFor(team.id) }))}
   </div>`);
 }

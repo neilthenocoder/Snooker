@@ -86,7 +86,8 @@ export default async function archive(view) {
             ${l.league.shield_team_id ? html`<a href="${urls.shield(l.league)}${q(ctx)}">${l.league.shield_name || "Shield"}</a>` : ""}
           </div></div>`)}</div>` : html`<p class="muted">No league results recorded for this season.</p>`}
         ${cups.length ? html`<div class="season-cups"><b>Competitions</b>${cups.map(({ c, winner }) => html`<a href="${urls.competition(c)}">${c.name}<span>${winner ? `Winner: ${winner}` : "In progress"}</span></a>`)}</div>` : ""}
-        <div class="btn-row"><a class="btn small secondary" href="/fixtures${q(ctx)}">Fixtures &amp; results ${ctx.season.name}</a>
+        <div class="btn-row"><a class="btn small" href="${urls.season(ctx.season)}">${ctx.season.name} season pages</a>
+          <a class="btn small secondary" href="/fixtures${q(ctx)}">Fixtures &amp; results ${ctx.season.name}</a>
           ${cups.length ? html`<a class="btn small ghost" href="/competitions${q(ctx)}">Competitions ${ctx.season.name}</a>` : ""}
           <a class="btn small ghost" href="/presentation${q(ctx)}">Trophies &amp; winners</a><a class="btn small ghost" href="/season-review${q(ctx)}">Season review</a></div>
       </section>`; })}

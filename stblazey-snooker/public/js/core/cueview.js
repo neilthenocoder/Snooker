@@ -4,7 +4,7 @@
 //  follow. Answers are stored together in players.cueview.
 // ─────────────────────────────────────────────────────────────
 export const CUEVIEW = [
-  { key: "hand", label: "Left or right handed", options: ["", "Left", "Right"] },
+  { key: "hand", label: "Left or right handed", options: ["", "Left", "Right", "Both"] },
   { key: "started", label: "At what age did you start playing snooker and why?" },
   { key: "first_memory", label: "What was your first ever memory of snooker?" },
   { key: "highest_break", label: "What is your highest break?" },

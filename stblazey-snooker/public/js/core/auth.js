@@ -74,14 +74,15 @@ export const DEFAULT_AREAS = {
  */
 export const SECTION_AREA = {
   overview: "matchnights", results: "matchnights",
-  fixtures: "fixtures", generator: "fixtures", import: ["fixtures", "league", "matchnights"],
+  fixtures: "fixtures", byes: "fixtures", generator: "fixtures", import: ["fixtures", "league", "matchnights"],
   leagues: "league", teams: "league", players: "league", venues: "league", seasons: "league",
   handicaps: "handicaps",
   competitions: "competitions", entries: "competitions", draws: "competitions",
   scoreboard: { any: ["competitions", "matchnights"] }, awards: { any: ["website", "competitions"] }, key_dates: { any: ["website", "competitions"] },
   meetings: "website", emails: "settings",
   accounts: "people", roles: "master", activity: "master", backup: "master",
-  articles: "website", categories: "website", announcements: "website", media: "website", pages: "website", sponsors: "website",
+  articles: "website", categories: "website", announcements: "website", media: "website", pages: "website", sponsors: "website", merchandise: "website",
+  cueviews: "league",
   branding: "settings", settings: "settings", stats: "settings",
 };
 
@@ -110,8 +111,15 @@ export const isMember = (user) => !!user?.profile && (!!user.profile.team_id || 
 /** "Competition Secretary · Captain" */
 export const roleText = (profile) => [ROLE_LABEL[profile?.role] ?? "Member",
   !["captain", "vice_captain"].includes(profile?.role) && TEAM_ROLE_LABEL[profile?.team_role]].filter(Boolean).join(" · ");
-/** Where someone lands after logging in. */
-export const homeFor = (user) => (isStaff(user) ? "/admin" : "/my");
+// ── My Snooker ─────────────────────────────────────────────────
+/** The team a login's own page (/myteam) is about: the one they chose, else the team their login belongs to. */
+export const mySnookerTeamId = (user) => user?.profile?.my_team_id || user?.profile?.team_id || null;
+/** Is My Snooker switched on for this login? (It is until they turn it off.) */
+export const mySnookerOn = (user) => !!user?.profile && user.profile.my_snooker !== false;
+/** A plain player login: no dashboard, no captain's tools. My Snooker is their home. */
+export const isPlainPlayer = (user) => !!user?.profile && !isStaff(user) && !isCaptain(user);
+/** Where someone lands after logging in: officers on the dashboard, captains in My Team, players on their own My Snooker page. */
+export const homeFor = (user) => (isStaff(user) ? "/admin" : isPlainPlayer(user) && mySnookerOn(user) ? "/myteam" : "/my");
 
 /** Forget the cached login details (after the profile changes). */
 export function refreshUser() { cached = undefined; return getUser(); }

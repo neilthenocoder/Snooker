@@ -44,9 +44,15 @@ export default async function calendar(view, { query }) {
       return { id: d.id, when: `${d.starts_on}T00:00:00.000Z`, day: d.starts_on, until: d.ends_on && d.ends_on > d.starts_on ? d.ends_on : null, allDay: true, kind: "key", status: "",
         href: d.url || (comp ? urls.competition(comp) : "/calendar"), title: d.title, sub: [d.details, comp?.name].filter(Boolean).join(" · "), teams: [] };
     }),
+    // Bye weeks: an all-day note on the night a team sits out.
+    ...(ctx.byes ?? []).map((b) => {
+      const t = ctx.team.get(b.team_id);
+      return { id: b.id, when: `${b.bye_on}T00:00:00.000Z`, day: b.bye_on, allDay: true, kind: "bye", status: "",
+        href: t ? urls.team(t) : "/fixtures", title: `${t?.name ?? "A team"}: bye week`, sub: ctx.league.get(b.league_id)?.name ?? "", teams: [b.team_id] };
+    }),
   ].filter((e) => e.status !== "postponed").sort((a, b) => a.when.localeCompare(b.when));
   const dayOf = (e) => e.day ?? ukDay(e.when);
-  const shown = (e) => !teamId || e.allDay || e.teams.includes(teamId);
+  const shown = (e) => !teamId || (e.allDay && e.kind !== "bye") || e.teams.includes(teamId);
   const longDay = (iso) => new Date(iso).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: SITE.timeZone });
 
   const draw = () => {
@@ -76,7 +82,7 @@ export default async function calendar(view, { query }) {
           <span class="cal-num">${Number(d.slice(8))}</span>${(byDay.get(d) ?? []).map(ev)}</div>`)}
       </div>
       <div class="cal-list">${monthEvents.length ? monthEvents.map((e) => html`<a class="cal-row ${e.kind}" href="${e.href}">
-          <span class="cal-date">${longDay(e.allDay ? `${e.day}T12:00:00Z` : e.when)}<b>${e.allDay ? "Key date" : fmtTime(e.when)}</b></span>
+          <span class="cal-date">${longDay(e.allDay ? `${e.day}T12:00:00Z` : e.when)}<b>${e.kind === "bye" ? "No match" : e.allDay ? "Key date" : fmtTime(e.when)}</b></span>
           <span><strong>${e.title}</strong><small>${[e.sub, e.venue, e.until ? `until ${longDay(`${e.until}T12:00:00Z`)}` : ""].filter(Boolean).join(" · ")}</small></span></a>`)
         : html`<div class="empty">No matches this month${teamId ? " for this team" : ""}.</div>`}</div>`);
     history.replaceState(null, "", `/calendar?${new URLSearchParams({ ...(teamId ? { team: teamId } : {}), month })}`);
@@ -89,7 +95,7 @@ export default async function calendar(view, { query }) {
       <label style="font-weight:700">Show matches for
         <select data-team><option value="">All teams</option>${ctx.leagues.map((l) => html`<optgroup label="${l.name}">${ctx.teamsIn(l.id).map((t) => html`<option value="${t.id}" ${t.id === teamId ? "selected" : ""}>${t.name}</option>`)}</optgroup>`)}</select></label>
       <button class="btn small blue" data-ics>Add to my phone calendar (.ics)</button>
-      <span class="cal-key"><i class="league"></i>League <i class="cup"></i>Cup${keyDates.length ? html` <i class="key"></i>Key date` : ""}</span>
+      <span class="cal-key"><i class="league"></i>League <i class="cup"></i>Cup${keyDates.length ? html` <i class="key"></i>Key date` : ""}${ctx.byes?.length ? html` <i class="bye"></i>Bye week` : ""}</span>
     </div>
     <div data-cal></div>
   </div>`);

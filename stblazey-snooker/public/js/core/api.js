@@ -79,8 +79,10 @@ export function loadSeason(seasonId) {
         seasonId ? selectAll(() => db.from("fixtures").select("*").eq("season_id", seasonId).order("starts_at")) : [],
       ]);
       const ids = fixtures.map((f) => f.id);
-      const [frames, breaks] = await Promise.all([selectIn("frames", "fixture_id", ids), selectIn("breaks", "fixture_id", ids)]);
-      return { season: seasons.find((s) => s.id === seasonId), seasons, leagues, venues, teams, players, fixtures, frames: withLegacyFrames(fixtures, frames), breaks };
+      const [frames, breaks, byes] = await Promise.all([selectIn("frames", "fixture_id", ids), selectIn("breaks", "fixture_id", ids),
+        // Bye weeks: shown in fixture lists only. (No table yet = schema.sql hasn't been re-run: carry on without them.)
+        seasonId ? selectAll(() => db.from("byes").select("*").eq("season_id", seasonId).order("bye_on")).catch(() => []) : []]);
+      return { season: seasons.find((s) => s.id === seasonId), seasons, leagues, venues, teams, players, fixtures, frames: withLegacyFrames(fixtures, frames), breaks, byes };
     })().catch((e) => { cache.delete(key); throw e; }));
   }
   return cache.get(key);
@@ -395,6 +397,31 @@ export async function loadLiveMatch(ref) {
   const byNo = /^\d+$/.test(String(ref));
   return run(db.from("live_matches").select("*").eq(byNo ? "no" : "id", byNo ? Number(ref) : ref).maybeSingle());
 }
+
+/**
+ * Bring a competition's draw up to date from a scoreboard match that is tied to one of its matches
+ * (the frames so far; and, once the match is over, the result and the winner going through).
+ * Returns "finished", "updated" or "none" (not tied to the draw).
+ */
+export async function scoreboardToDraw(liveMatchId) {
+  const outcome = await run(db.rpc("scoreboard_to_draw", { lid: liveMatchId }));
+  invalidate();
+  return outcome;
+}
+
+// ── My Snooker ───────────────────────────────────────────────────
+/** Save the logged-in person's own-page choices: which team it follows, and whether it is switched on. */
+export async function setMySnooker(teamId, on) {
+  await run(db.rpc("set_my_snooker", { p_team: teamId || null, p_on: on }));
+  invalidate();
+}
+
+// ── CueViews sent in on the form ─────────────────────────────────
+/** Send a CueView in from the public form (/cueview). It waits for an officer to approve it. */
+export const submitCueview = (row) => run(db.rpc("submit_cueview", {
+  p_player: row.player_id || null, p_name: row.name ?? "", p_team: row.team ?? "", p_answers: row.answers ?? {}, p_bio: row.bio ?? "", p_contact: row.contact ?? "" }));
+/** Every CueView sent in, newest first (officers who look after the players only). */
+export const cueviewSubmissions = () => selectAll(() => db.from("cueview_submissions").select("*").order("created_at", { ascending: false }));
 
 // ── result emails ────────────────────────────────────────────────
 /** Who gets the email when a captain submits a card (officers with Settings only). */

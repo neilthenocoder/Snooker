@@ -36,8 +36,8 @@ export function buildSeed() {
   const prevSeason = { id: uuid(), name: "2025-2026", is_current: false };
 
   const leagues = [
-    { id: uuid(), name: "Victory League", slug: "victory-league", short_name: "Victory", sort: 1, shield_name: "Victory Shield", shield_team_id: null, logo_url: "" },
-    { id: uuid(), name: "Rees Memorial League", slug: "rees-memorial-league", short_name: "Rees", sort: 2, shield_name: "Rees Shield", shield_team_id: null, logo_url: "" },
+    { id: uuid(), name: "Victory League", slug: "victory-league", short_name: "Victory", sort: 1, shield_name: "Victory League Runabout Shield", shield_team_id: null, logo_url: "" },
+    { id: uuid(), name: "Rees Memorial League", slug: "rees-memorial-league", short_name: "Rees", sort: 2, shield_name: "Rees Memorial League Runabout Shield", shield_team_id: null, logo_url: "" },
   ];
 
   const venueNames = {
@@ -359,6 +359,8 @@ export function buildSeed() {
     // An officer who also plays: competitions in the admin, plus captain rights for Bugle.
     { id: uuid(), email: "compsec@demo.test", full_name: players[6].full_name, role: "competition_secretary", team_role: "captain", team_id: players[6].team_id, player_id: players[6].id },
     { id: uuid(), email: "committee@demo.test", full_name: "Committee Member", role: "committee_member", team_role: null, team_id: null, player_id: null },
+    // A Player login that isn't linked to anyone: it only has My Snooker, and chooses its own team.
+    { id: uuid(), email: "fan@demo.test", full_name: "Sam Follower", role: "player", team_role: null, team_id: null, player_id: null },
   ];
   const demoUsers = [
     { email: "admin@demo.test", password: "admin123", id: profiles[0].id },
@@ -366,6 +368,7 @@ export function buildSeed() {
     { email: "player@demo.test", password: "player123", id: profiles[2].id },
     { email: "compsec@demo.test", password: "compsec123", id: profiles[3].id },
     { email: "committee@demo.test", password: "committee123", id: profiles[4].id },
+    { email: "fan@demo.test", password: "fan12345", id: profiles[5].id },
   ];
 
   // ── Wave 4 samples ──
@@ -610,6 +613,11 @@ The league table is decided on frames won: one point for every frame.
       competitions, competition_entries, competition_matches, competition_frames, competition_breaks, competition_signups,
       handicap_changes: [], categories, settings, media, page_views, announcements, role_permissions, audit_log: [],
       key_dates, awards, meetings, live_matches, private_settings: [{ id: 1, results_email_on: false, results_email_to: "" }],
+      byes: [], cueview_submissions: [],
+      merchandise: [
+        { id: uuid(), name: "League polo shirt", price: "£18", description: "Black polo with the league badge on the chest. A sample item: change or remove it under Admin → Website → Merchandise.", options: "S, M, L, XL, XXL", image_url: "", url: "", sort: 1, is_active: true },
+        { id: uuid(), name: "Cue towel", price: "£6", description: "Microfibre towel with the league badge. A sample item.", options: "", image_url: "", url: "", sort: 2, is_active: true },
+      ],
     },
     demoUsers,
   };

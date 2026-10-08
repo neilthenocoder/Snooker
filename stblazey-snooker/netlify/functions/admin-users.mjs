@@ -50,7 +50,7 @@ export default async (req) => {
     if ((TEAM_ROLES.includes(role) || team_role) && !team_id) return json(400, { error: "Captains and vice captains must be linked to a team." });
     if (role === "admin" && !master) return json(403, { error: "Only the Master Admin can create another Master Admin." });
     if (!withinReach(role)) return json(403, { error: "You can't give a login a role that is allowed more than your own. Ask the Master Admin." });
-    if (role === "player" && !player_id) return json(400, { error: "A player login must be linked to a player." });
+    // A Player login needs no link to a player or team: they pick the team to follow themselves (My Snooker).
     if (password && String(password).length < 8) return json(400, { error: "Passwords must be at least 8 characters." });
   }
   if (["update", "delete"].includes(action) && !id) return json(400, { error: "Missing account id." });

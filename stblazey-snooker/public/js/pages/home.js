@@ -10,13 +10,14 @@ import { answered, articleCueview } from "../core/cueview.js";
 import { leagueTablePanel, sidebar, panel, picture, urls, badge, avatar, articleThumb, shortName, latestNews, trophy } from "../core/components.js";
 import { SITE } from "../config.js";
 import { setTitle, adminEdit } from "../core/router.js";
+import { isPlainPlayer, mySnookerOn, mySnookerTeamId } from "../core/auth.js";
 import { competitionSummaries } from "./competitions.js";
 
 const ROTATE_MS = 7000;      // banner: time each article is shown
 const CAROUSEL_MS = 4500;    // live strip: time before it moves on one card
 const FEATURE_MS = 6000;     // feature box (when it shows one message at a time): time each one is shown
 
-export default async function home(view) {
+export default async function home(view, { user } = {}) {
   setTitle("");
   adminEdit("settings", null, { label: "Edit home page" });
   const [ctx, news, allComps, site, box, notices, dates] = await Promise.all([seasonContext(), articles(), competitionSummaries(), settings(), sideBoxData(),
@@ -43,6 +44,8 @@ export default async function home(view) {
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16.5 5 9.6l1.4-1.4L12 13.7l5.6-5.5L19 9.6Z"/></svg></button>
     <div class="wrap layout" style="margin-top:30px">
       <div class="stack">
+        ${isPlainPlayer(user) && mySnookerOn(user) ? html`<a class="ms-bar" href="/myteam"><b>My Snooker</b>
+          <span>${ctx.team.get(mySnookerTeamId(user))?.name ?? "Choose your team"}: matches, results, breaks and handicaps</span><i>Back to my page →</i></a>` : ""}
         <div class="quick-links">
           <a style="background:var(--yellow);color:#1b0e06" href="/competitions">Competitions</a>
           <a style="background:var(--red)" href="/calendar">Calendar</a>
@@ -297,7 +300,7 @@ function shieldsBox(ctx) {
     const defences = history.filter((h) => h.to === holderId && h.defended && (!since || h.fixture.starts_at > since.starts_at)).length;
     return html`<a class="shield" href="${urls.shield(l)}" title="See where the ${l.shield_name || "shield"} has been this season">
       <svg class="shield-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5.2 3.4 9.7 8 11 4.6-1.3 8-5.8 8-11V5Z"/></svg>
-      <small>${l.shield_name || `${shortName(l)} Shield`}</small>
+      <small>${l.shield_name || `${l.name} Runabout Shield`}</small>
       ${t ? badge(t) : ""}<strong>${t?.name ?? "–"}</strong>
       <span>${since ? `Won ${fmtDate(since.starts_at)}` : "Holder since the start of the season"}${defences ? ` · ${defences} defence${defences > 1 ? "s" : ""}` : ""}</span>
       <em>Shield history →</em>
