@@ -12,6 +12,8 @@ import { sidebar, crumbs } from "./core/components.js";
 import { openAccount, openNotifications, closeDrawer, initials } from "./core/drawers.js";
 import { toggleFollow } from "./core/my-snooker.js";
 import { openSearch } from "./core/search.js";
+import { footerLink } from "./core/terms.js";
+import { listItems } from "./core/list-field.js";
 import { table, invalidate, settings, nearbyMatches, subscribe, trackPageView, articles, liveMatches } from "./core/api.js";
 import { liveState } from "./core/rules.js";
 import { notificationsOn, startNotifications } from "./core/notify.js";
@@ -147,7 +149,7 @@ async function drawHeader() {
   // Phones add the menu button, which opens the full-screen menu.
   mount($("#site-header"), html`
     ${DEMO_MODE ? html`<div class="demo-banner">Demo mode — sample data saved in this browser only. Add your Supabase keys in js/config.js to go live.</div>` : ""}
-    <header class="site-header"><div class="wrap">
+    <header class="site-header"><div class="site-bar"><div class="wrap">
       <a class="logo" href="/" aria-label="${SITE.name} home"><img src="${site.logo_url || "/assets/logo.svg"}" alt="${SITE.name}"></a>
       <nav class="main-nav" aria-label="Main menu">
         ${MENU.map(([cls, href, label]) => html`<a class="${cls}" href="${href}">${label}</a>`)}
@@ -160,7 +162,7 @@ async function drawHeader() {
         <button type="button" class="nav-icon nav-search" data-search-open aria-label="Search" title="Search">${searchIcon}</button>
         <button type="button" class="nav-icon nav-toggle" data-menu-open aria-label="Menu" aria-expanded="false">${menuIcon}</button>
       </div>
-    </div></header>
+    </div></div></header>
     <div class="menu-overlay" data-menu role="dialog" aria-modal="true" aria-label="Menu">
       <div class="menu-top"><a class="logo" href="/" aria-label="${SITE.name} home"><img src="${site.logo_url || "/assets/logo.svg"}" alt=""></a>
         <button type="button" class="menu-x" data-menu-close aria-label="Close the menu">×</button></div>
@@ -185,18 +187,41 @@ async function drawHeader() {
 }
 
 /**
- * The menu bar stays at the top of the screen: tell the stylesheet how tall it is, so things that
- * stick below it line up. It is measured again whenever its height changes (it gets slimmer once you scroll).
+ * The menu bar stays at the top of the screen and gets slimmer once you have scrolled.
+ *
+ * Getting slimmer must not move the page. If it did, the browser would shift the scroll position to keep
+ * what you are reading in place, that would cross the line where the bar changes size, and the bar would
+ * flip back — over and over (the "shaking" bar). So:
+ *   1. <header class="site-header"> always keeps the height of the full-size bar (--header-full), and only
+ *      the bar inside it (.site-bar) changes size. Nothing below the header ever moves;
+ *   2. it goes slim at SLIM_AT and only goes back to full size above FULL_AT — two lines, well apart.
+ * The stylesheet is also told how tall the bar is right now (--header-h), so things that stick below it line up.
  */
-let headerWatch = null;
-function measureHeader() {
-  const bar = $(".site-header");
-  if (!bar) return;
-  const set = () => document.documentElement.style.setProperty("--header-h", `${Math.round(bar.getBoundingClientRect().height)}px`);
-  set();
-  headerWatch?.disconnect();
-  if (typeof ResizeObserver === "function") { headerWatch = new ResizeObserver(set); headerWatch.observe(bar); }
+const SLIM_AT = 120, FULL_AT = 60;
+let headerWatch = null, headerSlim = false;
+/** Slim or full size, from how far the page is scrolled (remembered, so a redrawn bar comes back the same size). */
+function slimHeader() {
+  if (!headerSlim && window.scrollY > SLIM_AT) headerSlim = true;
+  else if (headerSlim && window.scrollY < FULL_AT) headerSlim = false;
+  $(".site-header")?.classList.toggle("stuck", headerSlim);
 }
+function measureHeader() {
+  const head = $(".site-header"), bar = $(".site-bar");
+  if (!head || !bar) return;
+  const root = document.documentElement.style;
+  // How tall the bar is at full size: measured without its animation, whatever size it is at this moment.
+  head.classList.add("measuring");
+  head.classList.remove("stuck");
+  root.setProperty("--header-full", `${bar.getBoundingClientRect().height}px`);
+  slimHeader();            // drawn again part-way down a page: slim straight away
+  void bar.offsetHeight;   // settle before the animation is allowed again
+  head.classList.remove("measuring");
+  const fit = () => root.setProperty("--header-h", `${Math.round(bar.getBoundingClientRect().height)}px`);
+  fit();
+  headerWatch?.disconnect();
+  if (typeof ResizeObserver === "function") { headerWatch = new ResizeObserver(fit); headerWatch.observe(bar); }
+}
+window.addEventListener("resize", measureHeader, { passive: true });   // a different width can mean a different height
 const setMenu = (open) => {
   document.documentElement.classList.toggle("menu-open", open);
   $("[data-menu-open]")?.setAttribute("aria-expanded", String(open));
@@ -207,15 +232,22 @@ async function drawFooter() {
     table("sponsors", "sort").catch(() => []), table("pages", "sort").catch(() => []), settings(),
   ]);
   const socials = SOCIAL.filter(([key]) => site[key]);
-  const links = pages.filter((p) => p.show_in_footer);
+  // The bottom menu: the links chosen under Site settings → Footer, in that order; if none were chosen,
+  // every info page ticked "Show as a link in the footer".
+  const chosen = listItems(site.footer_links).map((text) => footerLink(text, pages)).filter(Boolean);
+  const links = chosen.length ? chosen : pages.filter((p) => p.show_in_footer).map((p) => ({ label: p.title, href: `/page/${p.slug}` }));
+  // The copyright line and the credit after it (Site settings → Footer; config.js holds the standard wording).
+  const owner = (site.footer_copyright || "").trim() || SITE.copyright || "St Blazey and District Snooker";
+  const creditText = site.footer_credit_show === false ? "" : (site.footer_credit_text || "").trim() || SITE.credit?.text || "";
+  const credit = creditText ? footerLink(`${creditText} | ${(site.footer_credit_url || "").trim() || SITE.credit?.url || ""}`) : null;
   mount($("#site-footer"), html`<footer class="site-footer"><div class="wrap">
     ${sponsors.length ? html`<h3 class="foot-h">Principal Partners</h3>
       <div class="sponsors">${sponsors.map((s) => html`<a href="${urls.sponsor(s)}" title="About ${s.name}">${s.image_url ? html`<img src="${s.image_url}" alt="${s.name}">` : s.name}</a>`)}</div>` : ""}
     <h3 class="foot-h">#SBDS</h3>
     ${socials.length ? html`<div class="socials">${socials.map(([key, name, icon]) => html`<a href="${site[key]}" target="_blank" rel="noopener" aria-label="${name}" title="${name}">
       <svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></a>`)}</div>` : ""}
-    ${links.length ? html`<nav class="foot-links" aria-label="Footer">${links.map((p) => html`<a href="/page/${p.slug}">${p.title}</a>`)}</nav>` : ""}
-    <p class="foot-copy">© ${new Date().getFullYear()} ${SITE.copyright ?? "St Blazey and District Snooker"}${SITE.credit?.text ? html` · <a href="${SITE.credit.url}">${SITE.credit.text}</a>` : ""}</p>
+    ${links.length ? html`<nav class="foot-links" aria-label="Footer">${links.map((l) => html`<a href="${l.href}" ${l.outside ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}</nav>` : ""}
+    <p class="foot-copy">© ${new Date().getFullYear()} ${owner}${creditText ? html` · ${credit ? html`<a href="${credit.href}" ${credit.outside ? html`target="_blank" rel="noopener"` : ""}>${creditText}</a>` : creditText}` : ""}</p>
   </div></footer>`);
 }
 
@@ -437,7 +469,7 @@ function drawScrollHint() {
 }
 window.addEventListener("scroll", () => {
   toTop.classList.toggle("show", window.scrollY > 500);
-  $(".site-header")?.classList.toggle("stuck", window.scrollY > 90);
+  slimHeader();
   drawScrollHint();
 }, { passive: true });
 window.addEventListener("resize", drawScrollHint, { passive: true });

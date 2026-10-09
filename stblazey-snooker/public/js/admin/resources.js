@@ -26,7 +26,7 @@ import { CUEVIEW } from "../core/cueview.js";
 import { ROLE_LABEL, TEAM_ROLE_LABEL } from "../core/auth.js";
 import { refreshShell } from "../core/router.js";
 import { FONTS, LAYOUT_GROUPS, LAYOUT_LABELS, TEXT_SIZES, parseFontEmbed } from "../core/branding.js";
-import { MEETING_KINDS, PLAYER_STATUS } from "../core/terms.js";
+import { MEETING_KINDS, PLAYER_STATUS, footerSuggestions } from "../core/terms.js";
 
 /** Fill in an award's shown name from the player or team picked for it (unless a different name was typed). */
 function awardName(row, refs, prefix) {
@@ -295,7 +295,7 @@ export const RESOURCES = {
       { name: "gallery", label: "Picture gallery", type: "gallery" },
       { name: "sort", label: "Display order", type: "number", default: 1 },
       { name: "show_in_league", label: "Show as a tile on the League page", type: "checkbox", default: true },
-      { name: "show_in_footer", label: "Show as a link in the footer", type: "checkbox" },
+      { name: "show_in_footer", label: "Show as a link in the footer (to choose the links and their order yourself, or add other pages: Site settings → Footer)", short: "Footer", type: "checkbox" },
       { name: "show_in_rules", label: "Show on the Rules page (/rules) as one of its tabs — e.g. “League rules” and “Rules of the game”", short: "Rules page", type: "checkbox" },
     ],
     rowActions: [{ label: "View", href: (row) => (row.show_in_rules ? `/rules?p=${row.slug}` : `/page/${row.slug}`) }],
@@ -494,6 +494,13 @@ export const RESOURCES = {
       { type: "heading", label: "Maintenance mode", help: "While this is on, visitors see a holding page with your message instead of the website. Anyone who is logged in still sees the full site, so you can keep working — and captains can still log in to enter results." },
       { name: "maintenance_on", label: "Switch the public website off for now", type: "checkbox" },
       { name: "maintenance_text", label: "Message for visitors", type: "textarea", rows: 2, placeholder: "We're making a few improvements to the website. Please check back shortly." },
+      { type: "heading", label: "Footer", help: "The very bottom of every page: the row of links (Privacy Policy, Contact Us…) and the copyright line under it. The partner logos come from Sponsors, and the social icons are set just below." },
+      { name: "footer_links", label: "Links in the bottom menu, in the order they should appear. Start typing and pick one of the website's pages — or type what the link should say, then | and where it goes (a web address, or an email address). Leave this empty to show every info page ticked “Show as a link in the footer”.",
+        type: "list", add: "+ Add another link", placeholder: "Privacy Policy | /page/privacy-policy", suggest: "pages", suggestions: (refs) => footerSuggestions(refs.pages), max: 240, wide: true },
+      { name: "footer_copyright", label: "Copyright line: whose website it is (the © and this year are added for you)", type: "text", placeholder: "St Blazey and District Snooker", wide: true },
+      { name: "footer_credit_show", label: "Show a credit after the copyright line", type: "checkbox", default: true },
+      { name: "footer_credit_text", label: "The credit", type: "text", placeholder: "Created by White River Design Studio" },
+      { name: "footer_credit_url", label: "Where the credit links to (optional)", type: "text", placeholder: "https://…" },
       { type: "heading", label: "Social links (footer)", help: "Paste the full address of each page. Blank ones aren't shown." },
       { name: "facebook_url", label: "Facebook", type: "text", placeholder: "https://www.facebook.com/…" },
       { name: "x_url", label: "X (Twitter)", type: "text", placeholder: "https://x.com/…" },

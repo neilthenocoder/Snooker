@@ -17,16 +17,17 @@ export function listItems(text) {
 }
 const pack = (items) => (items.length ? JSON.stringify(items) : "");
 
-const row = (value, placeholder, suggestions) => html`<div class="list-row">
-  <input type="text" data-list-item value="${value}" placeholder="${placeholder}" maxlength="120" ${suggestions ? html`list="${suggestions}"` : ""}>
+const row = (value, placeholder, suggestions, max = 120) => html`<div class="list-row">
+  <input type="text" data-list-item value="${value}" placeholder="${placeholder}" maxlength="${max}" ${suggestions ? html`list="${suggestions}"` : ""}>
   <button type="button" data-list-remove aria-label="Remove">×</button></div>`;
 
-/** options: add (button text), placeholder, suggestions (names offered as you type). */
-export function listField(name, value, { add = "+ Add another", placeholder = "", suggestions = [] } = {}) {
+/** options: add (button text), placeholder, suggestions (offered as you type), max (the most letters in one item). */
+export function listField(name, value, { add = "+ Add another", placeholder = "", suggestions = [], max = 120 } = {}) {
+  max = Number(max) || 120;
   const items = listItems(value);
   const dl = suggestions.length ? `dl-${name}` : "";
-  return html`<div class="list-field" data-list-field data-placeholder="${placeholder}" data-suggest="${dl}">
-    <div data-list-rows>${(items.length ? items : [""]).map((v) => row(v, placeholder, dl))}</div>
+  return html`<div class="list-field" data-list-field data-placeholder="${placeholder}" data-suggest="${dl}" data-max="${max}">
+    <div data-list-rows>${(items.length ? items : [""]).map((v) => row(v, placeholder, dl, max))}</div>
     <button type="button" class="btn small ghost" data-list-add>${add}</button>
     <input type="hidden" name="${name}" value="${pack(items)}">
     ${dl ? html`<datalist id="${dl}">${suggestions.map((s) => html`<option value="${s}">`)}</datalist>` : ""}
@@ -44,7 +45,7 @@ export function wireListFields(root) {
     if (!field) return;
     const rows = field.querySelector("[data-list-rows]");
     if (e.target.matches("[data-list-add]")) {
-      rows.insertAdjacentHTML("beforeend", String(row("", field.dataset.placeholder, field.dataset.suggest)));
+      rows.insertAdjacentHTML("beforeend", String(row("", field.dataset.placeholder, field.dataset.suggest, Number(field.dataset.max) || 120)));
       rows.lastElementChild.querySelector("input").focus();
     }
     if (e.target.matches("[data-list-remove]")) {

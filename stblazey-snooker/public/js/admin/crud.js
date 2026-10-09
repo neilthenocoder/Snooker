@@ -28,7 +28,7 @@ const valueOf = (f, row) => (f.in ? row[f.in]?.[f.name] : row[f.name]);
 async function loadRefs(res) {
   const names = [...new Set(res.fields.filter((f) => ["ref", "tags"].includes(f.type) || f.suggest).map((f) => f.ref ?? f.suggest))];
   const byName = { players: "full_name" };
-  const order = { leagues: "sort", categories: "sort", competitions: "sort", fixtures: "starts_at", articles: "published_at" };
+  const order = { leagues: "sort", categories: "sort", competitions: "sort", fixtures: "starts_at", articles: "published_at", pages: "sort" };
   const loaded = await Promise.all(names.map((n) => table(n, order[n] ?? byName[n] ?? "name")));
   return Object.fromEntries(names.map((n, i) => [n, loaded[i]]));
 }
@@ -63,7 +63,10 @@ const tagChips = (name, ids, options, store = "id") => html`${ids.map((id, i) =>
 function input(field, row, refs, rows) {
   const isNew = !row.id;
   const name = key(field);
-  const value = valueOf(field, row) ?? (isNew ? field.default : undefined) ?? "";
+  // A new row starts from the field's standard value — and so does a setting that has never been saved
+  // (a column added since the row was made comes back as "not there", not as empty).
+  const stored = valueOf(field, row);
+  const value = stored ?? (isNew || stored === undefined ? field.default : undefined) ?? "";
   const req = field.required || (isNew && field.requiredOnCreate);
   const attrs = `name="${name}" ${req ? "required" : ""} ${field.createOnly && !isNew ? "disabled" : ""}`;
   const a = (s) => html([s]); // attrs are built from our own config only, never user text
@@ -80,7 +83,7 @@ function input(field, row, refs, rows) {
       </div>
       <input type="text" ${a(attrs)} value="${value}" placeholder="…or paste a link to the document" data-file-url></div>`;
     case "number": return html`<input type="number" ${a(attrs)} value="${value}" placeholder="${field.placeholder ?? ""}" ${a(["min", "max", "step"].filter((k) => field[k] != null).map((k) => `${k}="${field[k]}"`).join(" "))}>`;
-    case "list": return listField(name, value, { add: field.add, placeholder: field.placeholder ?? "", suggestions: field.suggest ? (refs[field.suggest] ?? []).map(labelOf) : [] });
+    case "list": return listField(name, value, { add: field.add, placeholder: field.placeholder ?? "", max: field.max, suggestions: field.suggestions ? field.suggestions(refs) : field.suggest ? (refs[field.suggest] ?? []).map(labelOf) : [] });
     case "date": return html`<input type="date" ${a(attrs)} value="${String(value).slice(0, 10)}">`;
     case "datetime": return html`<input type="datetime-local" ${a(attrs)} value="${toLocalInput(value)}">`;
     case "password": return html`<input type="password" autocomplete="new-password" minlength="${field.minLength ?? 8}" ${a(attrs)}>`;

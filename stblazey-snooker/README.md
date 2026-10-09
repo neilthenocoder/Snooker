@@ -354,7 +354,7 @@ Visitors cannot upload pictures on the form (only people with a login can), and 
 
 ## 3j. The menu bar, side panels, news and the other site-wide pieces
 
-**The menu bar** stays at the top of the screen as the page scrolls (it gets a little slimmer once you have scrolled). On the right, in this order: the **person**, the **bell**, the **search** glass — and on phones the menu button, which opens the menu over the **whole screen**.
+**The menu bar** stays at the top of the screen as the page scrolls (it gets a little slimmer once you have scrolled down a little, and goes back to full size near the top; the page underneath never moves when it changes size — `measureHeader()` in `main.js` explains how). On the right, in this order: the **person**, the **bell**, the **search** glass — and on phones the menu button, which opens the menu over the **whole screen**.
 
 - **The person** opens a panel from the right. Logged out it is the login form (there is no separate Login button; `/login` still works). Logged in it shows the person's initials and their links: My Snooker, My Team, Admin dashboard, My Snooker settings, My profile, Password & details and a red **Log out**.
 - **The bell** opens the notifications panel: a master switch, then a slider for each kind of pop-up — Results, Breaks, News, Tables & rankings, Competitions, New players — and one for Celebrations (the confetti). The choices are remembered on that phone or computer (no login needed). The kinds are the `NOTIFY_KINDS` list in `core/notify.js`.
@@ -377,7 +377,7 @@ Visitors cannot upload pictures on the form (only people with a login can), and 
 
 **The calendar** (`/calendar`) is one long page: a strip of months that follows you as you scroll, every day with a date tile, and each match, key date or meeting with its buttons (Match preview, Result & scorecard, Venue). The team filter and the phone-calendar download are still there.
 
-**The dashboard.** Every list has a pager, "1–50 of 116 ‹ ›", so you can page through everything as well as search. The boxes on the overview (Teams, Players, Fixtures, Approved, Awaiting approval, Live now) open the matching list. The menu has no scrollbar: it scrolls with the wheel or a finger, and fades at the bottom when there is more.
+**The dashboard.** Every list has a pager, "1–50 of 116 ‹ ›", so you can page through everything as well as search. The boxes on the overview (Teams, Players, Fixtures, Approved, Awaiting approval, Live now) open the matching list. The menu is as long as its items: nothing in it is hidden and nothing inside it scrolls. On a long page it follows you down — at the top of the screen when it fits, otherwise it moves with the page until its last item is in view.
 
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
@@ -543,8 +543,9 @@ For example, to add a "phone" field to venues, add one line to `RESOURCES.venues
 | Put the quote somewhere else in an article | Type `[quote]` on its own line in the article text |
 | Footer: partner logos | Admin → Sponsors (they appear under "Principal Partners") |
 | Footer: Facebook / X / Instagram / YouTube links | Admin → Site settings & home page → Social links (an icon only shows when its link is filled in) |
-| Footer: Privacy Policy, Terms, Accessibility, About, Contact Us | Admin → Info pages — edit the text; "Show in the footer" / "Show on the League page" decide where each page is linked |
-| Footer: copyright line | `SITE` in `js/config.js` |
+| Footer: which links are in the bottom menu (Privacy Policy, Contact Us…), and their order | Admin → Site settings → **Footer** → "Links in the bottom menu": pick the website's pages as you type, or type `What it says \| where it goes` (a web address or an email address works too). Left empty, every info page ticked "Show as a link in the footer" is shown |
+| Footer: the text of Privacy Policy, Terms, Accessibility, About, Contact Us | Admin → Info pages — edit the text; "Show on the League page" puts a tile on the League page |
+| Footer: the copyright line and the credit after it | Admin → Site settings → **Footer** → "Copyright line", "The credit" and where it links to (untick "Show a credit" to leave it out). The © and the year are added for you |
 | Give a player a login for their own profile | Admin → Logins → Add new → role **Player**, and pick their player profile |
 | Let a captain edit their own profile too | Admin → Logins → Edit → pick their player under "Player profile" |
 | Tag a news article to players ("Player news") | Admin → News → Edit → "Players this article is about" |

@@ -25,6 +25,9 @@ import { scoreboardPage } from "../admin/scoreboard.js";
 import { emailsPage } from "../admin/emails.js";
 import { cueviewsPage } from "../admin/cueviews.js";
 
+
+/** Watches the height of the dashboard menu (see where the menu is drawn). */
+let navWatch = null;
 // The dashboard menu. Each login only sees the sections its role allows
 // (see SECTION_AREA and canManage in core/auth.js — the database enforces the same).
 const NAV = [
@@ -102,9 +105,13 @@ export default async function admin(view, { params, user, query }) {
 
   // Fold a group away or open it again (the group you are in always starts open).
   const menu = $(".admin-nav", view);
-  // A long menu scrolls inside its own column: start with the page you are on in view.
-  const here = $("a.active", menu);
-  if (here && here.offsetTop + here.offsetHeight > menu.clientHeight) menu.scrollTop = here.offsetTop - menu.clientHeight / 2;
+  // The menu never scrolls inside: it is as long as its items. The stylesheet is told how tall that is, so a menu
+  // taller than the screen can follow the page down to its last item (style.css: .admin-nav).
+  navWatch?.disconnect();
+  if (typeof ResizeObserver === "function") {
+    navWatch = new ResizeObserver(() => menu.style.setProperty("--admin-nav-h", `${menu.offsetHeight}px`));
+    navWatch.observe(menu);
+  }
   menu.addEventListener("click", (e) => {
     const head = e.target.closest(".nav-group-head");
     if (!head) return;

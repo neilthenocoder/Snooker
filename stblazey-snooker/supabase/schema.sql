@@ -1520,6 +1520,14 @@ alter table settings add column if not exists celebrate_leaders boolean not null
 alter table settings add column if not exists celebrate_rankings boolean not null default true;
 alter table settings add column if not exists celebrate_winners boolean not null default true;
 
+-- The footer (Site settings → Footer): whose name is in the copyright line, the credit after it,
+-- and the links of the bottom menu ("Privacy Policy | /page/privacy-policy", one per item, kept as a list).
+alter table settings add column if not exists footer_copyright text;
+alter table settings add column if not exists footer_credit_show boolean not null default true;
+alter table settings add column if not exists footer_credit_text text;
+alter table settings add column if not exists footer_credit_url text;
+alter table settings add column if not exists footer_links text;
+
 -- ── v8: give existing rows their short web addresses ────────────
 -- (Done down here, after the activity log has been told to ignore these columns.)
 update players set slug = slug where coalesce(slug, '') = '';

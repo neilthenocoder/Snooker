@@ -2125,6 +2125,12 @@ html { scroll-padding-top: calc(var(--header-h) + 14px); }
 .site-header { position: sticky; top: 0; z-index: 80; }
 .site-header .wrap { flex-wrap: nowrap; gap: 16px; transition: padding .2s; }
 .logo img { transition: height .2s; }
+/* The header keeps the height of the full-size bar, so the page below never moves when the bar gets slimmer
+   (that movement is what made the bar shake — see measureHeader in main.js). Only .site-bar changes size;
+   the strip it gives up is see-through and lets clicks through. */
+.site-header { min-height: var(--header-full, 0px); background: none; border-bottom: 0; pointer-events: none; }
+.site-bar { pointer-events: auto; background: #000 var(--header-img, radial-gradient(ellipse at 18% 60%, #2a2a2a 0%, #000 45%)) left center / cover no-repeat; border-bottom: 5px solid var(--red); }
+.site-header.measuring .wrap, .site-header.measuring .logo img { transition: none !important; }
 .site-header.stuck .wrap { padding-top: 8px; padding-bottom: 8px; }
 .site-header.stuck .logo img { height: 42px; }
 .main-nav { flex-wrap: nowrap; margin-left: auto; }
@@ -2349,7 +2355,7 @@ a.res-score.done:hover { color: #fff; filter: brightness(1.4); }
 .ms-home .ms-teams button { border-color: #444; }
 .ms-home .ms-form span { color: #cfcfcf; }
 .ms-home .notice { margin: 0; }
-.ms-set { padding: 0; background: none; display: grid; gap: 18px; max-width: 860px; }
+.ms-set { padding: 0; background: none; display: grid; gap: 18px; max-width: none; width: 100%; }
 .ms-set .ms-card { max-width: none; }
 .ms-set-box { margin: 0; padding: 18px 20px 20px; border: 0; background: #fff; border-radius: 14px; min-width: 0; }
 .ms-set-box legend { float: left; width: 100%; padding: 0; margin: 0 0 10px; font: 700 18px var(--font-head); text-transform: uppercase; }
@@ -2552,10 +2558,12 @@ a.res-score.done:hover { color: #fff; filter: brightness(1.4); }
   .cal-btns { width: 100%; } .cal-btn { flex: 1; text-align: center; padding: 8px 6px; }
 }
 
-/* ── dashboard: no scrollbar on the menu, overview boxes you can press, gaps between blocks on a phone ── */
-.admin-nav { top: calc(var(--header-h) + 12px); max-height: calc(100vh - var(--header-h) - 24px); scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 26px;
-  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 26px), transparent); mask-image: linear-gradient(180deg, #000 calc(100% - 26px), transparent); }
-.admin-nav::-webkit-scrollbar { display: none; width: 0; height: 0; }
+/* ── dashboard: a menu that never scrolls inside, overview boxes you can press, gaps between blocks on a phone ── */
+/* The menu is as long as its items — nothing is hidden and nothing inside it scrolls. It still follows you down
+   a long page: at the top when it fits the screen; when it is taller than the screen it moves with the page
+   until its last item is in view, and stays there. (pages/admin.js tells us its height: --admin-nav-h.) */
+.admin-nav { max-height: none; overflow: visible; padding-bottom: 4px;
+  top: min(calc(var(--header-h) + 12px), calc(100vh - var(--admin-nav-h, 0px) - 14px)); }
 a.stat.stat-link { position: relative; display: block; transition: box-shadow .15s, transform .15s; }
 a.stat.stat-link i { position: absolute; right: 14px; top: 14px; font-style: normal; font-size: 18px; color: #b5b4a8; transition: transform .15s, color .15s; }
 a.stat.stat-link:hover { box-shadow: 0 8px 20px rgba(0, 0, 0, .12), inset 0 -4px 0 var(--red); transform: translateY(-2px); color: inherit; }
