@@ -185,7 +185,10 @@ export function buildSeed() {
     lead: "", quote_text: "", quote_author: "", league_id: null, week_ending: null, player_ids: [],
     cueview: {}, cueview_name: "", cueview_extra: "", cueview_featured: false,
     show_breaks: false, show_results: false, show_standings: false, featured: i < 4 || category === "Match Reports",
+    author: "", video_url: "", hub_featured: i < 2, more_categories: [],
   }));
+  // One article sits under two tabs of the News page.
+  articles[2].more_categories = ["Match Reports"];
   // The two match reports show off the weekly round-up sections.
   [[0, 1, "2026-09-30"], [1, 0, "2026-09-23"]].forEach(([ai, li, week]) => Object.assign(articles[ai], {
     league_id: leagues[li].id, week_ending: week, show_breaks: true, show_results: true, show_standings: true,

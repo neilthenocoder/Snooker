@@ -5,7 +5,7 @@ import { buildBracket, roundName, winnerSide } from "../core/bracket.js";
 import { canEditCompMatch } from "../core/auth.js";
 import { breadcrumb, panel, dataTable, cupMatchInfo, urls, badge, handicapText } from "../core/components.js";
 import { handicapStarts, handicapMode } from "../core/rules.js";
-import { setTitle, adminEdit } from "../core/router.js";
+import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
 
 export default async function cupMatch(view, { params, user }) {
@@ -19,6 +19,7 @@ export default async function cupMatch(view, { params, user }) {
     const { c } = info;
     const nameA = info.a?.name ?? "To be decided", nameB = info.b?.name ?? "To be decided";
     setTitle(`${nameA} vs ${nameB}`);
+    sideContext({ competition: c });
     if (info.a && info.b) adminEdit("draws", null, { href: `/cup-scorecard/${match.no ?? match.id}`, label: "Edit scorecard" });
     // Handicap competitions: who gets a head start in each frame, and how many.
     const hc = (id) => players.find((p) => p.id === id)?.handicap ?? 0;
@@ -49,10 +50,10 @@ export default async function cupMatch(view, { params, user }) {
       <div class="match-hero">
         <div class="mh-band">${c?.name} · ${roundName(match.round, info.bracket.totalRounds)}${match.starts_at ? ` · ${fmtDate(match.starts_at)} ${fmtTime(match.starts_at)}` : ""}</div>
         <div class="mh-body">
-          <div class="mh-side ${won("a") ? "won" : ""}">${teamOf(info.a) ? badge(teamOf(info.a)) : ""}<span>${nameA}</span></div>
+          <div class="mh-side ${won("a") ? "won" : won("b") ? "lost" : ""}">${teamOf(info.a) ? badge(teamOf(info.a)) : ""}<span>${nameA}</span></div>
           <div class="mh-score"><b>${match.score_a ?? "–"}</b><i>:</i><b>${match.score_b ?? "–"}</b>
             ${live ? html`<span class="live-dot">Live</span>` : match.status === "completed" ? html`<small>Final</small>` : ""}</div>
-          <div class="mh-side ${won("b") ? "won" : ""}">${teamOf(info.b) ? badge(teamOf(info.b)) : ""}<span>${nameB}</span></div>
+          <div class="mh-side ${won("b") ? "won" : won("a") ? "lost" : ""}">${teamOf(info.b) ? badge(teamOf(info.b)) : ""}<span>${nameB}</span></div>
         </div>
         ${c?.handicap && scored.length ? html`<div class="mh-foot">Total points: <b>${total.a}</b> to <b>${total.b}</b>${level && match.status === "completed" && winnerSide(match)
           ? html` · level on frames, so <b>${winnerSide(match) === "a" ? nameA : nameB}</b> go through on total points` : level ? " · level on frames — the higher total wins" : ""}</div>` : ""}

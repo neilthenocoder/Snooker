@@ -10,7 +10,8 @@ import { answered, articleCueview } from "../core/cueview.js";
 import { leagueTablePanel, sidebar, panel, picture, urls, badge, avatar, articleThumb, shortName, latestNews, trophy } from "../core/components.js";
 import { SITE } from "../config.js";
 import { setTitle, adminEdit } from "../core/router.js";
-import { isPlainPlayer, mySnookerOn, mySnookerTeamId } from "../core/auth.js";
+import { mySnookerOn, mySnookerTeamId, mySnookerSetUp, mySnookerOnHome, mySnookerOwnPage } from "../core/auth.js";
+import { mountMySnooker, mySnookerStar } from "../core/my-snooker.js";
 import { competitionSummaries } from "./competitions.js";
 
 const ROTATE_MS = 7000;      // banner: time each article is shown
@@ -28,6 +29,8 @@ export default async function home(view, { user } = {}) {
   // This season's competitions (ones with no season set count as current).
   const comps = allComps.filter(({ c }) => !c.season_id || c.season_id === ctx.season?.id);
   view.classList.add("flush");
+  // My Snooker at the top of the home page, for those who chose to have it here.
+  const onHome = mySnookerOnHome(user);
 
   mount(view, html`
     <section class="hero" style="${site.hero_image_url ? `--hero-img:${cssUrl(site.hero_image_url)}` : ""}">
@@ -39,13 +42,15 @@ export default async function home(view, { user } = {}) {
       </div>
       <div class="live-strip-wrap"><div class="wrap"><div class="live-strip" data-strip></div></div></div>
     </section>
-    <button type="button" class="scroll-hint" data-scroll-hint aria-label="Scroll down for more">
-      <span class="mouse"><i></i></span><span>Scroll</span>
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16.5 5 9.6l1.4-1.4L12 13.7l5.6-5.5L19 9.6Z"/></svg></button>
+    ${onHome ? html`<div class="wrap" style="margin-top:30px"><section class="ms ms-home" aria-label="My Snooker">
+      <header class="ms-home-head"><h2>${mySnookerStar} My Snooker</h2>
+        <span class="btn-row">${mySnookerOwnPage(user) ? html`<a class="btn small ghost" href="/myteam">Open my page</a>` : ""}<a class="btn small ghost" href="/my/snooker">Change what I see</a></span></header>
+      <div data-my-snooker></div></section></div>` : ""}
     <div class="wrap layout" style="margin-top:30px">
       <div class="stack">
-        ${isPlainPlayer(user) && mySnookerOn(user) ? html`<a class="ms-bar" href="/myteam"><b>My Snooker</b>
-          <span>${ctx.team.get(mySnookerTeamId(user))?.name ?? "Choose your team"}: matches, results, breaks and handicaps</span><i>Back to my page →</i></a>` : ""}
+        ${!onHome && user && mySnookerOn(user) ? html`<a class="ms-bar" href="${mySnookerSetUp(user) ? "/myteam" : "/my/snooker"}"><b>My Snooker</b>
+          <span>${mySnookerSetUp(user) ? html`${ctx.team.get(mySnookerTeamId(user))?.name ?? "The players you follow"}: matches, results, breaks and news` : "Follow your team and players, and get your own page"}</span>
+          <i>${mySnookerSetUp(user) ? "Open my page →" : "Set it up →"}</i></a>` : ""}
         <div class="quick-links">
           <a style="background:var(--yellow);color:#1b0e06" href="/competitions">Competitions</a>
           <a style="background:var(--red)" href="/calendar">Calendar</a>
@@ -66,6 +71,8 @@ export default async function home(view, { user } = {}) {
       </div>
       ${sidebar(ctx, latestNews(news, site, slides.map((a) => a.id)), { count: site.latest_news_count || 1, box })}
     </div>`);
+
+  const stopMine = onHome ? await mountMySnooker($("[data-my-snooker]", view), user, { home: true }) : () => {};
 
   // Rotate the banner articles (pauses while the mouse is over it).
   const slideEls = $$(".hero-slide", view), dots = $$("[data-dot]", view);
@@ -134,14 +141,7 @@ export default async function home(view, { user } = {}) {
   strip.addEventListener("click", (e) => { const b = e.target.closest("[data-strip-move]"); if (b) move(Number(b.dataset.stripMove)); });
   const carousel = setInterval(() => { if (!stripPaused && !document.hidden) move(1); }, CAROUSEL_MS);
 
-  // Phones: a "scroll" hint, so people know there's more below. It goes once they scroll.
-  const hint = $("[data-scroll-hint]", view);
-  const onScroll = () => hint.classList.toggle("gone", window.scrollY > 60);
-  window.addEventListener("scroll", onScroll, { passive: true });
-  hint.addEventListener("click", () => window.scrollBy({ top: window.innerHeight * 0.8, behavior: "smooth" }));
-  onScroll();
-
-  return () => { clearInterval(timer); clearInterval(carousel); clearInterval(featureTimer); unsubscribe(); window.removeEventListener("scroll", onScroll); };
+  return () => { clearInterval(timer); clearInterval(carousel); clearInterval(featureTimer); unsubscribe(); stopMine(); };
 }
 
 /** One banner article: headline, category and date, a small "continue reading" — all linking to the article. */
@@ -149,8 +149,8 @@ function heroSlide(a, on) {
   return html`<div class="hero-slide ${on ? "on" : ""}">
     <div class="hero-text">
       <h2><a href="${urls.article(a)}"><span>${a.title}</span></a></h2>
-      <div class="hero-foot"><p class="hero-meta">${a.category} · ${fmtDate(a.published_at)}</p>
-        <a class="hero-more" href="${urls.article(a)}">Continue reading</a></div>
+      <p class="hero-meta">${a.category} · ${fmtDate(a.published_at)}</p>
+      <a class="hero-more" href="${urls.article(a)}">Continue reading <span aria-hidden="true">→</span></a>
     </div>
     ${articleThumb(a) ? html`<a class="hero-circle-link" href="${urls.article(a)}" aria-label="${a.title}"><img class="hero-circle" src="${articleThumb(a)}" alt=""></a>` : ""}
   </div>`;

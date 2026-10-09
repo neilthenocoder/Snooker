@@ -22,7 +22,7 @@ export default async function handicaps(view) {
       <label>Jump to a team
         <select data-team-jump><option value="">– choose a team –</option>
           ${ctx.leagues.map((l) => html`<optgroup label="${l.name}">${ctx.teamsIn(l.id).map((t) => html`<option value="hc-${t.slug}">${t.name}</option>`)}</optgroup>`)}</select></label>
-      <p class="hc-key"><span class="hc-val minus">0 or less</span> scratch and minus handicaps <span class="hc-val plus">+1 and up</span> plus handicaps
+      <p class="hc-key"><span class="hc-val plus">+1 and up</span> plus handicaps <span class="hc-val zero">0</span> scratch <span class="hc-val minus">−1 and down</span> minus handicaps
         ${moved ? html`<span class="hc-move up">▲</span> up from last year <span class="hc-move down">▼</span> down from last year` : ""}</p>
     </div>
     ${ctx.leagues.map((l) => html`<h3>${l.name}</h3><div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))">

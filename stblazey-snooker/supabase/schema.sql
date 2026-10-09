@@ -1469,6 +1469,57 @@ end $$;
 update leagues set shield_name = 'Victory League Runabout Shield' where slug = 'victory-league' and coalesce(shield_name, '') in ('', 'Victory Shield');
 update leagues set shield_name = 'Rees Memorial League Runabout Shield' where slug = 'rees-memorial-league' and coalesce(shield_name, '') in ('', 'Rees Shield');
 
+-- ── v11: My Snooker for everyone, news extras, more celebrations ─
+-- My Snooker is now for every login (players, captains, officers). Each person chooses the teams and
+-- players they follow, which sections they see, and where: on their own page (/myteam), on the home
+-- page, or both. All of it is kept in profiles.my_prefs:
+--   { "place": "page" | "home" | "both", "teams": [team ids], "players": [player ids],
+--     "sections": ["next", "results", …] (left out = every section), "cats": [news categories] }
+-- It changes what THEY see and nothing else: a login's dashboard rights are exactly as before.
+alter table profiles add column if not exists my_prefs jsonb not null default '{}'::jsonb;
+create or replace function public.set_my_prefs(p_on boolean, p_prefs jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+declare p jsonb := coalesce(p_prefs, '{}'::jsonb); v_teams jsonb; v_players jsonb; v_cats jsonb; v_place text; v_out jsonb;
+begin
+  if auth.uid() is null then raise exception 'Please log in first'; end if;
+  if jsonb_typeof(p) <> 'object' or octet_length(p::text) > 8000 then raise exception 'Those choices could not be saved'; end if;
+  -- Only teams and players that are on the website, in the order chosen: at most 12 teams and 40 players.
+  select coalesce(jsonb_agg(x.id order by x.n), '[]'::jsonb) into v_teams from (
+    select t.id, min(e.n) as n from jsonb_array_elements_text(case when jsonb_typeof(p->'teams') = 'array' then p->'teams' else '[]'::jsonb end) with ordinality e(v, n)
+      join teams t on t.id::text = e.v group by t.id order by 2 limit 12) x;
+  select coalesce(jsonb_agg(x.id order by x.n), '[]'::jsonb) into v_players from (
+    select pl.id, min(e.n) as n from jsonb_array_elements_text(case when jsonb_typeof(p->'players') = 'array' then p->'players' else '[]'::jsonb end) with ordinality e(v, n)
+      join players pl on pl.id::text = e.v group by pl.id order by 2 limit 40) x;
+  select coalesce(jsonb_agg(left(e.v, 80) order by e.n), '[]'::jsonb) into v_cats from (
+    select v, n from jsonb_array_elements_text(case when jsonb_typeof(p->'cats') = 'array' then p->'cats' else '[]'::jsonb end) with ordinality e(v, n) limit 20) e;
+  v_place := case when p->>'place' in ('page', 'home', 'both') then p->>'place' else 'page' end;
+  v_out := jsonb_build_object('place', v_place, 'teams', v_teams, 'players', v_players, 'cats', v_cats);
+  -- Sections: left out means "all of them"; otherwise the short names chosen (never more than 30).
+  if jsonb_typeof(p->'sections') = 'array' then
+    v_out := v_out || jsonb_build_object('sections', (select coalesce(jsonb_agg(e.v order by e.n), '[]'::jsonb)
+      from (select v, n from jsonb_array_elements_text(p->'sections') with ordinality e(v, n) where v ~ '^[a-z_]{1,24}$' limit 30) e));
+  end if;
+  update profiles set my_snooker = coalesce(p_on, true), my_prefs = v_out,
+         my_team_id = (select (v_teams->>0)::uuid where jsonb_array_length(v_teams) > 0)
+   where id = auth.uid();
+end;
+$$;
+revoke all on function public.set_my_prefs(boolean, jsonb) from public, anon;
+grant execute on function public.set_my_prefs(boolean, jsonb) to authenticated;
+
+-- News: who wrote it, a video, a place in "Featured news" at the top of the News page, and more than one category.
+alter table articles add column if not exists author text;
+alter table articles add column if not exists video_url text;
+alter table articles add column if not exists hub_featured boolean not null default false;
+alter table articles add column if not exists more_categories jsonb not null default '[]'::jsonb;
+alter table settings add column if not exists news_author text;
+
+-- Celebrations (confetti) for more than a highest break: new league leaders, a new leader of the
+-- player rankings, and the winner of a competition. Each can be switched off under Site settings.
+alter table settings add column if not exists celebrate_leaders boolean not null default true;
+alter table settings add column if not exists celebrate_rankings boolean not null default true;
+alter table settings add column if not exists celebrate_winners boolean not null default true;
+
 -- ── v8: give existing rows their short web addresses ────────────
 -- (Done down here, after the activity log has been told to ignore these columns.)
 update players set slug = slug where coalesce(slug, '') = '';
@@ -1492,7 +1543,7 @@ create unique index if not exists competition_matches_no_key on competition_matc
 do $$
 declare t text;
 begin
-  foreach t in array array['fixtures','frames','breaks','players','competition_matches','competition_frames','competition_breaks','competitions','live_matches'] loop
+  foreach t in array array['fixtures','frames','breaks','players','competition_matches','competition_frames','competition_breaks','competitions','live_matches','articles'] loop
     begin
       execute format('alter publication supabase_realtime add table %I', t);
     exception when duplicate_object then null;

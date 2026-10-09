@@ -5,7 +5,7 @@ import { html, mount, fmtDate } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { shieldHolder, shieldTable, matchScore } from "../core/rules.js";
 import { breadcrumb, panel, dataTable, teamLink, badge, seasonPicker, shortName, urls } from "../core/components.js";
-import { setTitle, adminEdit } from "../core/router.js";
+import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
 
 export default async function shield(view, { params, query }) {
@@ -15,6 +15,7 @@ export default async function shield(view, { params, query }) {
   const name = league.shield_name || `${league.name} Runabout Shield`;
   setTitle(`${name} ${ctx.season?.name ?? ""}`);
   adminEdit("leagues", league.id);
+  sideContext({ league });
 
   const { holderId, since, history } = shieldHolder(league, ctx.fixtures, ctx.framesByFixture);
   const holder = ctx.team.get(holderId), first = ctx.team.get(league.shield_team_id);

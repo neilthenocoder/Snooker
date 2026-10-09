@@ -22,3 +22,12 @@ export function adminEdit(section, id = null, { href = null, label = null } = {}
   editTarget = { section, href: href ?? `/admin/${section}${id ? `?edit=${encodeURIComponent(id)}` : ""}`, label };
 }
 export const takeEditTarget = () => { const t = editTarget; editTarget = null; return t; };
+
+// ── what the page is about (for the side boxes) ──────────────
+// When Admin → Branding gives a part of the site a sidebar, the boxes in it follow the page:
+// a competition's page gets that competition's breaks and news, a team's page its league, and so on.
+// A page says what it is about with sideContext({ competition }) / ({ league }) / ({ team }) / ({ player });
+// main.js collects it after the page has drawn (see core/side.js).
+let sideAbout = null;
+export function sideContext(about) { sideAbout = about; }
+export const takeSideContext = () => { const a = sideAbout; sideAbout = null; return a; };

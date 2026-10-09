@@ -96,7 +96,7 @@ export function roundCards(b, venueById, deadlines = {}) {
         const cell = (side) => {
           const id = m[side], e = isEntry(id) ? b.entryById.get(id) : null, href = entryHref(e);
           const name = sideLabel(b, m, side);
-          return html`<div class="fx-side ${m.winner === id && m.played ? "won" : ""}">
+          return html`<div class="fx-side ${m.winner === id && m.played ? "won" : m.loser === id && m.played ? "lost" : ""}">
             ${href ? html`<a href="${href}">${name}</a>` : html`<span>${name}</span>`}
             <b>${m.row[side === "a" ? "score_a" : "score_b"] ?? "-"}</b></div>`;
         };

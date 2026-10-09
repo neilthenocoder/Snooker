@@ -3,7 +3,7 @@ import { table, articles, loadCompetitions, subscribe, competitionBreaks, signup
 import { openForEntry } from "./enter.js";
 import { buildBracket, progressText, isEntry } from "../core/bracket.js";
 import { bracketView, wireBracket, roundCards, standingsTable } from "../core/bracket-view.js";
-import { breadcrumb, panel, urls, newsMini, topBreakPanel, dataTable, playerLink, shortName, trophy } from "../core/components.js";
+import { breadcrumb, panel, urls, topBreakPanel, dataTable, playerLink, shortName, trophy, newsStrip } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import notFound from "./not-found.js";
 
@@ -85,10 +85,10 @@ export default async function competition(view, { params }) {
             <div><b>${next ? fmtDate(next.row.starts_at) : "–"}</b>Next match</div>
           </div>
           ${next && isEntry(next.a) && isEntry(next.b) ? html`<p class="glance-next">Next up: <b>${b.entryById.get(next.a).name}</b> v <b>${b.entryById.get(next.b).name}</b></p>` : ""}`)}
-          ${panel("Related news", related.length ? html`<div>${related.map(newsMini)}</div>` : html`<div class="empty">No news yet.</div>`, { color: "blue" })}
           ${others.length ? panel("Other competitions", html`<div class="list-links">${others.map((x) => html`<a href="${urls.competition(x)}">${x.name}</a>`)}</div>`) : ""}
         </aside>
-      </div>`);
+      </div>
+      ${newsStrip("Related news", related)}`);
     wireBracket($("[data-bracket]", view) ?? document.createElement("div"));
   };
   await draw();

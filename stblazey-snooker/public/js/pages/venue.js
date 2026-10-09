@@ -30,7 +30,7 @@ export default async function venue(view, { params }) {
       ${breadcrumb([["Home", "/"], ["Our League", "/league"], ["Venues"]])}
       <h1>Venues</h1>
       <div class="cards">${ctx.venues.map((v) => html`<a class="tile venue-tile" href="${urls.venue(v)}">${venueEmblem(v)}
-        <span><h4>${v.name}</h4><div>Click here to view</div>${v.address ? html`<p>${v.address}</p>` : ""}</span></a>`)}</div>
+        <span><h4>${v.name}</h4><span class="tile-go">Click here to view</span>${v.address ? html`<p>${v.address}</p>` : ""}</span></a>`)}</div>
     </div>`);
   }
 

@@ -1,10 +1,13 @@
 // ─────────────────────────────────────────────────────────────
-//  A NEW HIGHEST BREAK — a few seconds of confetti in the snooker
-//  ball colours and a card saying who made it. It only ever shows
-//  to people who are on the website at that moment, once per break,
-//  and anyone can close it. No confetti for visitors whose device
-//  asks for reduced motion (they still get the card).
-//  Switched on/off under Admin → Site settings → Celebrations.
+//  THE BIG MOMENTS — a few seconds of confetti in the snooker ball
+//  colours and a card saying what happened: a new highest break,
+//  new league leaders, a new leader of the player rankings, or the
+//  winner of a competition. It only ever shows to people who are on
+//  the website at that moment, once each, and anyone can close it.
+//  No confetti for visitors whose device asks for reduced motion
+//  (they still get the card).
+//  Which moments are celebrated: Admin → Site settings → Celebrations.
+//  Each visitor can switch them off for themselves (the bell → Celebrations).
 // ─────────────────────────────────────────────────────────────
 import { html, mount } from "./dom.js";
 
@@ -45,9 +48,11 @@ function confetti(canvas, ms) {
 }
 
 /**
- * info: { value, name, avatar, where ("Victory League"), what ("New highest break of the season"), href }
+ * info: { what ("New highest break of the season"), name, where ("Victory League"), href, hrefLabel,
+ *         value (a big number or word beside the picture — a break, "1st"), avatar (a photo or emblem),
+ *         trophy (true = show the trophy instead of a photo) }
  */
-export function celebrateBreak(info) {
+export function celebrate(info) {
   open?.();
   const box = document.createElement("div");
   box.className = "celebrate";
@@ -55,13 +60,13 @@ export function celebrateBreak(info) {
     <div class="celebrate-card" role="status">
       <button type="button" class="celebrate-x" aria-label="Close">×</button>
       <p class="celebrate-what">${info.what ?? "New highest break"}</p>
-      <div class="celebrate-row">
-        <img src="${info.avatar || "/assets/avatar.svg"}" alt="">
-        <b>${info.value}</b>
+      <div class="celebrate-row ${info.trophy ? "is-trophy" : ""}">
+        <img src="${info.trophy ? info.avatar || "/assets/trophy.svg" : info.avatar || "/assets/avatar.svg"}" alt="">
+        ${info.value != null && info.value !== "" ? html`<b>${info.value}</b>` : ""}
       </div>
       <p class="celebrate-who">${info.name}</p>
       <p class="celebrate-where">${info.where ?? ""}</p>
-      ${info.href ? html`<a class="btn small" href="${info.href}">See the match</a>` : ""}
+      ${info.href ? html`<a class="btn small" href="${info.href}">${info.hrefLabel ?? "See the match"}</a>` : ""}
     </div>`);
   document.body.append(box);
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -71,3 +76,5 @@ export function celebrateBreak(info) {
   open = () => { clearTimeout(timer); close(); };
   box.addEventListener("click", (e) => { if (e.target.closest(".celebrate-x, a") || e.target === box) open?.(); });
 }
+/** The older name, kept for anything that still calls it. */
+export const celebrateBreak = celebrate;

@@ -112,14 +112,38 @@ export const isMember = (user) => !!user?.profile && (!!user.profile.team_id || 
 export const roleText = (profile) => [ROLE_LABEL[profile?.role] ?? "Member",
   !["captain", "vice_captain"].includes(profile?.role) && TEAM_ROLE_LABEL[profile?.team_role]].filter(Boolean).join(" · ");
 // ── My Snooker ─────────────────────────────────────────────────
-/** The team a login's own page (/myteam) is about: the one they chose, else the team their login belongs to. */
-export const mySnookerTeamId = (user) => user?.profile?.my_team_id || user?.profile?.team_id || null;
+// Every login has it: a page of their own, built from the teams and players they follow.
+// It only changes what THEY see — what a login may do in the dashboard is decided above, as before.
+/**
+ * What this login has chosen (profiles.my_prefs), tidied up:
+ * { place: "page" | "home" | "both", teams: [ids], players: [ids], sections: [keys] | null (= all), cats: [news categories] }.
+ * Until they choose, they follow the team their login belongs to and the player it is linked to.
+ */
+export function myPrefs(user) {
+  const p = user?.profile ?? {}, saved = p.my_prefs ?? {};
+  const list = (v) => (Array.isArray(v) ? v : []);
+  const fresh = !("teams" in saved) && !("players" in saved);
+  return {
+    place: ["page", "home", "both"].includes(saved.place) ? saved.place : "page",
+    teams: list(saved.teams).length ? [...saved.teams] : fresh ? [p.my_team_id || p.team_id].filter(Boolean) : [],
+    players: list(saved.players).length ? [...saved.players] : fresh ? [p.player_id].filter(Boolean) : [],
+    sections: Array.isArray(saved.sections) ? [...saved.sections] : null,
+    cats: list(saved.cats),
+  };
+}
+/** The first team a login follows (the one its page opens on). */
+export const mySnookerTeamId = (user) => myPrefs(user).teams[0] ?? null;
 /** Is My Snooker switched on for this login? (It is until they turn it off.) */
 export const mySnookerOn = (user) => !!user?.profile && user.profile.my_snooker !== false;
+/** Have they chosen anything to follow yet? */
+export const mySnookerSetUp = (user) => { const p = myPrefs(user); return p.teams.length + p.players.length > 0; };
+/** Should their choices show on the real home page / do they have the separate page as their start page? */
+export const mySnookerOnHome = (user) => mySnookerOn(user) && mySnookerSetUp(user) && ["home", "both"].includes(myPrefs(user).place);
+export const mySnookerOwnPage = (user) => mySnookerOn(user) && ["page", "both"].includes(myPrefs(user).place);
 /** A plain player login: no dashboard, no captain's tools. My Snooker is their home. */
 export const isPlainPlayer = (user) => !!user?.profile && !isStaff(user) && !isCaptain(user);
-/** Where someone lands after logging in: officers on the dashboard, captains in My Team, players on their own My Snooker page. */
-export const homeFor = (user) => (isStaff(user) ? "/admin" : isPlainPlayer(user) && mySnookerOn(user) ? "/myteam" : "/my");
+/** Where someone lands after logging in: officers on the dashboard, captains in My Team, players on their own My Snooker page (or the home page, if that is where they put it). */
+export const homeFor = (user) => (isStaff(user) ? "/admin" : !isPlainPlayer(user) ? "/my" : !mySnookerOn(user) ? "/my" : mySnookerOwnPage(user) ? "/myteam" : "/");
 
 /** Forget the cached login details (after the profile changes). */
 export function refreshUser() { cached = undefined; return getUser(); }

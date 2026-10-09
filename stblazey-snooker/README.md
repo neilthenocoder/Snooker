@@ -3,7 +3,7 @@
 A fast, plain HTML/CSS/JavaScript website (no build step) with:
 
 - **Public site**: home page with a rotating news banner, live & upcoming match strip, league tables, shield holders, player/team of the week and CueViews; fixtures and results, a **calendar** (with phone-calendar download), team pages, **player pages with CueView**, match scorecards, venues with maps and galleries, news with weekly round-ups, **knockout competitions with a live bracket and live cup scorecards**, standings, handicaps and a **Live** page.
-- **Live extras**: the LIVE button pulses orange ("LIVE SOON") an hour before matches and green while they're on; green pop-ups announce frame wins, breaks and new players (the bell turns them on/off).
+- **Live extras**: the LIVE button pulses orange ("LIVE SOON") an hour before matches and green while they're on; green pop-ups announce frame wins, breaks, news, new leaders, competition winners and new players. The **bell** opens a side panel where each visitor switches each kind on or off (section 3j).
 - **Members' area** (My Team · Fixtures · Profile · User details · Competitions): captains and vice captains enter scorecards frame by frame on match night — a **step-by-step view made for phones**, or the classic full card. Each save updates the live page for everyone, straight away. Every player can have a login to edit **their own profile** (photo, bio, career history, pictures, CueView).
 - **Players**: an **Our Players** page (pick a team, see its players past and present) and player pages with bio, career history, past teams, pictures and **player news**.
 - **Seasons** (`/seasons`): a page for every season with tiles for its Breaks, Competitions, Fixtures & Results, Handicaps, League Tables and Rankings, and a page per league for the breaks, the player rankings and the table. A **search** button in the menu finds players, teams, competitions, venues, news and pages.
@@ -19,7 +19,8 @@ A fast, plain HTML/CSS/JavaScript website (no build step) with:
 - **Finals night**: a **live scoreboard** scored ball by ball from a phone or tablet (Admin → Live scoreboard), watched live at `/scoreboard`.
 - **End of season**: a **presentation night** page with every trophy, winner and runner-up (`/presentation`) and a **season review** worked out from the results (`/season-review`).
 - **League information**: **key dates** on the home page and calendar, a **Rules** page with tabs, a contents list and proper tables and sub-bullets (`/rules`), **AGM and committee meetings** with minutes (`/meetings`), a page for each **sponsor**, and **Sadly no longer with us** (`/in-memoriam`).
-- **My Snooker** (`/myteam`): a player's login opens their own page — their team's next match, results, fixtures, breaks, handicaps and place in the table (section 3h).
+- **My Snooker** (`/myteam`): everyone with a login makes the site their own — the teams and players they follow, the sections they want (next match, results, fixtures, competitions, news, handicaps, breaks, table, rankings, CueViews), shown on their own page, on the home page, or both (section 3h).
+- **Menu bar and side panels**: the menu bar stays at the top as you scroll; on phones the menu opens over the whole screen; a person icon opens the login / My account panel; the site can be **added to a phone's home screen** (section 3j).
 - **Merchandise** (`/merchandise`) and a **CueView form** (`/cueview`) that players fill in themselves and the league approves (section 3i).
 - **Result emails**: the results secretary is emailed as soon as a captain submits a card (through Resend — see section 3f).
 - **Short web addresses**: `/match/2627-14`, `/player/sam-bolitho`, `/cup-match/27`.
@@ -42,6 +43,7 @@ It runs in **demo mode** out of the box, using sample data saved in your browser
 | Player (Bugle) | `player@demo.test` | `player123` |
 | Competition Secretary, who is also Bugle's captain | `compsec@demo.test` | `compsec123` |
 | Committee Member (website only) | `committee@demo.test` | `committee123` |
+| Player linked to nobody (My Snooker from scratch) | `fan@demo.test` | `fan12345` |
 
 Demo data lives only in your browser. **Admin → Reset sample data** starts it fresh.
 
@@ -198,7 +200,7 @@ What each role starts with (press **Put back the standard permissions** to retur
 | **League Secretary** | League, Handicaps |
 | **Committee Member**, **President**, **Vice Chairman**, **Chairman** | News & website, Settings & branding |
 | **Captain**, **Vice Captain** | Not in the grid: scorecards, postponing and match night photos for their own team; their own profile |
-| **Player** | Not in the grid, and no tools: **My Snooker**, their own page for the team they follow (section 3h). Linked to a player profile, they can also edit that profile |
+| **Player** | Not in the grid, and no tools: **My Snooker**, their own page for the teams and players they follow (section 3h — every other login has My Snooker as well). Linked to a player profile, they can also edit that profile |
 
 Things worth knowing:
 
@@ -207,7 +209,7 @@ Things worth knowing:
 - **Import from CSV** needs Fixtures, League and Match nights together, because an import writes to all three.
 - Some sections belong to two parts, and either one is enough: the **live scoreboard** (Competitions or Match nights), **presentation awards** and **key dates** (Competitions or News & website).
 - A change takes effect the next time that person opens the website or logs in.
-- Any officer who also plays can be given **Team rights** (Captain or Vice Captain) on their login, and then has a **My Team** button next to **Admin**.
+- Any officer who also plays can be given **Team rights** (Captain or Vice Captain) on their login, and then has **My Team** as well as the **Admin dashboard** in the panel behind the person icon.
 
 When an officer is logged in, public pages show an **Edit this page** button (bottom left) that opens the right part of the dashboard — only if their role includes it. The menu shows, in small print under **My Team** (or **Admin**), who is logged in and their club.
 
@@ -279,9 +281,9 @@ A match scored without a link (a friendly, an exhibition) changes nothing in any
 
 **Sponsors.** Each banner at the bottom of the site opens that sponsor's own page (`/sponsor/…`), written under Admin → Sponsors: about them, a photo, address, phone, email and a button to their website.
 
-**Player status** (Admin → Players → Status): *Playing*, *No team at the moment* (still in entry forms and the handicap list, in no team's squad), *Not playing* and *Sadly no longer with us*. The last two leave squad lists, scorecards and entry forms; results, breaks and the player's page stay. Players marked *Sadly no longer with us* are remembered on **`/in-memoriam`**, with the years and a few words of tribute if you add them.
+**Player status** (Admin → Players → Status): *Playing*, *No team at the moment* (still in entry forms and the handicap list, in no team's list), *Not playing* and *Sadly no longer with us*. The last two leave team lists, scorecards and entry forms; results, breaks and the player's page stay. Players marked *Sadly no longer with us* are remembered on **`/in-memoriam`**, with the years and a few words of tribute if you add them.
 
-**Celebrations.** When a break comes in that is the new highest of the season in its league or competition, everyone on the site at that moment sees a few seconds of confetti in the ball colours and a card saying who made it. Site settings → Celebrations switches it off, or adds the highest break of the week. Visitors who ask their device for reduced motion get the card without the confetti.
+**Celebrations.** Everyone on the site at that moment sees a few seconds of confetti in the ball colours and a card saying who did it when: a break comes in that is the new **highest of the season** in its league or competition; a **different team goes top** of a league table; there is a **new leader of the player rankings**; or a **competition is won** (its final is finished). Site settings → Celebrations has a switch for each of the four (and the highest break can be "of the week" as well). It is the change that is celebrated, as the result that causes it is entered — so it is seen by the people on the site at that moment, not by someone who opens it an hour later. Each visitor can switch celebrations off for themselves under the bell. Visitors who ask their device for reduced motion get the card without the confetti.
 
 **Announcements in the feature box.** The coloured strip on the home page shows its own text and, when "Also show the announcements" is ticked, the announcements as well — scrolling like the ticker, or one at a time. The ticker's **speed** is a slider from 1 to 10.
 
@@ -323,18 +325,20 @@ Good to know: the addresses are kept in a private table that visitors and captai
 
 ---
 
-## 3h. My Snooker: a player's own page
+## 3h. My Snooker: your own version of the site
 
-Modelled on "My Sport" on the BBC website. A **Player** login has no tools; it gets one thing, **My Snooker**.
+Modelled on "My Sport" on the BBC website. **Everyone with a login has it** — players, captains and officers. It adds a page; it takes nothing away: a captain still has My Team, an officer still has the dashboard, exactly as before.
 
-- **Making the login:** Admin → People → Logins → Add new, role **Player**, as for any other login. It does **not** have to be linked to a player or a team. (Link it to a player profile only if that person should also edit their own photo, bio and CueView.)
-- **What the player sees:** after logging in they land on **`/myteam`**: the team's next match, league position, last five results, every game played with its frame-by-frame page, the fixtures to come (with bye weeks), the squad with handicaps and ranking points, the team's breaks and the league table with their team picked out. If the login is linked to a player, their own season figures are there too.
-- **Choosing the team:** a login that is linked to a team starts with that team. One that isn't is asked to choose a team the first time.
-- **Back to the normal site:** the **Normal home page** button at the top of the page. On the home page a dark bar, **My Snooker: back to my page**, takes them back. The menu button says **My Snooker**.
-- **Their dashboard** (`/my`) has one control, the **My Snooker** tab: switch it on or off, change the team, or **Reset**. Switched off, they simply get the normal home page after logging in. (They can also change their password under User details.)
-- **When they come back later** still logged in, the site opens on their page once per visit; after that Home is the normal home page.
+- **Following.** A person follows as many **teams** and **players** as they like. The quick way is the **☆ Follow** button on any team or player page (pressed again, it unfollows). Someone who is not logged in is shown the login panel.
+- **What they see.** Thirteen sections, each one ticked or unticked: Next match, Team summary, Results, Fixtures, Competitions, Team news, Latest news (all of it, or only the news categories they pick), Team & handicaps, Players I follow, Breaks, League table, Rankings and CueViews. A section with nothing to show leaves no gap. With more than one team followed, buttons along the top switch between them.
+- **Where it shows.** Their choice of three: **on my own page** (`/myteam`), **on the home page** (their block sits above the normal home page), or **both**.
+- **Where it is set up:** My area → **My Snooker** (`/my/snooker`; the person icon in the menu bar → *My Snooker settings*). One form: on/off, where it shows, teams, players, sections, news categories, **Save my choices** and **Reset**.
+- **Starting point.** A login linked to a team or a player starts off following them. One linked to nobody is asked to pick a team the first time (`/myteam`).
+- **After logging in:** officers land on the dashboard and captains on My Team, as before. A plain **Player** login lands on their page (or on the home page, if that is where they chose to see it).
+- **Coming back later** still logged in, the site opens on their page once per visit when they chose "my own page"; after that Home is the normal home page. On the home page a dark bar, **My Snooker: back to my page**, takes them back.
+- **A Player login needs no link** to a player or a team (Admin → People → Logins → Add new, role **Player**). Link it to a player profile only if that person should also edit their own photo, bio and CueView.
 
-Captains and vice captains keep their **My Team** area as before. Where it is in the code: `pages/myteam.js`, the My Snooker tab in `pages/my.js`, `homeFor()` in `core/auth.js`, and `set_my_snooker()` in `schema.sql` (the only thing a player's login may change).
+The choices are saved with the login, so they follow the person from phone to computer. Where it is in the code: `core/my-snooker.js` (the sections and the Follow button — add a section there), `pages/myteam.js`, the My Snooker tab in `pages/my.js`, `myPrefs()` and `homeFor()` in `core/auth.js`, and `set_my_prefs()` in `schema.sql` (the only thing a login may change about itself; saved in `profiles.my_prefs`).
 
 ## 3i. Merchandise, and the CueView form
 
@@ -347,6 +351,33 @@ Captains and vice captains keep their **My Team** area as before. Where it is in
 3. As before: a player with a login linked to their profile edits it themselves (My area → Profile), and an officer can type it in under Admin → Players.
 
 Visitors cannot upload pictures on the form (only people with a login can), and nothing a visitor sends is public until it is approved.
+
+## 3j. The menu bar, side panels, news and the other site-wide pieces
+
+**The menu bar** stays at the top of the screen as the page scrolls (it gets a little slimmer once you have scrolled). On the right, in this order: the **person**, the **bell**, the **search** glass — and on phones the menu button, which opens the menu over the **whole screen**.
+
+- **The person** opens a panel from the right. Logged out it is the login form (there is no separate Login button; `/login` still works). Logged in it shows the person's initials and their links: My Snooker, My Team, Admin dashboard, My Snooker settings, My profile, Password & details and a red **Log out**.
+- **The bell** opens the notifications panel: a master switch, then a slider for each kind of pop-up — Results, Breaks, News, Tables & rankings, Competitions, New players — and one for Celebrations (the confetti). The choices are remembered on that phone or computer (no login needed). The kinds are the `NOTIFY_KINDS` list in `core/notify.js`.
+- **Add to your home screen** is in the person's panel. On Android and in Chrome it offers the install prompt; on an iPhone it shows the three steps (Share → Add to Home Screen). The name, colours and icons come from `public/manifest.webmanifest` and `public/assets/icon-192.png`, `icon-512.png`, `icon-maskable-512.png` and `apple-touch-icon.png` (180 × 180). **These four were made from the placeholder logo — replace them with the league's real badge**, keeping the same names and sizes (the "maskable" one needs the badge inside the middle 80%, as phones crop it to a circle).
+
+**Getting about.** Public pages have a **← back** link in place of the breadcrumb trail (it goes to the page above: a team → its league, an article → News). The dashboard and the My area keep the trail. On phones a white round **↓** button scrolls a screen down, and a white round **↑** takes you back to the top (on every screen size once you have scrolled).
+
+**News.**
+
+- **Featured news** — the big boxes at the top of the News page (one large, three beside it). Tick **Featured news** on an article (Admin → News → Edit). Fewer than four ticked: the newest articles fill the rest.
+- **Categories** — an article has a main category and, under **More categories**, as many others as you like; it is listed under each of those tabs.
+- **By and date** — every article shows "By: … · Date: …". **Written by** on the article, or the standard name under Site settings → News → *Articles are by*.
+- **Video** — paste a YouTube or Vimeo link, or the link to an .mp4 file, into **Video**. It plays under the opening paragraph; type `[video]` on its own line in the text to put it somewhere else.
+- **Share** — every article has share buttons (the phone's own share sheet, copy link, WhatsApp, Facebook, X, email).
+- **Related news** is a strip of cards you slide along, at the bottom of articles and competition pages.
+
+**Sidebars that know where they are.** A page with a sidebar (Admin → Branding → Page layout) fills it with what belongs to that page: a competition shows that competition's highest break, breaks, latest results, key dates and news; a team, player, match or league page shows that league only — its table with the team picked out, the team's news, and the standard boxes for that league; News shows the latest articles and the categories. Anything else gets the standard boxes. It is all in `core/side.js`; a page says what it is about with `sideContext({ competition })` (or `team`, `player`, `league`).
+
+**Won and lost.** Everywhere — league results, competition draws, round cards, match pages, the frame-by-frame bars — a win is green and a loss is red (no more gold for cup winners). A team's fixtures have a **Won / Lost** column and the score of a finished match has a coloured background. Handicaps: plus is green, minus is red, scratch (0) is plain. The two colours are `--win` and `--loss` at the top of the v11 block in `style.css`.
+
+**The calendar** (`/calendar`) is one long page: a strip of months that follows you as you scroll, every day with a date tile, and each match, key date or meeting with its buttons (Match preview, Result & scorecard, Venue). The team filter and the phone-calendar download are still there.
+
+**The dashboard.** Every list has a pager, "1–50 of 116 ‹ ›", so you can page through everything as well as search. The boxes on the overview (Teams, Players, Fixtures, Approved, Awaiting approval, Live now) open the matching list. The menu has no scrollbar: it scrolls with the wheel or a finger, and fades at the bottom when there is more.
 
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
@@ -370,7 +401,8 @@ If Rich confirms a different team rule (for example 3 points for a win), change 
 public/                     ← everything Netlify serves
   index.html                ← the only HTML page (the app shell)
   css/style.css             ← all styling; colours are variables at the top
-  assets/                   ← logo.svg, avatar.svg, trophy.svg (placeholder cup), hero.jpg (home page photo)
+  manifest.webmanifest      ← name, colours and icons for "Add to home screen"
+  assets/                   ← logo.svg, avatar.svg, trophy.svg (placeholder cup), hero.jpg (home page photo), icon-*.png + apple-touch-icon.png (home-screen icons)
   js/
     config.js               ← Supabase keys + site name  ← EDIT THIS
     main.js                 ← header, footer, and which page to show for each URL
@@ -384,7 +416,7 @@ public/                     ← everything Netlify serves
       markup.js             ← formatted text: headings, bullets, sub-bullets and tables typed as plain text (rules, minutes, info pages)
       live-score.js         ← the rules for scoring a match ball by ball (no HTML, no database)
       awards.js             ← the presentation awards: the standard list and what the results say the winners are
-      celebrate.js          ← confetti and card for a new highest break
+      celebrate.js          ← confetti and card: a new highest break, new leaders, a competition winner
       terms.js              ← lists of words used in more than one place (meeting types, player statuses)
       list-field.js         ← the "add as many as you like" field (past teams)
       dom.js                ← safe HTML helper, dates in UK time, toasts
@@ -396,10 +428,13 @@ public/                     ← everything Netlify serves
       search.js             ← the search pop-up
       csv.js                ← CSV import: reads the file and works out what to add (no database)
       cueview.js            ← the CueView questions (add/reword one here)
-      notify.js             ← live pop-up notifications + the bell toggle
+      notify.js             ← live pop-up notifications: the kinds (NOTIFY_KINDS), each visitor's choices, when to celebrate
+      my-snooker.js         ← My Snooker: the sections, the Follow button, and the block drawn on /myteam and the home page
+      drawers.js            ← the side panels: login / My account, notifications, add to home screen
+      side.js               ← the sidebar that follows the page (a competition's, a league's, the news)
       db.js                 ← picks real Supabase or the demo database
       demo-client.js        ← the in-browser demo database
-      router.js             ← navigate() / setTitle() for pages
+      router.js             ← navigate() / setTitle() for pages; sideContext() tells the sidebar what the page is about
     pages/                  ← one small file per page (home, team, match, seasons, players, myteam, merchandise, cueview, …)
     admin/
       resources.js          ← describes each admin section (add a field = add a line)
@@ -452,16 +487,21 @@ For example, to add a "phone" field to venues, add one line to `RESOURCES.venues
 | Use the real logo / favicon / loading logo | Admin → Branding → Logos |
 | Change a menu button's colour (and its section's headers) | Admin → Branding → Menu and section colours. Tick "Use my own colour" and pick; untick to go back to the standard one |
 | Stop sections using their menu colour for headers | Admin → Branding → untick "Colour-code each section" (headers go back to the main colour) |
-| Change the main colour or the page background | Admin → Branding → Other colours |
+| Change the background colour of the whole site | Admin → Branding → Other colours → **Page background** (the main colour is there too) |
 | Change the fonts | Admin → Branding → Fonts |
 | Give a part of the site a right sidebar, or make it full width | Admin → Branding → Page layout. One choice each for Home, Competitions, Fixtures, League and News: **Standard** (as designed), **Right sidebar on every page** (pages without side boxes get the standard ones), or **Full width on every page** (a page's own side boxes move underneath) |
 | Put sidebars on the left | Admin → Branding → Page layout → Which side a sidebar goes on |
 | Use a Google font that isn't in the lists | Admin → Branding → Fonts → paste the font's embed link from fonts.google.com ("Get font" → "Get embed code"). Its fonts join both lists straight away; choose them and Save |
 | Turn the loading screen off, or keep it up longer | Admin → Branding → Loading screen (on/off, and the minimum seconds it shows when the site is first opened) |
+| Put an article in the big boxes at the top of the News page | Admin → News → Edit → tick **Featured news** |
+| List an article under more than one News tab | Admin → News → Edit → More categories |
+| Add a video to an article | Admin → News → Edit → Video (YouTube, Vimeo or .mp4 link); `[video]` on its own line places it |
+| Change who articles are "By" | Admin → News → Edit → Written by; the standard name is in Site settings → News |
 | Change the order of the tabs on the News page | Admin → News categories → Edit → "Position" (1 = first). The cards themselves are in `public/js/pages/news.js` (12 at a time: `PAGE`) |
 | Add, change or hide something on the Merchandise page | Admin → Website → Merchandise; the words at the top and "How to order" are under Site settings → Merchandise page |
 | Change the CueView questions | `public/js/core/cueview.js` — the public form, the profile form and the player page all follow |
 | Give a player a login | Admin → People → Logins → Add new → Role: Player (no player or team needed) |
+| Follow a team or a player | The ☆ Follow button on its page, or My area → My Snooker |
 | Add, change or stop an announcement in the ticker | Admin → Announcements. The ticker's on/off switch and speed (1–10) are in Site settings → Announcements ticker |
 | Show (or stop showing) announcements in the home page's feature box | Admin → Site settings → Home page: feature box → "Also show the announcements" and "When there is more than one message". One announcement can be left out under Announcements → Edit |
 | Add a key date | Admin → Key dates |
@@ -473,7 +513,13 @@ For example, to add a "phone" field to venues, add one line to `RESOURCES.venues
 | Write a sponsor's page | Admin → Sponsors → Edit → The sponsor's page |
 | Mark a player as not playing, without a team, or no longer with us | Admin → Players → Edit → Status |
 | Change the size of headings, tables or the menu | Admin → Branding → Text sizes |
-| Switch the highest-break confetti off (or add "of the week") | Admin → Site settings → Celebrations |
+| Switch a celebration off (highest break, new league leaders, new rankings leader, competition winner) | Admin → Site settings → Celebrations — one switch each |
+| Add a kind of notification to the bell's panel | `NOTIFY_KINDS` in `public/js/core/notify.js` |
+| Add or reword a My Snooker section | `SECTIONS` in `public/js/core/my-snooker.js` |
+| Change what a page's sidebar shows | `public/js/core/side.js` |
+| Use the real badge as the phone home-screen icon | Replace `public/assets/icon-192.png`, `icon-512.png`, `icon-maskable-512.png` and `apple-touch-icon.png` (same names and sizes) |
+| Change the green and red used for won and lost | `--win` and `--loss` in `public/css/style.css` (v11 block) |
+| Show 25 or 100 rows per page in a dashboard list | `PAGE_SIZE` in `public/js/admin/crud.js` (or `pageSize` on one section in `resources.js`) |
 | Choose who is emailed when a card is submitted | Admin → Result emails |
 | Change the News menu button's colour | Admin → Branding → Menu and section colours → News (standard: blue) |
 | Choose what the side column's top box shows | Admin → Site settings → Side column: top box (latest league results, competition results, both, latest news, or nothing; heading; how many; one league) |

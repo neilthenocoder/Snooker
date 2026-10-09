@@ -168,7 +168,9 @@ export default async function admin(view, { params, user, query }) {
   if (RESOURCES[section]) {
     const current = (await table("seasons", "name")).find((s) => s.is_current);
     return crud(body, RESOURCES[section], {
-      preset: ["fixtures", "byes"].includes(section) && current ? { season_id: current.id } : {},
+      // A list can be opened already filtered, e.g. /admin/fixtures?status=approved (the Overview boxes do this).
+      preset: { ...(["fixtures", "byes"].includes(section) && current ? { season_id: current.id } : {}),
+        ...Object.fromEntries((RESOURCES[section].filters ?? []).filter((f) => query.get(f)).map((f) => [f, query.get(f)])) },
       editId: query.get("edit"), user, onChange: drawCounts,
     });
   }
@@ -180,9 +182,10 @@ async function overview(el, { user }) {
   const ctx = await seasonContext();
   const unpaid = canOpenSection(user, "entries") ? (await signups().catch(() => [])).filter((r) => r.status === "pending") : [];
   const count = (s) => ctx.fixtures.filter((f) => f.status === s).length;
+  // Each box opens the list behind its number (only for the parts of the dashboard this login has).
   const stats = [
-    ["Teams", ctx.teams.length], ["Players", ctx.players.length], ["Fixtures", ctx.fixtures.length],
-    ["Approved", count("approved")], ["Awaiting approval", count("submitted")], ["Live now", count("in_progress")],
+    ["Teams", ctx.teams.length, "teams", "/admin/teams"], ["Players", ctx.players.length, "players", "/admin/players"], ["Fixtures", ctx.fixtures.length, "fixtures", "/admin/fixtures"],
+    ["Approved", count("approved"), "fixtures", "/admin/fixtures?status=approved"], ["Awaiting approval", count("submitted"), "results", "/admin/results"], ["Live now", count("in_progress"), "results", "/admin/results"],
   ];
   const fresh = ctx.players.filter((p) => p.needs_review);
   const late = ctx.fixtures.filter((f) => f.status === "postponed" && Date.parse(rearrangeBy(f)) < Date.now());
@@ -191,7 +194,8 @@ async function overview(el, { user }) {
       <div class="todo-list">${fresh.map((p) => html`<a href="/admin/players?edit=${p.id}">${p.full_name} <small>${ctx.team.get(p.team_id)?.name ?? "no team"}</small></a>`)}</div></div>` : ""}
     ${unpaid.length ? html`<div class="notice todo"><b>${unpaid.length} competition entr${unpaid.length > 1 ? "ies are" : "y is"} waiting for payment to be confirmed.</b> <a href="/admin/entries" style="font-weight:700">Entries to approve</a></div>` : ""}
     ${late.length ? html`<div class="notice error"><b>${late.length} postponed match${late.length > 1 ? "es have" : " has"} passed the ${POSTPONE_WEEKS}-week limit.</b> <a href="/admin/results" style="font-weight:700">Rearrange them</a></div>` : ""}
-    <div class="stats">${stats.map(([l, n]) => html`<div class="stat"><b>${n}</b>${l}</div>`)}</div>
+    <div class="stats">${stats.map(([l, n, section, href]) => (canOpenSection(user, section)
+      ? html`<a class="stat stat-link" href="${href}" title="Open ${l.toLowerCase()}"><b>${n}</b>${l}<i aria-hidden="true">→</i></a>` : html`<div class="stat"><b>${n}</b>${l}</div>`))}</div>
     <p>Season: <b>${ctx.season?.name ?? "none — add one under Seasons"}</b>. Match nights: captains enter frames on their phones,
       press <b>Submit final result</b>, then you approve them under <a href="/admin/results" style="color:var(--red);font-weight:700">Results to approve</a>.
       Approved results are locked for captains; you can still edit them.</p>

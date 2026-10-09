@@ -1,12 +1,14 @@
 // The logged-in area ("dashboard") for captains, vice captains and players.
-//   Captains and vice captains:  My Team · Fixtures · Profile · User details · Competitions
+//   Captains and vice captains:  My Team · Fixtures · Profile · User details · Competitions · My Snooker
 //   Players:                     My Snooker · (Profile and Competitions, if the login is linked to a player or team) · User details
+//   Officers with no team:       My Snooker · User details (their tools are in the admin dashboard)
 // A player's login has no tools: the one thing they control here is My Snooker (their own page, /myteam).
 import { html, mount, $, readForm, toast, fmtDate, fmtTime, confirmBox } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
-import { loadCompetitions, updateMyPlayer, addPlayerToTeam, seasonFrames, setFixtureStatus, setMySnooker } from "../core/api.js";
+import { loadCompetitions, updateMyPlayer, addPlayerToTeam, seasonFrames, setFixtureStatus, setMyPrefs, table } from "../core/api.js";
+import { SECTIONS, prefsToSave } from "../core/my-snooker.js";
 import { listField, wireListFields } from "../core/list-field.js";
-import { isCaptain, isMember, isPlainPlayer, mySnookerOn, mySnookerTeamId, refreshUser, canEditFixture, canPostpone, canEditCompMatch, canAddMatchPhotos, changePassword, roleText } from "../core/auth.js";
+import { isCaptain, isMember, isPlainPlayer, mySnookerOn, myPrefs, refreshUser, canEditFixture, canPostpone, canEditCompMatch, canAddMatchPhotos, changePassword, roleText } from "../core/auth.js";
 import { buildBracket, isEntry, roundName } from "../core/bracket.js";
 import { extCounts, EXT_PER_SEASON, POSTPONE_WEEKS, rearrangeBy } from "../core/rules.js";
 import { CUEVIEW } from "../core/cueview.js";
@@ -16,9 +18,10 @@ import { setTitle, navigate, refreshShell } from "../core/router.js";
 import { mustLogin } from "./scorecard.js";
 
 const LABEL = { snooker: "My Snooker", team: "My Team", fixtures: "Fixtures", profile: "Profile", details: "User details", competitions: "Competitions" };
-/** The tabs this login gets. */
+/** The tabs this login gets. Everyone has My Snooker; what else they have is as it always was. */
 function tabsFor(user) {
-  if (!isPlainPlayer(user)) return ["team", "fixtures", "profile", "details", "competitions"];
+  if (!isMember(user)) return ["snooker", "details"];                       // an officer with no team or player
+  if (!isPlainPlayer(user)) return ["team", "fixtures", "profile", "details", "competitions", "snooker"];
   const p = user.profile ?? {};
   return ["snooker", ...(p.player_id ? ["profile"] : []), ...(p.player_id || p.team_id ? ["competitions"] : []), "details"];
 }
@@ -26,7 +29,7 @@ const logoutIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10
 
 export default async function my(view, { params, user }) {
   if (!user) return mustLogin(view);
-  if (!isMember(user)) return navigate("/admin", { replace: true });   // officers with no team or player link
+  if (!isMember(user) && !params.tab) return navigate("/admin", { replace: true });   // officers with no team or player link: their home is the dashboard
   const TABS = tabsFor(user).map((k) => [k, LABEL[k]]);
   const tab = TABS.some(([k]) => k === params.tab) ? params.tab : TABS[0][0];
   const ctx = await seasonContext();
@@ -78,44 +81,97 @@ function postponedNotices(ctx, team) {
 
 const noTeam = html`<div class="notice error">Your login isn't linked to a team yet. Please contact the league secretary.</div>`;
 
-// ── My Snooker (the one thing a player's login controls) ───────
-function snookerTab(el, { ctx, user, team }) {
+// ── My Snooker: who they follow, what they see, and where ──────
+// Every login has this tab. It changes what THEY see on the website; it gives no extra rights.
+async function snookerTab(el, { ctx, user, team, me }) {
   const on = mySnookerOn(user);
-  const chosen = user.profile?.my_team_id || "";
-  const showing = ctx.team.get(mySnookerTeamId(user));
+  const prefs = myPrefs(user);
+  const categories = (await table("categories", "sort").catch(() => [])).map((c) => c.name);
+  const followed = new Set(prefs.teams);
+  let players = prefs.players.filter((id) => ctx.player.get(id));
+  const wants = (key) => !prefs.sections || prefs.sections.includes(key);
+  const pickable = ctx.players.filter((p) => !["deceased"].includes(p.status)).sort((a, b) => a.full_name.localeCompare(b.full_name));
+  const teamName = (p) => ctx.team.get(p.team_id)?.name ?? "no team";
+  const chips = () => mount($("[data-chips]", el), players.length ? html`${players.map((id) => { const p = ctx.player.get(id); return html`<span class="chip">${p.full_name} <small class="muted">${teamName(p)}</small>
+    <button type="button" data-unfollow="${id}" aria-label="Stop following ${p.full_name}">×</button></span>`; })}` : html`<span class="muted">Nobody yet. Add a player below, or press Follow on any player's page.</span>`);
+  const place = [["page", "On my own page", "A separate page, My Snooker. It opens when you come to the website; the normal home page is one press away."],
+    ["home", "On the home page", "Your choices sit at the top of the normal home page."], ["both", "Both", "Your own page, and at the top of the home page too."]];
+
   mount(el, html`
-    <div class="ms-card ${on ? "on" : "off"}">
-      <div class="ms-card-head">
-        <div><small>My Snooker</small><h2>${on ? (showing ? showing.name : "Choose your team") : "Switched off"}</h2></div>
-        ${on ? html`<a class="btn green" href="/myteam">Open my page</a>` : ""}
-      </div>
-      <p>${on ? html`When you log in you go straight to your own page: ${showing ? html`<b>${showing.name}</b>'s` : "your team's"} next match, results, fixtures, breaks and handicaps.
-        The normal home page is always one press away.` : html`You see the normal home page when you log in. Switch My Snooker back on whenever you like — nothing is lost.`}</p>
-      <form class="form ms-form-set" data-snooker>
+    <form class="form ms-set" data-snooker>
+      <div class="ms-card ${on ? "on" : "off"}">
+        <div class="ms-card-head">
+          <div><small>My Snooker</small><h2>${on ? "Your own view of the league" : "Switched off"}</h2></div>
+          ${on ? html`<a class="btn green" href="/myteam">Open my page</a>` : ""}
+        </div>
+        <p>Follow the teams and players you care about, choose what you want to see, and choose where it shows. It changes what <b>you</b> see and nothing else.</p>
         <label class="ms-switch"><input type="checkbox" name="on" ${on ? "checked" : ""}><span class="ms-slider" aria-hidden="true"></span>
-          <span><b>Use My Snooker</b><small>Show my own page when I log in</small></span></label>
-        <label>Team to follow
-          <select name="team"><option value="">${team ? `My own team (${team.name})` : "Choose a team…"}</option>
-            ${ctx.leagues.map((l) => html`<optgroup label="${l.name}">${ctx.teamsIn(l.id).map((t) => html`<option value="${t.id}" ${t.id === chosen ? "selected" : ""}>${t.name}</option>`)}</optgroup>`)}</select></label>
-        <div class="btn-row form-actions"><button class="btn">Save</button>
-          <button type="button" class="btn ghost" data-reset>Reset</button></div>
-        <p class="muted" style="margin:0;font-size:13px"><b>Reset</b> puts My Snooker back as it was when your login was made: switched on, ${team ? `following ${team.name}` : "with no team chosen"}.</p>
-      </form>
-    </div>`);
-  const save = async (teamId, turnOn, message) => {
+          <span><b>Use My Snooker</b><small>Switch it off and you simply get the normal website</small></span></label>
+      </div>
+
+      <fieldset class="ms-set-box"><legend>Where do you want it?</legend>
+        <div class="ms-place">${place.map(([key, label, help]) => html`<label class="ms-radio"><input type="radio" name="place" value="${key}" ${prefs.place === key ? "checked" : ""}>
+          <span><b>${label}</b><small>${help}</small></span></label>`)}</div></fieldset>
+
+      <fieldset class="ms-set-box"><legend>Teams I follow</legend>
+        <p class="ms-help">The first team you tick is the one your page opens on. Follow more and you get a button for each.</p>
+        ${ctx.leagues.map((l) => html`<h4 class="ms-set-h">${l.name}</h4><div class="ms-ticks">${ctx.teamsIn(l.id).map((t) => html`<label class="ms-tick"><input type="checkbox" name="team" value="${t.id}" ${followed.has(t.id) ? "checked" : ""}>
+          <span>${badge(t)}${t.name}</span></label>`)}</div>`)}</fieldset>
+
+      <fieldset class="ms-set-box"><legend>Players I follow</legend>
+        <div class="tag-chips ms-chips" data-chips></div>
+        <div class="ms-add"><input type="text" list="ms-players" placeholder="Start typing a player's name…" data-player-add autocomplete="off" aria-label="Add a player to follow">
+          <button type="button" class="btn small secondary" data-player-add-btn>Follow</button></div>
+        <datalist id="ms-players">${pickable.map((p) => html`<option value="${p.full_name}">${teamName(p)}</option>`)}</datalist></fieldset>
+
+      <fieldset class="ms-set-box"><legend>What I want to see</legend>
+        <p class="ms-help">Tick the sections you want. <button type="button" class="link-btn" data-all="1">Tick them all</button> · <button type="button" class="link-btn" data-all="0">Untick them all</button></p>
+        <div class="ms-sections">${SECTIONS.map(([key, label, help]) => html`<label class="ms-tick wide"><input type="checkbox" name="section" value="${key}" ${wants(key) ? "checked" : ""}>
+          <span><b>${label}</b><small>${help}</small></span></label>`)}</div></fieldset>
+
+      ${categories.length ? html`<fieldset class="ms-set-box"><legend>News I want</legend>
+        <p class="ms-help">For the “Latest news” section. Tick none and you get everything.</p>
+        <div class="ms-ticks">${categories.map((c) => html`<label class="ms-tick"><input type="checkbox" name="cat" value="${c}" ${prefs.cats.includes(c) ? "checked" : ""}><span>${c}</span></label>`)}</div></fieldset>` : ""}
+
+      <div class="btn-row form-actions"><button class="btn">Save my choices</button>
+        <button type="button" class="btn ghost" data-reset>Reset</button>
+        <span class="muted" style="font-size:13px"><b>Reset</b>: switched on, ${team ? `following ${team.name}` : "following nobody"}${me ? ` and ${me.full_name}` : ""}, every section, on your own page.</span></div>
+    </form>`);
+  chips();
+
+  const save = async (turnOn, next, message) => {
     try {
-      await setMySnooker(teamId, turnOn);
+      await setMyPrefs(turnOn, prefsToSave(next));
       await refreshUser(); await refreshShell();
       toast(message);
       navigate("/my/snooker", { replace: true });
     } catch (err) { toast(err.message, "error"); }
   };
-  $("[data-snooker]", el).addEventListener("submit", (e) => {
-    e.preventDefault();
-    const f = e.target.elements;
-    save(f.team.value || null, f.on.checked, f.on.checked ? "My Snooker saved" : "My Snooker switched off");
+  const form = $("[data-snooker]", el);
+  const addPlayer = () => {
+    const box = $("[data-player-add]", el), p = pickable.find((x) => x.full_name.toLowerCase() === box.value.trim().toLowerCase());
+    if (!p) return toast("Choose a player from the list", "error");
+    if (!players.includes(p.id)) players = [...players, p.id];
+    box.value = ""; chips();
+  };
+  form.addEventListener("click", (e) => {
+    const t = e.target;
+    if (t.dataset.unfollow) { players = players.filter((id) => id !== t.dataset.unfollow); chips(); }
+    if (t.matches("[data-player-add-btn]")) addPlayer();
+    if (t.dataset.all) for (const box of form.querySelectorAll("[name=section]")) box.checked = t.dataset.all === "1";
+    if (t.matches("[data-reset]")) save(true, { place: "page", teams: [user.profile?.team_id].filter(Boolean), players: [user.profile?.player_id].filter(Boolean), cats: [], sections: null }, "My Snooker reset");
   });
-  $("[data-reset]", el).addEventListener("click", () => save(null, true, "My Snooker reset"));
+  $("[data-player-add]", el).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addPlayer(); } });
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const ticked = (name) => [...form.querySelectorAll(`[name=${name}]:checked`)].map((b) => b.value);
+    const sections = ticked("section");
+    // Keep the order the teams were followed in (so the first stays first), then any newly ticked ones.
+    const teams = [...prefs.teams.filter((id) => ticked("team").includes(id)), ...ticked("team").filter((id) => !prefs.teams.includes(id))];
+    const turnOn = form.elements.on.checked;
+    save(turnOn, { place: form.elements.place.value || "page", teams, players, cats: ticked("cat"), sections: sections.length === SECTIONS.length ? null : sections },
+      turnOn ? "My Snooker saved" : "My Snooker switched off");
+  });
 }
 
 // ── My Team ────────────────────────────────────────────────────
@@ -144,7 +200,7 @@ async function teamTab(el, { ctx, user, team }) {
       <div class="stat"><b>${row?.w ?? 0}</b>Won</div>
       <div class="stat"><b>${row?.pts ?? 0}</b>Points</div>
     </div>
-    ${panel(`${team.name} squad`, dataTable([
+    ${panel(`${team.name}: the team`, dataTable([
       { label: "Player", cell: (p) => playerLink(p) },
       { label: "Position", cell: (p) => p.position, cls: "hide-sm" },
       { label: "Handicap", cell: (p) => (p.handicap > 0 ? `+${p.handicap}` : p.handicap ?? 0), cls: "num" },
@@ -173,7 +229,7 @@ function fixturesTab(el, { ctx, user, team }) {
       A photo of the paper scorecard is needed before a result can be submitted. A match that hasn't started can be postponed here.
       <b>Home matches:</b> press <b>Photos</b> to add match night pictures — they show on the match page and in that week's news report.</p>` : ""}
     ${panel(`${team.name} fixtures ${ctx.season?.name ?? ""}`, fixturesTable(ctx, ctx.fixturesFor(team.id), {
-      byes: ctx.byesFor(team.id),
+      byes: ctx.byesFor(team.id), forTeam: team.id,
       actions: (f) => canEditFixture(user, f)
         ? html`<span class="btn-row" style="flex-wrap:nowrap"><a class="btn small" href="${urls.scorecard(f)}">${ctx.hasResult(f) ? "Edit scorecard" : "Enter scorecard"}</a>
             ${canPostpone(user, f) && f.status === "scheduled" ? html`<button type="button" class="btn small ghost" data-postpone="${f.id}">Postpone</button>` : ""}

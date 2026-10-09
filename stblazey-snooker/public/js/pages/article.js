@@ -2,7 +2,8 @@ import { html, mount, fmtDate, paragraphs, cssUrl, ukDay } from "../core/dom.js"
 import { seasonContext, sideBoxData } from "../core/context.js";
 import { articles } from "../core/api.js";
 import { addDays } from "../core/schedule.js";
-import { sidebar, breadcrumb, panel, dataTable, articleCard, articleThumb, quoteBox, playerLink, teamLink, leagueTablePanel, urls, cueviewSection, gallery } from "../core/components.js";
+import { breadcrumb, panel, dataTable, quoteBox, playerLink, teamLink, leagueTablePanel, urls, cueviewSection, gallery, newsStrip, videoEmbed, shareBar, readTime, categoriesOf } from "../core/components.js";
+import { SITE } from "../config.js";
 import { articleCueview } from "../core/cueview.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import notFound from "./not-found.js";
@@ -26,24 +27,33 @@ export default async function article(view, { params }) {
   const isRoundup = league || a.week_ending;
   const photoMatches = isRoundup && a.show_photos !== false
     ? (league ? ctx.fixturesIn(league.id) : ctx.fixtures).filter((f) => inWeek(f.starts_at) && f.gallery?.length) : [];
-  const related = news.filter((x) => x.id !== a.id && (x.category === a.category || (a.competition_id && x.competition_id === a.competition_id))).slice(0, 3);
+
+  // Related: the same competition first, then anything sharing a category, newest first.
+  const shares = (x) => categoriesOf(x).some((c) => categoriesOf(a).includes(c));
+  const related = [...news.filter((x) => x.id !== a.id && a.competition_id && x.competition_id === a.competition_id),
+    ...news.filter((x) => x.id !== a.id && !(a.competition_id && x.competition_id === a.competition_id) && shares(x))].slice(0, 10);
+  const author = a.author || box?.site?.news_author || SITE.name;
+  const longDate = new Date(`${String(a.published_at).slice(0, 10)}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+  const video = videoEmbed(a.video_url);
 
   mount(view, html`
-    <section class="hero article-hero" style="${a.image_url ? `--hero-img:${cssUrl(a.image_url)}` : ""}">
-      <div class="wrap hero-inner"><div class="hero-slide on">
-        <div class="hero-text"><h2><span>${a.title}</span></h2><p class="hero-meta">${a.category} · ${fmtDate(a.published_at)}</p></div>
-        ${articleThumb(a) ? html`<img class="hero-circle" src="${articleThumb(a)}" alt="">` : ""}
-      </div></div>
-    </section>
-    <div class="wrap layout" style="margin-top:30px">
-      <div class="stack">
-        <div>${breadcrumb([["Home", "/"], ["News", "/news"], [a.category, `/news#${encodeURIComponent(a.category)}`], [a.title]])}
-          <article class="prose article-body">
-            <h3 class="article-kicker">${a.category === "Match Reports" ? "Match report" : a.category}</h3>
-            ${a.lead ? html`<p class="lead">${a.lead}</p>` : ""}
-            ${bodyWithQuote(a)}
-          </article>
-        </div>
+    <header class="art-hero" style="${a.image_url ? `--art-img:${cssUrl(a.image_url)}` : ""}">
+      <div class="wrap">
+        ${breadcrumb([["Home", "/"], ["News", "/news"], [a.title]])}
+        <div class="art-cats">${categoriesOf(a).map((c) => html`<a href="/news?category=${encodeURIComponent(c)}">${c}</a>`)}</div>
+        <h1>${a.title}</h1>
+      </div>
+    </header>
+    <div class="wrap art-wrap">
+      <div class="art-bar">
+        <p class="art-by"><span>By: <b>${author}</b></span><span>Date: <b><time datetime="${String(a.published_at).slice(0, 10)}">${longDate}</time></b></span><span>${readTime(a)} min read</span></p>
+        ${shareBar(a.title, urls.article(a))}
+      </div>
+      <article class="art-body">
+        ${a.lead ? html`<p class="lead">${a.lead}</p>` : ""}
+        ${bodyWithQuote(a, video)}
+      </article>
+      <div class="stack art-extra">
         ${cueviewSection(a.cueview_name || a.title, articleCueview(a).filter((q) => q.key !== "hand"))}
         ${a.show_breaks && league ? panel(`Top breaks of the week — ${league.name}`, dataTable([
           { label: "Player", cell: (b) => playerLink(b.player) },
@@ -53,23 +63,32 @@ export default async function article(view, { params }) {
         ], weekBreaks.slice(0, 10), { empty: "No breaks recorded that week." })) : ""}
         ${a.show_results && league ? panel(`Team results — week ending ${fmtDate(weekEnd)}`, dataTable([
           { label: "Home", cell: (f) => teamLink(ctx.team.get(f.home_team_id)) },
-          { label: "Score", cell: (f) => { const s = ctx.scoreOf(f); return html`<a class="strong" href="${urls.match(f)}">${s.home} - ${s.away}</a>`; }, cls: "num" },
+          { label: "Score", cell: (f) => { const s = ctx.scoreOf(f); return html`<a class="res-score done" href="${urls.match(f)}">${s.home} - ${s.away}</a>`; }, cls: "num" },
           { label: "Away", cell: (f) => teamLink(ctx.team.get(f.away_team_id)) },
         ], weekFixtures, { empty: "No results that week." })) : ""}
         ${a.show_standings && league ? leagueTablePanel(ctx, league) : ""}
         ${photoMatches.length ? html`<div class="mn-week"><h3>Match night photos</h3>
           ${photoMatches.map((f) => html`<div class="mn-match"><a href="${urls.match(f)}">${ctx.team.get(f.home_team_id)?.name} v ${ctx.team.get(f.away_team_id)?.name}</a>${gallery(f.gallery)}</div>`)}</div>` : ""}
-        ${related.length ? html`<div><h3>Related news</h3><div class="cards">${related.map(articleCard)}</div></div>` : ""}
+        <div class="art-foot">${shareBar(a.title, urls.article(a))}<a class="btn ghost" href="/news">More news</a></div>
       </div>
-      ${sidebar(ctx, news.filter((x) => x.id !== a.id), { leagues: league ? [league] : ctx.leagues, box })}
-    </div>`);
+    </div>
+    ${newsStrip("Related news", related)}`);
 }
 
-/** Article text with the quote box where "[quote]" is typed (or after the first paragraph). */
-function bodyWithQuote(a) {
+/**
+ * Article text with the quote box where "[quote]" is typed (or after the first paragraph),
+ * and the video where "[video]" is typed (or above the text).
+ */
+function bodyWithQuote(a, video = "") {
   const parts = String(a.body || a.excerpt || "").split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
   const quote = quoteBox(a.quote_text, a.quote_author);
   let at = parts.findIndex((p) => p.toLowerCase() === "[quote]");
   if (at >= 0) parts.splice(at, 1); else at = Math.min(1, parts.length);
-  return html`${paragraphs(parts.slice(0, at).join("\n\n"))}${quote}${paragraphs(parts.slice(at).join("\n\n"))}`;
+  const placed = parts.some((p) => p.toLowerCase() === "[video]");
+  // Each stretch of text between the markers is ordinary paragraphs.
+  const text = (list) => { const out = []; let run = [];
+    for (const p of list) { if (p.toLowerCase() === "[video]") { out.push(paragraphs(run.join("\n\n")), video); run = []; } else run.push(p); }
+    out.push(paragraphs(run.join("\n\n")));
+    return out; };
+  return html`${placed ? "" : video}${text(parts.slice(0, at))}${quote}${text(parts.slice(at))}`;
 }

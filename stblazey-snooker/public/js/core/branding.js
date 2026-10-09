@@ -34,7 +34,7 @@ const COLOURS = {
  */
 export const TEXT_SIZES = [
   ["body", "Normal text (paragraphs, lists)", 15, "--fs-body"],
-  ["h1", "Page titles (H1)", 38, "--fs-h1"],
+  ["h1", "Page titles (H1)", 42, "--fs-h1"],
   ["h2", "Section headings (H2)", 22, "--fs-h2"],
   ["h3", "Smaller headings (H3)", 20, "--fs-h3"],
   ["panel", "Box headings (the coloured bars on tables and boxes)", 18, "--fs-panel"],
@@ -96,8 +96,8 @@ function brandOf(site) {
     const n = Number(site.text_sizes?.[key]);
     if (n >= 8 && n <= 90) vars[cssVar] = `${n}px`;
   }
-  // Page titles shrink with the screen: keep that in step with the chosen size (38px ↔ 4vw as standard).
-  if (vars["--fs-h1"]) vars["--fs-h1-fluid"] = `${((parseFloat(vars["--fs-h1"]) / 38) * 4).toFixed(2)}vw`;
+  // Page titles shrink with the screen: keep that in step with the chosen size (42px ↔ 4.4vw as standard).
+  if (vars["--fs-h1"]) vars["--fs-h1-fluid"] = `${((parseFloat(vars["--fs-h1"]) / 42) * 4.4).toFixed(2)}vw`;
   const layouts = {};
   for (const [group] of LAYOUT_GROUPS) layouts[group] = ["sidebar", "full"].includes(site.page_layouts?.[group]) ? site.page_layouts[group] : "auto";
   return {

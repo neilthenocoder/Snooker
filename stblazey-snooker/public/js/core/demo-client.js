@@ -365,6 +365,19 @@ export const demoClient = {
       persist(); emit("competition_matches", changed);
       return { data: null, error: null };
     }
+    if (name === "set_my_prefs") {
+      // Mirrors set_my_prefs(): only your own login's My Snooker choices, tidied up.
+      const me = state.tables.profiles.find((p) => p.id === currentSession()?.user.id);
+      if (!me) return { data: null, error: { message: "Please log in first" } };
+      const p = args.p_prefs ?? {}, t = state.tables;
+      const known = (list, rows, max) => [...new Set(Array.isArray(list) ? list : [])].filter((id) => rows.some((r) => r.id === id)).slice(0, max);
+      const out = { place: ["page", "home", "both"].includes(p.place) ? p.place : "page", teams: known(p.teams, t.teams, 12), players: known(p.players, t.players, 40),
+        cats: (Array.isArray(p.cats) ? p.cats : []).map((c) => String(c).slice(0, 80)).slice(0, 20) };
+      if (Array.isArray(p.sections)) out.sections = p.sections.filter((x) => /^[a-z_]{1,24}$/.test(x)).slice(0, 30);
+      Object.assign(me, { my_snooker: args.p_on ?? true, my_prefs: out, my_team_id: out.teams[0] ?? null });
+      persist();
+      return { data: null, error: null };
+    }
     if (name === "set_my_snooker") {
       // Mirrors set_my_snooker(): only your own login's two My Snooker choices.
       const me = state.tables.profiles.find((p) => p.id === currentSession()?.user.id);

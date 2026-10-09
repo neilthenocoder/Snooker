@@ -6,12 +6,13 @@ import { answered } from "../core/cueview.js";
 import { buildBracket, competitionStandings } from "../core/bracket.js";
 import { listItems } from "../core/list-field.js";
 import { breadcrumb, panel, dataTable, avatar, teamLink, urls, gallery, articleCard, cueviewSection, handicapText, handicapMove } from "../core/components.js";
-import { setTitle, navigate, adminEdit } from "../core/router.js";
+import { followButton } from "../core/my-snooker.js";
+import { setTitle, navigate, adminEdit, sideContext } from "../core/router.js";
 import { PLAYER_TAG } from "../core/terms.js";
 import { lifeYears } from "./memoriam.js";
 import notFound from "./not-found.js";
 
-export default async function player(view, { params }) {
+export default async function player(view, { params, user }) {
   // The address is the player's short name (/player/sam-bolitho); the old long ids still work.
   const allPlayers = await table("players", "full_name");
   const p = allPlayers.find((x) => x.slug === params.id) ?? allPlayers.find((x) => x.id === params.id);
@@ -23,6 +24,7 @@ export default async function player(view, { params }) {
   ]);
   setTitle(p.full_name);
   adminEdit("players", p.id);
+  sideContext({ player: p });
 
   const team = ctx.team.get(p.team_id);
   const league = team && ctx.league.get(team.league_id);
@@ -94,7 +96,7 @@ export default async function player(view, { params }) {
     <div>
       ${breadcrumb([["Home", "/"], ["Our Players", team ? `/players?team=${team.slug}` : "/players"], [p.full_name]])}
       <div class="player-head">
-        <h1>${rank && !gone ? html`<span class="rank-badge" title="${league.name} ranking">${rank.pos}</span>` : ""}${p.full_name}${tag && !gone ? html` <span class="status plain player-status">${tag}</span>` : ""}</h1>
+        <h1>${rank && !gone ? html`<span class="rank-badge" title="${league.name} ranking">${rank.pos}</span>` : ""}${p.full_name}${tag && !gone ? html` <span class="status plain player-status">${tag}</span>` : ""}${gone ? "" : followButton("player", p.id, user)}</h1>
         <div class="toolbar" style="margin:0">
           <label style="font-weight:700">Team
             <select data-team-filter><option value="">All teams</option>${ctx.teams.map((t) => html`<option value="${t.id}" ${t.id === p.team_id ? "selected" : ""}>${t.name}</option>`)}</select></label>

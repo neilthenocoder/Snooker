@@ -411,6 +411,11 @@ export async function scoreboardToDraw(liveMatchId) {
 
 // ── My Snooker ───────────────────────────────────────────────────
 /** Save the logged-in person's own-page choices: which team it follows, and whether it is switched on. */
+/** My Snooker: everything a login has chosen for its own page — { place, teams, players, sections, cats } — and whether it is on. */
+export async function setMyPrefs(on, prefs) {
+  await run(db.rpc("set_my_prefs", { p_on: on, p_prefs: prefs ?? {} }));
+  invalidate();
+}
 export async function setMySnooker(teamId, on) {
   await run(db.rpc("set_my_snooker", { p_team: teamId || null, p_on: on }));
   invalidate();

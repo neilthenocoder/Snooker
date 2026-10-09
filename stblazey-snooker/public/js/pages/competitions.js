@@ -1,4 +1,4 @@
-import { html, mount } from "../core/dom.js";
+import { html, mount, fmtDate } from "../core/dom.js";
 import { table, loadCompetitions } from "../core/api.js";
 import { buildBracket, progressText } from "../core/bracket.js";
 import { breadcrumb, picture, urls, shortName, trophy } from "../core/components.js";
@@ -13,8 +13,14 @@ export async function competitionSummaries() {
     parent: data.competitions.find((x) => x.id === c.parent_id),
     // "Rees only", "Victory and Rees", or nothing when it's open to everyone.
     openTo: (c.league_ids ?? []).length ? leagues.filter((l) => c.league_ids.includes(l.id)).map(shortName).join(" and ") : "",
-    progress: progressText(buildBracket(data.entries.filter((e) => e.competition_id === c.id), data.matches.filter((m) => m.competition_id === c.id))),
+    ...summary(buildBracket(data.entries.filter((e) => e.competition_id === c.id), data.matches.filter((m) => m.competition_id === c.id)), data.entries.filter((e) => e.competition_id === c.id).length),
   }));
+}
+/** Where a competition stands, in words and in numbers. */
+function summary(b, entrants) {
+  const real = b.rounds.flat().filter((m) => !m.isBye);
+  const next = real.filter((m) => !m.played && m.row.starts_at).map((m) => m.row.starts_at).sort()[0] ?? null;
+  return { progress: progressText(b), facts: { entrants, played: real.filter((m) => m.played).length, total: real.length, next } };
 }
 
 /** /competitions — this season's competitions, with a list to look back at earlier seasons. */
@@ -35,10 +41,22 @@ export default async function competitions(view, { query }) {
     ${choices.length > 1 ? html`<label class="toolbar" style="font-weight:700">Season
       <select data-season-picker>${choices.map((s) => html`<option value="${s.id}" ${s.id === season?.id ? "selected" : ""}>${s.name}${s.id === current?.id ? " (this season)" : ""}</option>`)}</select></label>` : ""}
     ${openForEntry(all.map((x) => x.c)).length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${openForEntry(all.map((x) => x.c)).map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
-    ${list.length ? html`<div class="cards">${list.map(({ c, progress, parent, openTo }) => html`<a class="card" href="${urls.competition(c)}">
-      <div class="card-pic">${c.image_url ? picture(c.image_url, c.name) : html`<div class="ph"></div>`}${trophy(c, "card-trophy")}</div>
-      <div><h4>${c.name}</h4><small>${[c.kind, c.handicap ? "Handicap" : "", openTo ? `${openTo} only` : "", parent ? `Plate of the ${parent.name}` : "", openForEntry([c]).length ? "Entries open" : ""].filter(Boolean).join(" · ")}</small>
-        <span class="status ${progress.startsWith("Winner") ? "approved" : "submitted"}">${progress}</span></div>
+    ${list.length ? html`<div class="comp-list">${list.map(({ c, progress, parent, openTo, facts }) => html`<a class="comp-row" href="${urls.competition(c)}">
+      <div class="comp-pic">${c.image_url ? picture(c.image_url, "") : html`<div class="ph"></div>`}${trophy(c, "comp-row-trophy")}</div>
+      <div class="comp-info">
+        <small class="comp-kind">${[c.handicap ? `Handicap ${c.kind.toLowerCase()}` : c.kind, openTo ? `${openTo} only` : "", parent ? `Plate of the ${parent.name}` : ""].filter(Boolean).join(" · ")}</small>
+        <h3>${c.name}</h3>
+        ${c.info ? html`<p class="comp-blurb">${c.info}</p>` : ""}
+        <dl class="comp-facts">
+          <div><dt>Entrants</dt><dd>${facts.entrants || "–"}</dd></div>
+          <div><dt>Matches played</dt><dd>${facts.total ? `${facts.played} of ${facts.total}` : "–"}</dd></div>
+          <div><dt>${facts.next ? "Next match" : c.draw_at && !facts.total ? "Draw" : "Best of"}</dt><dd>${facts.next ? fmtDate(facts.next) : c.draw_at && !facts.total ? fmtDate(c.draw_at) : `${c.best_of ?? 5} frame${(c.best_of ?? 5) === 1 ? "" : "s"}`}</dd></div>
+          ${c.entry_fee ? html`<div><dt>Entry</dt><dd>${c.entry_fee}</dd></div>` : ""}
+        </dl>
+        <span class="comp-tags"><span class="status ${progress.startsWith("Winner") ? "approved" : "submitted"}">${progress}</span>
+          ${openForEntry([c]).length ? html`<span class="status in_progress">Entries open${c.entry_closes ? ` until ${fmtDate(c.entry_closes)}` : ""}</span>` : ""}</span>
+      </div>
+      <span class="comp-go" aria-hidden="true">›</span>
     </a>`)}</div>` : html`<div class="empty box">No competitions for ${season?.name ?? "this season"} yet.</div>`}
   </div>`);
 }

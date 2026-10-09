@@ -11,7 +11,7 @@ import { seasonContext } from "../core/context.js";
 import { table } from "../core/api.js";
 import { breadcrumb, panel, dataTable, playerLink, teamLink, urls, seasonShort, breaksPanel, trophy } from "../core/components.js";
 import { RULES_TEXT } from "../core/rules.js";
-import { setTitle, adminEdit } from "../core/router.js";
+import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
 
 // The parts of a season that have a page for each league: [heading, what a league's tile says, title of a league's page].
@@ -20,7 +20,7 @@ const BY_LEAGUE = {
   rankings: ["Rankings", "Click here to view the rankings", (l) => `${l.name} Player Rankings`],
   "league-tables": ["League Tables", "Click here to view the league table", (l) => `${l.name} Table`],
 };
-const big = (title, line, href, note = "") => html`<a class="tile tall season-tile" href="${href}"><h4>${title}</h4><div>${line}</div>${note ? html`<p>${note}</p>` : ""}</a>`;
+const big = (title, line, href, note = "") => html`<a class="tile tall season-tile" href="${href}"><h4>${title}</h4><span class="tile-go">${line}</span>${note ? html`<p>${note}</p>` : ""}</a>`;
 const crumbs = (...rest) => breadcrumb([["Home", "/"], ["Our League", "/league"], ...rest]);
 
 export default async function seasons(view, { params }) {
@@ -38,6 +38,7 @@ export default async function seasons(view, { params }) {
 
   const league = ctx.leagues.find((l) => l.slug === params.league);
   if (!league) return notFound(view);
+  sideContext({ league });
   return { breaks, rankings, "league-tables": leagueTable }[params.section](view, ctx, season, league);
 }
 
@@ -49,7 +50,7 @@ function list(view, all, current) {
     ${crumbs(["Seasons"])}
     <h1>Seasons</h1>
     ${all.length ? html`<div class="cards season-cards">${[...all].reverse().map((s) => html`<a class="tile season-tile" href="${urls.season(s)}">
-      <h4>${s.name}</h4><div>Click here to view</div>${s.id === current?.id ? html`<p><span class="status in_progress">This season</span></p>` : ""}</a>`)}</div>`
+      <h4>${s.name}</h4><span class="tile-go">Click here to view</span>${s.id === current?.id ? html`<p><span class="status in_progress">This season</span></p>` : ""}</a>`)}</div>`
       : html`<div class="empty box">No seasons yet.</div>`}
     <a class="btn-bar" href="/archive">Season archive &amp; roll of honour: champions, top players and highest breaks</a>
   </div>`);

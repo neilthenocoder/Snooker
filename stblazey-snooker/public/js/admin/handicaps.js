@@ -8,7 +8,8 @@ import { panel, dataTable, handicapText, handicapMove } from "../core/components
 import { friendly } from "./crud.js";
 
 export async function handicapsPage(el) {
-  let search = "", teamId = "", note = "";
+  let search = "", teamId = "", note = "", page = 0;
+  const PAGE = 50;   // players shown at a time, with ‹ › to move through the rest (like every other list in the dashboard)
 
   async function draw() {
     const [players, teams, log] = await Promise.all([table("players", "full_name"), table("teams", "name"), handicapLog().catch(() => [])]);
@@ -16,6 +17,11 @@ export async function handicapsPage(el) {
     const name = (id) => players.find((p) => p.id === id)?.full_name ?? "A player";
     const list = players.filter((p) => (!teamId || p.team_id === teamId) && (!search || p.full_name.toLowerCase().includes(search)));
     const moved = players.filter((p) => p.last_handicap != null && p.last_handicap !== p.handicap).length;
+    page = Math.max(0, Math.min(page, Math.ceil(list.length / PAGE) - 1));
+    const from = page * PAGE, to = Math.min(list.length, from + PAGE);
+    const pager = list.length > PAGE ? html`<div class="pager"><span><b>${from + 1}–${to}</b> of <b>${list.length}</b></span>
+      <button type="button" data-page="-1" aria-label="Previous ${PAGE}" ${page === 0 ? "disabled" : ""}>‹</button>
+      <button type="button" data-page="1" aria-label="Next ${PAGE}" ${to >= list.length ? "disabled" : ""}>›</button></div>` : "";
 
     mount(el, html`<div class="stack" data-hc>
       <div class="notice">Change a handicap here and it takes effect straight away — on the Handicaps page, player pages and handicap competition scorecards.
@@ -29,15 +35,14 @@ export async function handicapsPage(el) {
           As you then adjust handicaps, the website shows an up or down arrow beside each player who has moved. ${moved ? html`<b>${moved}</b> player${moved > 1 ? "s have" : " has"} moved since the last review.` : "Nobody has moved since the last review."}</p>
         <div class="btn-row"><button type="button" class="btn secondary" data-review>Start a new yearly review</button></div></div>`)}
 
-      ${panel(`Handicaps (${list.length})`, dataTable([
+      ${panel(`Handicaps (${list.length})`, html`${pager}${dataTable([
         { label: "Player", cell: (p) => html`<a href="/player/${p.id}">${p.full_name}</a>` },
         { label: "Team", cell: (p) => teamName(p.team_id), cls: "hide-sm" },
         { label: "Last year", cell: (p) => (p.last_handicap == null ? "–" : handicapText(p.last_handicap)), cls: "num" },
         { label: "Now", cell: (p) => html`<b>${handicapText(p.handicap)}</b>${handicapMove(p)}`, cls: "num" },
         { label: "New handicap", cell: (p) => html`<span class="hc-edit"><input type="number" min="-200" max="200" step="1" value="${p.handicap}" data-hc-input="${p.id}" aria-label="New handicap for ${p.full_name}">
           <button type="button" class="btn small green" data-hc-save="${p.id}">Save</button></span>`, cls: "right" },
-      ], list.slice(0, 150), { empty: "No players match." }))}
-      ${list.length > 150 ? html`<p class="muted">Showing the first 150 — use the search or team list to narrow it down.</p>` : ""}
+      ], list.slice(from, to), { empty: "No players match." })}${pager}`)}
 
       ${panel("Recent changes", dataTable([
         { label: "Date", cell: (c) => fmtDate(c.created_at) },
@@ -62,6 +67,7 @@ export async function handicapsPage(el) {
     const t = e.target.closest("button");
     if (!t) return;
     if (t.dataset.hcSave) return saveOne(t.dataset.hcSave, t);
+    if (t.dataset.page) { page += Number(t.dataset.page); await draw(); return $("[data-hc] .pager", el)?.scrollIntoView({ block: "nearest" }); }
     if (t.matches("[data-review]")) {
       if (!(await confirmBox("Everyone's handicap today becomes their “last year” figure, and the up/down arrows on the website start again from here.\n\nDo this once, before you make this year's adjustments.", { title: "Start a new yearly review?", ok: "Start the review" }))) return;
       try { await startHandicapReview(); toast("Review started — today's handicaps saved as last year's"); draw(); }
@@ -71,8 +77,8 @@ export async function handicapsPage(el) {
   el.onkeydown = (e) => { if (e.key === "Enter" && e.target.dataset.hcInput) { e.preventDefault(); saveOne(e.target.dataset.hcInput, $(`[data-hc-save="${e.target.dataset.hcInput}"]`, el)); } };
   el.oninput = (e) => {
     if (e.target.matches("[data-note]")) note = e.target.value;
-    if (e.target.matches("[data-search]")) { search = e.target.value.trim().toLowerCase(); redrawKeepingFocus("[data-search]"); }
-    if (e.target.matches("[data-team]")) { teamId = e.target.value; draw(); }
+    if (e.target.matches("[data-search]")) { search = e.target.value.trim().toLowerCase(); page = 0; redrawKeepingFocus("[data-search]"); }
+    if (e.target.matches("[data-team]")) { teamId = e.target.value; page = 0; draw(); }
   };
   // Redraw the list while typing in the search box without losing the cursor.
   async function redrawKeepingFocus(sel) {

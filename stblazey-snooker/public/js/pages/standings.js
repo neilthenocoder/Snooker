@@ -2,7 +2,7 @@ import { html, mount } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { breadcrumb, leagueTablePanel, rankingsPanel, breaksPanel, seasonPicker, emblem, urls, trophy } from "../core/components.js";
 import { RULES_TEXT } from "../core/rules.js";
-import { setTitle, adminEdit } from "../core/router.js";
+import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
 
 export default async function standings(view, { params, query }) {
@@ -11,6 +11,7 @@ export default async function standings(view, { params, query }) {
   if (!league) return notFound(view);
   setTitle(`${league.name} ${ctx.season?.name}`);
   adminEdit("leagues", league.id);
+  sideContext({ league });
   mount(view, html`<div class="wrap stack">
     <div>${breadcrumb([["Home", "/"], ["Our League", "/league"], ["Seasons", "/seasons"], [`${ctx.season?.name} Season`, urls.season(ctx.season)], [league.name]])}
     <div class="title-trophy">${trophy(league)}<div>

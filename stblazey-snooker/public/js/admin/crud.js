@@ -48,7 +48,7 @@ function display(field, value, refs) {
     case "image": return html`<img class="thumb" src="${value}" alt="">`;
     case "gallery": return `${value.length} picture${value.length === 1 ? "" : "s"}`;
     case "list": return listItems(value).join(", ");
-    case "tags": return value.map((id) => labelOf(refs[field.ref].find((r) => r.id === id))).join(", ") || (field.empty ?? "–");
+    case "tags": return (value ?? []).map((id) => (field.store ? id : labelOf(refs[field.ref].find((r) => r.id === id)))).join(", ") || (field.empty ?? "–");
     default: return String(value).length > 60 ? `${String(value).slice(0, 60)}…` : value;
   }
 }
@@ -56,7 +56,8 @@ function display(field, value, refs) {
 const galleryThumbs = (name, urls) => html`${urls.map((u, i) => html`<figure class="gal-thumb"><img src="${u}" alt="">
   <button type="button" data-gal-remove="${name}" data-i="${i}" aria-label="Remove">×</button></figure>`)}`;
 
-const tagChips = (name, ids, options) => html`${ids.map((id, i) => html`<span class="chip">${labelOf(options.find((r) => r.id === id))}
+// (A tags field normally keeps ids; with store: "name" it keeps that column instead — e.g. category names.)
+const tagChips = (name, ids, options, store = "id") => html`${ids.map((id, i) => html`<span class="chip">${store !== "id" && !options.some((r) => r[store] === id) ? id : labelOf(options.find((r) => r[store] === id))}
   <button type="button" data-tag-remove="${name}" data-i="${i}" aria-label="Remove">×</button></span>`)}`;
 
 function input(field, row, refs, rows) {
@@ -112,8 +113,8 @@ function input(field, row, refs, rows) {
     case "tags": {
       const ids = Array.isArray(value) ? value : [];
       return html`<div class="tags-field">
-        <div class="tag-chips" data-tags="${name}">${tagChips(name, ids, refs[field.ref])}</div>
-        <select data-tag-add="${name}"><option value="">+ Add…</option>${refs[field.ref].map((r) => html`<option value="${r.id}">${labelOf(r)}</option>`)}</select>
+        <div class="tag-chips" data-tags="${name}">${tagChips(name, ids, refs[field.ref], field.store)}</div>
+        <select data-tag-add="${name}"><option value="">+ Add…</option>${refs[field.ref].map((r) => html`<option value="${r[field.store ?? "id"]}">${labelOf(r)}</option>`)}</select>
         <input type="hidden" name="${name}" value="${JSON.stringify(ids)}"></div>`;
     }
     case "ref": return html`<select ${a(attrs)}><option value="">– none –</option>${refs[field.ref].map((r) => html`<option value="${refValue(field, r)}" ${refValue(field, r) === value ? "selected" : ""}>${labelOf(r)}</option>`)}</select>`;
@@ -178,8 +179,8 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
   const filters = { ...preset };
   let search = "";
   let page = 0;
-  // Paging (‹ › arrows, like an email inbox) is switched on per section with `pageSize` in resources.js.
-  const PAGE_SIZE = res.pageSize ?? 0;
+  // Every list is paged like an email inbox: "1–50 of 116  ‹ ›". A section can set its own `pageSize` in resources.js.
+  const PAGE_SIZE = res.pageSize ?? 50;
   // A section can flag rows that are waiting for someone to look at them (res.flag — e.g. players a captain added).
   const flag = res.flag;
   const flagged = (r) => !!flag && !!r[flag.field];
@@ -285,7 +286,7 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
   const setTags = (name, ids) => {
     const field = res.fields.find((f) => key(f) === name);
     form().elements[name].value = JSON.stringify(ids);
-    mount($(`[data-tags="${name}"]`, form()), tagChips(name, ids, refs[field.ref]));
+    mount($(`[data-tags="${name}"]`, form()), tagChips(name, ids, refs[field.ref], field.store));
   };
 
   el.addEventListener("change", async (e) => {

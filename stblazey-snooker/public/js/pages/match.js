@@ -4,8 +4,8 @@ import { loadFixture, headToHead, subscribe, setMatchPhotos } from "../core/api.
 import { uploadImage } from "../core/upload.js";
 import { matchScore, frameWinner, breakPoints, isShieldMatch, RULES } from "../core/rules.js";
 import { canEditFixture, canAddMatchPhotos, MATCH_PHOTO_LIMIT } from "../core/auth.js";
-import { breadcrumb, panel, dataTable, resultsList, statusBadge, urls, teamLink, playerLink, badge, gallery } from "../core/components.js";
-import { setTitle, adminEdit } from "../core/router.js";
+import { breadcrumb, panel, dataTable, resultsList, statusBadge, urls, teamLink, playerLink, badge, gallery, outcomeTag } from "../core/components.js";
+import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
 
 export default async function match(view, { params, user }) {
@@ -20,6 +20,7 @@ export default async function match(view, { params, user }) {
     const title = `${home?.name} vs ${away?.name}`;
     setTitle(title);
     adminEdit("fixtures", null, { href: urls.scorecard(fx), label: "Edit scorecard" });
+    sideContext({ league: ctx.league.get(fx.league_id) });
     const score = matchScore(frames);
     const played = frames.length > 0;
     // An old result brought in with only its final score has no frame details to show.
@@ -54,17 +55,21 @@ export default async function match(view, { params, user }) {
     for (const f of h2h.frames) (h2hFrames.get(f.fixture_id) ?? h2hFrames.set(f.fixture_id, []).get(f.fixture_id)).push(f);
     const past = h2h.fixtures.filter((f) => f.id !== fx.id && h2hFrames.has(f.id));
 
+    // Win in green, loss in red — the same colours as the scorecard below it.
     const outcome = (side) => {
       if (!played) return "–";
       const other = side === "home" ? "away" : "home";
-      const verdict = score[side] > score[other] ? "Win" : score[side] < score[other] ? "Loss" : "Draw";
-      return fx.status === "in_progress" ? `${verdict} (so far)` : verdict;
+      const what = score[side] > score[other] ? "won" : score[side] < score[other] ? "lost" : "drawn";
+      const word = { won: "Win", lost: "Loss", drawn: "Draw" }[what];
+      return outcomeTag(what, fx.status === "in_progress" ? `${word} (so far)` : word);
     };
+    // The bars at the bottom: wins are green, losses red, the rest a plain grey.
     const bar = (label, key) => {
       const h = total("home", key), a = total("away", key), sum = h + a || 1;
-      return html`<h4>${label}</h4><div class="bar"><span>${h}</span>
+      return html`<h4>${label}</h4><div class="bar bar-${key}"><span>${h}</span>
         <div class="track"><i style="width:${(h / sum) * 100}%"></i></div><span>${a}</span></div>`;
     };
+    const lost = (s) => played && fx.status !== "in_progress" && score[s] < score[s === "home" ? "away" : "home"];
     const playerName = (id) => ctx.player.get(id)?.full_name ?? "–";
     const nameLink = (id, ext) => { const p = ctx.player.get(id); return p ? html`<a href="${urls.player(p)}">${p.full_name}</a>${ext ? html` <span class="ext-tag" title="Extra player">Ext</span>` : ""}` : "–"; };
     const league = ctx.league.get(fx.league_id);
@@ -78,10 +83,10 @@ export default async function match(view, { params, user }) {
       <div class="wrap"><div class="match-hero">
         <div class="mh-band">${league?.name ?? ""} · ${fmtDate(fx.starts_at)} ${fmtTime(fx.starts_at)}</div>
         <div class="mh-body">
-          <a class="mh-side ${won("home") ? "won" : ""}" href="${home ? urls.team(home) : "#"}">${badge(home)}<span>${home?.name}</span></a>
-          <div class="mh-score"><b>${played ? score.home : "–"}</b><i>:</i><b>${played ? score.away : "–"}</b>
+          <a class="mh-side ${won("home") ? "won" : lost("home") ? "lost" : ""}" href="${home ? urls.team(home) : "#"}">${badge(home)}<span>${home?.name}</span></a>
+          <div class="mh-score"><b class="${won("home") ? "won" : lost("home") ? "lost" : ""}">${played ? score.home : "–"}</b><i>:</i><b class="${won("away") ? "won" : lost("away") ? "lost" : ""}">${played ? score.away : "–"}</b>
             ${fx.status === "in_progress" ? html`<span class="live-dot">Live</span>` : played ? html`<small>${fx.status === "approved" ? "Final" : fx.status.replace("_", " ")}</small>` : html`<small>${fmtTime(fx.starts_at)}</small>`}</div>
-          <a class="mh-side ${won("away") ? "won" : ""}" href="${away ? urls.team(away) : "#"}">${badge(away)}<span>${away?.name}</span></a>
+          <a class="mh-side ${won("away") ? "won" : lost("away") ? "lost" : ""}" href="${away ? urls.team(away) : "#"}">${badge(away)}<span>${away?.name}</span></a>
         </div>
         ${shield.isShield ? html`<div class="mh-foot">🛡 <a href="${urls.shield(league)}">${league.shield_name || "Shield"}</a> match — ${ctx.team.get(shield.holderId)?.name} defending</div>` : ""}
       </div></div>
@@ -92,7 +97,7 @@ export default async function match(view, { params, user }) {
         </div>
         ${panel("Results", dataTable([
           { label: "Team", cell: ([, t]) => teamLink(t) },
-          { label: "Score", cell: ([s]) => (played ? score[s] : "–") },
+          { label: "Score", cell: ([s]) => (played ? html`<b class="res-num ${won(s) ? "won" : lost(s) ? "lost" : ""}">${score[s]}</b>` : "–"), cls: "num" },
           { label: "Outcome", cell: ([s]) => outcome(s) },
         ], sides))}
         ${panel("Details", dataTable([

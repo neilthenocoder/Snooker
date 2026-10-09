@@ -6,15 +6,17 @@
 import { SITE, DEMO_MODE } from "./config.js";
 import { html, mount, $, ukDay, toast } from "./core/dom.js";
 import { applyBranding, loaderOn, loaderOff, layoutFor, TICKER_PX } from "./core/branding.js";
-import { getUser, signOut, isStaff, isMember, isPlainPlayer, mySnookerOn, canOpenSection, roleText } from "./core/auth.js";
+import { getUser, signOut, isPlainPlayer, mySnookerOn, mySnookerSetUp, mySnookerOwnPage, canOpenSection } from "./core/auth.js";
 import { seasonContext, sideBoxData } from "./core/context.js";
-import { sidebar } from "./core/components.js";
+import { sidebar, crumbs } from "./core/components.js";
+import { openAccount, openNotifications, closeDrawer, initials } from "./core/drawers.js";
+import { toggleFollow } from "./core/my-snooker.js";
 import { openSearch } from "./core/search.js";
 import { table, invalidate, settings, nearbyMatches, subscribe, trackPageView, articles, liveMatches } from "./core/api.js";
 import { liveState } from "./core/rules.js";
-import { notificationsOn, setNotifications, startNotifications } from "./core/notify.js";
+import { notificationsOn, startNotifications } from "./core/notify.js";
 import { urls } from "./core/components.js";
-import { setNavigator, setShellRefresher, takeEditTarget } from "./core/router.js";
+import { setNavigator, setShellRefresher, takeEditTarget, takeSideContext } from "./core/router.js";
 
 const ROUTES = [
   ["/", "home"],
@@ -105,7 +107,6 @@ const SOCIAL = [
   ["youtube_url", "YouTube", html`<path d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.5 2.5 0 0 0 2.4 7.2C2 8.8 2 12 2 12s0 3.2.4 4.8a2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8c.4-1.6.4-4.8.4-4.8s0-3.2-.4-4.8ZM10 15V9l5.2 3Z"/>`],
 ];
 const LIVE_LABEL = { live: "Live", soon: "Live soon", idle: "Live" };
-const logoutIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5v-2H5V5h5Zm6.6 4.6-1.4 1.4 2 2H9v2h8.2l-2 2 1.4 1.4L21 12Z"/></svg>`;
 
 /** Recolour the LIVE button (orange "LIVE SOON" an hour before, green while matches are on). */
 async function refreshLive() {
@@ -118,60 +119,88 @@ async function refreshLive() {
   const draws = competitions.filter((c) => c.draw_live?.status === "live" || (!c.draw_live && c.draw_at))
     .map((c) => ({ starts_at: c.draw_live?.started_at ?? c.draw_at, status: c.draw_live ? "in_progress" : "scheduled" }));
   const state = liveState([...fixtures, ...comps, ...draws, ...scored], Date.now(), ukDay);
-  const btn = $(".nav-live-btn");
-  if (!btn) return;
-  btn.className = `nav-live nav-live-btn state-${state}`;
-  btn.textContent = LIVE_LABEL[state];
+  for (const btn of document.querySelectorAll(".nav-live-btn")) {
+    btn.className = btn.className.replace(/state-\w+/, `state-${state}`);
+    (btn.querySelector("span") ?? btn).textContent = LIVE_LABEL[state];
+  }
 }
 
+/** The bell has a line through it while live notifications are switched off. */
 function drawBell() {
   const on = notificationsOn();
-  const b = $("[data-bell]");
+  const b = $(".nav-bell");
   if (!b) return;
   b.classList.toggle("off", !on);
-  b.title = on ? "Live notifications are on — click to turn off" : "Live notifications are off — click to turn on";
-  b.setAttribute("aria-pressed", String(on));
+  b.title = on ? "Notifications: choose what you hear about" : "Notifications are off — press to change";
 }
+
+const personIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2a8 8 0 0 1 6.3 12.9c-1.3-1.8-3.6-2.9-6.3-2.9s-5 1.1-6.3 2.9A8 8 0 0 1 12 4Zm0 2.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm0 9.5c2 0 3.7.8 4.8 2.2a8 8 0 0 1-9.6 0c1.1-1.4 2.8-2.2 4.8-2.2Z"/></svg>`;
+const menuIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3Zm0 5h18v2H3Zm0 5h18v2H3Z"/></svg>`;
+// The pages in the menu bar, in order: [class (its colour), address, name].
+const MENU = [["nav-home", "/", "Home"], ["nav-comps", "/competitions", "Competitions"], ["nav-fixtures", "/fixtures", "Fixtures"], ["nav-league", "/league", "League"], ["nav-news", "/news", "News"]];
 
 async function drawHeader() {
   const [user, site] = await Promise.all([getUser(), settings()]);
   applyBranding(site);
-  // Officers get the Admin button; anyone linked to a team or player gets My Team (some people have both).
-  // Under it, very small: who is logged in and their club.
-  const staff = isStaff(user), member = isMember(user);
-  const club = user?.profile?.team_id ? (await table("teams", "name").catch(() => [])).find((t) => t.id === user.profile.team_id)?.name : "";
-  const who = user ? [...new Set([user.profile?.full_name || user.email, club || (member ? "" : roleText(user.profile))].filter(Boolean))].join(" · ") : "";
-  const tagged = (label) => html`<span class="nav-who"><b>${label}</b><small>${who}</small></span>`;
-  // A player's login has no tools: its button is My Snooker (their own page), or their dashboard if they turned it off.
-  const plain = isPlainPlayer(user);
-  const account = !user ? html`<a class="nav-login" href="/login">Login</a>`
-    : html`${staff ? html`<a class="nav-login" href="/admin">${member ? "Admin" : tagged("Admin")}</a>` : ""}${plain
-      ? html`<a class="nav-login nav-my" href="${mySnookerOn(user) ? "/myteam" : "/my"}">${tagged("My Snooker")}</a>`
-      : member ? html`<a class="nav-login nav-my" href="/my">${tagged("My Team")}</a>` : ""}`;
+  const name = user?.profile?.full_name || user?.email || "";
+  // On the right, always in this order: the person (log in / my account), the bell (notifications), search.
+  // Phones add the menu button, which opens the full-screen menu.
   mount($("#site-header"), html`
     ${DEMO_MODE ? html`<div class="demo-banner">Demo mode — sample data saved in this browser only. Add your Supabase keys in js/config.js to go live.</div>` : ""}
     <header class="site-header"><div class="wrap">
       <a class="logo" href="/" aria-label="${SITE.name} home"><img src="${site.logo_url || "/assets/logo.svg"}" alt="${SITE.name}"></a>
-      <button class="nav-search-m" data-search-open aria-label="Search">${searchIcon}</button>
-      <button class="nav-toggle" aria-expanded="false">Menu</button>
-      <nav class="main-nav ${user ? (staff && member ? "tight-2" : "tight") : ""}">
-        <a class="nav-home" href="/">Home</a>
-        <a class="nav-comps" href="/competitions">Competitions</a>
-        <a class="nav-fixtures" href="/fixtures">Fixtures</a>
-        <a class="nav-league" href="/league">League</a>
-        <a class="nav-news" href="/news">News</a>
-        ${account}
+      <nav class="main-nav" aria-label="Main menu">
+        ${MENU.map(([cls, href, label]) => html`<a class="${cls}" href="${href}">${label}</a>`)}
         <a class="nav-live nav-live-btn state-idle" href="/live">Live</a>
-        <button class="nav-live nav-bell" data-bell aria-label="Live notifications">${bell}</button>
-        <button class="nav-live nav-search" data-search-open aria-label="Search">${searchIcon}<span>Search</span></button>
-        ${user ? html`<button class="nav-logout" data-logout aria-label="Log out" title="Log out">${logoutIcon}<span>Log out</span></button>` : ""}
       </nav>
-    </div></header>`);
+      <div class="nav-icons">
+        <button type="button" class="nav-icon nav-account ${user ? "in" : ""}" data-account-open aria-label="${user ? `My account: ${name}` : "Log in"}" title="${user ? `My account: ${name}` : "Log in"}">
+          ${user ? html`<span class="nav-initials">${initials(name)}</span>` : personIcon}</button>
+        <button type="button" class="nav-icon nav-bell" data-bell aria-label="Notifications" title="Notifications">${bell}</button>
+        <button type="button" class="nav-icon nav-search" data-search-open aria-label="Search" title="Search">${searchIcon}</button>
+        <button type="button" class="nav-icon nav-toggle" data-menu-open aria-label="Menu" aria-expanded="false">${menuIcon}</button>
+      </div>
+    </div></header>
+    <div class="menu-overlay" data-menu role="dialog" aria-modal="true" aria-label="Menu">
+      <div class="menu-top"><a class="logo" href="/" aria-label="${SITE.name} home"><img src="${site.logo_url || "/assets/logo.svg"}" alt=""></a>
+        <button type="button" class="menu-x" data-menu-close aria-label="Close the menu">×</button></div>
+      <nav class="menu-links" aria-label="Main menu">
+        ${MENU.map(([cls, href, label]) => html`<a class="${cls}" href="${href}"><span>${label}</span></a>`)}
+        <a class="nav-live-btn menu-live state-idle" href="/live"><span>Live</span></a>
+      </nav>
+      <div class="menu-more">
+        <a href="/calendar">Calendar</a><a href="/results">Results</a><a href="/handicaps">Handicaps</a><a href="/players">Our Players</a><a href="/seasons">Seasons</a><a href="/scoreboard">Live scoreboard</a>
+      </div>
+      <div class="menu-foot">
+        <button type="button" class="btn ${user ? "secondary" : ""}" data-account-open>${user ? html`My account · ${name.split(" ")[0]}` : "Log in"}</button>
+        <button type="button" class="btn ghost" data-search-open>Search</button>
+        <button type="button" class="btn ghost" data-bell>Notifications</button>
+      </div>
+    </div>`);
   const icon = document.querySelector("link[rel=icon]");
   if (icon) icon.href = site.favicon_url || "/assets/logo.svg";
   drawBell();
   refreshLive();
+  measureHeader();
 }
+
+/**
+ * The menu bar stays at the top of the screen: tell the stylesheet how tall it is, so things that
+ * stick below it line up. It is measured again whenever its height changes (it gets slimmer once you scroll).
+ */
+let headerWatch = null;
+function measureHeader() {
+  const bar = $(".site-header");
+  if (!bar) return;
+  const set = () => document.documentElement.style.setProperty("--header-h", `${Math.round(bar.getBoundingClientRect().height)}px`);
+  set();
+  headerWatch?.disconnect();
+  if (typeof ResizeObserver === "function") { headerWatch = new ResizeObserver(set); headerWatch.observe(bar); }
+}
+const setMenu = (open) => {
+  document.documentElement.classList.toggle("menu-open", open);
+  $("[data-menu-open]")?.setAttribute("aria-expanded", String(open));
+};
 
 async function drawFooter() {
   const [sponsors, pages, site] = await Promise.all([
@@ -227,7 +256,9 @@ async function applyLayout(view, page) {
   shell.classList.toggle("has-side", add);
   if (!add) return mount(side, "");
   const [ctx, news, box] = await Promise.all([seasonContext(), articles(), sideBoxData()]);
-  mount(side, sidebar(ctx, news, { box }));
+  // What the page is about (a competition, a league, a team, a player…) decides what the side boxes show.
+  const { contextSidebar } = await import("./core/side.js");
+  mount(side, await contextSidebar(ctx, news, box, { page, group, about: takeSideContext() }) ?? sidebar(ctx, news, { box }));
 }
 
 /** Maintenance mode (Admin → Site settings): visitors see a holding page, anyone logged in sees the site. */
@@ -263,8 +294,11 @@ async function renderRoute() {
   document.querySelector(".edit-page")?.remove();
   const view = $("#view");
   view.className = "";
-  $(".main-nav")?.classList.remove("open");
+  setMenu(false); closeDrawer();
   const { page, params } = match(location.pathname);
+  // The dashboard and My area keep the full trail (Home - Admin - Players); public pages get a back arrow.
+  crumbs.trail = ["admin", "my", "scorecard", "cup-scorecard"].includes(page);
+  document.body.dataset.page = page;
   view.dataset.section = SECTION[page] ?? "";
   mount(view, "");
   mount($("#side"), ""); $("#shell").classList.remove("has-side");
@@ -272,18 +306,19 @@ async function renderRoute() {
   trackPageView(location.pathname);
   try {
     const [mod, user, site] = await Promise.all([import(`./pages/${page}.js`), getUser(), settings()]);
-    // My Snooker: a player who is still logged in starts on their own page when they come to the site.
-    // Once they have seen it (this visit), Home is the normal home page.
-    if (page === "home" && isPlainPlayer(user) && mySnookerOn(user) && !mySnookerSeen()) return navigate("/myteam", { replace: true });
+    // My Snooker: someone who is still logged in starts on their own page when they come to the site
+    // (if that is where they chose to have it). Once they have seen it (this visit), Home is the normal home page.
+    if (page === "home" && mySnookerOn(user) && mySnookerOwnPage(user) && (mySnookerSetUp(user) || isPlainPlayer(user)) && !mySnookerSeen()) return navigate("/myteam", { replace: true });
     document.body.classList.toggle("maintenance", !!site.maintenance_on && !user);
     drawTicker(page === "home" && !(site.maintenance_on && !user));
     if (site.maintenance_on && !user && page !== "login") return holdingPage(view, site);
-    takeEditTarget();
+    takeEditTarget(); takeSideContext();
     cleanup = await mod.default(view, { params, user, query: new URLSearchParams(location.search) });
     await applyLayout(view, page);
     drawEditButton(user, page);
     if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView();
     else window.scrollTo(0, 0);
+    drawScrollHint();
   } catch (err) {
     console.error(err);
     mount(view, html`<div class="wrap"><div class="notice error">Something went wrong: ${err.message}</div></div>`);
@@ -317,9 +352,45 @@ document.addEventListener("click", async (e) => {
   const a = e.target.closest("a[href]");
   if (e.target.closest("[data-logout]")) {
     await signOut(); try { sessionStorage.removeItem("sbds-my-snooker-seen"); } catch { /* nothing stored */ }
-    await drawHeader(); return navigate("/");
+    closeDrawer(); await drawHeader(); return navigate("/");
   }
-  if (e.target.closest(".nav-toggle")) { $(".main-nav").classList.toggle("open"); return; }
+  if (e.target.closest("[data-menu-open]")) return setMenu(true);
+  if (e.target.closest("[data-menu-close]")) return setMenu(false);
+  if (e.target.closest("[data-account-open]")) { setMenu(false); return openAccount(await getUser()); }
+  if (e.target.closest("[data-scroll-down]")) return window.scrollBy({ top: window.innerHeight * 0.8, behavior: "smooth" });
+  // The ‹ › buttons of a news strip move it along by most of its width.
+  const nsMove = e.target.closest("[data-ns-move]");
+  if (nsMove) { const row = nsMove.closest(".news-strip")?.querySelector(".ns-row"); return row?.scrollBy({ left: Number(nsMove.dataset.nsMove) * row.clientWidth * 0.8, behavior: "smooth" }); }
+  // Share buttons (articles): the phone's own share sheet, copy the link, or one of the usual places.
+  const share = e.target.closest("[data-share]");
+  if (share) {
+    const url = `${location.origin}${share.dataset.sharePath || location.pathname}`, title = share.dataset.shareTitle || document.title, kind = share.dataset.share;
+    const q = encodeURIComponent;
+    if (kind === "share" && navigator.share) return navigator.share({ title, url }).catch(() => {});
+    if (kind === "share" || kind === "link") {
+      try { await navigator.clipboard.writeText(url); toast("Link copied"); } catch { prompt("Copy this link:", url); }
+      return;
+    }
+    const to = { whatsapp: `https://wa.me/?text=${q(`${title} ${url}`)}`, facebook: `https://www.facebook.com/sharer/sharer.php?u=${q(url)}`,
+      x: `https://twitter.com/intent/tweet?text=${q(title)}&url=${q(url)}`, email: `mailto:?subject=${q(title)}&body=${q(`${title}\n\n${url}`)}` }[kind];
+    if (to) kind === "email" ? (location.href = to) : window.open(to, "_blank", "noopener");
+    return;
+  }
+  // Follow / stop following a team or a player (My Snooker). Logged out: the log in panel opens.
+  const follow = e.target.closest("[data-follow]");
+  if (follow) {
+    const user = await getUser(), [kind, id] = follow.dataset.follow.split(":");
+    if (!user) return openAccount(null, { message: "Log in to follow teams and players. They then appear on your own My Snooker page." });
+    follow.disabled = true;
+    try {
+      const on = await toggleFollow(user, kind, id);
+      follow.classList.toggle("on", on); follow.setAttribute("aria-pressed", String(on));
+      follow.querySelector("span").textContent = on ? "Following" : "Follow";
+      toast(on ? "Added to My Snooker" : "Removed from My Snooker");
+    } catch (err) { toast(err.message, "error"); }
+    follow.disabled = false;
+    return;
+  }
   if (e.target.closest("[data-to-top]")) return window.scrollTo({ top: 0, behavior: "smooth" });
   const stop = e.target.closest("[data-ticker-stop]");
   if (stop) {
@@ -330,14 +401,8 @@ document.addEventListener("click", async (e) => {
   }
   const shot = e.target.closest("[data-lightbox]");
   if (shot) return openLightbox(shot.dataset.lightbox);
-  if (e.target.closest("[data-search-open]")) { $(".main-nav")?.classList.remove("open"); return openSearch(); }
-  if (e.target.closest("[data-bell]")) {
-    const on = !notificationsOn();
-    setNotifications(on);
-    drawBell();
-    toast(on ? "Live notifications on" : "Live notifications off");
-    return;
-  }
+  if (e.target.closest("[data-search-open]")) { setMenu(false); return openSearch(); }
+  if (e.target.closest("[data-bell]")) { setMenu(false); return openNotifications({ onChange: drawBell }); }
   if (!a || a.target || a.hasAttribute("download") || e.metaKey || e.ctrlKey || e.shiftKey) return;
   const url = new URL(a.href, location.href);
   if (url.origin !== location.origin || /\.\w+$/.test(url.pathname)) return;
@@ -353,15 +418,30 @@ document.addEventListener("change", (e) => {
 await Promise.all([drawHeader(), drawFooter()]);
 renderRoute();
 
-// Phones: a "back to top" button once you've scrolled down a screen or so.
-const toTop = document.createElement("button");
-toTop.type = "button";
-toTop.className = "to-top";
+// Two round white buttons: "scroll down" on phones while there is more of the page below,
+// and "back to top" once you have scrolled down a screen or so.
+const arrow = (d) => html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
+const toTop = Object.assign(document.createElement("button"), { type: "button", className: "to-top round-btn" });
 toTop.dataset.toTop = "";
 toTop.setAttribute("aria-label", "Back to top");
-mount(toTop, html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7.5 5 14.4l1.4 1.4L12 10.3l5.6 5.5L19 14.4Z"/></svg><span>Top</span>`);
-document.body.append(toTop);
-window.addEventListener("scroll", () => toTop.classList.toggle("show", window.scrollY > 500), { passive: true });
+mount(toTop, arrow("M12 7.5 5 14.4l1.4 1.4L12 10.3l5.6 5.5L19 14.4Z"));
+const scrollHint = Object.assign(document.createElement("button"), { type: "button", className: "scroll-down round-btn" });
+scrollHint.dataset.scrollDown = "";
+scrollHint.setAttribute("aria-label", "Scroll down for more");
+mount(scrollHint, arrow("M12 16.5 5 9.6l1.4-1.4L12 13.7l5.6-5.5L19 9.6Z"));
+document.body.append(scrollHint, toTop);
+/** Show "scroll down" only at the top of a page that goes on well below the screen. */
+function drawScrollHint() {
+  const more = document.documentElement.scrollHeight - window.innerHeight;
+  scrollHint.classList.toggle("show", more > 240 && window.scrollY < 80);
+}
+window.addEventListener("scroll", () => {
+  toTop.classList.toggle("show", window.scrollY > 500);
+  $(".site-header")?.classList.toggle("stuck", window.scrollY > 90);
+  drawScrollHint();
+}, { passive: true });
+window.addEventListener("resize", drawScrollHint, { passive: true });
+setTimeout(drawScrollHint, 1500);   // once pictures and the first page have settled
 
 // Keep the LIVE button current: every minute, and whenever a match changes.
 setInterval(refreshLive, 60e3);

@@ -70,7 +70,7 @@ export const handicapText = (h) => (Number(h) > 0 ? `+${h}` : String(h ?? 0));
 
 /** Up or down arrow against last year's handicap (set at the yearly review), or nothing if it hasn't moved. */
 /** A handicap as a coloured tag: scratch and minus handicaps green, plus handicaps red. */
-export const handicapTag = (h) => html`<span class="hc-val ${Number(h) > 0 ? "plus" : "minus"}">${handicapText(h)}</span>`;
+export const handicapTag = (h) => html`<span class="hc-val ${Number(h) > 0 ? "plus" : Number(h) < 0 ? "minus" : "zero"}">${handicapText(h)}</span>`;
 
 export function handicapMove(player) {
   if (player?.last_handicap == null || player.last_handicap === player.handicap) return "";
@@ -85,7 +85,29 @@ export const seasonPicker = (ctx) => html`<label class="toolbar" style="font-wei
 /** "26-27" from "2026-2027". */
 export const seasonShort = (season) => (season?.name ?? "").replace(/\d\d(\d\d)/g, "$1");
 
+/**
+ * Won / Lost / Drawn, always in the same colours everywhere: a win is green, a loss is red.
+ * `what` is "won" | "lost" | "drawn" (anything else shows nothing).
+ */
+export const outcomeTag = (what, text = null) => (["won", "lost", "drawn"].includes(what)
+  ? html`<span class="wl ${what}">${text ?? { won: "Won", lost: "Lost", drawn: "Drawn" }[what]}</span>` : "");
+
+/**
+ * Where a page sits. On the public site this is a single back arrow to the page above
+ * ("‹ Our League"); in the dashboard and My area it is the full trail (Home - Admin - Players).
+ * main.js sets which, page by page (crumbs.trail).
+ */
+export const crumbs = { trail: false };
+const backArrow = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 5.3 8 12l6.7 6.7 1.4-1.4L10.8 12l5.3-5.3Z"/></svg>`;
 export function breadcrumb(items) {
+  if (!crumbs.trail) {
+    const up = [...items].slice(0, -1).reverse().find(([, href]) => href);
+    if (!up) return "";
+    return html`<nav class="back-nav" aria-label="Back"><a class="back-link" href="${up[1]}">${backArrow}<span>${up[0]}</span></a></nav>`;
+  }
+  return trail(items);
+}
+function trail(items) {
   return html`<nav class="breadcrumb" aria-label="Breadcrumb">${items.map(([label, href]) =>
     href ? html`<a href="${href}">${label}</a>` : html`<span>${label}</span>`)}</nav>`;
 }
@@ -108,7 +130,7 @@ export function dataTable(columns, rows, { highlight = () => false, rowClass = (
 }
 
 export const tile = (title, text, href, cls = "") =>
-  html`<a class="tile ${cls}" href="${href}"><h4>${title}</h4><div>Click here to view</div>${text ? html`<p>${text}</p>` : ""}</a>`;
+  html`<a class="tile ${cls}" href="${href}"><h4>${title}</h4><span class="tile-go">Click here to view</span>${text ? html`<p>${text}</p>` : ""}</a>`;
 
 /** The small round picture for an article (its circle image, or its main image). */
 export const articleThumb = (a) => a.circle_image_url || a.image_url;
@@ -133,7 +155,7 @@ export function leagueTablePanel(ctx, league, { limit = Infinity, highlightTeamI
     { label: "P", cell: (r) => r.pts, cls: "num strong" },
   ], rows, { highlight: top, empty: "No teams in this league yet." });
   return panel(html`${trophy(league, "tiny", { always: false })}${league.name} Table`, table, {
-    foot: Number.isFinite(limit) ? { href: urls.standings(league), label: "View full table" } : null,
+    foot: Number.isFinite(limit) ? { href: urls.standings(league), label: "View full table" } : null, cls: "lt-panel",
   });
 }
 
@@ -245,7 +267,7 @@ function sideBox(ctx, news, count, box) {
   return html`${panel(site.side_box_title || "Latest Results", rows.length
       ? html`<div class="res-list">${rows.map((r) => html`<a class="res-mini" href="${r.href}">
           <small>${r.when ? fmtDate(r.when) : ""}${r.title ? ` · ${r.title}` : ""}</small>
-          <span class="${r.won === "h" ? "won" : ""}">${r.home}</span><b>${r.score}</b><span class="${r.won === "a" ? "won" : ""}">${r.away}</span></a>`)}</div>`
+          <span class="${r.won === "h" ? "won" : r.won ? "lost" : ""}">${r.home}</span><b>${r.score}</b><span class="${r.won === "a" ? "won" : r.won ? "lost" : ""}">${r.away}</span></a>`)}</div>`
       : html`<div class="empty">No results yet.</div>`, { color: "blue", href: "/results" })}
     <a class="btn-bar" href="/results">See all results</a>`;
 }
@@ -262,14 +284,20 @@ export function resultText(ctx, fx) {
  * Full fixtures table used on team pages and in the captain area.
  * `byes` are that team's bye weeks (ctx.byesFor): each shows as a line on its date, with no match behind it.
  */
-export function fixturesTable(ctx, fixtures, { actions, byes = [] } = {}) {
+export function fixturesTable(ctx, fixtures, { actions, byes = [], forTeam = null } = {}) {
   const rows = [...fixtures, ...byes.map((b) => ({ ...b, bye: true, starts_at: `${b.bye_on}T12:00:00Z` }))]
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  // A finished match (not one still being played) has a result to pick out.
+  const done = (f) => !f.bye && ctx.hasResult(f) && f.status !== "in_progress";
+  /** "won" | "lost" | "drawn" for the team whose list this is. */
+  const outcome = (f) => { if (!forTeam || !done(f)) return ""; const s = ctx.scoreOf(f), us = f.home_team_id === forTeam ? s.home : s.away, them = f.home_team_id === forTeam ? s.away : s.home;
+    return us > them ? "won" : us < them ? "lost" : "drawn"; };
   return dataTable([
     { label: "Date", cell: (f) => fmtDate(f.starts_at) },
     { label: "Fixtures", cell: (f) => (f.bye ? html`<span class="bye-row">${ctx.team.get(f.team_id)?.name} <b>Bye week</b></span>`
       : html`<a href="${urls.match(f)}">${ctx.team.get(f.home_team_id)?.name} vs ${ctx.team.get(f.away_team_id)?.name}</a>`) },
-    { label: "Results", cell: (f) => (f.bye ? "–" : html`${resultText(ctx, f)}${f.status === "in_progress" ? html` <span class="live-dot">Live</span>` : ""}`) },
+    { label: "Results", cell: (f) => (f.bye ? "–" : html`<span class="res-score ${done(f) ? "done" : ""}">${resultText(ctx, f)}</span>${f.status === "in_progress" ? html` <span class="live-dot">Live</span>` : ""}`), cls: "num" },
+    ...(forTeam ? [{ label: "Won / Lost", cell: (f) => outcomeTag(outcome(f)) || "–", cls: "num" }] : []),
     { label: "League", cell: (f) => ctx.league.get(f.league_id)?.name, cls: "hide-sm" },
     { label: "Season", cell: () => ctx.season?.name, cls: "hide-sm" },
     { label: "Venue", cell: (f) => { const v = ctx.venue.get(f.venue_id); return v ? html`<a href="${urls.venue(v)}">${v.name}</a>` : "–"; }, cls: "hide-sm" },
@@ -319,4 +347,60 @@ export function cupMatchInfo(compData, match, buildBracket) {
   const bm = b.rounds[match.round - 1]?.[match.slot];
   const entry = (id) => entries.find((e) => e.id === id) ?? null;
   return { c, bracket: b, bm, a: entry(bm?.a), b: entry(bm?.b) };
+}
+
+// ── news: the related-news strip, video and share buttons ─────
+const WORDS_A_MINUTE = 200;
+/** Roughly how long an article takes to read, in whole minutes. */
+export const readTime = (a) => Math.max(1, Math.round(String(`${a.excerpt ?? ""} ${a.lead ?? ""} ${a.body ?? ""}`).trim().split(/\s+/).length / WORDS_A_MINUTE));
+/** Every category an article is listed under: its main one first, then any others. */
+export const categoriesOf = (a) => [...new Set([a.category, ...(Array.isArray(a.more_categories) ? a.more_categories : [])].filter(Boolean))];
+
+/**
+ * A strip of news that scrolls sideways: picture cards with the headline over the picture.
+ * Used for "Related news" under an article and under a competition. The ‹ › buttons are
+ * handled once, in main.js (data-ns-move).
+ */
+export function newsStrip(title, list, { more = "/news" } = {}) {
+  if (!list.length) return "";
+  return html`<section class="news-strip" aria-label="${title}"><div class="wrap">
+    <header><h2>${title}</h2><span class="ns-ctrl"><a href="${more}">All news</a>
+      <button type="button" data-ns-move="-1" aria-label="Earlier articles">‹</button><button type="button" data-ns-move="1" aria-label="More articles">›</button></span></header>
+    <div class="ns-row">${list.map((a) => html`<a class="ns-card" href="${urls.article(a)}">
+      ${a.image_url || a.circle_image_url ? html`<img src="${a.image_url || a.circle_image_url}" alt="" loading="lazy">` : html`<span class="ns-ph" aria-hidden="true"></span>`}
+      <span class="ns-text"><strong>${a.title}</strong><small>${a.category} | ${fmtDate(a.published_at)}</small></span></a>`)}</div>
+  </div></section>`;
+}
+
+/**
+ * A video from the link pasted into an article: YouTube and Vimeo are shown in their own player,
+ * anything else that is a video file plays in the browser's. Nothing else is ever put in a frame.
+ */
+export function videoEmbed(url) {
+  const u = String(url ?? "").trim();
+  if (!/^https:\/\//i.test(u)) return "";
+  const yt = u.match(/^https:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{6,20})/i);
+  const vm = u.match(/^https:\/\/(?:www\.|player\.)?vimeo\.com\/(?:video\/)?(\d{5,12})/i);
+  const src = yt ? `https://www.youtube-nocookie.com/embed/${yt[1]}` : vm ? `https://player.vimeo.com/video/${vm[1]}` : "";
+  if (src) return html`<div class="video-box"><iframe src="${src}" title="Video" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`;
+  if (/\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(u)) return html`<div class="video-box"><video src="${u}" controls preload="metadata" playsinline></video></div>`;
+  return html`<p><a class="btn ghost" href="${u}" target="_blank" rel="noopener">Watch the video</a></p>`;
+}
+
+const shareIcon = {
+  share: "M18 16a3 3 0 0 0-2.2 1l-7-4a3 3 0 0 0 0-2l7-4A3 3 0 1 0 15 5a3 3 0 0 0 .1.7l-7 4a3 3 0 1 0 0 4.6l7 4A3 3 0 1 0 18 16Z",
+  link: "M10.6 13.4a4 4 0 0 0 5.7 0l3.5-3.5a4 4 0 0 0-5.7-5.7l-1.1 1.1 1.4 1.4 1.1-1.1a2 2 0 0 1 2.9 2.9l-3.5 3.5a2 2 0 0 1-2.9 0Zm2.8-2.8a4 4 0 0 0-5.7 0l-3.5 3.5a4 4 0 0 0 5.7 5.7l1.1-1.1-1.4-1.4-1.1 1.1a2 2 0 0 1-2.9-2.9l3.5-3.5a2 2 0 0 1 2.9 0Z",
+  whatsapp: "M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 2a8 8 0 1 1-4.1 14.9l-.4-.2-2.6.7.7-2.6-.2-.4A8 8 0 0 1 12 4Zm-3.1 3.8c-.3 0-.6.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3 2.4 1 2.9.8 3.4.7.5 0 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.4l-1.9-.9c-.3-.1-.5-.1-.7.2l-.9 1.1c-.2.2-.3.2-.6.1a7 7 0 0 1-3.4-3c-.3-.4.3-.4.7-1.3.1-.2 0-.4 0-.5l-.9-2.1c-.2-.5-.4-.5-.6-.5Z",
+  facebook: "M14 8V6.5c0-.8.2-1.2 1.3-1.2H17V2.2c-.3 0-1.3-.2-2.4-.2-2.4 0-4.1 1.5-4.1 4.2V8H8v3.2h2.5V22H14V11.2h2.7l.4-3.2Z",
+  x: "M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.2-8.3L2 3h6.4l4.4 5.8Zm-1.1 16.2h1.7L7.4 4.7H5.6Z",
+  email: "M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm1.8 2 7.2 5.4L19.2 7Zm15.2 1.6-8 6-8-6V17h16Z",
+};
+/**
+ * Share buttons for a page: the phone's own share sheet (where there is one), copy the link,
+ * WhatsApp, Facebook, X and email. Presses are handled once, in main.js (data-share).
+ */
+export function shareBar(title, path) {
+  const btn = (kind, label) => html`<button type="button" class="share-btn" data-share="${kind}" data-share-title="${title}" data-share-path="${path}" aria-label="${label}" title="${label}">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="${shareIcon[kind]}"/></svg></button>`;
+  return html`<div class="share-bar"><span>Share</span>${btn("share", "Share this")}${btn("link", "Copy the link")}${btn("whatsapp", "Share on WhatsApp")}${btn("facebook", "Share on Facebook")}${btn("x", "Share on X")}${btn("email", "Send by email")}</div>`;
 }
