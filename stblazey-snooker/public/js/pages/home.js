@@ -18,6 +18,15 @@ const ROTATE_MS = 7000;      // banner: time each article is shown
 const CAROUSEL_MS = 4500;    // live strip: time before it moves on one card
 const FEATURE_MS = 6000;     // feature box (when it shows one message at a time): time each one is shown
 
+// The four quick links under the hero: one slim row (see the v13 block in style.css).
+const qi = (d) => html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
+const quickIcon = {
+  competitions: qi("M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v2H8v-2h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3Zm0 4H6v1a2 2 0 0 0 1 1.7Zm10 0v2.7A2 2 0 0 0 18 8V7Z"),
+  calendar: qi("M7 2h2v2h6V2h2v2h3v17H4V4h3Zm11 8H6v9h12Zm0-4H6v2h12Z"),
+  handicaps: qi("M4 7h3V4h2v3h3v2H9v3H7V9H4Zm9 9h7v2h-7Zm4.6-11.5 1.6 1.2-11 14.6-1.6-1.2Z"),
+  fixtures: qi("M4 5h16v2H4Zm0 6h16v2H4Zm0 6h10v2H4Z"),
+};
+
 export default async function home(view, { user } = {}) {
   setTitle("");
   adminEdit("settings", null, { label: "Edit home page" });
@@ -51,12 +60,12 @@ export default async function home(view, { user } = {}) {
         ${!onHome && user && mySnookerOn(user) ? html`<a class="ms-bar" href="${mySnookerSetUp(user) ? "/myteam" : "/my/snooker"}"><b>My Snooker</b>
           <span>${mySnookerSetUp(user) ? html`${ctx.team.get(mySnookerTeamId(user))?.name ?? "The players you follow"}: matches, results, breaks and news` : "Follow your team and players, and get your own page"}</span>
           <i>${mySnookerSetUp(user) ? "Open my page →" : "Set it up →"}</i></a>` : ""}
-        <div class="quick-links">
-          <a style="background:var(--yellow);color:#1b0e06" href="/competitions">Competitions</a>
-          <a style="background:var(--red)" href="/calendar">Calendar</a>
-          <a style="background:var(--blue)" href="/handicaps">Handicaps</a>
-          <a style="background:var(--green)" href="/fixtures">Fixtures</a>
-        </div>
+        <nav class="quick-links" aria-label="Quick links">
+          <a style="background:var(--yellow);color:#1b0e06" href="/competitions">${quickIcon.competitions}<span>Competitions</span></a>
+          <a style="background:var(--red)" href="/calendar">${quickIcon.calendar}<span>Calendar</span></a>
+          <a style="background:var(--blue)" href="/handicaps">${quickIcon.handicaps}<span>Handicaps</span></a>
+          <a style="background:var(--green)" href="/fixtures">${quickIcon.fixtures}<span>Fixtures</span></a>
+        </nav>
         ${featureBox(site, notices, today)}
         ${entering.length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${entering.map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
         ${keyDates(site, dates, allComps.map((x) => x.c), today)}

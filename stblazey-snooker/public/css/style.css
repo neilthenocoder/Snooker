@@ -2615,3 +2615,16 @@ table.data tbody tr.lt-down td { background: var(--lt-down); font-weight: 700; }
 /* home: the headline sat tight under the red bar */
 .hero-inner { padding-top: 46px; }
 @media (max-width: 720px) { .hero-inner { padding-top: 26px; } }
+
+/* ── v13: home quick links — one slim row, joined like the menu bar ── */
+.quick-links { display: flex; gap: 0; margin-bottom: 0; }
+.quick-links a { flex: 1 0 auto; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 12px; font-size: 15px; letter-spacing: .02em; white-space: nowrap; }
+.quick-links svg { width: 17px; height: 17px; flex: none; fill: currentColor; opacity: .9; }
+@media (max-width: 720px) {
+  /* a phone: still one row, without the icons. All four fit from 360px wide; on a narrower phone the row slides sideways */
+  .quick-links { overflow-x: auto; scrollbar-width: none; }
+  .quick-links::-webkit-scrollbar { display: none; }
+  .quick-links a { padding: 11px 6px; font-size: 12.5px; letter-spacing: 0; }
+  .quick-links svg { display: none; }
+}
+@media (max-width: 400px) { .quick-links a { padding: 11px 4px; font-size: 12px; } }
