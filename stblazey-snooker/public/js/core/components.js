@@ -141,20 +141,62 @@ export function articleCard(a) {
 }
 
 // ── league widgets ────────────────────────────────────────────
+const zoneArrow = (dir) => html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${dir === "up" ? "M12 5 4.5 13.5h5V19h5v-5.5h5Z" : "M12 19l7.5-8.5h-5V5h-5v5.5h-5Z"}"/></svg>`;
+
+/**
+ * How a league's table is marked, shared by every page that shows one:
+ *  - the leader's row is green, and the highest points total is picked out;
+ *  - the leader of every league but the highest is in the promotion place (up arrow);
+ *  - the bottom team of every league but the lowest is in the relegation place (pink row, down arrow).
+ * Leagues run from highest to lowest in their "sort" order (Admin → Leagues). Nothing is marked
+ * before the league has a result. `highlightTeamId` picks out one team's own row as well.
+ * Returns { highlight, rowClass, pos, pts, strong, key } for dataTable() and its cells.
+ */
+export function leagueMarks(ctx, league, { highlightTeamId, shown } = {}) {
+  const all = ctx.standings(league.id);
+  const order = [...ctx.leagues].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+  const at = order.findIndex((l) => l.id === league.id);
+  const above = at > 0 ? order[at - 1] : null, below = at >= 0 ? order[at + 1] ?? null : null;
+  const started = all.some((r) => r.p > 0);
+  const top = started && all[0].p > 0 ? all[0] : null;
+  const down = started && below && all.length > 1 ? all[all.length - 1] : null;
+  const up = top && above && top !== down ? top : null;
+  const topPts = top ? top.pts : null;
+  const mine = (r) => !!highlightTeamId && r.team.id === highlightTeamId;
+  const mark = (r) => (r === up
+    ? html`<span class="lt-mark up" title="Promotion place: up to the ${above.name}">${zoneArrow("up")}<span class="sr-only"> Promotion place</span></span>`
+    : r === down
+      ? html`<span class="lt-mark down" title="Relegation place: down to the ${below.name}">${zoneArrow("down")}<span class="sr-only"> Relegation place</span></span>`
+      : "");
+  const visible = shown ?? all;
+  const keys = [
+    up && visible.includes(up) ? html`<span><span class="lt-mark up">${zoneArrow("up")}</span>Promotion place, up to the ${above.name}</span>` : "",
+    down && visible.includes(down) ? html`<span><span class="lt-mark down">${zoneArrow("down")}</span>Relegation place, down to the ${below.name}</span>` : "",
+  ].filter(Boolean);
+  return {
+    highlight: (r) => r === top || mine(r),
+    rowClass: (r) => [r === top ? "lt-top" : "", r === down ? "lt-down" : "", mine(r) ? "lt-mine" : ""].join(" "),
+    strong: (r) => r === top || r === down || mine(r),
+    pos: (r) => html`<span class="lt-pos">${r.pos}${mark(r)}</span>`,
+    pts: (r) => (topPts > 0 && r.pts === topPts ? html`<span class="lt-pts">${r.pts}</span>` : r.pts),
+    key: keys.length ? html`<p class="lt-key">${keys}</p>` : "",
+  };
+}
+
 export function leagueTablePanel(ctx, league, { limit = Infinity, highlightTeamId } = {}) {
   const rows = ctx.standings(league.id).slice(0, limit);
-  const top = (r) => (highlightTeamId ? r.team.id === highlightTeamId : r.pos === 1 && r === rows[0]);
+  const m = leagueMarks(ctx, league, { highlightTeamId, shown: rows });
   const table = dataTable([
-    { label: "P", cell: (r) => r.pos, cls: "num" },
-    { label: "Team", cell: (r) => teamLink(r.team, top(r)) },
+    { label: "P", cell: m.pos, cls: "num" },
+    { label: "Team", cell: (r) => teamLink(r.team, m.strong(r)) },
     { label: "P", cell: (r) => r.p, cls: "num" },
     { label: "W", cell: (r) => r.w, cls: "num" },
     { label: "L", cell: (r) => r.l, cls: "num" },
     { label: "F", cell: (r) => r.f, cls: "num" },
     { label: "A", cell: (r) => r.a, cls: "num" },
-    { label: "P", cell: (r) => r.pts, cls: "num strong" },
-  ], rows, { highlight: top, empty: "No teams in this league yet." });
-  return panel(html`${trophy(league, "tiny", { always: false })}${league.name} Table`, table, {
+    { label: "P", cell: m.pts, cls: "num strong" },
+  ], rows, { highlight: m.highlight, rowClass: m.rowClass, empty: "No teams in this league yet." });
+  return panel(html`${trophy(league, "tiny", { always: false })}${league.name} Table`, html`${table}${m.key}`, {
     foot: Number.isFinite(limit) ? { href: urls.standings(league), label: "View full table" } : null, cls: "lt-panel",
   });
 }

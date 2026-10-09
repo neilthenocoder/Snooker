@@ -9,7 +9,7 @@
 import { html, mount, fmtDate } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { table } from "../core/api.js";
-import { breadcrumb, panel, dataTable, playerLink, teamLink, urls, seasonShort, breaksPanel, trophy } from "../core/components.js";
+import { breadcrumb, panel, dataTable, playerLink, teamLink, urls, seasonShort, breaksPanel, trophy, leagueMarks } from "../core/components.js";
 import { RULES_TEXT } from "../core/rules.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
@@ -161,18 +161,19 @@ function breaks(view, ctx, season, league) {
 // ── a league's table ────────────────────────────────────────────
 function leagueTable(view, ctx, season, league) {
   const rows = ctx.standings(league.id);
+  const m = leagueMarks(ctx, league);
   mount(view, html`<div class="wrap stack">
     ${head(ctx, season, "league-tables", league)}
-    ${panel(league.name, dataTable([
-      { label: "Pos", cell: (r) => r.pos, cls: "num" },
-      { label: "Team", cell: (r) => teamLink(r.team, r === rows[0] && r.p > 0) },
+    ${panel(league.name, html`${dataTable([
+      { label: "Pos", cell: m.pos, cls: "num" },
+      { label: "Team", cell: (r) => teamLink(r.team, m.strong(r)) },
       { label: "Played", cell: (r) => r.p, cls: "num" },
       { label: "Won", cell: (r) => r.w, cls: "num" },
       { label: "Lost", cell: (r) => r.l, cls: "num" },
       { label: "Frames for", cell: (r) => r.f, cls: "num hide-sm" },
       { label: "Frames against", cell: (r) => r.a, cls: "num hide-sm" },
-      { label: "Points", cell: (r) => r.pts, cls: "num strong" },
-    ], rows, { highlight: (r) => r === rows[0] && r.p > 0, empty: "No teams in this league yet." }))}
+      { label: "Points", cell: m.pts, cls: "num strong" },
+    ], rows, { highlight: m.highlight, rowClass: m.rowClass, empty: "No teams in this league yet." })}${m.key}`, { cls: "lt-panel" })}
     <p class="muted">A team gets one point for every frame it wins. Teams level on points are split by matches won, then frame difference.</p>
     <a class="btn-bar" href="${urls.standings(league)}?season=${season.id}">${league.name}: table, rankings and breaks on one page</a>
     ${more(ctx, season, "league-tables", league)}
