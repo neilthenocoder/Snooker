@@ -1,4 +1,4 @@
-import { html, mount, $, toast, readForm, fmtDate, fmtTime, fromLocalInput } from "../core/dom.js";
+import { html, mount, $, toast, readForm, fmtDate, fmtTime, fromLocalInput, safeHref } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { table, insertMany, setFixtureStatus, save, invalidate, signups, cueviewSubmissions } from "../core/api.js";
 import { isStaff, canOpenSection, isMember } from "../core/auth.js";
@@ -36,14 +36,14 @@ const NAV = [
   ["League", [["leagues", "Leagues"], ["teams", "Teams"], ["players", "Players"], ["cueviews", "CueViews to approve"], ["handicaps", "Handicaps"], ["venues", "Venues"], ["seasons", "Seasons"]]],
   ["Competitions", [["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws & results"], ["scoreboard", "Live scoreboard"], ["awards", "Presentation awards"]]],
   ["People", [["accounts", "Logins"]]],
-  ["Website", [["articles", "News"], ["categories", "News categories"], ["announcements", "Announcements"], ["key_dates", "Key dates"], ["meetings", "Meetings"], ["media", "Image library"], ["pages", "Info pages & rules"], ["merchandise", "Merchandise"], ["sponsors", "Sponsors"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["emails", "Result emails"], ["stats", "Statistics"]]],
+  ["Website", [["articles", "News"], ["categories", "News categories"], ["announcements", "Announcements"], ["notices", "Notifications"], ["key_dates", "Key dates"], ["meetings", "Meetings"], ["media", "Image library"], ["pages", "Info pages & rules"], ["merchandise", "Merchandise"], ["sponsors", "Sponsors"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["emails", "Result emails"], ["stats", "Statistics"]]],
   // Only the Master Admin sees these.
   ["Master Admin", [["roles", "Roles & permissions"], ["activity", "Activity log"], ["backup", "Backup"]]],
 ];
 const SPECIAL = { overview, results, generator, draws, media: mediaPage, stats: statsPage, import: importPage, handicaps: handicapsPage, entries: entriesPage,
   roles: rolesPage, activity: activityPage, backup: backupPage, awards: awardsPage, scoreboard: scoreboardPage, emails: emailsPage, cueviews: cueviewsPage };
 // Menu items that show a red number when something is waiting.
-const COUNTS = { players: "New players to check", entries: "Entries waiting for payment", cueviews: "CueViews waiting to be checked" };
+const COUNTS = { players: "Players waiting to be accepted", entries: "Entries waiting for payment", cueviews: "CueViews waiting to be checked" };
 const COUNT_WORD = { players: "new", entries: "waiting", cueviews: "waiting" };
 // A small picture for each group of the menu.
 const ico = (d) => html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
@@ -197,7 +197,7 @@ async function overview(el, { user }) {
   const fresh = ctx.players.filter((p) => p.needs_review);
   const late = ctx.fixtures.filter((f) => f.status === "postponed" && Date.parse(rearrangeBy(f)) < Date.now());
   mount(el, html`
-    ${fresh.length ? html`<div class="notice todo"><b>${fresh.length} new player${fresh.length > 1 ? "s" : ""} added by captains</b> — press a name to set their handicap (saving clears the alert), or use “Mark as checked” in the Players list.
+    ${fresh.length ? html`<div class="notice todo"><b>${fresh.length} player${fresh.length > 1 ? "s" : ""} added by captains ${fresh.length > 1 ? "are" : "is"} waiting for you to accept ${fresh.length > 1 ? "them" : "them"}.</b> Press a name to set the handicap (saving accepts them), or use “Accept” and “Reject” in the <a href="/admin/players" style="font-weight:700">Players list</a>. Captains can already pick them.
       <div class="todo-list">${fresh.map((p) => html`<a href="/admin/players?edit=${p.id}">${p.full_name} <small>${ctx.team.get(p.team_id)?.name ?? "no team"}</small></a>`)}</div></div>` : ""}
     ${unpaid.length ? html`<div class="notice todo"><b>${unpaid.length} competition entr${unpaid.length > 1 ? "ies are" : "y is"} waiting for payment to be confirmed.</b> <a href="/admin/entries" style="font-weight:700">Entries to approve</a></div>` : ""}
     ${late.length ? html`<div class="notice error"><b>${late.length} postponed match${late.length > 1 ? "es have" : " has"} passed the ${POSTPONE_WEEKS}-week limit.</b> <a href="/admin/results" style="font-weight:700">Rearrange them</a></div>` : ""}
@@ -222,7 +222,7 @@ async function results(el) {
     { label: "Match", cell: (f) => html`<a href="${urls.match(f)}">${ctx.team.get(f.home_team_id)?.name} vs ${ctx.team.get(f.away_team_id)?.name}</a>` },
     { label: "Score", cell: (f) => { const s = ctx.scoreOf(f); return ctx.hasResult(f) ? `${s.home} - ${s.away}` : "–"; } },
     { label: "Status", cell: (f) => statusBadge(f.status) },
-    { label: "Card photo", cell: (f) => (f.scorecard_url ? html`<a href="${f.scorecard_url}" target="_blank" rel="noopener" style="color:var(--red);font-weight:700">View photo</a>` : "–") },
+    { label: "Card photo", cell: (f) => (safeHref(f.scorecard_url) ? html`<a href="${safeHref(f.scorecard_url)}" target="_blank" rel="noopener" style="color:var(--red);font-weight:700">View photo</a>` : "–") },
     { label: "", cls: "right", cell: (f) => html`<span class="btn-row" style="justify-content:flex-end">
       <a class="btn small secondary" href="${urls.scorecard(f)}">Check / edit</a>
       ${withApprove && f.status === "submitted" ? html`<button class="btn small green" data-approve="${f.id}">Approve</button>` : ""}</span>` },

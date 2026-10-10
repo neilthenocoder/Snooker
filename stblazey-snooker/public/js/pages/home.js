@@ -1,6 +1,7 @@
-import { html, mount, $, $$, fmtDate, fmtTime, cssUrl, ukDay, todayUK } from "../core/dom.js";
+import { html, mount, $, $$, fmtDate, fmtTime, cssUrl, ukDay, todayUK, safeHref } from "../core/dom.js";
 import { TICKER_PX } from "../core/branding.js";
-import { sideName, matchLabel } from "../core/live-score.js";
+import { sideName, matchLabel, onTable } from "../core/live-score.js";
+import { mountSquadBox } from "../core/squad.js";
 import { openForEntry } from "./enter.js";
 import { seasonContext, sideBoxData } from "../core/context.js";
 import { articles, settings, upcomingMatches, loadCompetitions, subscribe, table, liveMatches } from "../core/api.js";
@@ -60,6 +61,7 @@ export default async function home(view, { user } = {}) {
         ${!onHome && user && mySnookerOn(user) ? html`<a class="ms-bar" href="${mySnookerSetUp(user) ? "/myteam" : "/my/snooker"}"><b>My Snooker</b>
           <span>${mySnookerSetUp(user) ? html`${ctx.team.get(mySnookerTeamId(user))?.name ?? "The players you follow"}: matches, results, breaks and news` : "Follow your team and players, and get your own page"}</span>
           <i>${mySnookerSetUp(user) ? "Open my page →" : "Set it up →"}</i></a>` : ""}
+        <div class="home-top">
         <nav class="quick-links" aria-label="Quick links">
           <a style="background:var(--yellow);color:#1b0e06" href="/competitions">${quickIcon.competitions}<span>Competitions</span></a>
           <a style="background:var(--red)" href="/calendar">${quickIcon.calendar}<span>Calendar</span></a>
@@ -69,6 +71,7 @@ export default async function home(view, { user } = {}) {
         ${featureBox(site, notices, today)}
         ${entering.length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${entering.map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
         ${keyDates(site, dates, allComps.map((x) => x.c), today)}
+        </div>
         ${ctx.leagues.map((l) => leagueTablePanel(ctx, l, { limit: 10 }))}
         ${site.shields_show !== false ? shieldsBox(ctx) : ""}
         ${spotlights(ctx, site)}
@@ -82,6 +85,8 @@ export default async function home(view, { user } = {}) {
     </div>`);
 
   const stopMine = onHome ? await mountMySnooker($("[data-my-snooker]", view), user, { home: true }) : () => {};
+  // Captains and vice captains: the "Manage team" box at the bottom of the screen in the days before a match.
+  const stopSquad = await mountSquadBox(user, ctx, site).catch(() => () => {});
 
   // Rotate the banner articles (pauses while the mouse is over it).
   const slideEls = $$(".hero-slide", view), dots = $$("[data-dot]", view);
@@ -131,6 +136,16 @@ export default async function home(view, { user } = {}) {
     }, FEATURE_MS);
   }
 
+  // Key dates: the ‹ › buttons appear only when the dates don't all fit, and slide the row along.
+  const kd = $("[data-kd]", view), kdRow = kd && $(".kd-row", kd);
+  const kdFit = () => kd?.classList.toggle("can-slide", kdRow.scrollWidth - kdRow.clientWidth > 4);
+  if (kd) {
+    kdFit();
+    document.fonts?.ready.then(() => kd.isConnected && kdFit());
+    window.addEventListener("resize", kdFit, { passive: true });
+    kd.addEventListener("click", (e) => { const b = e.target.closest("[data-kd-move]"); if (b) kdRow.scrollBy({ left: Number(b.dataset.kdMove) * Math.max(240, kdRow.clientWidth * 0.8), behavior: "smooth" }); });
+  }
+
   // …which moves on one card at a time, then goes back to the start.
   const strip = $("[data-strip]", view);
   let stripPaused = false;
@@ -150,7 +165,7 @@ export default async function home(view, { user } = {}) {
   strip.addEventListener("click", (e) => { const b = e.target.closest("[data-strip-move]"); if (b) move(Number(b.dataset.stripMove)); });
   const carousel = setInterval(() => { if (!stripPaused && !document.hidden) move(1); }, CAROUSEL_MS);
 
-  return () => { clearInterval(timer); clearInterval(carousel); clearInterval(featureTimer); unsubscribe(); stopMine(); };
+  return () => { clearInterval(timer); clearInterval(carousel); clearInterval(featureTimer); unsubscribe(); stopMine(); stopSquad(); window.removeEventListener("resize", kdFit); };
 }
 
 /** One banner article: headline, category and date, a small "continue reading" — all linking to the article. */
@@ -173,10 +188,10 @@ function heroSlide(a, on) {
  */
 function featureBox(site, notices, today) {
   if (!site.feature_show) return "";
-  const own = site.feature_text ? [{ label: site.feature_label, text: site.feature_text, url: site.feature_url || "", own: true }] : [];
+  const own = site.feature_text ? [{ label: site.feature_label, text: site.feature_text, url: safeHref(site.feature_url), own: true }] : [];
   const extra = site.feature_announcements === false ? [] : notices
     .filter((a) => a.is_active !== false && a.show_in_feature !== false && a.text && (!a.starts_on || a.starts_on <= today) && (!a.ends_on || a.ends_on >= today))
-    .map((a) => ({ label: a.label || "Announcement", text: a.text, url: a.url || "" }));
+    .map((a) => ({ label: a.label || "Announcement", text: a.text, url: safeHref(a.url) }));
   const items = [...own, ...extra];
   if (!items.length) return "";
   const bg = /^#[0-9a-f]{6}$/i.test(site.feature_bg ?? "") ? site.feature_bg : "#0b84e0";
@@ -208,9 +223,11 @@ function featureBox(site, notices, today) {
 }
 
 /**
- * Key dates (Admin → Key dates): the next few dates everyone should know, as a row of date cards.
- * A date leaves the box the day after it (or its last day) has passed.
+ * Key dates (Admin → Key dates): the next few dates everyone should know, in one slim row —
+ * the label on the left, then each date as a small card (date tile, title, how long to go).
+ * More dates than fit slide sideways. A date leaves the row the day after it (or its last day) has passed.
  */
+const kdIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h2v2h6V2h2v2h3v17H4V4h3Zm11 8H6v9h12Zm0-4H6v2h12Z"/></svg>`;
 function keyDates(site, dates, competitions, today) {
   if (site.key_dates_show === false) return "";
   const list = dates.filter((d) => d.is_active !== false && (d.ends_on || d.starts_on) >= today)
@@ -219,17 +236,19 @@ function keyDates(site, dates, competitions, today) {
   const part = (iso, opts) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { timeZone: "UTC", ...opts });
   const days = (iso) => Math.round((Date.parse(`${iso}T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) / 864e5);
   const when = (d) => { const n = days(d.starts_on); return n <= 0 ? (d.ends_on && d.ends_on > today ? "On now" : "Today") : n === 1 ? "Tomorrow" : n < 14 ? `In ${n} days` : `In ${Math.round(n / 7)} weeks`; };
-  return panel("Key dates", html`<div class="key-dates">${list.map((d) => {
-    const comp = competitions.find((c) => c.id === d.competition_id);
-    const href = d.url || (comp ? urls.competition(comp) : "");
-    const inner = html`<time datetime="${d.starts_on}"><b>${part(d.starts_on, { day: "numeric" })}</b><span>${part(d.starts_on, { month: "short" })}</span><small>${part(d.starts_on, { weekday: "short" })}</small></time>
-      <div><strong>${d.title}</strong>
-        ${d.ends_on && d.ends_on !== d.starts_on ? html`<small>Until ${part(d.ends_on, { weekday: "short", day: "numeric", month: "short" })}</small>` : ""}
-        ${d.details ? html`<small>${d.details}</small>` : ""}
-        <em class="${days(d.starts_on) <= 1 ? "soon" : ""}">${when(d)}</em></div>
-      ${comp ? trophy(comp, "kd-trophy", { always: false }) : ""}`;
-    return href ? html`<a class="key-date" href="${href}" ${/^https?:\/\//.test(href) ? html`target="_blank" rel="noopener"` : ""}>${inner}</a>` : html`<div class="key-date">${inner}</div>`;
-  })}</div>`, { color: "yellow", foot: { href: "/calendar", label: "See everything on the calendar" } });
+  return html`<section class="kd ${list.length > 1 ? "many" : "one"}" aria-label="Key dates" data-kd>
+    <a class="kd-label" href="/calendar" title="See everything on the calendar">${kdIcon}<span>Key dates</span><i aria-hidden="true">Calendar →</i></a>
+    <div class="kd-row">${list.map((d) => {
+      const comp = competitions.find((c) => c.id === d.competition_id);
+      const href = safeHref(d.url) || (comp ? urls.competition(comp) : "/calendar");
+      // One line under the title: how long to go, the day, the last day (if it runs on) and the details.
+      const more = [part(d.starts_on, { weekday: "short" }), d.ends_on && d.ends_on !== d.starts_on ? `until ${part(d.ends_on, { weekday: "short", day: "numeric", month: "short" }).replace(",", "")}` : "", d.details ?? ""].filter(Boolean).join(" · ");
+      return html`<a class="kd-item" href="${href}" ${/^https?:\/\//.test(href) ? html`target="_blank" rel="noopener"` : ""} title="${d.title} — ${when(d)}${more ? `, ${more}` : ""}">
+        <time datetime="${d.starts_on}"><b>${part(d.starts_on, { day: "numeric" })}</b><span>${part(d.starts_on, { month: "short" })}</span></time>
+        <div><strong>${d.title}</strong><small><em class="${days(d.starts_on) <= 1 ? "soon" : ""}">${when(d)}</em>${more}</small></div></a>`;
+    })}</div>
+    ${list.length > 1 ? html`<span class="kd-nav"><button type="button" data-kd-move="-1" aria-label="Earlier key dates">‹</button><button type="button" data-kd-move="1" aria-label="More key dates">›</button></span>` : ""}
+  </section>`;
 }
 
 // ── live & upcoming strip ─────────────────────────────────────
@@ -249,6 +268,9 @@ async function liveStrip() {
       a: { name: team.get(fx.home_team_id)?.name ?? "?", team: team.get(fx.home_team_id) },
       b: { name: team.get(fx.away_team_id)?.name ?? "?", team: team.get(fx.away_team_id) }, score: matchScore(framesBy.get(fx.id)),
       hasFrames: framesBy.has(fx.id), href: urls.match(fx), venue: venues.find((v) => v.id === fx.venue_id),
+      // A frame of this match being scored ball by ball by a captain: the card says so and opens that scoreboard.
+      ...(() => { const board = boards.find((m) => m.fixture_id === fx.id && onTable(m));
+        return board ? { href: urls.scoreboard(board), venue: { name: `Frame ${board.frame_no ?? board.state?.frame?.no ?? ""} ball by ball — watch live` } } : {}; })(),
     })),
     ...comps.map((m) => {
       const c = compData.competitions.find((x) => x.id === m.competition_id);
@@ -263,7 +285,7 @@ async function liveStrip() {
       };
     }).filter(Boolean),
     // Matches scored ball by ball (finals): on now, or set up with a date in the next three weeks.
-    ...boards.filter((m) => m.status === "live" || (m.status === "setup" && m.starts_at && Date.parse(m.starts_at) < Date.now() + 21 * 864e5)).map((m) => {
+    ...boards.filter((m) => !m.fixture_id && (m.status === "live" || (m.status === "setup" && m.starts_at && Date.parse(m.starts_at) < Date.now() + 21 * 864e5))).map((m) => {
       const who = (s) => { const p = players.find((x) => x.id === m[`player_${s}_id`]); return { name: sideName(m, s, players), player: p ?? {} }; };
       return { when: m.started_at ?? m.starts_at, live: m.status === "live", done: false, title: matchLabel(m, compData.competitions), a: who("a"), b: who("b"),
         score: { home: m.frames_a ?? 0, away: m.frames_b ?? 0 }, hasFrames: m.status === "live", href: urls.scoreboard(m), venue: { name: m.status === "live" ? "Ball by ball — watch live" : m.venue ?? "" } };

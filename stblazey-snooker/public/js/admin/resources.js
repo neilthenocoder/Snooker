@@ -127,8 +127,19 @@ export const RESOURCES = {
     pageSize: 50,   // 50 players at a time, with ‹ › arrows to move through the rest
     // Players added by a captain are marked NEW and listed first until someone has looked at them:
     // saving the player, or pressing "Mark as checked", clears it.
-    flag: { field: "needs_review", column: "full_name", tag: "NEW", clear: "Mark as checked",
-      banner: (n) => `${n} new player${n > 1 ? "s were" : " was"} added by a captain — ${n > 1 ? "they are" : "shown"} at the top of the list, marked NEW. Press Edit to set the handicap (saving clears the mark), or just press “Mark as checked”.` },
+    // “Accept” (or saving the player) clears the mark. “Reject” turns the captain's request down: a brand-new
+    // player is removed; someone who was already on the website goes back to having no team.
+    flag: { field: "needs_review", column: "full_name", tag: "NEW", clear: "Accept", clearAll: (n) => `Accept all ${n}`, cleared: (n) => (n > 1 ? `${n} players accepted` : "Player accepted"),
+      banner: (n) => `${n} player${n > 1 ? "s were" : " was"} added by a captain and ${n > 1 ? "are" : "is"} waiting for you — at the top of the list, marked NEW. Press Edit to set the handicap (saving accepts them), press “Accept” to accept as they are, or “Reject” to turn the request down.`,
+      reject: {
+        label: "Reject",
+        confirm: (row) => (row.review_from === "no_team"
+          ? `Turn down the request to add ${row.full_name}? They go back to having no team. Their profile and results are kept. If the captain has put them on a team sheet or a scorecard, change that too.`
+          : `Turn down the request and remove ${row.full_name}? Their name is taken off any scorecard or team sheet they have been put on. This can't be undone.`),
+        run: (row, { save, remove }) => (row.review_from === "no_team"
+          ? save("players", { id: row.id, team_id: null, status: "no_team", needs_review: false, review_from: null }) : remove("players", row.id)),
+        done: (row) => (row.review_from === "no_team" ? `${row.full_name} is back to having no team` : `${row.full_name} removed`),
+      } },
     columns: ["avatar_url", "full_name", "team_id", "position", "handicap", "status"],
     validate: (row) => (row.slug && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(row.slug) ? "The web address can only have small letters, numbers and dashes (e.g. sam-bolitho)." : null),
     // "No team at the moment" means just that: the player leaves their team's list.
@@ -177,8 +188,10 @@ export const RESOURCES = {
     ],
   },
   leagues: {
-    label: "Leagues", table: "leagues", order: "sort", columns: ["logo_url", "name", "short_name", "sort"],
+    label: "Leagues", table: "leagues", order: "sort", columns: ["logo_url", "name", "short_name", "sort", "promote_count", "relegate_count"],
     intro: "Add a league here and it appears automatically on the home page, the fixtures page and the League page. Then add its teams under Teams and create its fixtures with the Fixture generator.",
+    // An emptied number box means "none".
+    beforeSave: (row) => ({ ...row, promote_count: row.promote_count ?? 0, relegate_count: row.relegate_count ?? 0 }),
     fields: [
       { name: "name", label: "League name", type: "text", required: true },
       { name: "short_name", label: "Short name (e.g. Victory)", type: "text" },
@@ -186,6 +199,9 @@ export const RESOURCES = {
       { name: "sort", label: "Display order", type: "number", default: 1 },
       { name: "logo_url", label: "League emblem (shown on the league's table page and the League page)", short: "Emblem", type: "image", folder: "teams", maxSize: 400 },
       { name: "trophy_url", label: "League trophy (a cut-out picture: transparent PNG or SVG — shown beside the league's table and on presentation night; a placeholder cup is used until you add one)", short: "Trophy", type: "image", folder: "trophies", maxSize: 700 },
+      { type: "heading", label: "Promotion and relegation", help: "How many teams go up and down at the end of the season. In this season's table the promotion places are marked with a green P and the relegation places with a red R (and a pink row). Type 0 for none — the highest league promotes nobody, the lowest relegates nobody. Change the numbers whenever the committee changes the rule." },
+      { name: "promote_count", label: "Teams promoted from this league (the top of the table)", short: "Up", type: "number", default: 0, min: 0, max: 10 },
+      { name: "relegate_count", label: "Teams relegated from this league (the bottom of the table)", short: "Down", type: "number", default: 0, min: 0, max: 10 },
       { type: "heading", label: "Weekly shield", help: "Whoever holds the shield defends it every match night. If they lose, the winners take it." },
       { name: "shield_name", label: "Shield name (e.g. Victory League Runabout Shield)", type: "text" },
       { name: "shield_team_id", label: "Holder at the start of the season", type: "ref", ref: "teams" },
@@ -234,6 +250,7 @@ export const RESOURCES = {
       { name: "is_published", label: "Published", type: "checkbox", default: true },
       { name: "hub_featured", label: "Featured news (the big boxes at the top of the News page)", short: "Featured", type: "checkbox" },
       { name: "featured", label: "Show in the home page banner", short: "Home banner", type: "checkbox", default: true },
+      { name: "breaking", label: "Breaking news (it pops up for everyone on the website in red, and is listed behind the bell with a red number on it)", short: "Breaking", type: "checkbox" },
       { type: "heading", label: "Pictures and video" },
       { name: "image_url", label: "Background image (wide)", type: "image", folder: "news", maxSize: 1800 },
       { name: "circle_image_url", label: "Circle image (square works best — leave blank to use the background image)", type: "image", folder: "news", maxSize: 600, round: true },
@@ -283,6 +300,21 @@ export const RESOURCES = {
       { name: "ends_on", label: "Stop showing after (optional)", type: "date" },
     ],
     validate: (row) => (String(row.text ?? "").length > 160 ? "Please keep an announcement under 160 characters." : row.starts_on && row.ends_on && row.ends_on < row.starts_on ? "“Stop showing after” is before “Show from”." : null),
+  },
+  notices: {
+    label: "Notifications", table: "notices", order: "created_at", desc: true, filters: ["kind"], columns: ["kind", "title", "ends_on", "is_active"],
+    intro: "Send everyone a notification: breaking news, an important update or an offer. Anyone on the website at that moment gets a pop-up in the corner; everyone else sees a red number on the bell the next time they visit, and the message in the list behind it for 14 days (or until the day you choose). Each visitor chooses which of the three kinds they want, behind the bell. To make a news article breaking news instead, tick “Breaking news” on the article.",
+    fields: [
+      { name: "kind", label: "What kind of notification", short: "Kind", type: "select", options: ["breaking", "update", "offer"], labels: { breaking: "Breaking news", update: "Important update", offer: "Offer" }, default: "update" },
+      { name: "title", label: "The message (one line — this is what pops up)", short: "Message", type: "text", required: true, wide: true, placeholder: "Tonight's Bethel A v Bugle match is postponed" },
+      { name: "body", label: "A little more (optional — shown in the list behind the bell)", type: "textarea", rows: 3 },
+      { name: "url", label: "Link (optional — where a press on it goes)", short: "Link", type: "text", placeholder: "/news/… or https://…" },
+      { name: "ends_on", label: "Stop showing after (optional — otherwise it stays in the list for 14 days)", short: "Until", type: "date" },
+      { name: "is_active", label: "Send it (untick to take it down, or to write one and send it later)", short: "Sent", type: "checkbox", default: true },
+    ],
+    validate: (row) => (String(row.title ?? "").length > 140 ? "Please keep the message under 140 characters." : String(row.body ?? "").length > 500 ? "Please keep the extra text under 500 characters." : null),
+    // The time it was sent: what the 14 days, and each visitor's “new” count, are measured from.
+    beforeSave: (row) => ({ ...row, created_at: row.created_at || new Date().toISOString() }),
   },
   pages: {
     label: "Info pages", table: "pages", order: "sort", columns: ["title", "sort", "show_in_league", "show_in_footer", "show_in_rules"],
@@ -447,6 +479,8 @@ export const RESOURCES = {
       { type: "heading", label: "Other home page boxes" },
       { name: "cueviews_show", label: "Show CueViews (pick which ones under Players → “Show this CueView on the home page”)", type: "checkbox" },
       { name: "shields_show", label: "Show who holds each league's shield", type: "checkbox" },
+      { type: "heading", label: "Captains: the Manage team box", help: "A box at the bottom of the home page that only captains and vice captains see, in the days before their team's next match. It takes them to My area → Manage team, where they pick who plays each frame (it is then on the scorecard on the night) and can add a new player. They can close the box; it comes back for the next match." },
+      { name: "squad_box_days", label: "Show it this many days before the match (0 = never show it)", type: "number", default: 3, min: 0, max: 14 },
       { type: "heading", label: "Home page: feature box", help: "A coloured strip under the Competitions / Calendar / Handicaps / Fixtures buttons — for announcing something new." },
       { name: "feature_show", label: "Show the feature box", type: "checkbox" },
       { name: "feature_label", label: "Pulsing label (e.g. NEW)", type: "text", default: "NEW" },

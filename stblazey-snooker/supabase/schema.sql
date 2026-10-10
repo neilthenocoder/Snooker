@@ -822,7 +822,21 @@ begin
     raise exception 'Upload a photo of the paper scorecard before submitting the result';
   end if;
   update fixtures set status = new_status where id = fid;
+  -- Frames of this match that were being scored ball by ball (live_matches.fixture_id): once the card is in,
+  -- none of them is still "on the table".
+  if new_status in ('submitted', 'approved', 'postponed') then
+    delete from live_matches where fixture_id = fid and status = 'setup';
+    update live_matches set status = 'finished', finished_at = coalesce(finished_at, now()) where fixture_id = fid and status = 'live';
+  end if;
 end;
+$$;
+
+-- A picture kept in this website's own picture store ("images" bucket), optionally in one folder of it.
+-- Used to check the addresses that captains and players send in: they can only be pictures they have
+-- uploaded here — never a link to somewhere else, and never anything that is not a plain https address.
+create or replace function public.is_site_image(url text, folder text default null) returns boolean
+language sql immutable as $$
+  select url ~ ('^https://[A-Za-z0-9.-]+/storage/v1/object/public/images/' || coalesce(folder || '/', '') || '[A-Za-z0-9/_.-]+$') and length(url) <= 500;
 $$;
 
 -- Captains attach a photo of the paper scorecard.
@@ -832,7 +846,11 @@ begin
   if not public.can_edit_fixture(fid) then
     raise exception 'You are not allowed to change this fixture';
   end if;
-  update fixtures set scorecard_url = url where id = fid;
+  -- Only a photo uploaded to this website (the scorecards folder), or nothing at all.
+  if coalesce(url, '') <> '' and not public.is_site_image(url, 'scorecards') then
+    raise exception 'That is not a scorecard photo uploaded on this website';
+  end if;
+  update fixtures set scorecard_url = nullif(url, '') where id = fid;
 end;
 $$;
 
@@ -938,6 +956,21 @@ begin
   if patch ? 'gallery' and (jsonb_typeof(patch->'gallery') <> 'array' or jsonb_array_length(patch->'gallery') > 24) then
     raise exception 'A profile can have up to 24 pictures';
   end if;
+  -- A photo or picture must be one uploaded to this website (or one already on the profile): never a link elsewhere.
+  if patch ? 'avatar_url' and coalesce(patch->>'avatar_url', '') <> ''
+     and not public.is_site_image(patch->>'avatar_url')
+     and patch->>'avatar_url' is distinct from (select avatar_url from players where id = pid) then
+    raise exception 'That photo was not uploaded on this website';
+  end if;
+  if patch ? 'gallery' and exists (
+       select 1 from jsonb_array_elements(patch->'gallery') g
+       where jsonb_typeof(g) <> 'string'
+          or (not public.is_site_image(g #>> '{}') and not ((select gallery from players where id = pid) @> jsonb_build_array(g)))) then
+    raise exception 'One of those pictures was not uploaded on this website';
+  end if;
+  if patch ? 'birth_date' and coalesce(patch->>'birth_date', '') <> '' and patch->>'birth_date' !~ '^\d{4}-\d{2}-\d{2}$' then
+    raise exception 'That date could not be read';
+  end if;
   update players set
     avatar_url     = case when patch ? 'avatar_url' then nullif(patch->>'avatar_url', '') else avatar_url end,
     birth_date     = case when patch ? 'birth_date' then nullif(patch->>'birth_date', '')::date else birth_date end,
@@ -1027,6 +1060,12 @@ begin
   end if;
   if jsonb_typeof(urls) <> 'array' or jsonb_array_length(urls) > 12 or octet_length(urls::text) > 8000 then
     raise exception 'A match can have up to 12 photos';
+  end if;
+  -- Only photos uploaded to this website (the matchnight folder), or ones already on the match.
+  if exists (select 1 from jsonb_array_elements(urls) g
+             where jsonb_typeof(g) <> 'string'
+                or (not public.is_site_image(g #>> '{}', 'matchnight') and not ((select gallery from fixtures where id = fid) @> jsonb_build_array(g)))) then
+    raise exception 'One of those photos was not uploaded on this website';
   end if;
   update fixtures set gallery = urls where id = fid;
 end;
@@ -1528,6 +1567,149 @@ alter table settings add column if not exists footer_credit_text text;
 alter table settings add column if not exists footer_credit_url text;
 alter table settings add column if not exists footer_links text;
 
+-- ── v12: Rich's tenth round of feedback ─────────────────────────
+-- 1. League tables: how many teams go up from, and down from, each league (Admin → Leagues).
+--    The first time this runs the rule of the day is filled in: two up and two down between the leagues.
+do $$
+begin
+  if not exists (select 1 from information_schema.columns
+                 where table_schema = 'public' and table_name = 'leagues' and column_name = 'promote_count') then
+    alter table leagues add column promote_count int not null default 0 check (promote_count between 0 and 10);
+    alter table leagues add column relegate_count int not null default 0 check (relegate_count between 0 and 10);
+    if (select count(*) from leagues) > 1 then
+      update leagues set relegate_count = 2 where sort < (select max(sort) from leagues);
+      update leagues set promote_count = 2 where sort > (select min(sort) from leagues);
+    end if;
+  end if;
+end $$;
+
+-- 2. Notifications the league sends out itself: breaking news, important updates and offers
+--    (Admin → Notifications). A news article can be ticked as breaking news too.
+create table if not exists notices (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null default 'update' check (kind in ('breaking', 'update', 'offer')),
+  title text not null check (length(title) between 1 and 200),
+  body text check (length(body) <= 1000),
+  url text check (length(url) <= 500),
+  ends_on date,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+create index if not exists notices_created_idx on notices (created_at desc);
+alter table articles add column if not exists breaking boolean not null default false;
+alter table notices enable row level security;
+drop policy if exists "public read" on notices;
+drop policy if exists "admin write" on notices;
+create policy "public read" on notices for select using (is_active or public.can_manage('website'));
+create policy "admin write" on notices for all using (public.can_manage('website')) with check (public.can_manage('website'));
+
+-- 3. Live scoreboard. "commentary" is the live text the scorer types ([{ id, at, frame, text }], newest last).
+--    A league frame scored ball by ball by a captain is a row of its own, tied to its match (fixture_id, frame_no):
+--    captains may write those rows for their own matches — exactly the matches whose scorecard they may edit.
+alter table live_matches add column if not exists commentary jsonb not null default '[]'::jsonb;
+alter table live_matches add column if not exists fixture_id uuid references fixtures on delete cascade;
+alter table live_matches add column if not exists frame_no int;
+alter table live_matches drop constraint if exists live_matches_frame_no_check;
+alter table live_matches add constraint live_matches_frame_no_check check (frame_no is null or frame_no between 1 and 25);
+alter table live_matches drop constraint if exists live_matches_size_check;
+alter table live_matches add constraint live_matches_size_check
+  check (octet_length(state::text) <= 200000 and octet_length(commentary::text) <= 60000 and jsonb_typeof(commentary) = 'array');
+create unique index if not exists live_matches_fixture_frame_key on live_matches (fixture_id, frame_no) where fixture_id is not null;
+drop policy if exists "captain write" on live_matches;
+create policy "captain write" on live_matches for all
+  using (fixture_id is not null and public.can_edit_fixture(fixture_id))
+  with check (fixture_id is not null and comp_match_id is null and competition_id is null and public.can_edit_fixture(fixture_id));
+
+-- 4. Manage team: the players a captain picks ahead of a match night. One row per match and team;
+--    picks = [{ "player_id": …, "ext": false }, …] in frame order. It is kept apart from the scorecard so the
+--    other team cannot see it early: only that team's captains (and whoever looks after match nights) can
+--    read it — and, from the day of the match, the other team's captains, whose scorecard it then fills in.
+--    Nobody writes this table directly: set_lineup() below is the only way in.
+create table if not exists lineups (
+  id uuid primary key default gen_random_uuid(),
+  fixture_id uuid not null references fixtures on delete cascade,
+  team_id uuid not null references teams on delete cascade,
+  picks jsonb not null default '[]'::jsonb,
+  updated_by text,
+  updated_at timestamptz not null default now(),
+  unique (fixture_id, team_id)
+);
+alter table lineups enable row level security;
+drop policy if exists "team read" on lineups;
+create policy "team read" on lineups for select using (
+  public.can_manage('matchnights') or public.is_captain_of(team_id)
+  or exists (select 1 from fixtures f where f.id = lineups.fixture_id
+               and (f.starts_at at time zone 'Europe/London')::date <= (now() at time zone 'Europe/London')::date
+               and (public.is_captain_of(f.home_team_id) or public.is_captain_of(f.away_team_id))));
+
+create or replace function public.set_lineup(fid uuid, p_picks jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+declare f fixtures; my_team uuid; picks jsonb;
+begin
+  select * into f from fixtures where id = fid;
+  if not found then raise exception 'That match is not on the website'; end if;
+  my_team := case when public.is_captain_of(f.home_team_id) then f.home_team_id
+                  when public.is_captain_of(f.away_team_id) then f.away_team_id end;
+  if my_team is null then raise exception 'You can only pick the team for your own matches'; end if;
+  if f.status not in ('scheduled', 'in_progress') then raise exception 'This match has already been played'; end if;
+  if jsonb_typeof(coalesce(p_picks, '[]'::jsonb)) <> 'array' or jsonb_array_length(coalesce(p_picks, '[]'::jsonb)) > 10 then
+    raise exception 'A team sheet has up to 10 places';
+  end if;
+  -- Keep only what a team sheet is made of: a player, and whether they are playing as the extra player.
+  select coalesce(jsonb_agg(jsonb_build_object('player_id', nullif(e.v->>'player_id', ''), 'ext', coalesce(e.v->>'ext', '') = 'true') order by e.n), '[]'::jsonb)
+    into picks from jsonb_array_elements(coalesce(p_picks, '[]'::jsonb)) with ordinality e(v, n);
+  if exists (select 1 from jsonb_array_elements(picks) x where x->>'player_id' is not null
+             and not exists (select 1 from players p where p.id::text = x->>'player_id' and p.team_id = my_team)) then
+    raise exception 'You can only pick players from your own team';
+  end if;
+  -- An empty sheet is simply taken away.
+  if not exists (select 1 from jsonb_array_elements(picks) x where x->>'player_id' is not null) then
+    delete from lineups where fixture_id = fid and team_id = my_team;
+    return;
+  end if;
+  insert into lineups (fixture_id, team_id, picks, updated_by, updated_at)
+  values (fid, my_team, picks, (select coalesce(nullif(full_name, ''), email) from profiles where id = auth.uid()), now())
+  on conflict (fixture_id, team_id) do update set picks = excluded.picks, updated_by = excluded.updated_by, updated_at = now();
+end;
+$$;
+revoke all on function public.set_lineup(uuid, jsonb) from public, anon;
+grant execute on function public.set_lineup(uuid, jsonb) to authenticated;
+
+-- A captain signs someone who is already on the website but has no team. Like a brand-new player
+-- (add_player), they are flagged for the league to accept; "review_from" remembers where they came from,
+-- so turning the request down puts them back to having no team instead of removing them.
+alter table players add column if not exists review_from text;
+create or replace function public.claim_player(p_player uuid, p_team uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_captain_of(p_team) then
+    raise exception 'You can only add players to your own team';
+  end if;
+  update players set team_id = p_team, status = 'playing', needs_review = true, review_from = 'no_team'
+   where id = p_player and team_id is null and status <> 'deceased';
+  if not found then
+    raise exception 'That player already belongs to a team — ask the league secretary to move them';
+  end if;
+end;
+$$;
+revoke all on function public.claim_player(uuid, uuid) from public, anon;
+grant execute on function public.claim_player(uuid, uuid) to authenticated;
+
+-- The "Manage team" box on the home page: how many days before a match captains see it (0 = never).
+alter table settings add column if not exists squad_box_days int not null default 3;
+
+-- The activity log covers the notifications sent out as well.
+do $$
+declare t text;
+begin
+  foreach t in array array['notices'] loop
+    execute format('drop trigger if exists audit_row on %I', t);
+    execute format('drop trigger if exists audit_added on %I', t);
+    execute format('create trigger audit_row after update or delete on %I for each row execute function public.audit_row()', t);
+    execute format('create trigger audit_added after insert on %I referencing new table as added for each statement execute function public.audit_added()', t);
+  end loop;
+end $$;
+
 -- ── v8: give existing rows their short web addresses ────────────
 -- (Done down here, after the activity log has been told to ignore these columns.)
 update players set slug = slug where coalesce(slug, '') = '';
@@ -1551,7 +1733,7 @@ create unique index if not exists competition_matches_no_key on competition_matc
 do $$
 declare t text;
 begin
-  foreach t in array array['fixtures','frames','breaks','players','competition_matches','competition_frames','competition_breaks','competitions','live_matches','articles'] loop
+  foreach t in array array['fixtures','frames','breaks','players','competition_matches','competition_frames','competition_breaks','competitions','live_matches','articles','notices'] loop
     begin
       execute format('alter publication supabase_realtime add table %I', t);
     exception when duplicate_object then null;

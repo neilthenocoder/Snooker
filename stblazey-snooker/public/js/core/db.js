@@ -4,7 +4,9 @@ import { demoClient, demoAdminUsers, resetDemo } from "./demo-client.js";
 
 let client = demoClient;
 if (!DEMO_MODE) {
-  const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
+  // One exact version (not "the newest 2.x"): what the site runs only changes when this line does.
+  // To move to a newer one, change the number here and test the site.
+  const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/+esm");
   client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 export const db = client;

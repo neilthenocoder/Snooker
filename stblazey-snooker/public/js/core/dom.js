@@ -24,6 +24,14 @@ export function mount(el, content) { el.innerHTML = render(content); return el; 
 /** Safe CSS url() for inline styles. */
 export const cssUrl = (u) => `url("${encodeURI(u).replace(/["'()]/g, (c) => `%${c.charCodeAt(0).toString(16)}`)}")`;
 
+/**
+ * A web address typed in the dashboard, made safe to use as a link: only http(s), mailto, tel, a page of
+ * this site (/…) or a place on the page (#…) is allowed. Anything else (a "javascript:" address, say)
+ * gives "" — so a link that could run code in a visitor's browser is never drawn. (Pictures and PDFs that the
+ * demo keeps inside the browser are let through too: they cannot run anything.)
+ */
+export const safeHref = (u) => { const v = String(u ?? "").trim(); return /^(https?:\/\/|mailto:|tel:|\/(?!\/)|#|data:(image\/(png|jpe?g|webp|gif)|application\/pdf)[;,])/i.test(v) ? v : ""; };
+
 /** Plain text → escaped paragraphs (blank line = new paragraph). */
 export const paragraphs = (text = "") =>
   html`${String(text).split(/\n\s*\n/).filter(Boolean).map((p) => html`<p>${raw(esc(p).replace(/\n/g, "<br>"))}</p>`)}`;

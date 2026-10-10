@@ -1,6 +1,6 @@
 import { html, mount, $, toast } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
-import { loadFixture, saveScorecard, setFixtureStatus, seasonFrames, setScorecardPhoto, addPlayerToTeam, sendResultEmail } from "../core/api.js";
+import { loadFixture, saveScorecard, setFixtureStatus, seasonFrames, setScorecardPhoto, addPlayerToTeam, sendResultEmail, fixtureBoards, save, lineupsFor } from "../core/api.js";
 import { extCounts, isShieldMatch } from "../core/rules.js";
 import { canEditFixture, isAdmin } from "../core/auth.js";
 import { uploadImage } from "../core/upload.js";
@@ -56,6 +56,20 @@ export default async function scorecard(view, { params, user }) {
     a: { name: home?.name, team: home, options: squad(fx.home_team_id, "home") },
     b: { name: away?.name, team: away, options: squad(fx.away_team_id, "away") },
   };
+  // Team sheets picked ahead of the night (My area → Manage team): the names go into any place on the card
+  // that is still empty. Nothing is saved until the card is — and they can be changed here as usual.
+  const cardFrames = bundle.frames.filter((f) => !f.legacy).map(toEditor);
+  const sheets = ["scheduled", "in_progress"].includes(fx.status) ? await lineupsFor(fx.id) : [];
+  const filled = [];
+  for (const [side, teamId] of [["a", fx.home_team_id], ["b", fx.away_team_id]]) {
+    const picks = (sheets.find((l) => l.team_id === teamId)?.picks ?? []).filter((x) => !x?.player_id || sides[side].options.some((o) => o.id === x.player_id));
+    if (!picks.some((x) => x?.player_id) || cardFrames.some((f) => f[side][0].player_id)) continue;   // nothing picked, or this side is already on the card
+    picks.forEach((x, i) => {
+      cardFrames[i] ??= { frame_no: i + 1, a_points: null, b_points: null, a: [{ player_id: null, ext: false, breaks: "" }], b: [{ player_id: null, ext: false, breaks: "" }] };
+      if (x?.player_id) Object.assign(cardFrames[i][side][0], { player_id: x.player_id, ext: !!x.ext });
+    });
+    filled.push(sides[side].name);
+  }
   const myTeam = admin ? null : user.profile.team_id;
   const back = admin ? "/admin/results" : "/my/fixtures";
   const CHECK = "Please be certain the scores are correct and in the right columns.";
@@ -75,8 +89,25 @@ export default async function scorecard(view, { params, user }) {
     person: (id) => { const p = ctx.player.get(id); return { name: p?.full_name ?? "A player", avatar_url: p?.avatar_url, club: ctx.team.get(p?.team_id)?.name }; },
     photo: { required: true, url: () => fx.scorecard_url, pick: () => pickPhoto() },
     addPlayer: myTeam || admin ? { label: `+ Add a new player to ${admin ? "a team" : ctx.team.get(myTeam)?.name}`, run: () => addPlayer() } : null,
-    frames: bundle.frames.filter((f) => !f.legacy).map(toEditor),
-    notice: shield.isShield ? html`<div class="sc-shield">🛡 ${league.shield_name || "Shield"} match — <b>${holder?.name}</b> ${holder ? "hold the shield and are defending it tonight." : ""}</div>` : "",
+    frames: cardFrames,
+    // The third view: each frame scored ball by ball. A frame gets its own scoreboard row (tied to this match),
+    // which is what visitors watch; the score and breaks come back onto this card when the frame ends.
+    ballByBall: {
+      async open(f) {
+        const a = f.a[0] ?? null, b = f.b[0] ?? null;
+        const row = (await fixtureBoards(fx.id)).find((m) => m.frame_no === f.frame_no);
+        const who = { player_a_id: a, player_b_id: b, title: `${home?.name} v ${away?.name}`, round_name: `${home?.name} v ${away?.name} · Frame ${f.frame_no}` };
+        if (!row) return save("live_matches", { fixture_id: fx.id, frame_no: f.frame_no, ...who, best_of: 1, status: "setup", frames_a: 0, frames_b: 0, state: {},
+          venue: ctx.venue.get(fx.venue_id)?.name ?? null, created_by: user?.profile?.full_name ?? null, updated_at: new Date().toISOString() });
+        // Different players picked for this frame since it was last on the pad: start it afresh for them.
+        if (row.player_a_id !== a || row.player_b_id !== b)
+          return save("live_matches", { id: row.id, ...who, status: "setup", frames_a: 0, frames_b: 0, state: {}, started_at: null, finished_at: null, updated_at: new Date().toISOString() });
+        return row;
+      },
+      save: (row) => save("live_matches", row),
+    },
+    notice: html`${shield.isShield ? html`<div class="sc-shield">🛡 ${league.shield_name || "Shield"} match — <b>${holder?.name}</b> ${holder ? "hold the shield and are defending it tonight." : ""}</div>` : ""}
+      ${filled.length ? html`<div class="sc-sheet">✓ ${filled.join(" and ")}: the players picked under <b>Manage team</b> are already on the card. Change any of them under Players.</div>` : ""}`,
     actions: [
       { key: "progress", label: "Save progress", done: "Progress saved", saves: true },
       { key: "submit", label: "Submit results", cls: "green", final: true, needsPhoto: true, done: "Result submitted",

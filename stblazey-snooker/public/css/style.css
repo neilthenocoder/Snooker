@@ -2585,31 +2585,47 @@ a.stat.stat-link:hover i { color: var(--red); transform: translateX(3px); }
 :root { --lt-top: #dcf3de; --lt-top-ink: #07500d; --lt-down: #f8dde3; --lt-down-ink: #a10029; --lt-mine: #fff3cf; }
 table.data tbody tr.lt-mine td { background: var(--lt-mine); }
 table.data tbody tr.lt-mine td:first-child { box-shadow: inset 4px 0 0 var(--ink); }
+table.data tbody tr.lt-up td { background: var(--lt-top); }
 table.data tbody tr.lt-top td { background: var(--lt-top); }
 table.data tbody tr.lt-down td { background: var(--lt-down); font-weight: 700; }
-.lt-pos { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-.lt-mark { display: inline-grid; place-items: center; flex: none; width: 20px; height: 20px; border-radius: 50%; color: #fff; }
-.lt-mark svg { width: 14px; height: 14px; fill: currentColor; }
-.lt-mark.up { background: var(--green); }
-.lt-mark.down { background: var(--red); }
+/* the position, with how far the team has moved since last week: ▲2 ▼1 – */
+.lt-pos { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.lt-pos b { font-weight: inherit; min-width: 1.2em; }
+.lt-mv { display: inline-flex; align-items: center; gap: 2px; min-width: 24px; font: 700 12px/1 var(--font-body, inherit); white-space: nowrap; }
+.lt-mv i { font-style: normal; font-size: 9px; line-height: 1; }
+.lt-mv.up { color: var(--green); }
+.lt-mv.down { color: var(--red); }
+.lt-mv.same { color: #9a9a92; justify-content: center; }
+.lt-mv.same i { font-size: 14px; }
+/* P = promotion place, R = relegation place: a small letter after the team's name */
+.lt-team { display: flex; align-items: center; gap: 8px; }
+.lt-team .team-cell { min-width: 0; }
+.lt-zone { display: inline-grid; place-items: center; flex: none; width: 20px; height: 20px; border-radius: 4px; color: #fff; font: 700 12px/1 var(--font-head); letter-spacing: 0; }
+.lt-zone.up { background: var(--green); }
+.lt-zone.down { background: var(--red); }
 /* the highest points total in the table */
 .lt-pts { display: inline-block; min-width: 2.2em; padding: 3px 9px; border-radius: 20px; background: var(--green); color: #fff; font-weight: 700; line-height: 1.3; }
 .lt-key { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0; padding: 10px 14px; background: #fff; border-top: 1px solid var(--head-row); font-size: 13px; color: var(--muted); }
 .lt-key > span { display: inline-flex; align-items: center; gap: 7px; }
-.lt-key .lt-mark { width: 18px; height: 18px; }
-.lt-key .lt-mark svg { width: 12px; height: 12px; }
-/* in the narrow side column the columns sit closer, so the arrow and the points pill fit without scrolling */
+.lt-key .lt-zone { width: 18px; height: 18px; font-size: 11px; }
+.lt-key .lt-mv { min-width: 0; }
+/* in the narrow side column the columns sit closer and the movement sits under the position, so everything fits without scrolling */
+.sidebar .lt-panel .lt-pos { flex-direction: column; gap: 3px; }
+.sidebar .lt-panel .lt-mv { min-width: 0; font-size: 11px; }
 .sidebar .lt-panel table.data th, .sidebar .lt-panel table.data td { padding-left: 7px; padding-right: 7px; }
 .sidebar .lt-panel table.data th:first-child, .sidebar .lt-panel table.data td:first-child { padding-left: 12px; }
 .sidebar .lt-panel table.data th:last-child, .sidebar .lt-panel table.data td:last-child { padding-right: 12px; }
 @media (max-width: 720px) {
-  .lt-pos { gap: 3px; }
-  .lt-mark { width: 16px; height: 16px; }
-  .lt-mark svg { width: 11px; height: 11px; }
+  /* a phone: the movement sits under the position, so the column stays narrow */
+  .lt-pos { flex-direction: column; gap: 3px; }
+  .lt-mv { min-width: 0; font-size: 11px; }
+  .lt-zone { width: 17px; height: 17px; font-size: 11px; }
+  .lt-team { gap: 6px; }
   .lt-pts { min-width: 0; padding: 1px 6px; }
   /* the arrow and the points pill need a little width: the columns sit slightly closer on a phone, so the table still fits */
   .lt-panel table.data th, .lt-panel table.data td { padding-left: 4px; padding-right: 4px; }
   .lt-panel table.data th:first-child, .lt-panel table.data td:first-child { padding-left: 8px; }
+  .lt-panel table.data th { font-size: 12px; }
   .lt-panel table.data th:last-child, .lt-panel table.data td:last-child { padding-right: 8px; }
 }
 /* home: the headline sat tight under the red bar */
@@ -2628,3 +2644,180 @@ table.data tbody tr.lt-down td { background: var(--lt-down); font-weight: 700; }
   .quick-links svg { display: none; }
 }
 @media (max-width: 400px) { .quick-links a { padding: 11px 4px; font-size: 12px; } }
+
+/* ── v14: the home page's feature strip and Key dates take far less room ── */
+/* The feature strip ("NEW …"): a slimmer bar. */
+.feature-box { padding: 8px 14px; gap: 12px; font-size: 15px; min-height: 42px; }
+.feature-new { font-size: 11px; padding: 3px 8px; }
+.feature-go { font-size: 18px; }
+.feature-item { padding: 8px 14px; gap: 12px; }
+.feature-box.scrolling .ticker-item .feature-new { font-size: 10px; padding: 2px 7px; }
+@media (max-width: 720px) { .feature-box { font-size: 14px; padding: 8px 12px; gap: 10px; } .feature-item { padding: 8px 12px; gap: 10px; } }
+
+/* Key dates: one slim row. The yellow label on the left, then each date as a small card; extra dates slide sideways. */
+.kd { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; background: #fff; }
+.kd-label { display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 8px 16px; background: var(--yellow); color: #1b0e06; font: 700 15px/1.1 var(--font-head); text-transform: uppercase; white-space: nowrap; }
+.kd-label svg { width: 18px; height: 18px; fill: currentColor; display: none; }
+.kd-label i { font: 700 11px/1.2 var(--font-body, inherit); font-style: normal; text-transform: none; letter-spacing: 0; opacity: .8; }
+.kd-label:hover { color: #1b0e06; filter: brightness(1.06); }
+.kd-row { display: flex; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
+.kd-row::-webkit-scrollbar { display: none; }
+.kd-item { flex: 1 0 290px; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 8px 14px; scroll-snap-align: start; box-shadow: inset 1px 0 0 var(--head-row); }
+.kd.one .kd-item { flex-basis: 100%; }
+a.kd-item:hover { color: inherit; background: #fffbea; }
+.kd-item time { flex: none; width: 44px; display: grid; justify-items: center; background: var(--ink); color: #fff; padding: 5px 2px 4px; line-height: 1; border-radius: 3px; }
+.kd-item time b { font: 700 20px/1 var(--font-head); }
+.kd-item time span { font: 700 11px/1.3 var(--font-head); text-transform: uppercase; color: var(--yellow); }
+.kd-item > div { flex: 1; min-width: 0; }
+.kd-item strong { display: block; font: 700 15px/1.25 var(--font-head); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kd-item small { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kd-item em { font-style: normal; font-weight: 700; color: var(--ink); margin-right: 7px; }
+.kd-item em.soon { color: var(--red); }
+/* ‹ › — only while there are more dates than fit (home.js adds .can-slide) */
+.kd-nav { display: none; flex-direction: column; box-shadow: inset 1px 0 0 var(--head-row); }
+.kd.can-slide .kd-nav { display: flex; }
+.kd-nav button { flex: 1; width: 30px; border: 0; background: #fff; font: 700 18px/1 var(--font-head); color: var(--ink); cursor: pointer; padding: 0; }
+.kd-nav button + button { box-shadow: inset 0 1px 0 var(--head-row); }
+.kd-nav button:hover { background: var(--head-row); }
+/* the four buttons, the strip, the entries bar and Key dates sit close together as one block */
+.home-top { display: grid; gap: 10px; min-width: 0; }
+.home-top > * { margin: 0; min-width: 0; }
+.home-top .enter-bar { padding: 9px 14px; flex-wrap: nowrap; }
+.home-top .enter-bar span { flex: none; padding: 5px 11px; margin-left: auto; }
+@media (max-width: 720px) {
+  /* a phone: the label is a thin bar across the top, the dates slide underneath (the next one peeks in from the right) */
+  .kd { grid-template-columns: minmax(0, 1fr); }
+  .kd-label { flex-direction: row; align-items: center; justify-content: flex-start; gap: 7px; padding: 6px 12px; font-size: 13px; }
+  .kd-label svg { display: block; width: 15px; height: 15px; }
+  .kd-label i { margin-left: auto; font-size: 12px; opacity: 1; }
+  .kd-item { flex: 0 0 86%; padding: 8px 12px; gap: 10px; }
+  .kd.one .kd-item { flex-basis: 100%; }
+  .kd-item strong { font-size: 14px; }
+  .kd.can-slide .kd-nav { display: none; }
+  .home-top { gap: 8px; }
+  .home-top .enter-bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 1px 12px; font-size: 14px; }
+  .home-top .enter-bar b { grid-column: 1; }
+  .home-top .enter-bar span { grid-column: 2; grid-row: 1 / span 2; margin: 0; }
+}
+
+/* ── v14: notices from the league — breaking news, important updates, offers ── */
+/* Their pop-ups have their own colours (the green ones are match news), with the kind written above the message. */
+.live-pop.tone-breaking { background: var(--red); }
+.live-pop.tone-update { background: #0b63c4; }
+.live-pop.tone-offer { background: var(--yellow); color: #1b0e06; }
+a.live-pop.tone-offer:hover { color: #1b0e06; }
+.live-pop[class*="tone-"] { padding-left: 16px; }
+.live-pop[class*="tone-"]::before { display: none; }
+.live-pop-tag { display: block; font: 700 11px/1.2 var(--font-head); text-transform: uppercase; letter-spacing: .08em; opacity: .85; margin-bottom: 3px; }
+/* the red number on the bell: notices sent since you last opened it */
+.nav-bell { position: relative; }
+.nav-bell-count { position: absolute; top: -4px; right: -4px; min-width: 19px; height: 19px; padding: 0 5px; display: grid; place-items: center; border-radius: 10px; background: var(--red); color: #fff; font: 700 11px/1 var(--font-body, inherit); box-shadow: 0 0 0 2px #000; pointer-events: none; }
+/* the list behind the bell */
+.notice-list { display: grid; gap: 8px; margin: 8px 0 6px; }
+.notice-item { display: block; position: relative; background: #fff; border: 1px solid #eeede3; border-radius: 8px; padding: 11px 13px; color: inherit; }
+a.notice-item:hover { color: inherit; border-color: #cfcec4; box-shadow: 0 2px 8px rgba(0, 0, 0, .06); }
+.notice-item b { display: block; margin-top: 6px; font-size: 15px; line-height: 1.3; }
+.notice-item p { margin: 4px 0 0; font-size: 13px; line-height: 1.4; color: #444; }
+.notice-item small { display: block; margin-top: 6px; font-size: 12px; color: var(--muted); }
+.notice-tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font: 700 10px/1.5 var(--font-head); text-transform: uppercase; letter-spacing: .08em; color: #fff; }
+.notice-tag.tone-breaking { background: var(--red); }
+.notice-tag.tone-update { background: #0b63c4; }
+.notice-tag.tone-offer { background: var(--yellow); color: #1b0e06; }
+.notice-new { float: right; font: 700 10px/1.8 var(--font-head); font-style: normal; text-transform: uppercase; letter-spacing: .08em; color: var(--red); }
+
+/* ── v14: live text on the ball-by-ball scoreboard ── */
+/* the box on the scorer's pad */
+.pad-say { margin-top: 14px; background: #fff; padding: 12px 14px; border-left: 5px solid var(--blue); }
+.pad-say label { display: block; font-size: 14px; margin-bottom: 8px; }
+.pad-say label small { color: var(--muted); font-weight: 400; }
+.pad-say-row { display: flex; gap: 8px; }
+.pad-say-row input { flex: 1; min-width: 0; }
+.pad-said { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
+.pad-said li { display: flex; align-items: baseline; gap: 8px; }
+.pad-said time { flex: none; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pad-said span { flex: 1; min-width: 0; }
+.pad-said button { flex: none; border: 0; background: none; color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; padding: 0 4px; }
+.pad-said button:hover { color: var(--red); }
+/* what the public sees, newest line first */
+.sb-said { list-style: none; margin: 0; padding: 0; background: #fff; max-height: 420px; overflow-y: auto; }
+.sb-said li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 12px; padding: 11px 16px; border-top: 1px solid var(--row-alt); }
+.sb-said li:first-child { border-top: 0; background: #f3faf4; box-shadow: inset 4px 0 0 var(--live-green); }
+.sb-said time { grid-row: 1 / span 2; align-self: start; font: 700 14px/1.5 var(--font-head); color: var(--ink); font-variant-numeric: tabular-nums; }
+.sb-said small { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.sb-said p { margin: 0; font-size: 15px; line-height: 1.45; grid-column: 2; }
+
+/* ── v14: the scorecard's third view — a frame scored ball by ball ── */
+.sc-views { flex-wrap: wrap; row-gap: 6px; }
+.g-ball { display: block; }
+.g-ball .pad { padding: 12px; }
+.g-ball .pad-start { margin: 0; }
+.g-ball-note { padding: 18px 14px; text-align: center; display: grid; gap: 10px; justify-items: center; }
+.g-ball-note p { margin: 0; }
+.pad-frame .notice { margin: 12px 0; }
+@media (max-width: 720px) {
+  .sc-views span { flex-basis: 100%; margin: 0; }
+  .sc-views button { flex: 1; padding: 8px 6px; }
+  .g-ball .pad { padding: 10px 8px; }
+}
+.g-ball .pad-info { color: #e9e9e4; }
+.g-ball .pad-info .muted { color: #b9b9b0; }
+.g-ball .pad-info em { color: var(--yellow); }
+.g-ball .pad-end { border-top-color: #3a3a3a; }
+.g-ball .g-ball-note, .g-ball .pad-start { background: #fff; color: var(--ink); }
+.sb-frames.one b { opacity: .7; }
+
+/* ── v14: Manage team — the captains' box on the home page, and the team sheet ── */
+/* The box: fixed to the bottom of the screen, like an app's reminder. Only captains and vice captains ever see it. */
+.squad-box { position: fixed; left: 50%; bottom: 14px; z-index: 55; width: min(560px, calc(100vw - 24px)); transform: translate(-50%, 24px); opacity: 0;
+  display: flex; align-items: center; gap: 12px; padding: 14px 44px 14px 18px; background: #fff; color: var(--ink); border-radius: 14px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .28), 0 0 0 1px rgba(0, 0, 0, .06); border-left: 6px solid var(--green); transition: transform .3s ease-out, opacity .3s; }
+.squad-box.in { transform: translate(-50%, 0); opacity: 1; }
+.squad-box-text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.squad-box-text strong { font: 700 18px/1.15 var(--font-head); text-transform: uppercase; }
+.squad-box-text span { font-size: 14px; line-height: 1.35; }
+.squad-box-text small { font-size: 12px; font-weight: 700; color: var(--red); }
+.squad-box-text small.ok { color: var(--green); }
+.squad-box .btn { flex: none; white-space: nowrap; border-radius: 22px; padding: 10px 16px; }
+.squad-box-x { position: absolute; top: 6px; right: 8px; width: 30px; height: 30px; border: 0; background: none; font-size: 24px; line-height: 1; color: #777; cursor: pointer; border-radius: 50%; }
+.squad-box-x:hover { background: var(--row-alt); color: var(--ink); }
+/* while it is there, the round "scroll down" button gives way and the other corner buttons sit above it */
+.has-squad-box .scroll-down { display: none !important; }
+.has-squad-box .to-top, .has-squad-box .edit-page, .has-squad-box .live-pops { bottom: 110px; }
+.drawer-open .squad-box, .menu-open .squad-box { display: none; }
+@media (max-width: 520px) {
+  .squad-box { flex-wrap: wrap; padding: 12px 40px 12px 14px; gap: 10px; }
+  .squad-box .btn { width: 100%; text-align: center; }
+  .has-squad-box .to-top, .has-squad-box .edit-page, .has-squad-box .live-pops { bottom: 168px; }
+}
+@media print { .squad-box { display: none !important; } }
+
+/* the team sheet (My area → Manage team) */
+.squad-matches { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.squad-matches::-webkit-scrollbar { display: none; }
+.squad-matches a { flex: 0 0 auto; min-width: 150px; display: grid; gap: 1px; padding: 10px 14px; background: #fff; border-bottom: 4px solid transparent; }
+.squad-matches a.on { border-bottom-color: var(--red); box-shadow: 0 2px 8px rgba(0, 0, 0, .08); }
+.squad-matches b { font: 700 15px var(--font-head); text-transform: uppercase; }
+.squad-matches span { font-size: 13px; }
+.squad-matches small { font-size: 11px; font-weight: 700; color: var(--muted); }
+.squad-matches small.ok { color: var(--green); }
+.squad-form { padding: 16px 18px 18px; background: #fff; }
+.squad-lead { margin: 0 0 14px; font-size: 14px; line-height: 1.5; max-width: 70ch; }
+.squad-lead span { display: block; color: var(--muted); }
+.squad-rows { display: grid; gap: 8px; margin-bottom: 16px; max-width: 520px; }
+.squad-row { display: grid; grid-template-columns: 78px minmax(0, 1fr); align-items: center; gap: 10px; }
+.squad-row span { font: 700 14px var(--font-head); text-transform: uppercase; }
+.squad-row select { width: 100%; }
+.squad-saved { font-size: 13px; }
+.squad-add { padding: 16px 18px 18px; background: #fff; border-top: 2px solid var(--head-row); }
+.squad-add label { display: block; margin-bottom: 8px; font-size: 14px; }
+.squad-add label small { display: block; font-weight: 400; color: var(--muted); margin-top: 2px; }
+.squad-add-row { display: flex; gap: 8px; max-width: 520px; }
+.squad-add-row input { flex: 1; min-width: 0; }
+.squad-found { max-width: 520px; }
+.squad-found p { margin: 12px 0 6px; font-size: 13px; font-weight: 700; }
+.squad-hit { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; margin-top: 6px; background: var(--row-alt); border: 1px solid transparent; text-align: left; cursor: pointer; font: inherit; }
+.squad-hit:hover { border-color: var(--green); background: #fff; }
+.squad-hit b { display: block; }
+.squad-hit small { color: var(--green); font-weight: 700; }
+.sc-sheet { background: #e8f6ea; color: #07500d; padding: 9px 14px; font-size: 14px; margin: 8px 0; border-left: 5px solid var(--green); }
+@media (max-width: 520px) { .squad-add-row { flex-wrap: wrap; } .squad-add-row .btn { width: 100%; } .squad-row { grid-template-columns: 64px minmax(0, 1fr); } }

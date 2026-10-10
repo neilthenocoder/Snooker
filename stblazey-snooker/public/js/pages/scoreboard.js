@@ -3,7 +3,7 @@
 //                    scorer presses a button (Admin → Live scoreboard); nobody has to refresh.
 import { html, mount, fmtDate, fmtTime } from "../core/dom.js";
 import { table, liveMatches, loadLiveMatch, subscribe } from "../core/api.js";
-import { ballOf, framesToWin, situation, highBreaks, matchWinner, sideName, sidePlayer, matchLabel, ballOn } from "../core/live-score.js";
+import { ballOf, framesToWin, situation, highBreaks, matchWinner, sideName, sidePlayer, matchLabel, ballOn, onTable } from "../core/live-score.js";
 import { breadcrumb, urls, avatar, trophy, panel, dataTable } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import notFound from "./not-found.js";
@@ -35,6 +35,8 @@ function board(m, { players, competitions, teams, venues }) {
   const f = m.state?.frame, done = m.state?.frames ?? [];
   const live = m.status === "live", finished = m.status === "finished";
   const comp = competitions.find((c) => c.id === m.competition_id);
+  // A frame of a league match, scored ball by ball by a captain: it belongs to that match's scorecard.
+  const leagueFrame = !!m.fixture_id;
   const name = { a: sideName(m, "a", players), b: sideName(m, "b", players) };
   const sit = live ? situation(f) : null, high = highBreaks(m), won = matchWinner(m);
   const on = live ? ballOn(f) : null;
@@ -44,11 +46,12 @@ function board(m, { players, competitions, teams, venues }) {
     const who = html`${avatar(p, "sb-face")}<span class="sb-name">${name[s]}</span><small>${teams.find((t) => t.id === p?.team_id)?.name ?? ""}</small>`;
     return html`<div class="sb-side ${s} ${live && f.striker === s ? "at-table" : ""} ${won === s ? "won" : ""}">
       ${p ? html`<a class="sb-who" href="${urls.player(p)}">${who}</a>` : html`<div class="sb-who">${who}</div>`}
-      <div class="sb-points" aria-label="${name[s]}: ${live ? f[s] : m[`frames_${s}`] ?? 0}">${live ? f[s] : finished ? "" : "0"}</div>
+      <div class="sb-points" aria-label="${name[s]}: ${live ? f[s] : m[`frames_${s}`] ?? 0}">${live ? f[s] : finished ? (leagueFrame ? done.at(-1)?.[s] ?? "" : "") : "0"}</div>
       ${live && f.striker === s ? html`<span class="sb-cue">At the table</span>` : ""}
     </div>`;
   };
   const lead = !sit ? "" : sit.ahead ? `${name[sit.ahead]} leads by ${sit.lead}` : "Level";
+  const said = (Array.isArray(m.commentary) ? m.commentary : []).slice().reverse();
 
   return html`<section class="sb is-${m.status}">
     <div class="wrap">
@@ -56,14 +59,15 @@ function board(m, { players, competitions, teams, venues }) {
       <div class="sb-head">
         ${comp ? trophy(comp, "sb-trophy", { always: false }) : ""}
         <div><h1>${matchLabel(m, competitions)}</h1>
-          <p>Best of ${m.best_of} frames · first to ${framesToWin(m)}${venue ? ` · ${venue}` : ""}${m.starts_at && !live && !finished ? ` · ${fmtDate(m.starts_at)} ${fmtTime(m.starts_at)}` : ""}</p></div>
+          <p>${leagueFrame ? "League match · this frame is being scored ball by ball" : `Best of ${m.best_of} frames · first to ${framesToWin(m)}`}${venue ? ` · ${venue}` : ""}${m.starts_at && !live && !finished ? ` · ${fmtDate(m.starts_at)} ${fmtTime(m.starts_at)}` : ""}</p></div>
         ${live ? html`<span class="live-dot">Live</span>` : finished ? html`<span class="status approved">Finished</span>` : html`<span class="status submitted">Not started</span>`}
       </div>
       <div class="sb-table"><div class="sb-board">
         ${side("a")}
         <div class="sb-mid">
-          <div class="sb-frames"><b>${m.frames_a ?? 0}</b><span>(${m.best_of})</span><b>${m.frames_b ?? 0}</b></div>
-          <small>${live ? `Frame ${f.no}` : finished ? "Final score" : "Frames"}</small>
+          ${leagueFrame ? html`<div class="sb-frames one"><b>v</b></div><small>Frame ${m.frame_no ?? 1}${finished ? " · over" : ""}</small>`
+            : html`<div class="sb-frames"><b>${m.frames_a ?? 0}</b><span>(${m.best_of})</span><b>${m.frames_b ?? 0}</b></div>
+          <small>${live ? `Frame ${f.no}` : finished ? "Final score" : "Frames"}</small>`}
         </div>
         ${side("b")}
       </div>
@@ -76,11 +80,13 @@ function board(m, { players, competitions, teams, venues }) {
           ${on ? html`<span class="sb-on">Next: ${on === "red" ? html`${ballDot(1)} a red` : on === "colour" ? "a colour" : html`${ballDot(on)} the ${ballOf(on).name.toLowerCase()}`}</span>` : ""}
         </div>
         ${f.last ? html`<p class="sb-last" aria-live="polite">${f.last}</p>` : ""}
-      </div>` : finished ? html`<p class="sb-result">${name[won]} wins ${Math.max(m.frames_a, m.frames_b)}–${Math.min(m.frames_a, m.frames_b)}</p>`
+      </div>` : finished ? html`<p class="sb-result">${leagueFrame ? `${name[won]} wins the frame` : `${name[won]} wins ${Math.max(m.frames_a, m.frames_b)}–${Math.min(m.frames_a, m.frames_b)}`}</p>`
         : html`<p class="sb-result wait">${m.starts_at ? `Starts ${fmtDate(m.starts_at)} at ${fmtTime(m.starts_at)}` : "Waiting for the first break"} — this page updates by itself.</p>`}
       </div>
     </div></section>
     <div class="wrap stack sb-under">
+      ${said.length ? panel("Live text", html`<ol class="sb-said" aria-live="polite">${said.map((l) => html`<li><time datetime="${l.at}">${fmtTime(l.at)}</time>
+        ${l.frame ? html`<small>Frame ${l.frame}</small>` : ""}<p>${l.text}</p></li>`)}</ol>`) : ""}
       ${done.length ? panel("Frame by frame", dataTable([
         { label: "Frame", cell: (r) => r.no, cls: "num" },
         { label: name.a, cell: (r) => html`<span class="${r.winner === "a" ? "strong" : ""}">${r.a}</span>${r.high_a >= 20 ? html`<span class="break-tag">${r.high_a} break</span>` : ""}`, cls: "right" },
@@ -88,7 +94,7 @@ function board(m, { players, competitions, teams, venues }) {
         { label: name.b, cell: (r) => html`<span class="${r.winner === "b" ? "strong" : ""}">${r.b}</span>${r.high_b >= 20 ? html`<span class="break-tag">${r.high_b} break</span>` : ""}` },
       ], done)) : ""}
       ${high.a || high.b ? html`<div class="stats"><div class="stat"><b>${high.a || "–"}</b>Highest break: ${name.a}</div><div class="stat"><b>${high.b || "–"}</b>Highest break: ${name.b}</div></div>` : ""}
-      <div class="btn-row">${comp ? html`<a class="btn secondary" href="${urls.competition(comp)}">${comp.name}</a>` : ""}<a class="btn ghost" href="/scoreboard">All scoreboard matches</a></div>
+      <div class="btn-row">${leagueFrame ? html`<a class="btn secondary" href="/match/${m.fixture_id}">The whole match: every frame</a>` : ""}${comp ? html`<a class="btn secondary" href="${urls.competition(comp)}">${comp.name}</a>` : ""}<a class="btn ghost" href="/scoreboard">All scoreboard matches</a></div>
     </div>`;
 }
 
@@ -97,13 +103,14 @@ async function list(view, look) {
   setTitle("Live scoreboard");
   adminEdit("scoreboard", null, { label: "Score a match" });
   const draw = async () => {
-    const all = await liveMatches().catch(() => []);
+    // League frames scored by captains show while they are on the table; afterwards they are part of the match's own page.
+    const all = (await liveMatches().catch(() => [])).filter((m) => !m.fixture_id || onTable(m));
     const card = (m) => {
       const f = m.state?.frame, won = matchWinner(m);
       return html`<a class="sb-card is-${m.status}" href="${urls.scoreboard(m)}">
         <small>${matchLabel(m, look.competitions)}${m.status === "live" ? html` <span class="live-dot">Live</span>` : ""}</small>
         <div class="sb-card-row"><span class="${won === "a" ? "strong" : ""}">${sideName(m, "a", look.players)}</span>
-          <b>${m.frames_a ?? 0} <i>(${m.best_of})</i> ${m.frames_b ?? 0}</b>
+          <b>${m.fixture_id ? html`${f?.a ?? 0} <i>v</i> ${f?.b ?? 0}` : html`${m.frames_a ?? 0} <i>(${m.best_of})</i> ${m.frames_b ?? 0}`}</b>
           <span class="${won === "b" ? "strong" : ""}">${sideName(m, "b", look.players)}</span></div>
         <em>${m.status === "live" ? `Frame ${f?.no ?? 1}: ${f?.a ?? 0} – ${f?.b ?? 0}` : m.status === "finished" ? `Finished ${fmtDate(m.finished_at)}` : m.starts_at ? `${fmtDate(m.starts_at)} at ${fmtTime(m.starts_at)}` : "Not started yet"}</em></a>`;
     };

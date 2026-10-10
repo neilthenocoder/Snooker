@@ -2,7 +2,7 @@
 //  GENERIC ADMIN EDITOR — one list + form engine used by every
 //  section in admin/resources.js. Nothing here is table-specific.
 // ─────────────────────────────────────────────────────────────
-import { html, mount, $, toast, fmtDate, fmtTime, toLocalInput, fromLocalInput } from "../core/dom.js";
+import { html, mount, $, toast, fmtDate, fmtTime, toLocalInput, fromLocalInput, confirmBox } from "../core/dom.js";
 import { table, save, remove, invalidate } from "../core/api.js";
 import { slugify } from "../core/schedule.js";
 import { dataTable, panel } from "../core/components.js";
@@ -203,7 +203,7 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
     }),
     { label: "", cls: "right", cell: (r) => html`<span class="btn-row" style="justify-content:flex-end;flex-wrap:nowrap">
       ${(res.rowActions ?? []).map((a) => html`<a class="btn small ghost" href="${a.href(r)}">${a.label}</a>`)}
-      ${flagged(r) ? html`<button class="btn small green" data-unflag="${r.id}">${flag.clear}</button>` : ""}
+      ${flagged(r) ? html`<button class="btn small green" data-unflag="${r.id}">${flag.clear}</button>${flag.reject ? html`<button class="btn small" data-reject="${r.id}">${flag.reject.label}</button>` : ""}` : ""}
       <button class="btn small secondary" data-edit="${r.id}">Edit</button>
       <button class="btn small" data-delete="${r.id}">Delete</button></span>` },
   ];
@@ -231,7 +231,7 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
     const waiting = rows.filter(flagged).length;
     mount($("[data-list]", el), html`
       ${waiting ? html`<div class="notice todo list-todo"><span>${flag.banner(waiting)}</span>
-        <button type="button" class="btn small ghost" data-unflag-all>${waiting > 1 ? `Mark all ${waiting} as checked` : flag.clear}</button></div>` : ""}
+        <button type="button" class="btn small ghost" data-unflag-all>${waiting > 1 ? (flag.clearAll?.(waiting) ?? `Mark all ${waiting} as checked`) : flag.clear}</button></div>` : ""}
       ${paged ? pager(list.length) : ""}
       ${!PAGE_SIZE && list.length > MAX_ROWS ? html`<div class="notice">Showing the first ${MAX_ROWS} of ${list.length} — use search or filters to narrow down.</div>` : ""}
       ${dataTable(columns, shown, { empty: "Nothing here yet — press “Add new”.", rowClass: res.rowClass })}
@@ -380,7 +380,15 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
     if (t.matches("[data-unflag], [data-unflag-all]")) {
       const ids = t.matches("[data-unflag]") ? [t.dataset.unflag] : rows.filter(flagged).map((r) => r.id);
       t.disabled = true;
-      try { for (const id of ids) await save(res.table, { id, [flag.field]: false }); toast(ids.length > 1 ? `${ids.length} marked as checked` : "Marked as checked"); await load(); drawList(); onChange(); }
+      try { for (const id of ids) await save(res.table, { id, [flag.field]: false }); toast(flag.cleared?.(ids.length) ?? (ids.length > 1 ? `${ids.length} marked as checked` : "Marked as checked")); await load(); drawList(); onChange(); }
+      catch (err) { toast(friendly(err), "error"); t.disabled = false; }
+    }
+    // "Reject": turn a flagged row down (what that means is the section's own business — see res.flag.reject).
+    if (t.matches("[data-reject]") && flag?.reject) {
+      const row = rows.find((r) => r.id === t.dataset.reject);
+      if (!row || !(await confirmBox(flag.reject.confirm(row), { title: `${flag.reject.label}?`, ok: flag.reject.label }))) return;
+      t.disabled = true;
+      try { await flag.reject.run(row, { save, remove }); toast(flag.reject.done?.(row) ?? "Done"); await load(); drawList(); onChange(); }
       catch (err) { toast(friendly(err), "error"); t.disabled = false; }
     }
     if (t.matches("[data-edit]")) { editing = rows.find((r) => r.id === t.dataset.edit); drawForm(); }

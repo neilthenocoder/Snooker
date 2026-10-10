@@ -2,7 +2,9 @@
 //  LIVE NOTIFICATIONS — green pop-ups (with the player's photo)
 //  when a frame is won, a break is made, news is published, a
 //  league or the rankings has a new leader, a tie is drawn, a
-//  competition is won or a player joins.
+//  competition is won or a player joins — and, in their own
+//  colours, the notices the league sends out itself: breaking
+//  news, important updates and offers (Admin → Notifications).
 //  The bell in the menu opens a side panel where each visitor
 //  switches the kinds they want on and off (remembered in this
 //  browser only). The same listener sets off the confetti for the
@@ -12,6 +14,7 @@ import { listen, table, selectIn, nearbyMatches, settings, invalidate, competiti
 import { frameWinner, RULES } from "./rules.js";
 import { celebrate } from "./celebrate.js";
 import { buildBracket } from "./bracket.js";
+import { safeHref } from "./dom.js";
 
 const KEY = "sbdsl-notifications";
 export const notificationsOn = () => { try { return localStorage.getItem(KEY) !== "off"; } catch { return true; } };
@@ -21,6 +24,9 @@ export const setNotifications = (on) => { try { localStorage.setItem(KEY, on ? "
 export const NOTIFY_KINDS = [
   ["results", "Results", "A pop-up as each frame is won on a match night"],
   ["breaks", "Breaks", "Every break of 30 or more, as it is entered"],
+  ["breaking", "Breaking news", "The big stories, the moment the league sends them out"],
+  ["updates", "Important updates", "Things you need to know: a postponement, a rule change, a venue or date that has moved"],
+  ["offers", "Offers", "Offers from the league and its sponsors"],
   ["news", "News", "When a new article is published"],
   ["leaders", "Tables & rankings", "A new team at the top of a league, or a new leader of the player rankings"],
   ["comps", "Competitions", "Each tie as a draw is made live, and the winner of a competition"],
@@ -38,6 +44,47 @@ export function setNotifyPref(kind, on) {
 }
 /** Does this visitor want this kind? Pop-ups need the bell on as well; celebrations have their own switch. */
 export const wantsKind = (kind) => (kind === "confetti" ? notifyPrefs().confetti : notificationsOn() && notifyPrefs()[kind] !== false);
+
+// ── notices: breaking news, important updates and offers ───────
+// Sent from Admin → Notifications (and a news article ticked "Breaking news"). Anyone on the website at
+// that moment gets a pop-up; everyone else finds them behind the bell, which shows how many are new.
+/** A notice's kind → the switch that decides whether this visitor wants it, its label and its colour. */
+export const NOTICE_KIND = {
+  breaking: { pref: "breaking", label: "Breaking news", tone: "breaking" },
+  update: { pref: "updates", label: "Important update", tone: "update" },
+  offer: { pref: "offers", label: "Offer", tone: "offer" },
+};
+export const NOTICE_DAYS = 14;      // how long a notice stays in the list behind the bell
+const SEEN_KEY = "sbdsl-notices-seen";
+const todayIso = () => new Date().toISOString().slice(0, 10);
+/** Is this notice showing today? (Switched on, not past its last day, and sent in the last NOTICE_DAYS days.) */
+export const noticeLive = (n) => n.is_active !== false && !!n.title && (!n.ends_on || n.ends_on >= todayIso())
+  && Date.now() - Date.parse(n.created_at ?? 0) < NOTICE_DAYS * 864e5;
+/** The notices to list behind the bell, newest first — only the kinds this visitor has left switched on. */
+export async function latestNotices() {
+  const [rows, news] = await Promise.all([table("notices", "created_at").catch(() => []), table("articles", "published_at").catch(() => [])]);
+  const prefs = notifyPrefs();
+  const fromNews = news.filter((a) => a.is_published && a.breaking).map((a) => ({ id: `article-${a.id}`, kind: "breaking", title: a.title, body: a.excerpt ?? "",
+    url: `/news/${a.slug}`, created_at: `${a.published_at}T12:00:00Z`, is_active: true }));
+  return [...rows, ...fromNews].filter((n) => NOTICE_KIND[n.kind] && noticeLive(n) && prefs[NOTICE_KIND[n.kind].pref] !== false)
+    .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+}
+/** The notices this visitor has already had in front of them (opening the bell reads everything listed). */
+export function seenNotices() { try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || "[]")); } catch { return new Set(); } }
+/** How many of them this visitor hasn't opened the bell for yet (none while their notifications are switched off). */
+export async function unreadNotices() {
+  if (!notificationsOn()) return 0;
+  const seen = seenNotices();
+  return (await latestNotices().catch(() => [])).filter((n) => !seen.has(n.id)).length;
+}
+/** The bell has been opened: everything listed now counts as read. */
+export async function markNoticesSeen() {
+  const ids = (await latestNotices().catch(() => [])).map((n) => n.id);
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify([...new Set([...ids, ...seenNotices()])].slice(0, 200))); } catch { /* not remembered */ }
+}
+/** Called when a notice arrives or is read, so the bell's number can be redrawn. */
+let onNotice = () => {};
+export const setNoticeWatcher = (fn) => { onNotice = fn; };
 
 let stop = null;
 const seen = new Set();
@@ -58,12 +105,12 @@ async function isTonight(id) {
  * options: kind (one of NOTIFY_KINDS — nothing shows if the visitor switched that kind, or the bell, off),
  * avatar (a picture link — a player's photo), icon ("trophy" for draws and winners), href (where a click goes).
  */
-export function popup(message, { kind = "results", avatar = null, icon = null, href = null } = {}) {
+export function popup(message, { kind = "results", avatar = null, icon = null, href = null, tone = "", label = "", stay = SHOW_MS } = {}) {
   if (!wantsKind(kind)) return;
   let box = document.querySelector(".live-pops");
   if (!box) { box = document.createElement("div"); box.className = "live-pops"; box.setAttribute("aria-live", "polite"); document.body.append(box); }
   const el = document.createElement(href ? "a" : "div");
-  el.className = "live-pop";
+  el.className = `live-pop ${tone ? `tone-${tone}` : ""}`;
   if (href) el.href = href;
   if (avatar !== null || icon) {
     const img = document.createElement("img");
@@ -74,13 +121,14 @@ export function popup(message, { kind = "results", avatar = null, icon = null, h
     el.append(img);
   }
   const text = document.createElement("span");
-  text.textContent = message;
+  if (label) { const tag = document.createElement("b"); tag.className = "live-pop-tag"; tag.textContent = label; text.append(tag); }
+  text.append(message);
   el.append(text);
   box.append(el);
   // Never more than four on screen at once (a whole scorecard can arrive together).
   while (box.children.length > 4) box.firstElementChild.remove();
-  setTimeout(() => el.classList.add("out"), SHOW_MS - 400);
-  setTimeout(() => el.remove(), SHOW_MS);
+  setTimeout(() => el.classList.add("out"), stay - 400);
+  setTimeout(() => el.remove(), stay);
 }
 
 const frameKey = (f, pre = "") => `${pre}f:${f.fixture_id ?? f.match_id}:${f.frame_no}:${f.home_points ?? f.a_points}-${f.away_points ?? f.b_points}`;
@@ -176,11 +224,23 @@ export async function startNotifications() {
     champs = now;
   }, 1500); };
 
-  stop = listen(["frames", "breaks", "players", "competition_frames", "competition_breaks", "competitions", "articles", "fixtures", "competition_matches"], async (t, row, type) => {
+  // Notices already sent, so only a NEW one (or one just switched on) makes a pop-up.
+  const noticesSeen = new Set((await table("notices", "created_at").catch(() => [])).filter(noticeLive).map((n) => n.id));
+
+  stop = listen(["frames", "breaks", "players", "competition_frames", "competition_breaks", "competitions", "articles", "fixtures", "competition_matches", "notices"], async (t, row, type) => {
+    if (t === "notices") { invalidate(); onNotice(); }
     if (type === "DELETE" || !row.id) return;
+    if (t === "notices") {
+      const k = NOTICE_KIND[row.kind];
+      if (!k || !noticeLive(row)) { noticesSeen.delete(row.id); return; }
+      if (noticesSeen.has(row.id)) return;
+      noticesSeen.add(row.id);
+      return popup(row.title, { kind: k.pref, tone: k.tone, label: k.label, href: safeHref(row.url) || null, stay: 12000 });
+    }
     if (t === "articles") {
       if (!row.is_published || newsSeen.has(row.id)) return;
       newsSeen.add(row.id);
+      if (row.breaking) { invalidate(); onNotice(); return popup(row.title, { kind: "breaking", tone: "breaking", label: "Breaking news", href: `/news/${row.slug}`, stay: 12000 }); }
       return popup(`News: ${row.title}`, { kind: "news", avatar: row.circle_image_url || row.image_url || "", href: `/news/${row.slug}` });
     }
     // A result being approved (or changed) can put a new team or player on top.

@@ -6,15 +6,19 @@
 //                  1 pick the players → 2 score one frame at a time → 3 finish
 //                  (photo of the card, then submit)
 //    • "classic" – the whole card in one table
+//    • "ball"    – league matches only: like step by step, but each frame is scored ball by ball
+//                  on a pad (core/score-pad.js). Visitors watch it live; when the frame ends its
+//                  score and breaks are put on the card.
 //  The page that uses it converts its own rows to/from this shape:
 //
 //    { frame_no, a_points, b_points,
 //      a: [{ player_id, ext, breaks: "34, 41" }, …],   // 1 slot, or 2 for doubles
 //      b: [{ … }] }
 // ─────────────────────────────────────────────────────────────
-import { html, mount, $, toast, fmtDate, fmtTime, confirmBox } from "./dom.js";
+import { html, mount, $, toast, fmtDate, fmtTime, confirmBox, safeHref } from "./dom.js";
 import { badge, handicapText } from "./components.js";
 import { frameWinner, parseBreaks, breakPoints, handicapStarts, RULES, EXT_PER_SEASON, MAX_BREAK } from "./rules.js";
+import { scorePad } from "./score-pad.js";
 
 const VIEW_KEY = "sbdsl-scorecard-view";
 const blankSlot = () => ({ player_id: null, ext: false, breaks: "" });
@@ -32,7 +36,7 @@ const camera = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 7.
 
 /** The view this person used last time; otherwise step-by-step on phones, classic on big screens. */
 function startingView() {
-  try { const v = localStorage.getItem(VIEW_KEY); if (v === "guided" || v === "classic") return v; } catch {}
+  try { const v = localStorage.getItem(VIEW_KEY); if (v === "guided" || v === "classic" || v === "ball") return v; } catch {}
   return window.matchMedia("(max-width: 760px)").matches ? "guided" : "classic";
 }
 
@@ -48,6 +52,7 @@ function startingView() {
  *   frames, minFrames, preset, playerName(id), person(id) → { name, avatar_url, club },
  *   photo: { required, url: () => string | null, pick: () => void },
  *   addPlayer: { label, run: () => void },
+ *   ballByBall: { open(frame) → Promise<live_matches row>, save(row) → Promise } — give this to offer the "Ball by ball" view,
  *   actions: [{ key, label, cls, saves?, final?, confirm?, needsPhoto?, skipChecks?, quiet?, done? }]
  *            ("saves" marks the plain save-progress action: it runs behind "Save frame" in the guided view),
  *   onSave(frames, breaks, actionKey) → Promise
@@ -66,6 +71,10 @@ export function scorecardEditor(opts) {
   while (frames.length < (opts.minFrames ?? RULES.framesPerMatch)) addFrame();
   let dirty = false;
   let view = startingView();
+  if (view === "ball" && !opts.ballByBall) view = "guided";
+  const stepped = () => view !== "classic";          // "guided" and "ball" share the three steps
+  let pad = null, padNo = 0;                          // the ball-by-ball pad on screen, if any
+  const rescoring = new Set();                        // frames (by index) being scored again on the pad
   const allPicked = () => frames.every((f) => slotsOf(f).every((s) => s.player_id));
   const firstOpen = () => frames.findIndex((f) => !winnerOf(f));
   const startStep = () => (!allPicked() ? "players" : firstOpen() < 0 ? "finish" : firstOpen());
@@ -121,7 +130,8 @@ export function scorecardEditor(opts) {
   const frameButtons = () => html`<div class="btn-row sc-frame-btns"><button type="button" class="btn small ghost" data-add-frame>+ Add frame</button>
     ${frames.length > 1 ? html`<button type="button" class="btn small ghost" data-remove-frame>Remove last frame</button>` : ""}</div>`;
   const addPlayerButton = () => (opts.addPlayer ? html`<button type="button" class="btn small ghost" data-add-player>${opts.addPlayer.label}</button>` : "");
-  const help = () => html`<details class="sc-help"><summary>Help: breaks${allowExt ? ", Ext players" : ""}${hcap ? ", handicap starts" : ""}</summary>
+  const help = () => html`<details class="sc-help"><summary>Help: breaks${allowExt ? ", Ext players" : ""}${hcap ? ", handicap starts" : ""}${opts.ballByBall ? ", ball by ball" : ""}</summary>
+    ${opts.ballByBall ? html`<p><b>Ball by ball:</b> pick the players, then press a ball each time one is potted, “End of break” on a miss, and “End the frame” when it's over. Everyone watching the website sees the score move, and the frame's score and breaks of ${RULES.breakMinimum} or more are put on the card for you. You can mix it with the other two views: score one frame ball by ball and type the next.</p>` : ""}
     <p>${view === "classic" ? html`Type each break in the small box next to the player, e.g. <b>34, 41</b>.` : "A player can have more than one break in a frame — add each one."}
       Break points: ${RULES.breakMinimum}–39 = 3, 40–49 = 4 … 140+ = ${RULES.maxBreakPoints}. The highest possible break is ${MAX_BREAK}.</p>
     ${allowExt ? html`<p>A player picked as “(Ext)” is playing a second frame as the team's extra player — allowed ${EXT_PER_SEASON} time${EXT_PER_SEASON > 1 ? "s" : ""} a season. Otherwise each player can only be picked once.</p>` : ""}
@@ -133,7 +143,7 @@ export function scorecardEditor(opts) {
     if (!opts.photo) return "";
     const url = opts.photo.url();
     return html`<div class="sc-photo-box ${url ? "ok" : ""}">
-      ${url ? html`<a class="sc-photo-thumb" href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="Photo of the paper scorecard"></a>` : html`<span class="sc-photo-icon">${camera}</span>`}
+      ${url ? html`<a class="sc-photo-thumb" href="${safeHref(url) || "#"}" target="_blank" rel="noopener"><img src="${url}" alt="Photo of the paper scorecard"></a>` : html`<span class="sc-photo-icon">${camera}</span>`}
       <div><strong>${url ? "✓ Scorecard photo uploaded" : "Photo of the paper scorecard"}</strong>
         <small>${url ? "Tap the picture to check it." : opts.photo.required ? "Needed before the result can be submitted." : "Optional."}</small></div>
       <button type="button" class="btn ${url ? "small ghost" : "secondary"}" data-photo-pick>${url ? "Replace" : "Take or upload photo"}</button>
@@ -216,6 +226,58 @@ export function scorecardEditor(opts) {
     </div>`;
   };
   const names = (f, side) => f[side].map((s) => (s.player_id ? person(s.player_id).name : "–")).join(" & ");
+  // Ball by ball: the same steps, but the frame is scored on the pad (mounted by mountPad once this is drawn).
+  const ballStep = (i) => {
+    const f = frames[i], picked = slotsOf(f).every((s) => s.player_id);
+    return html`<div class="g-step">
+      ${tabs()}
+      <div class="g-frame g-ball">
+        <div class="g-frame-head">Frame ${f.frame_no} of ${frames.length} · ball by ball</div>
+        ${picked ? html`<div data-pad="${i}"><p class="muted" style="padding:14px">Getting the scoring pad ready…</p></div>`
+          : html`<div class="g-ball-note"><p>Pick both players for this frame first.</p><button type="button" class="btn green" data-go="players">Pick the players</button></div>`}
+      </div>
+      <div class="g-nav">
+        <button type="button" class="btn ghost" data-go="${i === 0 ? "players" : i - 1}">‹ Back</button>
+        <button type="button" class="btn ghost" data-go="${i === frames.length - 1 ? "finish" : i + 1}">${winnerOf(f) ? "Next ›" : "Skip ›"}</button>
+      </div>
+    </div>`;
+  };
+  /** Put the pad (or a note that the frame already has its score) into the frame that is on screen. */
+  async function mountPad() {
+    pad?.destroy(); pad = null;
+    const host = $("[data-pad]", el);
+    if (!host) return;
+    const i = Number(host.dataset.pad), f = frames[i], mine = ++padNo;
+    try {
+      const row = await opts.ballByBall.open({ frame_no: f.frame_no, a: f.a.map((x) => x.player_id), b: f.b.map((x) => x.player_id) });
+      if (mine !== padNo || !host.isConnected) return;
+      const w = winnerOf(f);
+      // The score was typed in (or scored earlier): say so, and offer to score it again on the pad.
+      if (w && row.status === "setup" && !rescoring.has(i)) {
+        return mount(host, html`<div class="g-ball-note"><p><b>${names(f, "a")} ${f.a_points} – ${f.b_points} ${names(f, "b")}</b><br>This frame already has its score.</p>
+          <button type="button" class="btn small ghost" data-rescore="${i}">Score it again ball by ball</button></div>`);
+      }
+      pad = scorePad(host, {
+        match: row, name: { a: names(f, "a"), b: names(f, "b") }, save: opts.ballByBall.save, scored: !!w && !rescoring.has(i),
+        // The frame is live: save who is playing and mark the match as started, so the public pages show it.
+        onStart: () => { dirty = true; run(saveAction, { disabled: false }, "The match is live"); },
+        async onFrameEnd(rec) {
+          // The frame's score and each player's breaks go onto the card, exactly as if they had been typed in.
+          const breaksOf = (side) => (rec.breaks ?? []).filter((x) => x.s === side).map((x) => x.v).join(", ");
+          Object.assign(f, { a_points: rec.a, b_points: rec.b });
+          f.a[0].breaks = breaksOf("a"); f.b[0].breaks = breaksOf("b");
+          dirty = true; rescoring.delete(i);
+          drawScore();
+          if (!(await run(saveAction, { disabled: false }, `Frame ${f.frame_no} saved`))) return drawBody();
+          const next = firstOpen();
+          if (next < 0) toast(opts.photo?.required && !opts.photo.url() ? "All frames are in — now add the scorecard photo." : "All frames are in — finish when you're ready.");
+          goTo(next < 0 ? "finish" : next);
+        },
+      });
+    } catch (err) {
+      if (mine === padNo && host.isConnected) mount(host, html`<div class="notice error">The scoring pad could not be opened: ${err.message}. You can still enter this frame under “Step by step”.</div>`);
+    }
+  }
   const finishStep = () => {
     const s = score(frames), left = frames.filter((f) => !winnerOf(f)).length;
     return html`<div class="g-step">
@@ -246,15 +308,17 @@ export function scorecardEditor(opts) {
       row?.classList.toggle("won-b", w === "b");
     });
     const shown = $("[data-frame]", el);
-    if (shown) {
+    if (shown && $("[data-card]", shown)) {
       const w = winnerOf(frames[Number(shown.dataset.frame)]);
       for (const side of ["a", "b"]) $(`[data-card="${side}"]`, shown).classList.toggle("ahead", w === side);
     }
   }
   function drawBody() {
-    const guided = () => html`${steps()}${step === "players" ? playersStep() : step === "finish" ? finishStep() : frameStep(step)}`;
+    const guided = () => html`${steps()}${step === "players" ? playersStep() : step === "finish" ? finishStep() : view === "ball" ? ballStep(step) : frameStep(step)}`;
+    pad?.destroy(); pad = null; padNo++;
     mount($("[data-body]", el), view === "classic" ? classicBody() : guided());
     drawScore();
+    if (view === "ball" && typeof step === "number") mountPad();
   }
   const teamHead = (k) => html`<div class="sc-team">
     <div class="sc-team-name">${sides[k].name}</div>
@@ -273,7 +337,8 @@ export function scorecardEditor(opts) {
       ${typeof opts.notice === "function" ? opts.notice() : opts.notice ?? ""}
       <div class="sc-views" role="group" aria-label="Scorecard view"><span>Scorecard view:</span>
         <button type="button" class="${view === "guided" ? "on" : ""}" data-view="guided">Step by step</button>
-        <button type="button" class="${view === "classic" ? "on" : ""}" data-view="classic">Classic card</button></div>
+        <button type="button" class="${view === "classic" ? "on" : ""}" data-view="classic">Classic card</button>
+        ${opts.ballByBall ? html`<button type="button" class="${view === "ball" ? "on" : ""}" data-view="ball" title="Score each frame ball by ball: everyone can watch it live">Ball by ball</button>` : ""}</div>
       <div class="sc-frames" data-body></div>
       <div data-errors></div>
       ${view === "classic" ? html`<div class="btn-row sc-actions">${actionButtons(opts.actions)}</div>` : ""}
@@ -327,9 +392,11 @@ export function scorecardEditor(opts) {
     if (t.matches("[data-view]")) {
       view = t.dataset.view;
       try { localStorage.setItem(VIEW_KEY, view); } catch {}
-      if (view === "guided") step = startStep();
+      if (stepped()) step = startStep();
       return draw();
     }
+    if (t.dataset.rescore !== undefined) { rescoring.add(Number(t.dataset.rescore)); return mountPad(); }
+    if (t.closest("[data-pad]")) return;                 // the pad looks after its own buttons
     if (t.matches("[data-photo-pick]")) return opts.photo.pick();
     if (t.matches("[data-add-player]")) return opts.addPlayer.run();
     if (t.matches("[data-add-frame]")) {
@@ -440,7 +507,7 @@ export function scorecardEditor(opts) {
 
   const warn = (e) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } };
   window.addEventListener("beforeunload", warn);
-  return { destroy: () => window.removeEventListener("beforeunload", warn), redraw: draw };
+  return { destroy: () => { pad?.destroy(); pad = null; padNo++; window.removeEventListener("beforeunload", warn); }, redraw: draw };
 }
 
 /** Group saved breaks onto the editor's slots as "34, 41" text. */

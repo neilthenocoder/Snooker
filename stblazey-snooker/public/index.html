@@ -26,16 +26,7 @@
   <!-- Loading screen: black, with the logo pulsing, until the page is ready.
        (The logo and colours chosen under Admin → Branding are remembered in the browser, so they show at once.) -->
   <div id="boot" class="boot" role="status" aria-label="Loading"><img src="/assets/logo.svg" alt=""></div>
-  <script>
-    try {
-      var b = JSON.parse(localStorage.getItem("sbdsl-brand") || "{}"), r = document.documentElement, boot = document.getElementById("boot");
-      for (var k in (b.vars || {})) r.style.setProperty(k, b.vars[k]);
-      if (b.sidebar === "left") r.classList.add("sidebar-left");
-      if (b.sections !== false) r.classList.add("section-colors");
-      if (b.loaderShow === false) boot.classList.add("off");
-      if (b.loader) boot.querySelector("img").src = b.loader;
-    } catch (e) {}
-  </script>
+  <script src="/js/boot.js"></script>
   <div id="ticker"></div>
   <div id="site-header"></div>
   <!-- The page itself, plus (when Admin → Branding gives a section a right sidebar) the standard side boxes. -->

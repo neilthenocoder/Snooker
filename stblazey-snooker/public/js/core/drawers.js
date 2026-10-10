@@ -5,10 +5,10 @@
 //    the bell    → which live notifications you want
 //  Plus "Add to home screen", which lives in the person's panel.
 // ─────────────────────────────────────────────────────────────
-import { html, mount, $, readForm, toast } from "./dom.js";
+import { html, mount, $, readForm, toast, fmtDate, safeHref } from "./dom.js";
 import { DEMO_MODE } from "../config.js";
 import { signIn, homeFor, isStaff, isMember, isPlainPlayer, roleText, mySnookerOn } from "./auth.js";
-import { notificationsOn, setNotifications, NOTIFY_KINDS, notifyPrefs, setNotifyPref } from "./notify.js";
+import { notificationsOn, setNotifications, NOTIFY_KINDS, notifyPrefs, setNotifyPref, latestNotices, markNoticesSeen, seenNotices, NOTICE_KIND } from "./notify.js";
 import { navigate, refreshShell } from "./router.js";
 
 const ico = (d) => html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
@@ -112,28 +112,45 @@ export function openAccount(user, { message = "" } = {}) {
 }
 export const initials = (name) => String(name ?? "").trim().split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "?";
 
-// ── the bell: which notifications ──────────────────────────────
-export function openNotifications({ onChange = () => {} } = {}) {
+// ── the bell: the league's notices, and which notifications ────
+const LEAGUE_KINDS = ["breaking", "updates", "offers"];   // the ones the league sends out itself
+export async function openNotifications({ onChange = () => {} } = {}) {
   const row = (key, label, help, on, disabled = false) => html`<label class="switch-row ${disabled ? "is-off" : ""}">
     <span><b>${label}</b><small>${help}</small></span>
     <input type="checkbox" data-kind="${key}" ${on ? "checked" : ""} ${disabled ? "disabled" : ""}><span class="ms-slider" aria-hidden="true"></span></label>`;
-  const body = () => { const all = notificationsOn(), prefs = notifyPrefs();
+  const kinds = (keys) => NOTIFY_KINDS.filter(([key]) => keys(key));
+  // What the league has sent out lately (breaking news, important updates, offers) — the kinds left switched on.
+  const seen = seenNotices();      // as it was before the panel was opened: those not in it are marked "New"
+  const notices = (list) => (list.length ? html`<h3 class="drawer-h">Latest from the league</h3>
+    <div class="notice-list">${list.map((n) => { const k = NOTICE_KIND[n.kind], href = safeHref(n.url);
+      const inner = html`<span class="notice-tag tone-${k.tone}">${k.label}</span>${seen.has(n.id) ? "" : html`<i class="notice-new">New</i>`}
+        <b>${n.title}</b>${n.body ? html`<p>${n.body}</p>` : ""}<small>${fmtDate(n.created_at)}${href ? " · Find out more →" : ""}</small>`;
+      return href ? html`<a class="notice-item" href="${href}" ${/^https?:/i.test(href) ? html`target="_blank" rel="noopener"` : ""}>${inner}</a>` : html`<div class="notice-item">${inner}</div>`; })}</div>` : "");
+  const body = (list) => { const all = notificationsOn(), prefs = notifyPrefs();
     return html`
+      ${notices(list)}
       <p class="drawer-lead">Choose what pops up while you are on the website. Your choices are remembered on this phone or computer.</p>
-      <div class="switch-list">${row("all", "Live notifications", "The green pop-ups in the corner. Switch this off to stop them all.", all)}</div>
-      <h3 class="drawer-h">What you want to hear about</h3>
-      <div class="switch-list">${NOTIFY_KINDS.filter(([key]) => key !== "confetti").map(([key, label, help]) => row(key, label, help, prefs[key], !all))}</div>
+      <div class="switch-list">${row("all", "Live notifications", "The pop-ups in the corner. Switch this off to stop them all.", all)}</div>
+      <h3 class="drawer-h">From the league</h3>
+      <div class="switch-list">${kinds((key) => LEAGUE_KINDS.includes(key)).map(([key, label, help]) => row(key, label, help, prefs[key], !all))}</div>
+      <h3 class="drawer-h">From the matches</h3>
+      <div class="switch-list">${kinds((key) => key !== "confetti" && !LEAGUE_KINDS.includes(key)).map(([key, label, help]) => row(key, label, help, prefs[key], !all))}</div>
       <h3 class="drawer-h">Celebrations</h3>
-      <div class="switch-list">${NOTIFY_KINDS.filter(([key]) => key === "confetti").map(([key, label, help]) => row(key, label, help, prefs[key]))}</div>`; };
-  const el = drawer("notify", "Notifications", html`<div data-notify>${body()}</div>`);
-  el.addEventListener("change", (e) => {
+      <div class="switch-list">${kinds((key) => key === "confetti").map(([key, label, help]) => row(key, label, help, prefs[key]))}</div>`; };
+  const el = drawer("notify", "Notifications", html`<div data-notify>${body([])}</div>`);
+  const redraw = async () => { const list = await latestNotices().catch(() => []); if (el.isConnected) mount($("[data-notify]", el), body(list)); };
+  el.addEventListener("change", async (e) => {
     const kind = e.target.dataset?.kind;
     if (!kind) return;
     if (kind === "all") { setNotifications(e.target.checked); toast(e.target.checked ? "Live notifications on" : "Live notifications off"); }
     else setNotifyPref(kind, e.target.checked);
-    mount($("[data-notify]", el), body());
+    await redraw();
     onChange();
   });
+  await redraw();
+  // Opening the bell reads them: the number on the bell goes (the "New" marks stay until the panel is closed).
+  await markNoticesSeen();
+  onChange();
 }
 
 // ── add to home screen ─────────────────────────────────────────

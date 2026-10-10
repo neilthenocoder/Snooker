@@ -2,7 +2,7 @@
 // the top to jump between them (it follows the page as you scroll). Each line has what it is,
 // when and where, and buttons to go further. Filter by team; download an .ics file so players
 // can add their matches to their phone. Key dates (Admin → Key dates) and bye weeks are in it too.
-import { html, mount, $, fmtTime, ukDay, todayUK } from "../core/dom.js";
+import { html, mount, $, fmtTime, ukDay, todayUK, safeHref } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { loadCompetitions, table } from "../core/api.js";
 import { buildBracket, isEntry, roundName } from "../core/bracket.js";
@@ -44,7 +44,7 @@ export default async function calendar(view, { query }) {
     ...keyDates.filter((d) => d.is_active !== false).map((d) => {
       const comp = compData.competitions.find((c) => c.id === d.competition_id);
       return { id: d.id, when: `${d.starts_on}T00:00:00.000Z`, day: d.starts_on, until: d.ends_on && d.ends_on > d.starts_on ? d.ends_on : null, allDay: true, kind: "key", status: "",
-        href: d.url || (comp ? urls.competition(comp) : "/calendar"), title: d.title, sub: [d.details, comp?.name].filter(Boolean).join(" · "), teams: [] };
+        href: safeHref(d.url) || (comp ? urls.competition(comp) : "/calendar"), title: d.title, sub: [d.details, comp?.name].filter(Boolean).join(" · "), teams: [] };
     }),
     // Bye weeks: an all-day note on the night a team sits out.
     ...(ctx.byes ?? []).map((b) => {

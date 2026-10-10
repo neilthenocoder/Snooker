@@ -1,33 +1,35 @@
 // The logged-in area ("dashboard") for captains, vice captains and players.
-//   Captains and vice captains:  My Team · Fixtures · Profile · User details · Competitions · My Snooker
+//   Captains and vice captains:  My Team · Manage team · Fixtures · Profile · User details · Competitions · My Snooker
 //   Players:                     My Snooker · (Profile and Competitions, if the login is linked to a player or team) · User details
 //   Officers with no team:       My Snooker · User details (their tools are in the admin dashboard)
 // A player's login has no tools: the one thing they control here is My Snooker (their own page, /myteam).
 import { html, mount, $, readForm, toast, fmtDate, fmtTime, confirmBox } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
-import { loadCompetitions, updateMyPlayer, addPlayerToTeam, seasonFrames, setFixtureStatus, setMyPrefs, table } from "../core/api.js";
+import { loadCompetitions, updateMyPlayer, addPlayerToTeam, seasonFrames, setFixtureStatus, setMyPrefs, table, teamLineups, setLineup, claimPlayer } from "../core/api.js";
+import { upcomingFor, pickedCount, dayText, untilText, fixtureLine } from "../core/squad.js";
 import { SECTIONS, prefsToSave } from "../core/my-snooker.js";
 import { listField, wireListFields } from "../core/list-field.js";
 import { isCaptain, isMember, isPlainPlayer, mySnookerOn, myPrefs, refreshUser, canEditFixture, canPostpone, canEditCompMatch, canAddMatchPhotos, changePassword, roleText } from "../core/auth.js";
 import { buildBracket, isEntry, roundName } from "../core/bracket.js";
-import { extCounts, EXT_PER_SEASON, POSTPONE_WEEKS, rearrangeBy } from "../core/rules.js";
+import { extCounts, EXT_PER_SEASON, POSTPONE_WEEKS, rearrangeBy, RULES } from "../core/rules.js";
 import { CUEVIEW } from "../core/cueview.js";
 import { uploadImage } from "../core/upload.js";
 import { breadcrumb, panel, dataTable, fixturesTable, urls, statusBadge, playerLink, avatar, badge } from "../core/components.js";
 import { setTitle, navigate, refreshShell } from "../core/router.js";
 import { mustLogin } from "./scorecard.js";
 
-const LABEL = { snooker: "My Snooker", team: "My Team", fixtures: "Fixtures", profile: "Profile", details: "User details", competitions: "Competitions" };
+const LABEL = { snooker: "My Snooker", team: "My Team", squad: "Manage team", fixtures: "Fixtures", profile: "Profile", details: "User details", competitions: "Competitions" };
 /** The tabs this login gets. Everyone has My Snooker; what else they have is as it always was. */
 function tabsFor(user) {
   if (!isMember(user)) return ["snooker", "details"];                       // an officer with no team or player
-  if (!isPlainPlayer(user)) return ["team", "fixtures", "profile", "details", "competitions", "snooker"];
+  // "Manage team" (the team sheet, and adding players) is for captains and vice captains only.
+  if (!isPlainPlayer(user)) return ["team", ...(isCaptain(user) ? ["squad"] : []), "fixtures", "profile", "details", "competitions", "snooker"];
   const p = user.profile ?? {};
   return ["snooker", ...(p.player_id ? ["profile"] : []), ...(p.player_id || p.team_id ? ["competitions"] : []), "details"];
 }
 const logoutIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5v-2H5V5h5Zm6.6 4.6-1.4 1.4 2 2H9v2h8.2l-2 2 1.4 1.4L21 12Z"/></svg>`;
 
-export default async function my(view, { params, user }) {
+export default async function my(view, { params, user, query }) {
   if (!user) return mustLogin(view);
   if (!isMember(user) && !params.tab) return navigate("/admin", { replace: true });   // officers with no team or player link: their home is the dashboard
   const TABS = tabsFor(user).map((k) => [k, LABEL[k]]);
@@ -62,8 +64,8 @@ export default async function my(view, { params, user }) {
     try { await setFixtureStatus(fx.id, "postponed"); toast("Match postponed"); navigate(location.pathname, { replace: true }); }
     catch (err) { toast(err.message, "error"); }
   });
-  const sections = { snooker: snookerTab, team: teamTab, fixtures: fixturesTab, profile: profileTab, details: detailsTab, competitions: competitionsTab };
-  return sections[tab](body, { ctx, user, team, me });
+  const sections = { snooker: snookerTab, team: teamTab, squad: squadTab, fixtures: fixturesTab, profile: profileTab, details: detailsTab, competitions: competitionsTab };
+  return sections[tab](body, { ctx, user, team, me, query });
 }
 
 /** Reminder box for each of the team's postponed matches. */
@@ -192,6 +194,7 @@ async function teamTab(el, { ctx, user, team }) {
       <span class="btn-row">${canEditFixture(user, next)
         ? html`<a class="btn green" href="${urls.scorecard(next)}">${ctx.hasResult(next) ? "Continue scorecard" : "Open scorecard"}</a>`
         : html`<a class="btn ghost" href="${urls.match(next)}">Match page</a>`}
+        ${isCaptain(user) && next.status === "scheduled" ? html`<a class="btn secondary" href="/my/squad?m=${next.code || next.id}">Manage team</a>` : ""}
         ${canPostpone(user, next) && next.status === "scheduled" ? html`<button type="button" class="btn small ghost" data-postpone="${next.id}">Postpone</button>` : ""}</span>
     </div>` : html`<div class="notice">No more matches scheduled this season.</div>`}
     <div class="stats">
@@ -206,14 +209,109 @@ async function teamTab(el, { ctx, user, team }) {
       { label: "Handicap", cell: (p) => (p.handicap > 0 ? `+${p.handicap}` : p.handicap ?? 0), cls: "num" },
       { label: "Ext games used", cell: (p) => `${ext.get(p.id) ?? 0} of ${EXT_PER_SEASON}`, cls: "num" },
     ], ctx.playersOf(team.id), { empty: "No players yet." }))}
-    ${isCaptain(user) ? html`<div class="btn-row"><button class="btn secondary" data-add-player>+ Add a new player to ${team.name}</button>
+    ${isCaptain(user) ? html`<div class="btn-row"><a class="btn secondary" href="/my/squad">Manage team: pick the players, add a new player</a>
       <a class="btn ghost" href="${urls.team(team)}">Public team page</a></div>` : ""}`);
+}
 
-  $("[data-add-player]", el)?.addEventListener("click", async () => {
-    const name = prompt("New player's full name:")?.trim();
-    if (!name) return;
-    try { await addPlayerToTeam(name, team.id); toast(`${name} added`); navigate("/my/team", { replace: true }); }
+// ── Manage team (captains and vice captains) ───────────────────
+// The team sheet for a coming match — who plays each frame — and the squad, with a way to add a player.
+// The sheet is put on the scorecard on the night; the other team can't see it before the day of the match.
+async function squadTab(el, { ctx, user, team, query }) {
+  if (!team) return mount(el, noTeam);
+  if (!isCaptain(user)) return mount(el, html`<div class="notice">Only the captain and vice captain can manage the team.</div>`);
+  const upcoming = upcomingFor(ctx, team.id).slice(0, 5);
+  const wanted = query?.get("m");
+  const fx = upcoming.find((f) => f.code === wanted || f.id === wanted) ?? upcoming[0] ?? null;
+  const sheets = await teamLineups(team.id);
+  const sheet = fx ? sheets.find((l) => l.fixture_id === fx.id) : null;
+  const squad = ctx.playersOf(team.id);
+  const ext = extCounts(await seasonFrames(ctx.season?.id));
+  const N = RULES.framesPerMatch;
+  const picks = Array.from({ length: Math.max(N, sheet?.picks?.length ?? 0) }, (_, i) => ({ player_id: sheet?.picks?.[i]?.player_id ?? null, ext: !!sheet?.picks?.[i]?.ext }))
+    .map((x) => (x.player_id && !squad.some((p) => p.id === x.player_id) ? { player_id: null, ext: false } : x));   // someone who has since left the squad
+  const locked = fx && fx.status !== "scheduled";
+  const cap = (p) => (p.position === "Team Captain" ? " (c)" : p.position === "Vice Captain" ? " (vc)" : "");
+  const taken = (i, id, isExt) => picks.some((x, j) => j !== i && x.player_id === id && !!x.ext === isExt);
+  const options = (i) => { const cur = picks[i];
+    const opt = (p, isExt) => { const sel = cur.player_id === p.id && cur.ext === isExt, off = !sel && taken(i, p.id, isExt);
+      return html`<option value="${isExt ? `${p.id}|ext` : p.id}" ${sel ? "selected" : ""} ${off ? "disabled" : ""}>${p.full_name}${cap(p)}${isExt ? " (Ext)" : ""}${p.needs_review ? " — awaiting approval" : ""}${off ? " — already picked" : ""}</option>`; };
+    return html`<option value="">– not picked yet –</option>${squad.map((p) => opt(p, false))}<optgroup label="Playing a second frame as the extra player">${squad.map((p) => opt(p, true))}</optgroup>`; };
+  const rows = () => html`${picks.map((x, i) => html`<label class="squad-row"><span>Frame ${i + 1}</span><select data-pick="${i}" ${locked ? "disabled" : ""}>${options(i)}</select></label>`)}`;
+  const tag = (p) => (p.needs_review ? html`<span class="new-tag" title="The league has been told and will accept them shortly. You can pick them in the meantime.">Awaiting approval</span>` : "");
+
+  mount(el, html`
+    ${fx ? html`
+      ${upcoming.length > 1 ? html`<nav class="squad-matches" aria-label="Choose a match">${upcoming.map((f) => { const s = sheets.find((l) => l.fixture_id === f.id), n = pickedCount(s);
+        return html`<a href="/my/squad?m=${f.code || f.id}" class="${f.id === fx.id ? "on" : ""}"><b>${dayText(f.starts_at)}</b><span>${f.home_team_id === team.id ? "home" : "away"} v ${ctx.team.get(f.home_team_id === team.id ? f.away_team_id : f.home_team_id)?.name ?? "?"}</span>
+          <small class="${n >= N ? "ok" : ""}">${n >= N ? "Picked ✓" : n ? `${n} of ${N} picked` : "Not picked"}</small></a>`; })}</nav>` : ""}
+      ${panel(`Your team: ${fixtureLine(ctx, fx, team.id)}`, html`<form class="squad-form" data-squad>
+        <p class="squad-lead"><b>${untilText(fx.starts_at)}.</b> Choose who plays each frame. On the night the names are already on the scorecard when you open it — and you can still change them there.
+          <span>The other team can't see your team before the day of the match.</span></p>
+        ${locked ? html`<div class="notice">This match has started, so the players are now changed on the <a href="${urls.scorecard(fx)}" style="font-weight:700">scorecard</a>.</div>` : ""}
+        <div class="squad-rows" data-rows>${rows()}</div>
+        ${locked ? "" : html`<div class="btn-row"><button class="btn green">Save the team</button>
+          <button type="button" class="btn ghost" data-clear>Clear</button>
+          <span class="muted squad-saved" data-saved>${sheet ? `Saved${sheet.updated_by ? ` by ${sheet.updated_by}` : ""} on ${fmtDate(sheet.updated_at)} at ${fmtTime(sheet.updated_at)}` : "Not saved yet"}</span></div>`}
+      </form>`)}` : html`<div class="notice">No more matches to play this season, so there is no team to pick.</div>`}
+    ${panel(`${team.name}: the squad`, html`${dataTable([
+      { label: "Player", cell: (p) => html`${playerLink(p)} ${tag(p)}` },
+      { label: "Position", cell: (p) => p.position, cls: "hide-sm" },
+      { label: "Handicap", cell: (p) => (p.needs_review ? "–" : p.handicap > 0 ? `+${p.handicap}` : p.handicap ?? 0), cls: "num" },
+      { label: "Ext games used", cell: (p) => `${ext.get(p.id) ?? 0} of ${EXT_PER_SEASON}`, cls: "num hide-sm" },
+    ], squad, { empty: "No players yet." })}
+      <form class="squad-add" data-add autocomplete="off">
+        <label for="squad-add-name"><b>Add a player</b> <small>Someone new to the team. Type their full name. The league is told and has the final say; you can pick them straight away.</small></label>
+        <div class="squad-add-row"><input id="squad-add-name" type="text" maxlength="80" placeholder="Full name" data-add-name><button class="btn secondary">Add as a new player</button></div>
+        <div class="squad-found" data-found></div>
+      </form>`)}`);
+
+  // ── the team sheet ──
+  const form = $("[data-squad]", el);
+  form?.addEventListener("change", (e) => {
+    const i = e.target.dataset?.pick;
+    if (i === undefined) return;
+    const [id, isExt] = e.target.value.split("|");
+    picks[Number(i)] = { player_id: id || null, ext: isExt === "ext" };
+    mount($("[data-rows]", el), rows());      // the other lists grey this player out
+    $("[data-saved]", el).textContent = "Not saved yet — press Save the team";
+  });
+  const store = async (list, message) => {
+    try { await setLineup(fx.id, list); toast(message); navigate(`/my/squad?m=${fx.code || fx.id}`, { replace: true }); }
     catch (err) { toast(err.message, "error"); }
+  };
+  form?.addEventListener("submit", (e) => { e.preventDefault(); store(picks, picks.some((x) => x.player_id) ? "Team saved" : "Team cleared"); });
+  $("[data-clear]", el)?.addEventListener("click", async () => {
+    if (await confirmBox("Take every player off this match's team sheet?", { title: "Clear the team?", ok: "Clear it" })) store([], "Team cleared");
+  });
+
+  // ── add a player: someone brand new, or someone already on the website with no team ──
+  const addForm = $("[data-add]", el), nameBox = $("[data-add-name]", el), found = $("[data-found]", el);
+  const free = ctx.players.filter((p) => !p.team_id && p.status !== "deceased");
+  const clean = (t) => t.trim().replace(/\s+/g, " ");
+  nameBox.addEventListener("input", () => {
+    const q = clean(nameBox.value).toLowerCase();
+    const hits = q.length < 3 ? [] : free.filter((p) => p.full_name.toLowerCase().includes(q)).slice(0, 5);
+    mount(found, hits.length ? html`<p>Already on the website, with no team at the moment. Is it one of these?</p>
+      ${hits.map((p) => html`<button type="button" class="squad-hit" data-claim="${p.id}">${avatar(p)}<span><b>${p.full_name}</b><small>Add to ${team.name}</small></span></button>`)}` : "");
+  });
+  const done = (name) => { toast(`${name} added — waiting for the league to accept them. You can pick them now.`); navigate(location.pathname + location.search, { replace: true }); };
+  found.addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-claim]");
+    if (!b) return;
+    const p = ctx.player.get(b.dataset.claim);
+    b.disabled = true;
+    try { await claimPlayer(p.id, team.id); done(p.full_name); } catch (err) { toast(err.message, "error"); b.disabled = false; }
+  });
+  addForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = clean(nameBox.value);
+    if (name.length < 3 || !name.includes(" ")) return toast("Type the player's first name and surname", "error");
+    if (squad.some((p) => p.full_name.toLowerCase() === name.toLowerCase())) return toast(`${name} is already in your squad`, "error");
+    const same = free.find((p) => p.full_name.toLowerCase() === name.toLowerCase());
+    if (same && !(await confirmBox(`There is already a ${same.full_name} on the website with no team. If that is the same person, press Cancel and choose them from the list under the box instead — their results and breaks stay with them.`,
+      { title: "Someone with that name is already on the website", ok: "No — add a new player" }))) return;
+    const btn = addForm.querySelector("button"); btn.disabled = true;
+    try { await addPlayerToTeam(name, team.id); done(name); } catch (err) { toast(err.message, "error"); btn.disabled = false; }
   });
 }
 

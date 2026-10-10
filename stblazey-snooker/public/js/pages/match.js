@@ -1,6 +1,7 @@
-import { html, mount, $, toast, fmtDate, fmtTime } from "../core/dom.js";
+import { html, mount, $, toast, fmtDate, fmtTime, safeHref } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
-import { loadFixture, headToHead, subscribe, setMatchPhotos } from "../core/api.js";
+import { loadFixture, headToHead, subscribe, setMatchPhotos, fixtureBoards } from "../core/api.js";
+import { onTable } from "../core/live-score.js";
 import { uploadImage } from "../core/upload.js";
 import { matchScore, frameWinner, breakPoints, isShieldMatch, RULES } from "../core/rules.js";
 import { canEditFixture, canAddMatchPhotos, MATCH_PHOTO_LIMIT } from "../core/auth.js";
@@ -77,6 +78,8 @@ export default async function match(view, { params, user }) {
     const won = (s) => played && fx.status !== "in_progress" && score[s] > score[s === "home" ? "away" : "home"];
     // Match night photos: added by the home captain / vice captain, shown here and in that week's news report.
     const photos = fx.gallery ?? [], mayAddPhotos = canAddMatchPhotos(user, fx);
+    // A frame of this match being scored ball by ball right now (a captain using the scorecard's third view).
+    const board = fx.status === "in_progress" ? (await fixtureBoards(fx.id)).find((m) => onTable(m)) : null;
 
     mount(view, html`
       <div class="wrap">${breadcrumb([["Home", "/"], [title]])}</div>
@@ -91,9 +94,10 @@ export default async function match(view, { params, user }) {
         ${shield.isShield ? html`<div class="mh-foot">🛡 <a href="${urls.shield(league)}">${league.shield_name || "Shield"}</a> match — ${ctx.team.get(shield.holderId)?.name} defending</div>` : ""}
       </div></div>
       <div class="wrap stack" style="margin-top:24px">
+        ${board ? html`<a class="live-draw-note" href="${urls.scoreboard(board)}"><span class="live-dot">Live</span> <b>Frame ${board.frame_no}</b> is being scored ball by ball: ${playerName(board.player_a_id)} ${board.state?.frame?.a ?? 0} – ${board.state?.frame?.b ?? 0} ${playerName(board.player_b_id)} — watch it →</a>` : ""}
         <div class="btn-row">
           ${canEditFixture(user, fx) ? html`<a class="btn" href="${urls.scorecard(fx)}">${played ? "Edit scorecard" : "Enter scorecard"}</a>` : ""}
-          ${fx.scorecard_url ? html`<a class="btn ghost" href="${fx.scorecard_url}" target="_blank" rel="noopener">Photo of the paper scorecard</a>` : ""}
+          ${safeHref(fx.scorecard_url) ? html`<a class="btn ghost" href="${safeHref(fx.scorecard_url)}" target="_blank" rel="noopener">Photo of the paper scorecard</a>` : ""}
         </div>
         ${panel("Results", dataTable([
           { label: "Team", cell: ([, t]) => teamLink(t) },

@@ -3,7 +3,8 @@
 // captains and officers alike. It is set up and changed under My area → My Snooker (/my/snooker),
 // or with the Follow button on any team or player page.
 import { html, mount, $, toast } from "../core/dom.js";
-import { setMyPrefs } from "../core/api.js";
+import { setMyPrefs, settings } from "../core/api.js";
+import { mountSquadBox } from "../core/squad.js";
 import { mySnookerOn, myPrefs, refreshUser } from "../core/auth.js";
 import { mySnookerData, mountMySnooker, mySnookerStar as star, prefsToSave } from "../core/my-snooker.js";
 import { breadcrumb, urls, badge } from "../core/components.js";
@@ -57,7 +58,10 @@ export default async function myteam(view, { user }) {
       <a href="/my/snooker">Click here to change or reset.</a></span></p>
     <div data-ms></div>
   </div>`);
-  return mountMySnooker($("[data-ms]", view), user, { data });
+  const stopMine = await mountMySnooker($("[data-ms]", view), user, { data });
+  // Captains and vice captains: the "Manage team" box, as on the home page (this page is where they land).
+  const stopSquad = await mountSquadBox(user, ctx, await settings()).catch(() => () => {});
+  return () => { stopMine?.(); stopSquad(); };
 }
 
 /** Nothing followed yet: pick the first team (more teams, players and sections are chosen in the dashboard). */

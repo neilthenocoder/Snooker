@@ -1,7 +1,7 @@
 // /meetings — the AGM and committee meetings: the next one, then the minutes of past ones
 // by year. Added in Admin → Meetings; the minutes can be typed (with headings and bullets)
 // or attached as a PDF.
-import { html, mount, fmtDate, todayUK } from "../core/dom.js";
+import { html, mount, fmtDate, todayUK, safeHref } from "../core/dom.js";
 import { table, articles } from "../core/api.js";
 import { markup } from "../core/markup.js";
 import { MEETING_KINDS } from "../core/terms.js";
@@ -36,7 +36,7 @@ export default async function meetings(view, { query }) {
       <h2>${m.title || m.kind}</h2>
       <p class="meet-date">${longDate(m.held_on)}${where(m) ? html`<span>${where(m)}</span>` : ""}</p>
       ${m.summary ? html`<div class="rich">${markup(m.summary)}</div>` : ""}
-      ${m.document_url ? html`<a class="btn small secondary" href="${m.document_url}" target="_blank" rel="noopener">Open the agenda / papers</a>` : ""}</div>`)}</div>` : ""}
+      ${safeHref(m.document_url) ? html`<a class="btn small secondary" href="${safeHref(m.document_url)}" target="_blank" rel="noopener">Open the agenda / papers</a>` : ""}</div>`)}</div>` : ""}
 
     ${years.length ? years.map((y) => html`<div><h3 class="meet-year">${y}</h3>
       ${past.filter((m) => m.held_on.startsWith(y)).map((m) => html`<details class="meet-card" ${past[0] === m ? "open" : ""}>
@@ -45,7 +45,7 @@ export default async function meetings(view, { query }) {
           ${m.summary ? html`<div class="rich meet-summary">${markup(m.summary)}</div>` : ""}
           ${m.minutes ? html`<h4>Minutes</h4><div class="rich">${markup(m.minutes)}</div>` : ""}
           ${!m.summary && !m.minutes && !m.document_url ? html`<p class="muted">The minutes haven't been added yet.</p>` : ""}
-          ${m.document_url ? html`<a class="btn small secondary" href="${m.document_url}" target="_blank" rel="noopener">Open the minutes (PDF)</a>` : ""}
+          ${safeHref(m.document_url) ? html`<a class="btn small secondary" href="${safeHref(m.document_url)}" target="_blank" rel="noopener">Open the minutes (PDF)</a>` : ""}
         </div></details>`)}</div>`)
       : coming.length ? "" : html`<div class="empty box">No meetings have been added yet.</div>`}
 

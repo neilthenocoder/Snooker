@@ -2,7 +2,15 @@
 import { loadSeason, currentSeason, settings, loadCompetitions } from "./api.js";
 import { buildBracket, winnerSide } from "./bracket.js";
 import { leagueTable, playerRankings, matchScore, isCounted } from "./rules.js";
+import { ukDay } from "./dom.js";
 
+/** The Monday (YYYY-MM-DD, UK) of the week an ISO date and time falls in. */
+function weekStart(iso) {
+  const [y, m, d] = ukDay(iso).split("-").map(Number);
+  const day = new Date(Date.UTC(y, m - 1, d));
+  day.setUTCDate(day.getUTCDate() - ((day.getUTCDay() + 6) % 7));
+  return day.toISOString().slice(0, 10);
+}
 const byId = (rows) => new Map(rows.map((r) => [r.id, r]));
 function groupBy(rows, key) {
   const m = new Map();
@@ -45,6 +53,15 @@ export async function seasonContext(seasonId) {
 
     standings: (leagueId) => once(`st:${leagueId}`, () =>
       leagueTable(ctx.teamsIn(leagueId), ctx.fixturesIn(leagueId), framesByFixture)),
+    // The table as it stood before the latest week that has a result: what the "moved since last week"
+    // arrows are measured against. A week runs Monday to Sunday (UK). Null in the first week of results.
+    previousStandings: (leagueId) => once(`pv:${leagueId}`, () => {
+      const fx = ctx.fixturesIn(leagueId), counted = fx.filter(isCounted);
+      if (!counted.length) return null;
+      const monday = weekStart(counted.reduce((latest, f) => (f.starts_at > latest ? f.starts_at : latest), ""));
+      const before = fx.filter((f) => ukDay(f.starts_at) < monday);
+      return before.some(isCounted) ? leagueTable(ctx.teamsIn(leagueId), before, framesByFixture) : null;
+    }),
     rankings: (leagueId) => once(`rk:${leagueId}`, () =>
       playerRankings(ctx.playersIn(leagueId), ctx.fixturesIn(leagueId), framesByFixture, raw.breaks)),
     breaksIn: (leagueId) => once(`br:${leagueId}`, () => {

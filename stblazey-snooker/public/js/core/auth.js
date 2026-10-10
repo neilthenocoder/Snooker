@@ -81,7 +81,7 @@ export const SECTION_AREA = {
   scoreboard: { any: ["competitions", "matchnights"] }, awards: { any: ["website", "competitions"] }, key_dates: { any: ["website", "competitions"] },
   meetings: "website", emails: "settings",
   accounts: "people", roles: "master", activity: "master", backup: "master",
-  articles: "website", categories: "website", announcements: "website", media: "website", pages: "website", sponsors: "website", merchandise: "website",
+  articles: "website", categories: "website", announcements: "website", notices: "website", media: "website", pages: "website", sponsors: "website", merchandise: "website",
   cueviews: "league",
   branding: "settings", settings: "settings", stats: "settings",
 };

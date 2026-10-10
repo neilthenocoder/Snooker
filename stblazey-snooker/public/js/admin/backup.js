@@ -13,7 +13,7 @@ const TABLES = [
   ["fixtures", "Fixtures and results"], ["byes", "Bye weeks"], ["frames", "Scorecards: frames"], ["breaks", "Scorecards: breaks"],
   ["competitions", "Competitions"], ["competition_entries", "Competition entrants"], ["competition_matches", "Competition draws and results"],
   ["competition_frames", "Competition scorecards: frames"], ["competition_breaks", "Competition scorecards: breaks"], ["competition_signups", "Entry-form entries"],
-  ["handicap_changes", "Handicap changes"], ["categories", "News categories"], ["articles", "News articles"], ["announcements", "Announcements"],
+  ["handicap_changes", "Handicap changes"], ["categories", "News categories"], ["articles", "News articles"], ["announcements", "Announcements"], ["notices", "Notifications sent out"],
   ["pages", "Info pages"], ["sponsors", "Sponsors"], ["merchandise", "Merchandise"], ["cueview_submissions", "CueViews sent in on the form"], ["media", "Image library (the list of pictures)"], ["settings", "Site settings and branding"],
   ["profiles", "Logins (names, roles, teams — no passwords)"], ["role_permissions", "Roles & permissions"],
 ];

@@ -14,6 +14,7 @@ import { ballDot } from "../pages/scoreboard.js";
 import { friendly } from "./crud.js";
 
 const BEST_OF = [1, 3, 5, 7, 9].filter((n) => n <= score.MAX_BEST_OF);
+const SAY_MAX = 200, SAY_KEEP = 150;      // a line of live text is short; a match keeps its last 150 lines
 /** The parts of a match that a press can change (what Undo puts back). */
 const snap = (m) => ({ status: m.status, frames_a: m.frames_a, frames_b: m.frames_b, state: m.state, started_at: m.started_at ?? null, finished_at: m.finished_at ?? null });
 
@@ -41,7 +42,8 @@ export async function scoreboardPage(el, { user } = {}) {
   // ── the list, and the form to set a match up ──────────────────
   async function list(editing = null) {
     stopKeys();
-    const all = await liveMatches();
+    // League frames that captains score ball by ball have their own scoreboard rows: they belong to the scorecard, not to this list.
+    const all = (await liveMatches()).filter((m) => !m.fixture_id);
     const form = editing ?? { best_of: 9 };
     let ties = await drawMatches(form.competition_id, form.comp_match_id);
     const isTeam = (id) => competitions.find((c) => c.id === id)?.kind === "Team";
@@ -168,6 +170,27 @@ export async function scoreboardPage(el, { user } = {}) {
     };
     const name = { a: nameOf(m, "a"), b: nameOf(m, "b") };
 
+    // Live text: a line typed here appears under the public scoreboard straight away ("Great long red to start").
+    // It is kept apart from the score, so Undo never takes a line of text away.
+    const lines = () => (Array.isArray(m.commentary) ? m.commentary : []);
+    const saveLines = (list) => {
+      m = { ...m, commentary: list.slice(-SAY_KEEP) };
+      queue = queue.then(() => save("live_matches", { id: m.id, commentary: m.commentary, updated_at: new Date().toISOString() }))
+        .then(() => {}, (err) => toast(`The live text was not saved: ${friendly(err)}`, "error"));
+      draw();
+    };
+    const say = (text) => {
+      const t = String(text ?? "").trim().slice(0, SAY_MAX);
+      if (t) saveLines([...lines(), { id: Math.random().toString(36).slice(2, 10), at: new Date().toISOString(), frame: m.state?.frame?.no ?? null, text: t }]);
+    };
+    const sayBox = () => html`<form class="pad-say" data-say autocomplete="off">
+      <label for="pad-say-text"><b>Live text</b> <small>Say what is happening. It appears under the scoreboard for everyone watching.</small></label>
+      <div class="pad-say-row"><input id="pad-say-text" type="text" maxlength="${SAY_MAX}" placeholder="e.g. Great long red to get in — he's on the black" data-say-text>
+        <button class="btn secondary">Post</button></div>
+      ${lines().length ? html`<ul class="pad-said">${lines().slice(-4).reverse().map((l) => html`<li><time>${fmtTime(l.at)}</time><span>${l.text}</span>
+        <button type="button" data-unsay="${l.id}" aria-label="Remove this line" title="Remove">×</button></li>`)}</ul>` : ""}
+    </form>`;
+
     function draw() {
       const f = m.state?.frame, sit = score.situation(f), on = score.ballOn(f);
       const live = m.status === "live";
@@ -176,6 +199,7 @@ export async function scoreboardPage(el, { user } = {}) {
         <strong>${name[s]}</strong><span class="pad-frames">${m[`frames_${s}`] ?? 0}</span><b>${live ? f[s] : "–"}</b></button>`;
       const leader = !f ? null : f.a > f.b ? "a" : f.b > f.a ? "b" : null;
       const fixOpen = !!$(".pad-fix", el)?.open;      // the corrections box stays open while it is being used
+      const typing = $("[data-say-text]", el), typed = typing?.value ?? "", wasTyping = typing && document.activeElement === typing;
       mount(el, html`<div class="pad">
         <div class="pad-top"><button type="button" class="btn small ghost" data-pad-back>‹ All matches</button>
           <span><b>${score.matchLabel(m, competitions)}</b> · best of ${m.best_of}${m.comp_match_id ? html` · <span class="in-draw">in the draw</span>` : ""}</span>
@@ -222,12 +246,18 @@ export async function scoreboardPage(el, { user } = {}) {
                   Or enter it by hand under <a href="/admin/draws?c=${m.competition_id}" style="font-weight:700">Draws &amp; results</a>.` : ""}</div>
           <div class="btn-row"><button type="button" class="btn ghost" data-undo ${undo.length ? "" : "disabled"}>Undo — the match isn't over</button></div>` : ""}
 
+        ${m.status !== "setup" ? sayBox() : ""}
+
         ${(m.state?.frames ?? []).length ? html`<div style="height:18px"></div>${panel("Frames so far", dataTable([
           { label: "Frame", cell: (r) => r.no, cls: "num" }, { label: name.a, cell: (r) => html`<span class="${r.winner === "a" ? "strong" : ""}">${r.a}</span>`, cls: "num" },
           { label: name.b, cell: (r) => html`<span class="${r.winner === "b" ? "strong" : ""}">${r.b}</span>`, cls: "num" },
           { label: "Best breaks", cell: (r) => [r.high_a >= 20 ? `${name.a} ${r.high_a}` : "", r.high_b >= 20 ? `${name.b} ${r.high_b}` : ""].filter(Boolean).join(", ") || "–" },
         ], m.state.frames))}` : ""}
       </div>`);
+      // A press on the pad redraws it: what was being typed in the live text box is kept.
+      const box = $("[data-say-text]", el);
+      if (box && typed) box.value = typed;
+      if (box && wasTyping) box.focus();
     }
 
     const endFrame = async (winner) => {
@@ -249,6 +279,8 @@ export async function scoreboardPage(el, { user } = {}) {
       if (!t || t.disabled) return;
       const d = t.dataset;
       if ("padBack" in d) return open(null);
+      if (d.unsay) return saveLines(lines().filter((l) => l.id !== d.unsay));
+      if (t.closest("[data-say]")) return;                 // "Post" is the form's own button
       if (d.start) return apply(score.start(m, d.start));
       if (d.pot) return press.pot(Number(d.pot));
       if ("endBreak" in d) return press.endBreak();
@@ -260,6 +292,12 @@ export async function scoreboardPage(el, { user } = {}) {
       if (d.reds) return apply(score.adjustReds(m, Number(d.reds)));
       if ("endFrame" in d) return endFrame();
       if (d.give) return endFrame(d.give);
+    };
+    el.onsubmit = (e) => {
+      if (!e.target.matches("[data-say]")) return;
+      e.preventDefault();
+      const box = $("[data-say-text]", el);
+      say(box.value); const again = $("[data-say-text]", el); if (again) { again.value = ""; again.focus(); }
     };
     // Keyboard, for a laptop by the table.
     const onKey = (e) => {

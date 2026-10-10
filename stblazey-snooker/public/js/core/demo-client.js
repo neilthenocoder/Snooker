@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────
 import { buildSeed } from "../demo/seed-data.js";
 
-const KEY = "sbdsl-demo-db-v8";
+const KEY = "sbdsl-demo-db-v9";
 const SESSION_KEY = "sbdsl-demo-session";
 const store = typeof localStorage !== "undefined" ? localStorage : (() => {
   const m = new Map();
@@ -143,7 +143,7 @@ function shortAddress(table, row) {
 }
 
 // Mirrors the activity-log triggers in supabase/schema.sql (audit_row / audit_added).
-const AUDITED = new Set(["seasons", "leagues", "venues", "teams", "players", "fixtures", "competitions", "competition_entries", "articles", "pages", "sponsors", "categories", "announcements", "settings", "role_permissions", "key_dates", "awards", "meetings"]);
+const AUDITED = new Set(["seasons", "leagues", "venues", "teams", "players", "fixtures", "competitions", "competition_entries", "articles", "pages", "sponsors", "categories", "announcements", "settings", "role_permissions", "key_dates", "awards", "meetings", "notices"]);
 function auditLabel(table, r) {
   const team = (id) => state.tables.teams.find((t) => t.id === id)?.name ?? "?";
   if (table === "fixtures") return `${team(r.home_team_id)} v ${team(r.away_team_id)}${r.starts_at ? ` (${r.starts_at.slice(8, 10)}/${r.starts_at.slice(5, 7)}/${r.starts_at.slice(0, 4)})` : ""}`;
@@ -176,7 +176,7 @@ function logHandicap(player, value, note) {
 
 // Mirrors "on delete cascade" in supabase/schema.sql.
 const CASCADES = {
-  fixtures: [["frames", "fixture_id"], ["breaks", "fixture_id"]],
+  fixtures: [["frames", "fixture_id"], ["breaks", "fixture_id"], ["live_matches", "fixture_id"], ["lineups", "fixture_id"]],
   competitions: [["competition_entries", "competition_id"], ["competition_matches", "competition_id"], ["competition_signups", "competition_id"]],
   players: [["handicap_changes", "player_id"]],
   seasons: [["awards", "season_id"]],
@@ -250,6 +250,14 @@ export const demoClient = {
       audit("changed", "fixtures", [fx], { status: args.new_status });
       fx.status = args.new_status;
       fx.postponed_at = fx.status === "postponed" ? (fx.postponed_at ?? new Date().toISOString()) : null;
+      // Mirrors set_fixture_status(): once the card is in, no frame of it is still "on the table".
+      if (["submitted", "approved", "postponed"].includes(fx.status)) {
+        const t = state.tables, mine = (m) => m.fixture_id === fx.id;
+        t.live_matches = (t.live_matches ?? []).filter((m) => !(mine(m) && m.status === "setup"));
+        const ended = t.live_matches.filter((m) => mine(m) && m.status === "live");
+        for (const m of ended) Object.assign(m, { status: "finished", finished_at: new Date().toISOString() });
+        if (ended.length) emit("live_matches", ended);
+      }
       persist(); emit("fixtures", [fx]);
       return { data: null, error: null };
     }
@@ -339,9 +347,36 @@ export const demoClient = {
       const who = state.tables.profiles.find((p) => p.id === currentSession()?.user.id);
       const staff = ["admin", "league_admin", "league_secretary"].includes(who?.role);
       const row = { id: newId(), full_name: args.p_name, team_id: args.p_team, position: "Player", handicap: 0, avatar_url: "", birth_date: null, cueview: {}, cueview_featured: false, bio: "", career_history: "", past_teams: "", gallery: [], needs_review: !staff,
-        status: "playing", died_on: null, memorial: "" };
+        status: "playing", died_on: null, memorial: "", review_from: null };
       state.tables.players.push(row); shortAddress("players", row); persist(); emit("players", [row], "INSERT");
       return { data: row.id, error: null };
+    }
+    if (name === "claim_player") {
+      // Mirrors claim_player(): only a player with no team, onto the caller's own team; flagged for the league to accept.
+      const who = state.tables.profiles.find((p) => p.id === currentSession()?.user.id);
+      const row = state.tables.players.find((p) => p.id === args.p_player);
+      const captain = who && who.team_id === args.p_team && (["captain", "vice_captain"].includes(who.role) || ["captain", "vice_captain"].includes(who.team_role));
+      if (!captain) return { data: null, error: { message: "You can only add players to your own team" } };
+      if (!row || row.team_id || row.status === "deceased") return { data: null, error: { message: "That player already belongs to a team — ask the league secretary to move them" } };
+      Object.assign(row, { team_id: args.p_team, status: "playing", needs_review: true, review_from: "no_team" });
+      persist(); emit("players", [row]);
+      return { data: null, error: null };
+    }
+    if (name === "set_lineup") {
+      // Mirrors set_lineup(): your own team's sheet for a match that has not been submitted.
+      const t = state.tables, who = t.profiles.find((p) => p.id === currentSession()?.user.id);
+      const fx = t.fixtures.find((f) => f.id === args.fid);
+      const captain = who && [fx?.home_team_id, fx?.away_team_id].includes(who.team_id) && (["captain", "vice_captain"].includes(who.role) || ["captain", "vice_captain"].includes(who.team_role));
+      if (!fx || !captain) return { data: null, error: { message: "You can only pick the team for your own matches" } };
+      if (!["scheduled", "in_progress"].includes(fx.status)) return { data: null, error: { message: "This match has already been played" } };
+      const picks = (Array.isArray(args.p_picks) ? args.p_picks : []).slice(0, 10).map((x) => ({ player_id: x?.player_id || null, ext: !!x?.ext }));
+      if (picks.some((x) => x.player_id && t.players.find((p) => p.id === x.player_id)?.team_id !== who.team_id)) return { data: null, error: { message: "You can only pick players from your own team" } };
+      const list = (t.lineups ??= []), hit = list.find((l) => l.fixture_id === fx.id && l.team_id === who.team_id);
+      if (!picks.some((x) => x.player_id)) t.lineups = list.filter((l) => l !== hit);
+      else if (hit) Object.assign(hit, { picks, updated_by: who.full_name, updated_at: new Date().toISOString() });
+      else list.push({ id: newId(), fixture_id: fx.id, team_id: who.team_id, picks, updated_by: who.full_name, updated_at: new Date().toISOString() });
+      persist(); emit("lineups", []);
+      return { data: null, error: null };
     }
     if (name === "sync_comp_match") {
       // Mirrors sync_comp_match() in supabase/schema.sql

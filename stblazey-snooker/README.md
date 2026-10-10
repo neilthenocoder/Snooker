@@ -3,8 +3,8 @@
 A fast, plain HTML/CSS/JavaScript website (no build step) with:
 
 - **Public site**: home page with a rotating news banner, live & upcoming match strip, league tables, shield holders, player/team of the week and CueViews; fixtures and results, a **calendar** (with phone-calendar download), team pages, **player pages with CueView**, match scorecards, venues with maps and galleries, news with weekly round-ups, **knockout competitions with a live bracket and live cup scorecards**, standings, handicaps and a **Live** page.
-- **Live extras**: the LIVE button pulses orange ("LIVE SOON") an hour before matches and green while they're on; green pop-ups announce frame wins, breaks, news, new leaders, competition winners and new players. The **bell** opens a side panel where each visitor switches each kind on or off (section 3j).
-- **Members' area** (My Team · Fixtures · Profile · User details · Competitions): captains and vice captains enter scorecards frame by frame on match night — a **step-by-step view made for phones**, or the classic full card. Each save updates the live page for everyone, straight away. Every player can have a login to edit **their own profile** (photo, bio, career history, pictures, CueView).
+- **Live extras**: the LIVE button pulses orange ("LIVE SOON") an hour before matches and green while they're on; green pop-ups announce frame wins, breaks, news, new leaders, competition winners and new players. The league can send its own **notifications** — breaking news, important updates, offers — which pop up and wait behind the bell with a red number. The **bell** opens a side panel where each visitor switches each kind on or off (section 3j).
+- **Members' area** (My Team · Manage team · Fixtures · Profile · User details · Competitions): captains and vice captains enter scorecards frame by frame on match night — a **step-by-step view made for phones**, the classic full card, or **ball by ball** with everyone watching. Before the night they pick their players under **Manage team** (section 3k). Each save updates the live page for everyone, straight away. Every player can have a login to edit **their own profile** (photo, bio, career history, pictures, CueView).
 - **Players**: an **Our Players** page (pick a team, see its players past and present) and player pages with bio, career history, past teams, pictures and **player news**.
 - **Seasons** (`/seasons`): a page for every season with tiles for its Breaks, Competitions, Fixtures & Results, Handicaps, League Tables and Rankings, and a page per league for the breaks, the player rankings and the table. A **search** button in the menu finds players, teams, competitions, venues, news and pages.
 - **Roles & permissions**: the Master Admin decides, in a tick-box grid, what each officer role (League Admin, Competition Secretary, League Secretary, Committee Member, President, Vice Chairman, Chairman) can see and do. Each login only sees its own parts of the dashboard, and the database enforces it. Any officer can also be given captain rights for their team.
@@ -128,6 +128,7 @@ Result emails need one more variable (and a second once the league's domain is v
    - **2 Frames** — one frame at a time: home player on top, away player below. Type each **frame score**, add any **breaks** one by one, then press **Save frame**. It moves to the next frame; the numbers jump to any frame and **Skip** leaves one for later. The live strip, the **Live** page and the match page update for everyone within a second or two.
    - **3 Finish** — a summary of all the frames, the **photo of the paper scorecard** (opens the phone camera) and **Submit results**. **A result cannot be submitted without the photo** — the database refuses it, not just the page. Before it's sent, a box asks them to be certain the scores are correct and in the right columns.
    - **Classic card** (the switch above the steps) shows the whole card in one table instead — breaks are typed as `34, 41` next to the player. The site remembers which view each person prefers.
+   - **Ball by ball** (the third choice on the switch, league matches only) is the step-by-step card with a **scoring pad** in place of the score boxes: press who breaks off, then a ball each time one is potted, **End of break** on a miss, the foul buttons, and **End the frame**. The match shows as live from the first press. Visitors watch that frame on the Live scoreboard (the home page strip, the Live page and the match page all link to it), and when the frame ends its score and every break of 30 or more are put on the card for the captain. The three views can be mixed: score one frame on the pad and type the next. A frame that was started on the pad and left is no longer shown as live after three hours, or as soon as the card is submitted.
 3. **Admin** opens **Results to approve**, checks the scorecard and its photo, and presses **Approve**. Approved results are locked for captains, but the admin can still edit them.
 
 Tables and rankings count **submitted** and **approved** results. To make tables move live during the evening instead, add `"in_progress"` to `countedStatuses` in `public/js/core/rules.js`.
@@ -136,7 +137,7 @@ Tables and rankings count **submitted** and **approved** results. To make tables
 
 **Postponed matches:** a captain or vice captain presses **Postpone** next to the match under My Team → Fixtures (before it starts), or the admin opens its scorecard and presses **Mark postponed**. Players and visitors can't. It shows as "P - P" on the site and is left out of the tables. Both captains then see a reminder on their My Team page that it must be re-arranged **within 3 weeks**, with the date (`POSTPONE_WEEKS` in `rules.js`). The admin gives it a new date under **Admin → Results to approve → Postponed** and presses **Rearrange**; anything past the 3 weeks is flagged on the admin Overview.
 
-**New players added by captains** show up on the admin Overview and with a red count next to **Players** in the menu. In the Players list they sit at the top, marked **NEW**. The mark (and the count) goes as soon as you **save** that player, or press **Mark as checked** — one at a time, or all at once. Players the admin adds are never marked.
+**New players added by captains** (from Manage team or the scorecard) show up on the admin Overview and with a red count next to **Players** in the menu. In the Players list they sit at the top, marked **NEW**, each with **Accept** and **Reject**. The captain can pick them straight away; the league has the final say. **Accept** (or saving the player, e.g. after setting the handicap) clears the mark. **Reject** turns the request down: a brand-new player is removed (and comes off any card or team sheet), someone who was already on the website with no team goes back to having no team. Players the admin adds are never marked.
 
 **The Players list** in the dashboard shows 50 players at a time, with ‹ › arrows to move on (`pageSize` on the players section in `admin/resources.js`). Search and the team filter look through every page.
 
@@ -245,6 +246,8 @@ For a final (or any match worth watching), one person scores it ball by ball and
 5. **End the frame** when it's over (or **Frame conceded: to …**). The players take turns to break. The match ends by itself when someone has enough frames.
 
 Visitors open **`/scoreboard`** (also linked from the League page, the Live page and the home page strip). It needs no refreshing. On a laptop: keys **1–7** pot a ball, **Space** ends the break, **Backspace** undoes.
+
+**Live text.** Under the pad is a **Live text** box: type what is happening ("Great long red to get in") and press **Post**. The line appears under the scoreboard for everyone watching, newest first, with the time and the frame. The × beside a line takes it back. Undo never removes live text. A match keeps its last 150 lines.
 
 **The result goes into the draw by itself.** When you set the match up, choose the competition and then **Match in the draw**: the list shows every match of that competition's draw whose two players are known (singles and doubles; a team competition keeps its own scorecard). Choosing one fills in the players, the round and the number of frames. From then on:
 
@@ -357,7 +360,8 @@ Visitors cannot upload pictures on the form (only people with a login can), and 
 **The menu bar** stays at the top of the screen as the page scrolls (it gets a little slimmer once you have scrolled down a little, and goes back to full size near the top; the page underneath never moves when it changes size — `measureHeader()` in `main.js` explains how). On the right, in this order: the **person**, the **bell**, the **search** glass — and on phones the menu button, which opens the menu over the **whole screen**.
 
 - **The person** opens a panel from the right. Logged out it is the login form (there is no separate Login button; `/login` still works). Logged in it shows the person's initials and their links: My Snooker, My Team, Admin dashboard, My Snooker settings, My profile, Password & details and a red **Log out**.
-- **The bell** opens the notifications panel: a master switch, then a slider for each kind of pop-up — Results, Breaks, News, Tables & rankings, Competitions, New players — and one for Celebrations (the confetti). The choices are remembered on that phone or computer (no login needed). The kinds are the `NOTIFY_KINDS` list in `core/notify.js`.
+- **The bell** opens the notifications panel: at the top what the league has sent out lately, then a master switch and a slider for each kind of pop-up — **from the league:** Breaking news, Important updates, Offers; **from the matches:** Results, Breaks, News, Tables & rankings, Competitions, New players — and one for Celebrations (the confetti). The choices are remembered on that phone or computer (no login needed). The kinds are the `NOTIFY_KINDS` list in `core/notify.js`.
+- **Sending a notification** — Admin → Website → **Notifications**: choose Breaking news, Important update or Offer, type the message (and, if you like, a little more and a link) and save. Anyone on the website at that moment gets a pop-up (red, blue or yellow); everyone else sees a **red number on the bell** on their next visit and the message in the list behind it for 14 days, or until the day you choose. Untick “Send it” to take one down. A news article ticked **Breaking news** does the same without typing it twice. These are notifications on the website itself: a phone does not buzz when the site is closed.
 - **Add to your home screen** is in the person's panel. On Android and in Chrome it offers the install prompt; on an iPhone it shows the three steps (Share → Add to Home Screen). The name, colours and icons come from `public/manifest.webmanifest` and `public/assets/icon-192.png`, `icon-512.png`, `icon-maskable-512.png` and `apple-touch-icon.png` (180 × 180). **These four were made from the placeholder logo — replace them with the league's real badge**, keeping the same names and sizes (the "maskable" one needs the badge inside the middle 80%, as phones crop it to a circle).
 
 **Getting about.** Public pages have a **← back** link in place of the breadcrumb trail (it goes to the page above: a team → its league, an article → News). The dashboard and the My area keep the trail. On phones a white round **↓** button scrolls a screen down, and a white round **↑** takes you back to the top (on every screen size once you have scrolled).
@@ -378,6 +382,16 @@ Visitors cannot upload pictures on the form (only people with a login can), and 
 **The calendar** (`/calendar`) is one long page: a strip of months that follows you as you scroll, every day with a date tile, and each match, key date or meeting with its buttons (Match preview, Result & scorecard, Venue). The team filter and the phone-calendar download are still there.
 
 **The dashboard.** Every list has a pager, "1–50 of 116 ‹ ›", so you can page through everything as well as search. The boxes on the overview (Teams, Players, Fixtures, Approved, Awaiting approval, Live now) open the matching list. The menu is as long as its items: nothing in it is hidden and nothing inside it scrolls. On a long page it follows you down — at the top of the screen when it fits, otherwise it moves with the page until its last item is in view.
+
+## 3k. Manage team: the captain's team sheet
+
+For captains and vice captains only. Nobody else sees any of it.
+
+- **The box.** In the days before their team's next match a **Manage team** box sits at the bottom of the home page (and of their My Snooker page): the match, how long to go and whether the team is picked. The × closes it for that match; it is back for the next one. How many days before a match it appears is under **Site settings → Captains: the Manage team box** (3 to start with; 0 switches it off).
+- **The team sheet.** My area → **Manage team**: choose one of the next five matches and pick who plays each frame (a player can be picked a second time as the extra player, as on the card). **Save the team**. It can be changed as often as they like until the match starts.
+- **On the night** the names are already on the scorecard when it is opened, for whichever side has picked. They can still be changed there.
+- **Who can see it.** A team sheet is kept apart from the scorecard, so the other team cannot see it early: only that team's captain and vice captain, and whoever looks after match nights. From the day of the match the other captain can too (it is on the card they both fill in). The database enforces this (`lineups` and `set_lineup()` in `schema.sql`).
+- **Adding a player.** Under the squad list: type a name. If someone with that name is already on the website with no team, they are offered first — choose them and their history stays with them. Otherwise **Add as a new player**. Either way the player can be picked at once, is marked “Awaiting approval”, and waits in the dashboard for the league to accept or reject (see “New players added by captains” in section 3).
 
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
@@ -402,9 +416,11 @@ public/                     ← everything Netlify serves
   index.html                ← the only HTML page (the app shell)
   css/style.css             ← all styling; colours are variables at the top
   manifest.webmanifest      ← name, colours and icons for "Add to home screen"
+  _headers                  ← the security headers Netlify sends (what the browser may load, and from where)
   assets/                   ← logo.svg, avatar.svg, trophy.svg (placeholder cup), hero.jpg (home page photo), icon-*.png + apple-touch-icon.png (home-screen icons)
   js/
     config.js               ← Supabase keys + site name  ← EDIT THIS
+    boot.js                 ← the loading screen and saved colours, applied before the page is drawn
     main.js                 ← header, footer, and which page to show for each URL
     core/
       rules.js              ← ALL scoring maths
@@ -415,6 +431,8 @@ public/                     ← everything Netlify serves
       branding.js           ← turns Admin → Branding (colours, fonts, text sizes, page layouts, loading screen) into CSS variables
       markup.js             ← formatted text: headings, bullets, sub-bullets and tables typed as plain text (rules, minutes, info pages)
       live-score.js         ← the rules for scoring a match ball by ball (no HTML, no database)
+      score-pad.js          ← the pad a captain scores one league frame on, ball by ball (the scorecard's third view)
+      squad.js              ← Manage team: the captains' box on the home page, and helpers for the team sheet
       awards.js             ← the presentation awards: the standard list and what the results say the winners are
       celebrate.js          ← confetti and card: a new highest break, new leaders, a competition winner
       terms.js              ← lists of words used in more than one place (meeting types, player statuses)
@@ -424,11 +442,11 @@ public/                     ← everything Netlify serves
       bracket.js            ← knockout draw + who-plays-whom logic (no HTML)
       bracket-view.js       ← draws the bracket roadmap, round cards, standings
       upload.js             ← shrinks and uploads images (and adds them to the library)
-      scorecard-editor.js   ← the one scorecard editor used for league AND cup matches (step-by-step + classic views)
+      scorecard-editor.js   ← the one scorecard editor used for league AND cup matches (step-by-step, classic and ball-by-ball views)
       search.js             ← the search pop-up
       csv.js                ← CSV import: reads the file and works out what to add (no database)
       cueview.js            ← the CueView questions (add/reword one here)
-      notify.js             ← live pop-up notifications: the kinds (NOTIFY_KINDS), each visitor's choices, when to celebrate
+      notify.js             ← live pop-up notifications: the kinds (NOTIFY_KINDS), each visitor's choices, the league's own notices, when to celebrate
       my-snooker.js         ← My Snooker: the sections, the Follow button, and the block drawn on /myteam and the home page
       drawers.js            ← the side panels: login / My account, notifications, add to home screen
       side.js               ← the sidebar that follows the page (a competition's, a league's, the news)
@@ -468,7 +486,7 @@ real-data/2026-27/          ← the real season collected from the old website (
 scripts/
   build-seed.mjs            ← writes supabase/seed.sql from the sample data
   build-real-season.mjs     ← writes supabase/real-season-2026-27.sql from real-data/2026-27/
-netlify.toml                ← Netlify settings (publish folder, URL routing, headers)
+netlify.toml                ← Netlify settings (publish folder, URL routing)
 ```
 
 **Don't repeat yourself.** Each thing has exactly one home:
@@ -489,7 +507,12 @@ For example, to add a "phone" field to venues, add one line to `RESOURCES.venues
 | Stop sections using their menu colour for headers | Admin → Branding → untick "Colour-code each section" (headers go back to the main colour) |
 | Change the background colour of the whole site | Admin → Branding → Other colours → **Page background** (the main colour is there too) |
 | Change the fonts | Admin → Branding → Fonts |
-| Change which league teams go up to or down to (the green top row, the pink bottom row and the arrows in the league tables) | Admin → Leagues → **Display order**: 1 is the highest league. The bottom team of every league but the lowest is shown in the relegation place, the top team of every league but the highest in the promotion place. The colours are `--lt-top`, `--lt-down` and `--lt-mine` in the v12 block at the end of `public/css/style.css`; the rules are `leagueMarks()` in `public/js/core/components.js` |
+| Send everyone a notification (breaking news, an important update, an offer) | Admin → Website → Notifications. Or tick “Breaking news” on a news article |
+| Change when captains see the Manage team box, or switch it off | Admin → Site settings → Captains: the Manage team box (days before the match; 0 = never) |
+| Change how many frames a team sheet has | It follows `framesPerMatch` in `public/js/core/rules.js` (5), like the scorecard |
+| Load something from another website and it doesn't show (a new font service, a video site, a widget) | Add its address to the matching part of `Content-Security-Policy` in `public/_headers` |
+| Move to a newer version of the Supabase library | Change the version number in `public/js/core/db.js` (one line), then test logging in and saving a scorecard |
+| Change how many teams are promoted and relegated (the green **P** and red **R** in this season's league tables) | Admin → Leagues → Edit → **Promotion and relegation**: a number for each league (0 = none). Which league is above which is “Display order” (1 is the highest). The colours are `--lt-top`, `--lt-down` and `--lt-mine` in the v12 block of `public/css/style.css`; the rules, and the “places moved since last week” arrows, are `leagueMarks()` in `public/js/core/components.js` and `previousStandings()` in `core/context.js` |
 | Give a part of the site a right sidebar, or make it full width | Admin → Branding → Page layout. One choice each for Home, Competitions, Fixtures, League and News: **Standard** (as designed), **Right sidebar on every page** (pages without side boxes get the standard ones), or **Full width on every page** (a page's own side boxes move underneath) |
 | Put sidebars on the left | Admin → Branding → Page layout → Which side a sidebar goes on |
 | Use a Google font that isn't in the lists | Admin → Branding → Fonts → paste the font's embed link from fonts.google.com ("Get font" → "Get embed code"). Its fonts join both lists straight away; choose them and Save |
@@ -578,22 +601,43 @@ When you get new code files:
 4. **Don't run `seed.sql`, `remove-sample-data.sql` or `real-season-2026-27.sql` again.** An update never needs them. `real-season-2026-27.sql` puts the season back as it was on 8 October 2026, so a second run would wipe every result entered on the website since. `remove-sample-data.sql` deletes the sample players, teams, venues and articles — together with any photos, emblems or details you attached to them — and `seed.sql` puts back blank ones. Only use them if you deliberately want to reset the sample league.
 5. Netlify redeploys the logins function on its own when you push — nothing to do there. If you upload by drag and drop instead, upload the **whole project folder** (not only `public`), or the functions are not updated.
 
-## 8. Security checklist before launch
+## 8. Security
 
-- [ ] Public sign-ups turned **off** in Supabase (step 2a.4).
-- [ ] `SUPABASE_SERVICE_ROLE_KEY` and `RESEND_API_KEY` are only in Netlify environment variables, never in any file.
+### How the site is protected
+
+- **The database decides, not the page.** Every table has row-level security switched on. Hiding a button is never the protection: a captain who types another team's scorecard address, or calls the database directly, is refused by the database itself.
+- **The two keys in `public/js/config.js` are meant to be public.** The address of your Supabase project and its **anon** key are what every visitor's browser uses to read the public data; every Supabase website publishes them. They open nothing that the security rules don't allow. The key that must stay secret is the **service role** key: it is only ever in Netlify's environment variables, is used only by the two functions in `netlify/functions/`, and is in no file of this project.
+- **Text typed in is always escaped** (`html` in `core/dom.js`), so a name, a news article or a CueView answer can never become a script. Links typed in the dashboard are only drawn when they are ordinary web addresses (`safeHref`).
+- **Pictures sent in by captains and players** (the scorecard photo, match night photos, a player's own photo and pictures) must be ones uploaded on this website: the database refuses any other address.
+- **The browser is told what it may load** (`Content-Security-Policy` in `public/_headers`): scripts only from this website and the Supabase library, frames only from YouTube, Vimeo and Google Maps. A script from anywhere else does not run. The Supabase library is one exact version (`core/db.js`), not “whatever is newest”.
+- **Logins** are made by the league, never by the public. Passwords are kept by Supabase (hashed); the website never sees them after they are typed. Nobody can change their own role.
+- **Emails** to the results secretary are sent by a function that checks who is asking and that the match really is theirs; the links in the email always point at the website's own address.
+
+### Checklist before launch
+
+- [ ] Public sign-ups turned **off** in Supabase (step 2a.4). Authentication → Sign In / Providers → “Allow new users to sign up” off.
+- [ ] `SUPABASE_SERVICE_ROLE_KEY` and `RESEND_API_KEY` are only in Netlify environment variables, never in any file. In Netlify, tick “Contains secret values” for both.
+- [ ] Two-step login switched on for your own **Supabase**, **Netlify**, **Resend** and domain accounts. Whoever gets into one of those has the whole site, whatever the website's own rules say.
+- [ ] Supabase → Advisors → **Security Advisor** shows no errors (run `supabase/schema.sql` first).
 - [ ] Test it: Admin → Result emails → Send a test email arrives; then submit a card as a captain and check the email.
 - [ ] Test it: log in as one captain, then try to open another team's scorecard URL. It should say "Scorecard locked".
 - [ ] Test it: as a captain, try **Submit results** without a photo. It should be refused.
 - [ ] Test it: log in as an officer (e.g. a Committee Member) and open `/admin/fixtures`. It should say the login doesn't include that part.
+- [ ] Test it: as a captain, open **My area → Manage team** and save a team; log in as the other team's captain and check there is nothing of it to see.
 - [ ] Open **Roles & permissions** as the Master Admin and check each role only has what you want. Keep the number of Master Admins small.
-- [ ] Download a **backup** once the real data is in.
+- [ ] Download a **backup** once the real data is in, and again every month or so: on Supabase's free plan your own download is the only backup you can count on.
 - [ ] Test it: as the away captain, open a match page. There should be no "Add match night photos" button.
 - [ ] Test it: enter a competition on `/enter` without logging in, then check it appears under Admin → Entries to approve and nowhere on the public site except as a name "waiting for payment".
-- [ ] Give each captain their own login, and ask them to change their password under **My Team → User details**.
+- [ ] Give each captain their own login, and ask them to change their password under **My Team → User details**. Remove the login of anyone who leaves.
 
-Players' names, scores and breaks are public, as they are on the current site. Login emails are only visible to the admin. The contact details typed into the entry form are only visible to the competition secretary and the admins.
+### What is public, and what to decide
 
-The entry form is open to anyone (no login), like a paper form on a club noticeboard: someone could enter another player's name. Nothing happens until the competition secretary approves it, so a bogus entry is simply removed, or lapses on its own.
+Players' names, scores and breaks are public, as they are on the current site. Login emails are only visible to the admin. The contact details typed into the entry form are only visible to the competition secretary and the admins. A team sheet is only visible to its own captains until the day of the match.
+
+**Birthdays.** A player's date of birth, if one is filled in, is shown on their page with their age. That is personal information: the committee should decide whether the league wants it public, and tell players it is optional. Leaving the box empty hides both.
+
+The entry form and the CueView form are open to anyone (no login), like a paper form on a club noticeboard: someone could enter another player's name. Nothing happens until an officer approves it, so a bogus entry is simply removed, or lapses on its own.
+
+Photos of paper scorecards and match nights are public pictures (anyone with the link can open them), like every picture on the site.
 
 **The loading screen.** While a page is loading, the screen is black with the logo pulsing in the middle (the loading logo from Admin → Branding, or the main logo). It can be switched off, or made to stay up for a set number of seconds when the site is first opened (Admin → Branding → Loading screen). The colours and logo are remembered in each visitor's browser, so their second visit shows the right ones from the first instant.

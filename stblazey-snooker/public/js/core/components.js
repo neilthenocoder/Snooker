@@ -141,43 +141,65 @@ export function articleCard(a) {
 }
 
 // ── league widgets ────────────────────────────────────────────
-const zoneArrow = (dir) => html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${dir === "up" ? "M12 5 4.5 13.5h5V19h5v-5.5h5Z" : "M12 19l7.5-8.5h-5V5h-5v5.5h-5Z"}"/></svg>`;
+/** How many teams go up from, and down from, a league (Admin → Leagues → Promotion and relegation). */
+export function zoneCounts(ctx, league) {
+  const order = [...ctx.leagues].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+  const at = order.findIndex((l) => l.id === league.id);
+  const above = at > 0 ? order[at - 1] : null, below = at >= 0 ? order[at + 1] ?? null : null;
+  // Until schema.sql has been run again the leagues have no numbers of their own: two up, two down.
+  const num = (v, fallback) => (v == null || !Number.isFinite(Number(v)) ? fallback : Math.max(0, Math.round(Number(v))));
+  return { above, below, up: num(league.promote_count, above ? 2 : 0), down: num(league.relegate_count, below ? 2 : 0) };
+}
 
 /**
  * How a league's table is marked, shared by every page that shows one:
  *  - the leader's row is green, and the highest points total is picked out;
- *  - the leader of every league but the highest is in the promotion place (up arrow);
- *  - the bottom team of every league but the lowest is in the relegation place (pink row, down arrow).
- * Leagues run from highest to lowest in their "sort" order (Admin → Leagues). Nothing is marked
- * before the league has a result. `highlightTeamId` picks out one team's own row as well.
- * Returns { highlight, rowClass, pos, pts, strong, key } for dataTable() and its cells.
+ *  - the promotion places (the top N) carry a green "P", the relegation places (the bottom N) are pink with
+ *    a red "R" — N is set for each league under Admin → Leagues. Only the current season's table is marked,
+ *    because the numbers are today's rules;
+ *  - beside each position: how many places the team has moved since last week's table (▲2, ▼1, – for no change).
+ * Nothing is marked before the league has a result. `highlightTeamId` picks out one team's own row as well.
+ * Returns { highlight, rowClass, pos, team, pts, key } for dataTable() and its cells.
  */
 export function leagueMarks(ctx, league, { highlightTeamId, shown } = {}) {
   const all = ctx.standings(league.id);
-  const order = [...ctx.leagues].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
-  const at = order.findIndex((l) => l.id === league.id);
-  const above = at > 0 ? order[at - 1] : null, below = at >= 0 ? order[at + 1] ?? null : null;
+  const zone = zoneCounts(ctx, league);
   const started = all.some((r) => r.p > 0);
+  const current = !(ctx.seasons ?? []).some((s) => s.is_current) || ctx.season?.is_current !== false;
   const top = started && all[0].p > 0 ? all[0] : null;
-  const down = started && below && all.length > 1 ? all[all.length - 1] : null;
-  const up = top && above && top !== down ? top : null;
+  // Never more places than there are teams: relegation gives way to promotion in a very small league.
+  const nUp = started && current ? Math.min(zone.up, all.length) : 0;
+  const nDown = started && current ? Math.min(zone.down, Math.max(0, all.length - nUp - 1)) : 0;
+  const ups = new Set(all.slice(0, nUp)), downs = new Set(nDown ? all.slice(-nDown) : []);
   const topPts = top ? top.pts : null;
   const mine = (r) => !!highlightTeamId && r.team.id === highlightTeamId;
-  const mark = (r) => (r === up
-    ? html`<span class="lt-mark up" title="Promotion place: up to the ${above.name}">${zoneArrow("up")}<span class="sr-only"> Promotion place</span></span>`
-    : r === down
-      ? html`<span class="lt-mark down" title="Relegation place: down to the ${below.name}">${zoneArrow("down")}<span class="sr-only"> Relegation place</span></span>`
-      : "");
+  // Places moved since last week (by the position shown, so teams level on everything share one).
+  const before = ctx.previousStandings?.(league.id) ?? null;
+  const was = new Map((before ?? []).map((r) => [r.team.id, r.pos]));
+  const moved = (r) => (was.has(r.team.id) ? was.get(r.team.id) - r.pos : null);
+  const move = (r) => {
+    const n = moved(r);
+    if (n === null) return "";
+    if (n === 0) return html`<span class="lt-mv same" title="No change since last week"><i aria-hidden="true">–</i><span class="sr-only"> no change since last week</span></span>`;
+    const dir = n > 0 ? "up" : "down", by = Math.abs(n);
+    return html`<span class="lt-mv ${dir}" title="${n > 0 ? "Up" : "Down"} ${by} place${by > 1 ? "s" : ""} since last week"><i aria-hidden="true">${n > 0 ? "▲" : "▼"}</i>${by}<span class="sr-only"> place${by > 1 ? "s" : ""} ${dir} since last week</span></span>`;
+  };
+  const upTitle = `Promotion place${zone.above ? `: up to the ${zone.above.name}` : ""}`, downTitle = `Relegation place${zone.below ? `: down to the ${zone.below.name}` : ""}`;
+  const chip = (r) => (ups.has(r) ? html`<span class="lt-zone up" title="${upTitle}">P<span class="sr-only"> promotion place</span></span>`
+    : downs.has(r) ? html`<span class="lt-zone down" title="${downTitle}">R<span class="sr-only"> relegation place</span></span>` : "");
+  const strong = (r) => r === top || downs.has(r) || mine(r);
   const visible = shown ?? all;
   const keys = [
-    up && visible.includes(up) ? html`<span><span class="lt-mark up">${zoneArrow("up")}</span>Promotion place, up to the ${above.name}</span>` : "",
-    down && visible.includes(down) ? html`<span><span class="lt-mark down">${zoneArrow("down")}</span>Relegation place, down to the ${below.name}</span>` : "",
+    visible.some((r) => ups.has(r)) ? html`<span><span class="lt-zone up">P</span>${nUp > 1 ? `Promotion places (top ${nUp})` : "Promotion place"}${zone.above ? `, up to the ${zone.above.name}` : ""}</span>` : "",
+    visible.some((r) => downs.has(r)) ? html`<span><span class="lt-zone down">R</span>${nDown > 1 ? `Relegation places (bottom ${nDown})` : "Relegation place"}${zone.below ? `, down to the ${zone.below.name}` : ""}</span>` : "",
+    before ? html`<span><span class="lt-mv up"><i>▲</i></span><span class="lt-mv down"><i>▼</i></span>Places moved since last week</span>` : "",
   ].filter(Boolean);
   return {
     highlight: (r) => r === top || mine(r),
-    rowClass: (r) => [r === top ? "lt-top" : "", r === down ? "lt-down" : "", mine(r) ? "lt-mine" : ""].join(" "),
-    strong: (r) => r === top || r === down || mine(r),
-    pos: (r) => html`<span class="lt-pos">${r.pos}${mark(r)}</span>`,
+    rowClass: (r) => [r === top ? "lt-top" : "", ups.has(r) ? "lt-up" : "", downs.has(r) ? "lt-down" : "", mine(r) ? "lt-mine" : ""].join(" "),
+    strong,
+    pos: (r) => html`<span class="lt-pos"><b>${r.pos}</b>${move(r)}</span>`,
+    team: (r) => html`<span class="lt-team">${teamLink(r.team, strong(r))}${chip(r)}</span>`,
     pts: (r) => (topPts > 0 && r.pts === topPts ? html`<span class="lt-pts">${r.pts}</span>` : r.pts),
     key: keys.length ? html`<p class="lt-key">${keys}</p>` : "",
   };
@@ -188,7 +210,7 @@ export function leagueTablePanel(ctx, league, { limit = Infinity, highlightTeamI
   const m = leagueMarks(ctx, league, { highlightTeamId, shown: rows });
   const table = dataTable([
     { label: "P", cell: m.pos, cls: "num" },
-    { label: "Team", cell: (r) => teamLink(r.team, m.strong(r)) },
+    { label: "Team", cell: m.team },
     { label: "P", cell: (r) => r.p, cls: "num" },
     { label: "W", cell: (r) => r.w, cls: "num" },
     { label: "L", cell: (r) => r.l, cls: "num" },

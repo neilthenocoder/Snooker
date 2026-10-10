@@ -14,7 +14,7 @@
 //    RESULTS_EMAIL_FROM    e.g.  St Blazey Snooker League <results@yourdomain.co.uk>
 //                          Leave it out while testing: Resend's test address onboarding@resend.dev is used,
 //                          which can only send to the email address of your own Resend account.
-//    SITE_URL              optional — the website's address for the links in the email
+//    SITE_URL              optional — the website's address for the links in the email (Netlify's own URL is used otherwise)
 //  Who the email goes to is set in the dashboard: Admin → Result emails.
 // ─────────────────────────────────────────────────────────────
 import { createClient } from "@supabase/supabase-js";
@@ -47,7 +47,9 @@ export default async (req) => {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return json(500, { error: "Server is missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY environment variables." });
   const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
   const from = process.env.RESULTS_EMAIL_FROM || TEST_FROM;
-  const siteUrl = process.env.SITE_URL || req.headers.get("origin") || new URL(req.url).origin;
+  // The website's address for the links in the email: SITE_URL if it is set, otherwise the address Netlify itself
+  // gives this site (URL). Never the "origin" a browser sends, which the sender could make up.
+  const siteUrl = process.env.SITE_URL || process.env.URL || new URL(req.url).origin;
 
   // 1. Who is asking?
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");

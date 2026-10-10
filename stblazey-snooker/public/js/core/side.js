@@ -8,7 +8,7 @@
 //    other competition pages → the competitions as a whole
 //  Anything else gets the standard boxes (components.js: sidebar()).
 // ─────────────────────────────────────────────────────────────
-import { html, fmtDate } from "./dom.js";
+import { html, fmtDate, safeHref } from "./dom.js";
 import { loadCompetitions, competitionBreaks, table } from "./api.js";
 import { buildBracket } from "./bracket.js";
 import { cupResults } from "./context.js";
@@ -44,7 +44,7 @@ export async function contextSidebar(ctx, news, box, { page, group, about }) {
       ${breakList(`${name} Breaks`, breaks)}
       ${results.length ? panel(c ? "Latest results" : "Latest competition results", html`<div class="res-list">${results.map((r) => html`<a class="res-mini" href="${r.href}">
         <small>${r.when ? fmtDate(r.when) : ""}${c ? "" : ` · ${r.title}`}</small><span class="${r.won === "h" ? "won" : r.won ? "lost" : ""}">${r.home}</span><b>${r.score}</b><span class="${r.won === "a" ? "won" : r.won ? "lost" : ""}">${r.away}</span></a>`)}</div>`, { color: "blue" }) : ""}
-      ${dates.length ? panel("Key dates", html`<div class="list-links">${dates.map((d) => html`<a href="${d.url || "/calendar"}"><b>${fmtDate(d.starts_on)}</b> ${d.title}</a>`)}</div>`, { color: "yellow" }) : ""}
+      ${dates.length ? panel("Key dates", html`<div class="list-links">${dates.map((d) => html`<a href="${safeHref(d.url) || "/calendar"}"><b>${fmtDate(d.starts_on)}</b> ${d.title}</a>`)}</div>`, { color: "yellow" }) : ""}
       ${newsBox(c ? "Related news" : "Competition news", news.filter((a) => (c ? a.competition_id === c.id : a.competition_id && ids.has(a.competition_id))))}
       ${panel(c ? "Other competitions" : "This season's competitions", html`<div class="list-links">${data.competitions.filter((x) => x.id !== c?.id && (!x.season_id || x.season_id === ctx.season?.id))
         .map((x) => { const w = champion(x); return html`<a href="${urls.competition(x)}">${x.name}${w ? html` ${outcomeTag("won", `Winner: ${w}`)}` : ""}</a>`; })}</div>`)}

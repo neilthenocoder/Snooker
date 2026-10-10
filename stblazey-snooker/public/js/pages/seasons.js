@@ -166,7 +166,7 @@ function leagueTable(view, ctx, season, league) {
     ${head(ctx, season, "league-tables", league)}
     ${panel(league.name, html`${dataTable([
       { label: "Pos", cell: m.pos, cls: "num" },
-      { label: "Team", cell: (r) => teamLink(r.team, m.strong(r)) },
+      { label: "Team", cell: m.team },
       { label: "Played", cell: (r) => r.p, cls: "num" },
       { label: "Won", cell: (r) => r.w, cls: "num" },
       { label: "Lost", cell: (r) => r.l, cls: "num" },

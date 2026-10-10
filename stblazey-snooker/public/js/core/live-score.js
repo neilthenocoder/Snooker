@@ -8,23 +8,30 @@
 //  A match row: { best_of, status, frames_a, frames_b, state }
 //  state = {
 //    frame:  { no, a, b, striker: "a" | "b", brk, pots: [1, 7, 1, …], reds, colours: [2..7],
-//              onColour, high_a, high_b, last: "…what just happened…" },
-//    frames: [{ no, a, b, winner, high_a, high_b }]     // finished frames
+//              onColour, high_a, high_b, breaks: [{ s: "a" | "b", v: 34 }], last: "…what just happened…" },
+//    frames: [{ no, a, b, winner, high_a, high_b, breaks: [{ s, v }] }]     // finished frames
 //  }
+//  "breaks" are the finished breaks of BREAK_MIN or more (the ones that earn ranking points):
+//  a league scorecard filled in from the pad needs every one of them, not just the highest.
 // ─────────────────────────────────────────────────────────────
+import { RULES } from "./rules.js";
+
 export const BALLS = [
   { value: 1, key: "red", name: "Red" }, { value: 2, key: "yellow", name: "Yellow" }, { value: 3, key: "green", name: "Green" },
   { value: 4, key: "brown", name: "Brown" }, { value: 5, key: "blue", name: "Blue" }, { value: 6, key: "pink", name: "Pink" }, { value: 7, key: "black", name: "Black" },
 ];
 export const ballOf = (value) => BALLS.find((b) => b.value === value);
 export const MAX_BEST_OF = 9;      // first to 5
+export const BREAK_MIN = RULES.breakMinimum;   // breaks from here up are kept in frame.breaks
 export const REDS = 15;
 
 const other = (side) => (side === "a" ? "b" : "a");
 const copy = (x) => JSON.parse(JSON.stringify(x));
 export const framesToWin = (m) => Math.floor((m.best_of || 1) / 2) + 1;
 
-export const newFrame = (no, striker = "a") => ({ no, a: 0, b: 0, striker, breaker: striker, brk: 0, pots: [], reds: REDS, colours: [2, 3, 4, 5, 6, 7], onColour: false, high_a: 0, high_b: 0, last: "" });
+export const newFrame = (no, striker = "a") => ({ no, a: 0, b: 0, striker, breaker: striker, brk: 0, pots: [], reds: REDS, colours: [2, 3, 4, 5, 6, 7], onColour: false, high_a: 0, high_b: 0, breaks: [], last: "" });
+/** The break at the table is over: if it is big enough to count, keep it. */
+function bank(f) { if (f.brk >= BREAK_MIN) (f.breaks ??= []).push({ s: f.striker, v: f.brk }); }
 
 /** Start the match: frame 1, with `breaker` at the table. */
 export function start(match, breaker = "a") {
@@ -67,6 +74,7 @@ export const freeBall = (match) => inFrame(match, (f) => {
 /** The break is over (a miss or a safety): the other player comes to the table. */
 export const endBreak = (match) => inFrame(match, (f) => {
   f.last = f.brk ? `Break of ${f.brk} ends` : "No score";
+  bank(f);
   f.striker = other(f.striker); f.brk = 0; f.pots = []; f.onColour = false;
 });
 
@@ -75,11 +83,12 @@ export const foul = (match, points) => inFrame(match, (f) => {
   const to = other(f.striker);
   f[to] += points;
   f.last = `Foul — ${points} away`;
+  bank(f);
   f.striker = to; f.brk = 0; f.pots = []; f.onColour = false;
 });
 
 /** Put a named player at the table (to put right a wrong press). */
-export const setStriker = (match, side) => inFrame(match, (f) => { if (f.striker !== side) { f.striker = side; f.brk = 0; f.pots = []; f.onColour = false; } });
+export const setStriker = (match, side) => inFrame(match, (f) => { if (f.striker !== side) { bank(f); f.striker = side; f.brk = 0; f.pots = []; f.onColour = false; } });
 
 /** Add or take away points by hand (a free ball, or a correction). */
 export const adjust = (match, side, delta) => inFrame(match, (f) => { f[side] = Math.max(0, f[side] + delta); f.last = `${delta > 0 ? "+" : ""}${delta} (correction)`; });
@@ -113,7 +122,9 @@ export function endFrame(match, winner) {
   const w = winner ?? (f.a > f.b ? "a" : f.b > f.a ? "b" : null);
   if (!w) return match;                                           // level: play the re-spotted black, or choose a winner
   const next = copy(match);
-  next.state.frames.push({ no: f.no, a: f.a, b: f.b, winner: w, high_a: f.high_a, high_b: f.high_b });
+  // The break being made when the frame ended counts too.
+  const breaks = [...(f.breaks ?? []), ...(f.brk >= BREAK_MIN ? [{ s: f.striker, v: f.brk }] : [])];
+  next.state.frames.push({ no: f.no, a: f.a, b: f.b, winner: w, high_a: f.high_a, high_b: f.high_b, breaks });
   next[`frames_${w}`] = (next[`frames_${w}`] || 0) + 1;
   if (next[`frames_${w}`] >= framesToWin(next)) {
     next.status = "finished"; next.finished_at = new Date().toISOString(); next.state.frame = null;
@@ -146,3 +157,10 @@ export function highBreaks(match) {
   const all = [...(match.state?.frames ?? []), ...(match.state?.frame ? [match.state.frame] : [])];
   return { a: Math.max(0, ...all.map((f) => f.high_a || 0)), b: Math.max(0, ...all.map((f) => f.high_b || 0)) };
 }
+
+/**
+ * Is this match really on the table right now? A league frame scored by a captain (it has a fixture_id)
+ * that nobody has touched for three hours was abandoned, not live — so it stops showing as live.
+ */
+export const STALE_MS = 3 * 3600e3;
+export const onTable = (m, now = Date.now()) => m.status === "live" && (!m.fixture_id || now - Date.parse(m.updated_at ?? m.started_at ?? 0) < STALE_MS);

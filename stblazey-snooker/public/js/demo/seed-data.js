@@ -36,8 +36,8 @@ export function buildSeed() {
   const prevSeason = { id: uuid(), name: "2025-2026", is_current: false };
 
   const leagues = [
-    { id: uuid(), name: "Victory League", slug: "victory-league", short_name: "Victory", sort: 1, shield_name: "Victory League Runabout Shield", shield_team_id: null, logo_url: "" },
-    { id: uuid(), name: "Rees Memorial League", slug: "rees-memorial-league", short_name: "Rees", sort: 2, shield_name: "Rees Memorial League Runabout Shield", shield_team_id: null, logo_url: "" },
+    { id: uuid(), name: "Victory League", slug: "victory-league", short_name: "Victory", sort: 1, shield_name: "Victory League Runabout Shield", shield_team_id: null, logo_url: "", promote_count: 0, relegate_count: 2 },
+    { id: uuid(), name: "Rees Memorial League", slug: "rees-memorial-league", short_name: "Rees", sort: 2, shield_name: "Rees Memorial League Runabout Shield", shield_team_id: null, logo_url: "", promote_count: 2, relegate_count: 0 },
   ];
 
   const venueNames = {
@@ -427,6 +427,12 @@ export function buildSeed() {
     ["Captains: remember to add your match night photos after each home match", ""],
   ].map(([text, url], i) => ({ id: uuid(), text, url, sort: i + 1, is_active: true, starts_on: null, ends_on: null, created_at: "2026-10-01T09:00:00.000Z",
     label: i === 0 ? "Entries open" : "", show_in_feature: i < 2 }));
+  // Notices sent out by the league (Admin → Notifications): they sit behind the bell for 14 days.
+  const ago = (days) => new Date(Date.now() - days * 864e5).toISOString();
+  const notices = [
+    { id: uuid(), kind: "update", title: "Bethel D v Mevagissey C has moved to Thursday at 7.30pm", body: "Both captains have agreed the new date. The fixture list has been updated.", url: "/fixtures", ends_on: null, is_active: true, created_at: ago(1) },
+    { id: uuid(), kind: "offer", title: "League polo shirts: £3 off until the end of the month", body: "Order from any committee member and say you saw it on the website.", url: "/merchandise", ends_on: null, is_active: true, created_at: ago(3) },
+  ];
   // What each officer role may use in the dashboard (the Master Admin can change it under Roles & permissions).
   const role_permissions = [
     ["league_admin", ["matchnights", "fixtures", "league", "handicaps", "competitions", "website", "settings", "people"]],
@@ -616,7 +622,7 @@ The league table is decided on frames won: one point for every frame.
       competitions, competition_entries, competition_matches, competition_frames, competition_breaks, competition_signups,
       handicap_changes: [], categories, settings, media, page_views, announcements, role_permissions, audit_log: [],
       key_dates, awards, meetings, live_matches, private_settings: [{ id: 1, results_email_on: false, results_email_to: "" }],
-      byes: [], cueview_submissions: [],
+      byes: [], cueview_submissions: [], notices, lineups: [],
       merchandise: [
         { id: uuid(), name: "League polo shirt", price: "£18", description: "Black polo with the league badge on the chest. A sample item: change or remove it under Admin → Website → Merchandise.", options: "S, M, L, XL, XXL", image_url: "", url: "", sort: 1, is_active: true },
         { id: uuid(), name: "Cue towel", price: "£6", description: "Microfibre towel with the league badge. A sample item.", options: "", image_url: "", url: "", sort: 2, is_active: true },

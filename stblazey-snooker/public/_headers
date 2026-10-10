@@ -1,0 +1,25 @@
+# Headers Netlify sends with the website's pages and files.
+# A line starting with # is a note. The format is: a path, then its headers underneath, each indented two spaces.
+#
+# Security headers, sent with every page and file. The long one is the Content Security Policy: the list of
+# places the website may load things from. Anything else is refused by the browser — so even if someone
+# managed to get a piece of script into a page, it would not run.
+#   scripts ......... this website, and the Supabase library from cdn.jsdelivr.net (see js/core/db.js)
+#   styles, fonts ... this website and Google Fonts
+#   data ............ this website and your Supabase project (https, and its live "wss" connection)
+#   pictures, video . any https address (the image library, sponsors' logos, a pasted video file)
+#   frames .......... YouTube, Vimeo and Google Maps only
+# If you ever add something from another website (a new font service, another video site, a widget) and it
+# does not show, add its address to the matching part of the Content-Security-Policy line.
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Cross-Origin-Opener-Policy: same-origin
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://www.youtube-nocookie.com https://player.vimeo.com https://www.google.com https://maps.google.com https://www.google.co.uk; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+
+# The scripts are small and change with every update: browsers always check for the newest.
+/js/*
+  Cache-Control: public, max-age=0, must-revalidate

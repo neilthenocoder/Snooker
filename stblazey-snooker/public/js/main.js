@@ -4,7 +4,7 @@
 //  js/pages/ and is loaded only when it's needed.
 // ─────────────────────────────────────────────────────────────
 import { SITE, DEMO_MODE } from "./config.js";
-import { html, mount, $, ukDay, toast } from "./core/dom.js";
+import { html, mount, $, ukDay, toast, safeHref } from "./core/dom.js";
 import { applyBranding, loaderOn, loaderOff, layoutFor, TICKER_PX } from "./core/branding.js";
 import { getUser, signOut, isPlainPlayer, mySnookerOn, mySnookerSetUp, mySnookerOwnPage, canOpenSection } from "./core/auth.js";
 import { seasonContext, sideBoxData } from "./core/context.js";
@@ -16,7 +16,8 @@ import { footerLink } from "./core/terms.js";
 import { listItems } from "./core/list-field.js";
 import { table, invalidate, settings, nearbyMatches, subscribe, trackPageView, articles, liveMatches } from "./core/api.js";
 import { liveState } from "./core/rules.js";
-import { notificationsOn, startNotifications } from "./core/notify.js";
+import { onTable } from "./core/live-score.js";
+import { notificationsOn, startNotifications, unreadNotices, setNoticeWatcher } from "./core/notify.js";
 import { urls } from "./core/components.js";
 import { setNavigator, setShellRefresher, takeEditTarget, takeSideContext } from "./core/router.js";
 
@@ -115,7 +116,7 @@ async function refreshLive() {
   const [{ fixtures, comps }, competitions, boards] = await Promise.all([
     nearbyMatches(36).catch(() => ({ fixtures: [], comps: [] })), table("competitions", "sort").catch(() => []), liveMatches().catch(() => [])]);
   // A match being scored ball by ball counts as well.
-  const scored = boards.filter((m) => m.status === "live" || (m.status === "setup" && m.starts_at))
+  const scored = boards.filter((m) => onTable(m) || (m.status === "setup" && m.starts_at))
     .map((m) => ({ starts_at: m.started_at ?? m.starts_at, status: m.status === "live" ? "in_progress" : "scheduled" }));
   // A competition draw counts too: "live soon" before it, "live" while it's being made.
   const draws = competitions.filter((c) => c.draw_live?.status === "live" || (!c.draw_live && c.draw_at))
@@ -134,6 +135,14 @@ function drawBell() {
   if (!b) return;
   b.classList.toggle("off", !on);
   b.title = on ? "Notifications: choose what you hear about" : "Notifications are off — press to change";
+  // A red number: breaking news, important updates and offers sent since this visitor last opened the bell.
+  unreadNotices().then((n) => {
+    let dot = b.querySelector(".nav-bell-count");
+    if (!n) return dot?.remove();
+    if (!dot) { dot = document.createElement("span"); dot.className = "nav-bell-count"; b.append(dot); }
+    dot.textContent = n > 9 ? "9+" : String(n);
+    b.setAttribute("aria-label", `Notifications: ${n} new`);
+  }).catch(() => {});
 }
 
 const personIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2a8 8 0 0 1 6.3 12.9c-1.3-1.8-3.6-2.9-6.3-2.9s-5 1.1-6.3 2.9A8 8 0 0 1 12 4Zm0 2.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm0 9.5c2 0 3.7.8 4.8 2.2a8 8 0 0 1-9.6 0c1.1-1.4 2.8-2.2 4.8-2.2Z"/></svg>`;
@@ -231,7 +240,7 @@ async function drawFooter() {
   const [sponsors, pages, site] = await Promise.all([
     table("sponsors", "sort").catch(() => []), table("pages", "sort").catch(() => []), settings(),
   ]);
-  const socials = SOCIAL.filter(([key]) => site[key]);
+  const socials = SOCIAL.filter(([key]) => safeHref(site[key]));
   // The bottom menu: the links chosen under Site settings → Footer, in that order; if none were chosen,
   // every info page ticked "Show as a link in the footer".
   const chosen = listItems(site.footer_links).map((text) => footerLink(text, pages)).filter(Boolean);
@@ -244,7 +253,7 @@ async function drawFooter() {
     ${sponsors.length ? html`<h3 class="foot-h">Principal Partners</h3>
       <div class="sponsors">${sponsors.map((s) => html`<a href="${urls.sponsor(s)}" title="About ${s.name}">${s.image_url ? html`<img src="${s.image_url}" alt="${s.name}">` : s.name}</a>`)}</div>` : ""}
     <h3 class="foot-h">#SBDS</h3>
-    ${socials.length ? html`<div class="socials">${socials.map(([key, name, icon]) => html`<a href="${site[key]}" target="_blank" rel="noopener" aria-label="${name}" title="${name}">
+    ${socials.length ? html`<div class="socials">${socials.map(([key, name, icon]) => html`<a href="${safeHref(site[key])}" target="_blank" rel="noopener" aria-label="${name}" title="${name}">
       <svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></a>`)}</div>` : ""}
     ${links.length ? html`<nav class="foot-links" aria-label="Footer">${links.map((l) => html`<a href="${l.href}" ${l.outside ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}</nav>` : ""}
     <p class="foot-copy">© ${new Date().getFullYear()} ${owner}${creditText ? html` · ${credit ? html`<a href="${credit.href}" ${credit.outside ? html`target="_blank" rel="noopener"` : ""}>${creditText}</a>` : creditText}` : ""}</p>
@@ -259,7 +268,7 @@ async function drawTicker(show) {
   const today = ukDay(new Date().toISOString());
   const items = rows.filter((a) => a.is_active !== false && a.text && (!a.starts_on || a.starts_on <= today) && (!a.ends_on || a.ends_on >= today));
   if (site.ticker_show === false || !items.length) return mount(box, "");
-  const one = (a) => (a.url ? html`<a class="ticker-item" href="${a.url}" ${/^https?:/.test(a.url) ? html`target="_blank" rel="noopener"` : ""}>${a.text}<i>→</i></a>` : html`<span class="ticker-item">${a.text}</span>`);
+  const one = (a) => { const url = safeHref(a.url); return url ? html`<a class="ticker-item" href="${url}" ${/^https?:/.test(url) ? html`target="_blank" rel="noopener"` : ""}>${a.text}<i>→</i></a>` : html`<span class="ticker-item">${a.text}</span>`; };
   // The list is written twice so the loop has no gap; the copy is hidden from screen readers.
   mount(box, html`<div class="ticker" role="region" aria-label="Announcements">
     <span class="ticker-label">Announcements</span>
@@ -382,6 +391,9 @@ function openLightbox(url) {
 // Intercept clicks on internal links so pages switch without a full reload.
 document.addEventListener("click", async (e) => {
   const a = e.target.closest("a[href]");
+  // A safety net for the whole site: a link whose address is a piece of code (javascript:…) never does anything,
+  // wherever on the site it was typed in. (The pages don't draw such links either — see safeHref in core/dom.js.)
+  if (a && /^\s*(javascript|vbscript)\s*:/i.test(a.getAttribute("href") ?? "")) return e.preventDefault();
   if (e.target.closest("[data-logout]")) {
     await signOut(); try { sessionStorage.removeItem("sbds-my-snooker-seen"); } catch { /* nothing stored */ }
     closeDrawer(); await drawHeader(); return navigate("/");
@@ -479,5 +491,6 @@ setTimeout(drawScrollHint, 1500);   // once pictures and the first page have set
 setInterval(refreshLive, 60e3);
 subscribe(["fixtures", "competition_matches", "competitions", "live_matches"], refreshLive);
 // Always listening: the pop-ups obey the bell, the highest-break celebration obeys Admin → Site settings.
+setNoticeWatcher(drawBell);
 startNotifications();
 

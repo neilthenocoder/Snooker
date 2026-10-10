@@ -13,15 +13,5 @@
   to = "/index.html"
   status = 200
 
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
-
-[[headers]]
-  for = "/js/*"
-  [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+# The security headers (and the "always check for a newer file" rule for /js) are in public/_headers.
+# They live there, next to the pages, so that they are sent however the site is uploaded.

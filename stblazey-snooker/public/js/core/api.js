@@ -209,6 +209,30 @@ export async function addPlayerToTeam(name, teamId) {
   return id;
 }
 
+/**
+ * A captain signs someone who is already on the website but has no team (the list of past players).
+ * Like a brand-new player, they wait for the league to accept them — but can be picked straight away.
+ */
+export async function claimPlayer(playerId, teamId) {
+  await run(db.rpc("claim_player", { p_player: playerId, p_team: teamId }));
+  invalidate();
+}
+
+// ── team sheets (Manage team) ────────────────────────────────────
+/**
+ * The players a captain has picked ahead of a match night: one row per match and team,
+ * picks = [{ player_id, ext }] in frame order. Only that team's captains (and whoever looks after
+ * match nights) can read a team sheet before the day of the match; from that day the other captain can too.
+ * Empty until schema.sql has been run again.
+ */
+export const lineupsFor = (fixtureId) => run(db.from("lineups").select("*").eq("fixture_id", fixtureId)).catch(() => []);
+export const teamLineups = (teamId) => run(db.from("lineups").select("*").eq("team_id", teamId)).catch(() => []);
+/** Save (or, with no picks, clear) your own team's sheet for a match. The database checks it is your team and your players. */
+export async function setLineup(fixtureId, picks) {
+  await run(db.rpc("set_lineup", { fid: fixtureId, p_picks: picks }));
+  invalidate();
+}
+
 export async function setScorecardPhoto(fid, url) {
   await run(db.rpc("set_scorecard_photo", { fid, url }));
   invalidate();
@@ -408,6 +432,12 @@ export async function scoreboardToDraw(liveMatchId) {
   invalidate();
   return outcome;
 }
+
+/**
+ * The ball-by-ball scoreboards of one league match: a row for each frame a captain has scored that way
+ * (live_matches.fixture_id / frame_no). Empty until schema.sql has been run again.
+ */
+export const fixtureBoards = (fixtureId) => run(db.from("live_matches").select("*").eq("fixture_id", fixtureId).order("frame_no")).catch(() => []);
 
 // ── My Snooker ───────────────────────────────────────────────────
 /** Save the logged-in person's own-page choices: which team it follows, and whether it is switched on. */
