@@ -11,6 +11,7 @@
 // ─────────────────────────────────────────────────────────────
 import { html, mount, $, toast, confirmBox } from "./dom.js";
 import * as score from "./live-score.js";
+import { linesOf, withLine, sayBox } from "./live-text.js";
 
 const ballDot = (value) => html`<i class="ball b-${score.ballOf(value)?.key ?? "red"}" title="${score.ballOf(value)?.name ?? ""}"></i>`;
 /** The parts of the row that a press can change (what Undo puts back). */
@@ -24,10 +25,11 @@ const snap = (m) => ({ status: m.status, frames_a: m.frames_a, frames_b: m.frame
  *   onStart() — the break-off has been chosen: the frame is live,
  *   onFrameEnd(frame) → Promise — the frame is over: { a, b, winner, breaks: [{ s, v }] },
  *   scored  — true when the scorecard already has this frame's score (a finished pad then just says so),
+ *   liveText — { href } to show the "Live text" box (what is typed appears under this frame's public scoreboard, at href),
  * }
  * Returns { destroy() }.
  */
-export function scorePad(el, { match, name, save, onStart = () => {}, onFrameEnd, scored = false }) {
+export function scorePad(el, { match, name, save, onStart = () => {}, onFrameEnd, scored = false, liveText = null }) {
   let m = match;
   const KEY = `sbdsl-sb-${m.id}`;
   let undo = [];
@@ -46,6 +48,13 @@ export function scorePad(el, { match, name, save, onStart = () => {}, onFrameEnd
     m = next; draw(); push();
     return true;
   };
+  // Live text: kept apart from the score, so Undo never takes a line of text away.
+  const saveLines = (list) => {
+    m = { ...m, commentary: list };
+    queue = queue.then(() => save({ id: m.id, commentary: list, updated_at: new Date().toISOString() })).then(() => {}, (err) => toast(`The live text was not saved: ${err.message}`, "error"));
+    draw();
+  };
+  const textBox = () => (liveText ? sayBox(linesOf(m), { publicHref: liveText.href }) : "");
 
   function draw() {
     if (!alive) return;
@@ -57,6 +66,7 @@ export function scorePad(el, { match, name, save, onStart = () => {}, onFrameEnd
       <strong>${name[s]}</strong><b>${live ? f[s] : last ? last[s] : "–"}</b></button>`;
     const leader = !f ? null : f.a > f.b ? "a" : f.b > f.a ? "b" : null;
     const fixOpen = !!$(".pad-fix", el)?.open;      // the corrections box stays open while it is being used
+    const typing = $("[data-say-text]", el), typed = typing?.value ?? "", wasTyping = typing && document.activeElement === typing;
     mount(el, html`<div class="pad pad-frame">
       ${m.status === "setup" ? html`<div class="pad-start box">
         <p style="margin-top:0"><b>Who breaks off?</b> Pressing a name starts the frame: it shows as live on the website straight away.</p>
@@ -77,6 +87,7 @@ export function scorePad(el, { match, name, save, onStart = () => {}, onFrameEnd
         <div class="pad-row pad-fouls"><span>Foul by ${name[f.striker]}:</span>${[4, 5, 6, 7].map((n) => html`<button type="button" class="btn small" data-foul="${n}">${n} away</button>`)}
           <button type="button" class="btn small blue" data-free title="After a foul leaves a snooker: the free ball counts as the ball on">Free ball potted</button></div>
         <p class="pad-info"><b>${f.reds}</b> red${f.reds === 1 ? "" : "s"} left · <b>${sit.remaining}</b> on the table · ${sit.ahead ? `${name[sit.ahead]} leads by ${sit.lead}` : "level"}${sit.snookers ? html` · <em>${name[sit.ahead === "a" ? "b" : "a"]} needs snookers</em>` : ""}${f.last ? html` · <span class="muted">${f.last}</span>` : ""}</p>
+        ${textBox()}
         <details class="pad-fix" ${fixOpen ? "open" : ""}><summary>Put something right</summary>
           <div class="pad-fix-grid">
             <span>${name.a}'s points</span><span class="btn-row"><button type="button" class="btn small ghost" data-adj="a" data-by="-1">−1</button><button type="button" class="btn small ghost" data-adj="a" data-by="1">+1</button></span>
@@ -93,7 +104,12 @@ export function scorePad(el, { match, name, save, onStart = () => {}, onFrameEnd
         <div class="btn-row">${scored ? "" : html`<button type="button" class="btn green" data-hand-over>Put it on the scorecard</button>`}
           <button type="button" class="btn ghost" data-undo ${undo.length ? "" : "disabled"}>Undo — the frame isn't over</button>
           <button type="button" class="btn ghost" data-again>Score this frame again from the start</button></div>` : ""}
+      ${live ? "" : textBox()}
     </div>`);
+    // A press on the pad redraws it: what was being typed in the live text box is kept.
+    const box = $("[data-say-text]", el);
+    if (box && typed) box.value = typed;
+    if (box && wasTyping) box.focus();
   }
 
   const handOver = async () => {
@@ -114,6 +130,8 @@ export function scorePad(el, { match, name, save, onStart = () => {}, onFrameEnd
     const t = e.target.closest("button");
     if (!t || t.disabled || !el.contains(t)) return;
     const d = t.dataset;
+    if (d.unsay) return saveLines(linesOf(m).filter((l) => l.id !== d.unsay));
+    if (t.closest("[data-say]")) return;                 // "Post" is the form's own button
     if (d.start) { if (apply(score.start(m, d.start))) { await queue; if (alive) onStart(); } return; }
     if (d.pot) return apply(score.pot(m, Number(d.pot)));
     if ("endBreak" in d) return apply(score.endBreak(m));
@@ -132,6 +150,15 @@ export function scorePad(el, { match, name, save, onStart = () => {}, onFrameEnd
       draw(); push();
     }
   };
+  el.onsubmit = (e) => {
+    if (!e.target.matches("[data-say]")) return;
+    e.preventDefault();
+    const now = linesOf(m), next = withLine(now, $("[data-say-text]", el)?.value, m.frame_no ?? m.state?.frame?.no ?? null);
+    if (next === now) return;
+    const box = $("[data-say-text]", el); if (box) box.value = "";
+    saveLines(next);
+    $("[data-say-text]", el)?.focus();
+  };
   draw();
-  return { destroy() { alive = false; el.onclick = null; } };
+  return { destroy() { alive = false; el.onclick = null; el.onsubmit = null; } };
 }

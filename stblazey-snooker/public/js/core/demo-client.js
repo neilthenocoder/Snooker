@@ -6,6 +6,7 @@
 //  NOT secure — for testing only.
 // ─────────────────────────────────────────────────────────────
 import { buildSeed } from "../demo/seed-data.js";
+import { SCHEMA_VERSION } from "./version.js";
 
 const KEY = "sbdsl-demo-db-v9";
 const SESSION_KEY = "sbdsl-demo-session";
@@ -244,6 +245,8 @@ export const demoClient = {
   from: (table) => new Query(table),
   auth,
   async rpc(name, args) {
+    // The sample database is always the version the website expects (see SCHEMA_VERSION in db.js).
+    if (name === "schema_version") return { data: SCHEMA_VERSION, error: null };
     if (name === "set_fixture_status") {
       const fx = state.tables.fixtures.find((f) => f.id === args.fid);
       if (args.new_status === "submitted" && !fx.scorecard_url) return { data: null, error: { message: "Upload a photo of the paper scorecard before submitting the result" } };

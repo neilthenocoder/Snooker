@@ -195,13 +195,7 @@ table.data tbody tr.hl .badge { width: 42px; height: 42px; font-size: 13px; }
 .strip-empty a { color: #fff; font-weight: 700; }
 
 /* Shield holders, player/team of the week, CueViews */
-.shields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1px; background: var(--head-row); }
-.shield { position: relative; background: #fff; padding: 16px; display: grid; justify-items: center; text-align: center; gap: 6px; overflow: hidden; }
 .shield-icon { position: absolute; right: -14px; top: -10px; width: 110px; height: 110px; fill: rgba(251,182,26,.18); }
-.shield small { font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-.shield .badge { width: 54px; height: 54px; font-size: 16px; }
-.shield strong { font: 700 20px var(--font-head); text-transform: uppercase; }
-.shield span { font-size: 13px; color: var(--muted); }
 .spotlights { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
 .spotlight { position: relative; background: #111 radial-gradient(circle at 80% 0%, #3a0010, transparent 60%); color: #fff; padding: 22px 18px 18px; display: grid; justify-items: center; text-align: center; gap: 6px; }
 .spotlight:hover { color: #fff; }
@@ -211,15 +205,6 @@ table.data tbody tr.hl .badge { width: 42px; height: 42px; font-size: 13px; }
 .spotlight strong { font: 700 22px var(--font-head); text-transform: uppercase; }
 .spotlight small { color: #bbb; }
 .spotlight p { margin: 4px 0 0; font-size: 14px; color: #e7e7e7; }
-.cv-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1px; background: var(--head-row); }
-.cv-card { background: #fff; padding: 16px; display: block; font-size: 14px; }
-.cv-head { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
-.cv-photo { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: var(--red); }
-.cv-head strong { display: block; font: 700 17px var(--font-head); text-transform: uppercase; }
-.cv-head small { color: var(--muted); }
-.cv-card p { margin: 0 0 8px; }
-.cv-card p b { display: block; font-size: 12px; color: var(--red); }
-.cv-more { font-weight: 700; font-size: 13px; }
 .quick-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-bottom: 16px; }
 .quick-links a { font: 700 20px/1 var(--font-head); text-transform: uppercase; text-align: center; padding: 14px; color: #fff; }
 .quick-links a:hover { color: #fff; filter: brightness(1.1); }
@@ -336,7 +321,11 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); outl
 
 /* Live notifications (green pop-ups, bottom left) */
 .live-pops { position: fixed; left: 16px; bottom: 16px; z-index: 60; display: flex; flex-direction: column; gap: 8px; max-width: min(380px, calc(100vw - 32px)); }
-.live-pop { background: var(--live-green); color: #fff; padding: 12px 16px 12px 40px; font-weight: 700; border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.3); position: relative; animation: popIn .35s ease-out; transition: opacity .4s, transform .4s; }
+.live-pop { background: var(--live-green); color: #fff; font-weight: 700; border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.3); position: relative; animation: popIn .35s ease-out; transition: opacity .4s, transform .4s; display: flex; align-items: stretch; overflow: hidden; }
+.live-pop-body { flex: 1; min-width: 0; display: block; padding: 12px 8px 12px 40px; color: inherit; text-decoration: none; }
+a.live-pop-body:hover { color: inherit; background: rgba(255, 255, 255, .1); }
+.live-pop-x { flex: none; width: 42px; border: 0; background: rgba(0, 0, 0, .16); color: inherit; font: 400 24px/1 var(--font-body); cursor: pointer; }
+.live-pop-x:hover, .live-pop-x:focus-visible { background: rgba(0, 0, 0, .34); }
 .live-pop::before { content: ""; position: absolute; left: 14px; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%; background: #d0021b; box-shadow: inset -2px -2px 3px rgba(0,0,0,.35); }
 .live-pop.out { opacity: 0; transform: translateX(-20px); }
 @keyframes popIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
@@ -903,8 +892,6 @@ a.feature-box:hover { color: inherit; filter: brightness(1.08); }
 .strip-card .badge.logo { background: transparent; padding: 0; border-radius: 0; }
 
 /* Shield holders: smaller pictures with more room around them */
-.shield { padding: 24px 18px; gap: 4px; }
-.shield .badge { width: 44px; height: 44px; font-size: 14px; margin: 12px 0 10px; }
 .shield-icon { width: 84px; height: 84px; right: -8px; top: -6px; }
 
 /* Match page: wins in green, losses in red; what the ranking points are made of */
@@ -1071,7 +1058,6 @@ table.data tbody tr.imp-row-error td { background: #fdeef1 !important; }
 .list-todo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 0; }
 .list-todo span { flex: 1 1 320px; }
 
-.shield em { font-style: normal; font-size: 12px; font-weight: 700; color: var(--red); margin-top: 4px; }
 .shield-now { position: relative; overflow: hidden; background: #1d1d1d; color: #fff; padding: 26px 22px; display: grid; justify-items: center; text-align: center; gap: 8px; border-bottom: 5px solid var(--yellow); }
 .shield-now .shield-icon { position: absolute; right: -10px; top: -14px; width: 150px; height: 150px; fill: rgba(251,182,26,.16); }
 .shield-now small { color: var(--yellow); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
@@ -1414,7 +1400,7 @@ body.maintenance .main-nav > :not(.nav-login), body.maintenance .nav-search-m { 
 @media (max-width: 720px) { .nav-logout { gap: 10px; } .nav-logout span { display: inline; } }
 
 /* ── notifications with the player's photo ── */
-.live-pop.with-face { display: flex; align-items: center; gap: 12px; padding-left: 12px; }
+.live-pop.with-face .live-pop-body { display: flex; align-items: center; gap: 12px; padding-left: 12px; }
 .live-pop.with-face::before { display: none; }
 .live-pop-face { width: 38px; height: 38px; flex: none; border-radius: 50%; object-fit: cover; background: #fff; border: 2px solid #fff; }
 .live-pop-face.icon { object-fit: contain; padding: 4px; background: #111; border-color: #111; }
@@ -2224,8 +2210,6 @@ body.maintenance .nav-bell, body.maintenance .nav-search, body.maintenance .nav-
 .switch-row input:checked + .ms-slider::after { transform: translateX(22px); }
 .switch-row input:focus-visible + .ms-slider { outline: 3px solid var(--blue); outline-offset: 2px; }
 .switch-row.is-off { opacity: .5; cursor: default; }
-a.live-pop { text-decoration: none; }
-a.live-pop:hover { color: #fff; filter: brightness(1.08); }
 .celebrate-row.is-trophy img { border-radius: 14px; object-fit: contain; background: #111; padding: 6px; }
 
 /* ── back arrow (public pages) instead of the breadcrumb trail ── */
@@ -2705,8 +2689,7 @@ a.kd-item:hover { color: inherit; background: #fffbea; }
 .live-pop.tone-breaking { background: var(--red); }
 .live-pop.tone-update { background: #0b63c4; }
 .live-pop.tone-offer { background: var(--yellow); color: #1b0e06; }
-a.live-pop.tone-offer:hover { color: #1b0e06; }
-.live-pop[class*="tone-"] { padding-left: 16px; }
+.live-pop[class*="tone-"] .live-pop-body { padding-left: 16px; }
 .live-pop[class*="tone-"]::before { display: none; }
 .live-pop-tag { display: block; font: 700 11px/1.2 var(--font-head); text-transform: uppercase; letter-spacing: .08em; opacity: .85; margin-bottom: 3px; }
 /* the red number on the bell: notices sent since you last opened it */
@@ -2821,3 +2804,167 @@ a.notice-item:hover { color: inherit; border-color: #cfcec4; box-shadow: 0 2px 8
 .squad-hit small { color: var(--green); font-weight: 700; }
 .sc-sheet { background: #e8f6ea; color: #07500d; padding: 9px 14px; font-size: 14px; margin: 8px 0; border-left: 5px solid var(--green); }
 @media (max-width: 520px) { .squad-add-row { flex-wrap: wrap; } .squad-add-row .btn { width: 100%; } .squad-row { grid-template-columns: 64px minmax(0, 1fr); } }
+
+/* ══ v15: Rich's eleventh round — mostly phones ══════════════════════════════════════ */
+/* 1. iPhones zoom the whole page in when you tap a box whose text is smaller than 16px — and after
+      logging in the page stayed zoomed, so everything was a little too wide for the screen.
+      On phones and tablets every box you can type in or choose from is now 16px or more. */
+@media (pointer: coarse), (max-width: 900px) {
+  input, select, textarea { font-size: 16px !important; }
+  .sc-points input { font-size: 17px !important; }
+  .g-points input { font-size: 28px !important; }
+  .search-bar input { font-size: 19px !important; }
+}
+
+/* 2. The list of suggestions under a text box (core/suggest.js). */
+.suggest { position: absolute; z-index: 90; box-sizing: border-box; max-height: 250px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  background: #fff; border: 1px solid #b9b8ae; border-top: 2px solid var(--blue); border-radius: 0 0 8px 8px; box-shadow: 0 12px 28px rgba(0, 0, 0, .22); }
+.suggest button { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; width: 100%; min-height: 44px; padding: 10px 12px; border: 0; border-bottom: 1px solid #eeede3;
+  background: #fff; color: var(--ink); font: 16px/1.25 var(--font-body); text-align: left; cursor: pointer; }
+.suggest button:last-of-type { border-bottom: 0; }
+.suggest button span { font-weight: 700; }
+.suggest button small { flex: none; max-width: 45%; color: var(--muted); font-size: 13px; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.suggest button:hover, .suggest button.on { background: #eaf3ff; }
+.suggest-more { margin: 0; padding: 8px 12px; background: #f6f5ee; color: var(--muted); font-size: 13px; }
+@media print { .suggest { display: none; } }
+
+/* 3. Manage team: handicaps in their colours (the same ones as on the Handicaps page: green plus, pink minus) —
+      in the squad list, and beside each frame once a player is picked. */
+.squad-row { grid-template-columns: 78px minmax(0, 1fr) 58px; }
+.squad-hc { font-style: normal; text-align: center; }
+.squad-hc .hc-val { display: block; min-width: 0; padding: 7px 4px; font: 700 15px/1.2 var(--font-body); text-transform: none; }
+.squad-hc .hc-val.zero { background: var(--row-alt); }
+.squad-hc.none { color: var(--muted); font-size: 12px; }
+.squad-key { margin: 0; padding: 10px 18px; background: #fff; border-top: 1px solid var(--row-alt); color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.squad-key { gap: 6px 14px; }
+.squad-key span { white-space: nowrap; }
+.squad-key .hc-val { min-width: 0; font-size: 12px; padding: 1px 7px; margin-right: 3px; }
+@media (max-width: 520px) { .squad-row { grid-template-columns: 58px minmax(0, 1fr) 50px; gap: 8px; } .squad-row > span { font-size: 13px; } }
+
+/* 4. Home page: Shield holders and CueView take far less room.
+      Shield holders — one slim row per shield: its picture (uploaded under Admin → Leagues, small), the holders, since when. */
+.shield-pic { flex: none; width: 46px; height: 46px; object-fit: contain; }
+svg.shield-pic.placeholder { fill: #f0b323; }
+svg.shield-pic.placeholder .shine { fill: rgba(255, 255, 255, .35); }
+.shield-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1px; background: var(--head-row); }
+.shield-row { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 10px 12px 10px 14px; background: #fff; color: var(--ink); }
+.shield-row:hover { color: var(--ink); background: #fffdf5; }
+.shield-row > div { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.shield-row small { font-size: 11px; line-height: 1.25; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.shield-row strong { display: flex; align-items: center; gap: 8px; min-width: 0; font: 700 18px/1.15 var(--font-head); text-transform: uppercase; }
+.shield-row strong span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shield-row strong .badge { flex: none; width: 26px; height: 26px; font-size: 10px; }
+.shield-row em { font-style: normal; font-size: 12.5px; color: var(--muted); }
+.shield-row > i { flex: none; font: 700 24px/1 var(--font-head); font-style: normal; color: var(--red); }
+/* the shield's own page: the same picture beside "Current holders", instead of the big faint shield behind it */
+.shield-now .shield-pic { width: 76px; height: 76px; margin-bottom: 2px; }
+/* CueView — a small card each: photo, name, and a Q&A mark with the number of questions answered. */
+.cv-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); background: #fff; overflow: hidden; }
+.cv-chip { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 9px 12px; background: #fff; color: var(--ink); box-shadow: 1px 0 0 var(--head-row), 0 1px 0 var(--head-row); }
+.cv-chip:hover { color: var(--ink); background: #fffdf5; }
+.cv-photo { flex: none; width: 42px; height: 42px; border-radius: 50%; object-fit: cover; background: var(--red); }
+.cv-chip > div { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.cv-chip strong { font: 700 14.5px/1.15 var(--font-head); text-transform: uppercase; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+.cv-chip small { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cv-qa { flex: none; display: inline-flex; align-items: center; gap: 3px; padding: 3px 7px 3px 5px; border-radius: 12px; background: var(--row-alt); color: var(--red); font: 700 12px/1 var(--font-head); }
+.cv-qa svg { width: 16px; height: 16px; fill: currentColor; }
+.cv-qa b { color: var(--ink); }
+@media (max-width: 560px) {
+  .cv-row { grid-template-columns: 1fr 1fr; }
+  .cv-chip { gap: 8px; padding: 8px 8px 8px 10px; }
+  .cv-photo { width: 36px; height: 36px; }
+  .cv-chip strong { font-size: 13px; }
+  .cv-qa { padding: 3px 5px 3px 4px; }
+  .cv-qa b { display: none; }
+  .shield-row strong { font-size: 17px; }
+}
+
+/* 5. The admin dashboard's warning when the website files are newer than the database (pages/admin.js). */
+.db-behind { display: grid; gap: 8px; border-left: 6px solid var(--red); font-weight: 400; line-height: 1.5; }
+.db-behind > b { font-size: 16px; }
+.db-behind ol { margin: 0; padding-left: 22px; }
+.db-behind code { background: rgba(0, 0, 0, .08); padding: 1px 5px; border-radius: 3px; font-size: .92em; }
+
+/* 6. The classic scorecard on a phone. The table had five columns squeezed side by side, so a player's name
+      was cut to a few letters. Each frame is now a block: its number down the left, then for each team its name,
+      the player (as wide as the screen allows) with the points beside it, and the breaks underneath. */
+@media (max-width: 640px) {
+  .sc-table, .sc-table tbody, .sc-table tfoot { display: block; }
+  .sc-table thead { display: none; }
+  .sc-table tbody tr, .sc-table tfoot tr { display: grid; grid-template-columns: 34px minmax(0, 1fr) 64px; grid-template-areas: "no pa xa" "no pb xb"; gap: 12px 8px; align-items: start;
+    padding: 10px 8px 12px 0; background: #fff; border-bottom: 6px solid var(--cream, #f6f5ee); }
+  .sc-table td { display: block; width: auto; padding: 0 !important; border: 0; }
+  .sc-table td.sc-no { grid-area: no; align-self: stretch; width: auto; display: grid; place-items: center; margin: -10px 0 -12px; font-size: 19px; }
+  .sc-table td:nth-child(1) { grid-area: pa; }
+  .sc-table td:nth-child(2) { grid-area: xa; }
+  .sc-table td:nth-child(4) { grid-area: pb; }
+  .sc-table td:nth-child(5) { grid-area: xb; }
+  .sc-table td[data-team]::before { content: attr(data-team); display: block; height: 14px; margin-bottom: 3px; font: 700 11px/14px var(--font-head); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sc-slot { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .sc-slot select { height: 44px; padding: 6px 8px; }
+  .sc-slot .sc-breaks { height: 36px; padding: 4px 8px; }
+  .sc-table td.sc-points { width: auto; padding-top: 17px !important; }
+  .sc-points input { width: 100%; height: 44px; padding: 6px 2px; }
+  .sc-table tfoot tr { background: var(--head-row); align-items: center; }
+  .sc-table .sc-total-row td { background: none; }
+  .sc-table .sc-total-row td.sc-points { padding-top: 0 !important; text-align: center; }
+  .sc-frame-btns { padding: 12px 8px; }
+  /* who won the frame: the points box is green already; here the team's name gets a tick instead of the bar down the side */
+  .sc-table tr.won-a td:first-child, .sc-table tr.won-b td:nth-child(4) { box-shadow: none; }
+  .sc-table tr.won-a td:first-child::before, .sc-table tr.won-b td:nth-child(4)::before { content: attr(data-team) "  ✓ won"; color: #0b7a1a; }
+}
+
+/* 7. Tables on a phone: a little less space between the columns, and long column headings may wrap onto two lines,
+      so the public tables fit the screen instead of having to be slid sideways. (The admin's tables turn into cards.) */
+@media (max-width: 480px) {
+  table.data th { white-space: normal; line-height: 1.2; vertical-align: bottom; padding: 8px 5px; font-size: 12.5px; }
+  table.data td { padding: 9px 5px; }
+  table.data th:first-child, table.data td:first-child { padding-left: 10px; }
+  table.data th:last-child, table.data td:last-child { padding-right: 10px; }
+  table.data th.num { text-align: center; white-space: normal; }
+}
+@media (max-width: 400px) {
+  table.data { font-size: 13px; }
+  table.data th, table.data td { padding-left: 4px; padding-right: 4px; }
+  table.data th:first-child, table.data td:first-child { padding-left: 8px; }
+  table.data th:last-child, table.data td:last-child { padding-right: 8px; }
+  table.data .team-cell { gap: 6px; }
+  table.data .team-cell .badge, table.data .team-cell .avatar { width: 24px; height: 24px; font-size: 9px; }
+}
+/* A team's fixture list on a phone: one small block per match — teams and score, the date underneath, then the
+   buttons (Enter scorecard, Postpone, Photos) on their own line where a thumb can reach them. */
+@media (max-width: 560px) {
+  .fx-list .table-scroll { overflow: visible; }
+  .fx-list table.data, .fx-list table.data tbody { display: block; width: 100%; }
+  .fx-list table.data thead { display: none; }
+  .fx-list table.data tr { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "name res out" "comp comp comp" "date date date" "act act act"; gap: 2px 10px; align-items: center; padding: 11px 12px; background: #fff; border-bottom: 1px solid var(--row-alt); }
+  .fx-list table.data tbody tr:nth-child(even) { background: var(--row-alt); }
+  .fx-list table.data td { display: block; padding: 0; background: none !important; text-align: left; white-space: normal; }
+  .fx-list table.data td.hide-sm, .fx-list table.data td.fx-art { display: none; }
+  .fx-list td.fx-name { grid-area: name; font-weight: 700; font-size: 15px; line-height: 1.3; }
+  .fx-list td.fx-res { grid-area: res; }
+  .fx-list td.fx-out { grid-area: out; }
+  .fx-list td.fx-date { grid-area: date; font-size: 12.5px; color: var(--muted); }
+  .fx-list td.fx-comp { grid-area: comp; font-size: 13px; }
+  .fx-list td.fx-act { grid-area: act; margin-top: 8px; }
+  .fx-list td.fx-act:empty { display: none; }
+  .fx-list td.fx-act .btn-row { flex-wrap: wrap !important; gap: 8px; }
+  .fx-list td.fx-act .btn { flex: 1 1 auto; min-height: 42px; }
+  .fx-list .fx-none { display: none; }
+}
+
+/* 8. My area on a phone: every tab can be seen (they wrap onto two or three short rows) instead of
+      running off the right-hand edge — "Profile" was cut in half and the last three could not be seen at all. */
+@media (max-width: 640px) {
+  .tabs { flex-wrap: wrap; overflow: visible; gap: 6px; border-bottom: 0; padding-bottom: 12px; margin-bottom: 18px; box-shadow: 0 3px 0 var(--red); }
+  .tabs a { flex: 1 1 auto; padding: 10px 12px; font-size: 13.5px; text-align: center; }
+  .tabs .tab-logout { flex: 1 1 auto; margin-left: 0; padding: 9px 12px; font-size: 13px; }
+}
+
+/* 9. My Snooker settings on a narrow phone: the two columns of teams share the width equally, and a long team
+      name wraps, instead of pushing the page a few pixels wider than the screen. */
+@media (max-width: 700px) {
+  .ms-ticks { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .ms-tick { min-width: 0; }
+  .ms-tick > span { overflow-wrap: anywhere; }
+}

@@ -101,10 +101,12 @@ export default async function scorecard(view, { params, user }) {
           venue: ctx.venue.get(fx.venue_id)?.name ?? null, created_by: user?.profile?.full_name ?? null, updated_at: new Date().toISOString() });
         // Different players picked for this frame since it was last on the pad: start it afresh for them.
         if (row.player_a_id !== a || row.player_b_id !== b)
-          return save("live_matches", { id: row.id, ...who, status: "setup", frames_a: 0, frames_b: 0, state: {}, started_at: null, finished_at: null, updated_at: new Date().toISOString() });
+          return save("live_matches", { id: row.id, ...who, status: "setup", frames_a: 0, frames_b: 0, state: {}, commentary: [], started_at: null, finished_at: null, updated_at: new Date().toISOString() });
         return row;
       },
       save: (row) => save("live_matches", row),
+      // Live text is the league's voice: the box is there when an admin is scoring (what is typed shows under the frame's public scoreboard).
+      liveText: admin ? (row) => urls.scoreboard(row) : null,
     },
     notice: html`${shield.isShield ? html`<div class="sc-shield">🛡 ${league.shield_name || "Shield"} match — <b>${holder?.name}</b> ${holder ? "hold the shield and are defending it tonight." : ""}</div>` : ""}
       ${filled.length ? html`<div class="sc-sheet">✓ ${filled.join(" and ")}: the players picked under <b>Manage team</b> are already on the card. Change any of them under Players.</div>` : ""}`,

@@ -1710,6 +1710,11 @@ begin
   end loop;
 end $$;
 
+-- ── v13: Rich's eleventh round of feedback ──────────────────────
+-- A picture of each league's weekly shield (Admin → Leagues → Weekly shield). It is shown small beside
+-- the holders on the home page and on the shield's own page; a gold shield is drawn until one is added.
+alter table leagues add column if not exists shield_image_url text;
+
 -- ── v8: give existing rows their short web addresses ────────────
 -- (Done down here, after the activity log has been told to ignore these columns.)
 update players set slug = slug where coalesce(slug, '') = '';
@@ -1764,3 +1769,15 @@ create policy "images admin update" on storage.objects for update to authenticat
   using (bucket_id = 'images' and public.is_staff());
 create policy "images admin delete" on storage.objects for delete to authenticated
   using (bucket_id = 'images' and public.is_staff());
+
+-- ── the version of this file ─────────────────────────────────────
+-- KEEP THIS AT THE VERY END. The website asks the database for this number (public/js/core/version.js holds
+-- the one it expects). Because it is the last thing in the file, the database only reports the new number
+-- when everything above it has run. If the website files are uploaded without this file being run, the admin
+-- dashboard says "The database needs updating" at the top of every page.
+-- When something is added to this file that the website needs: raise this number and the one in version.js.
+create or replace function public.schema_version() returns int language sql immutable as $$ select 13 $$;
+grant execute on function public.schema_version() to anon, authenticated;
+
+-- Tell the website's data service about the new tables, columns and functions straight away.
+notify pgrst, 'reload schema';

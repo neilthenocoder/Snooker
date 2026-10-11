@@ -8,7 +8,7 @@ import { articles, settings, upcomingMatches, loadCompetitions, subscribe, table
 import { matchScore, shieldHolder } from "../core/rules.js";
 import { buildBracket, isEntry } from "../core/bracket.js";
 import { answered, articleCueview } from "../core/cueview.js";
-import { leagueTablePanel, sidebar, panel, picture, urls, badge, avatar, articleThumb, shortName, latestNews, trophy } from "../core/components.js";
+import { leagueTablePanel, sidebar, panel, picture, urls, badge, avatar, articleThumb, shortName, latestNews, trophy, shieldPicture } from "../core/components.js";
 import { SITE } from "../config.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import { mySnookerOn, mySnookerTeamId, mySnookerSetUp, mySnookerOnHome, mySnookerOwnPage } from "../core/auth.js";
@@ -326,15 +326,16 @@ async function liveStrip() {
 function shieldsBox(ctx) {
   const shields = ctx.leagues.filter((l) => l.shield_team_id).map((l) => ({ l, ...shieldHolder(l, ctx.fixtures, ctx.framesByFixture) }));
   if (!shields.length) return "";
-  return panel("Shield holders", html`<div class="shields">${shields.map(({ l, holderId, since, history }) => {
+  // One slim row for each shield: its picture (small), who holds it and since when. The whole row opens the shield's history.
+  return panel("Shield holders", html`<div class="shield-rows">${shields.map(({ l, holderId, since, history }) => {
     const t = ctx.team.get(holderId);
     const defences = history.filter((h) => h.to === holderId && h.defended && (!since || h.fixture.starts_at > since.starts_at)).length;
-    return html`<a class="shield" href="${urls.shield(l)}" title="See where the ${l.shield_name || "shield"} has been this season">
-      <svg class="shield-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5.2 3.4 9.7 8 11 4.6-1.3 8-5.8 8-11V5Z"/></svg>
-      <small>${l.shield_name || `${l.name} Runabout Shield`}</small>
-      ${t ? badge(t) : ""}<strong>${t?.name ?? "–"}</strong>
-      <span>${since ? `Won ${fmtDate(since.starts_at)}` : "Holder since the start of the season"}${defences ? ` · ${defences} defence${defences > 1 ? "s" : ""}` : ""}</span>
-      <em>Shield history →</em>
+    return html`<a class="shield-row" href="${urls.shield(l)}" title="See where the ${l.shield_name || "shield"} has been this season">
+      ${shieldPicture(l)}
+      <div><small>${l.shield_name || `${l.name} Runabout Shield`}</small>
+        <strong>${t ? badge(t) : ""}<span>${t?.name ?? "–"}</span></strong>
+        <em>${since ? `Won ${fmtDate(since.starts_at)}` : "Holders since the start of the season"}${defences ? ` · ${defences} defence${defences > 1 ? "s" : ""}` : ""}</em></div>
+      <i aria-hidden="true">›</i>
     </a>`;
   })}</div>`);
 }
@@ -351,20 +352,24 @@ function spotlights(ctx, site) {
   </div>`;
 }
 
-/** CueViews picked for the home page: players' own, and interviews attached to news articles. */
+/**
+ * CueViews picked for the home page: players' own, and interviews attached to news articles.
+ * Kept small — the photo, the name and a "Q&A" mark with how many questions were answered; the answers
+ * themselves are one tap away on the player's page (or the article).
+ */
+const qaIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H9.5L5 20v-4H4Zm4.2 3.2v2h7.6v-2Zm0 3.6v2h5.2v-2Z"/></svg>`;
 function cueviewBox(ctx, news) {
   // Interviews from the news come first (newest first), then the featured players.
   const cards = [
     ...news.filter((a) => a.cueview_featured && articleCueview(a).length).map((a) => ({
       href: `${urls.article(a)}#cueview`, photo: html`<img class="cv-photo" src="${articleThumb(a) || "/assets/avatar.svg"}" alt="" loading="lazy">`,
-      name: a.cueview_name || a.title, sub: "Interview", qs: articleCueview(a) })),
+      name: a.cueview_name || a.title, sub: "Interview", n: articleCueview(a).length })),
     ...ctx.players.filter((p) => p.cueview_featured && answered(p).length).map((p) => ({
       href: `${urls.player(p)}#cueview`, photo: avatar(p, "cv-photo"), name: p.full_name, sub: ctx.team.get(p.team_id)?.name ?? "",
-      qs: answered(p).filter((q) => q.key !== "biography") })),
+      n: answered(p).filter((q) => q.key !== "biography").length })),
   ];
   if (!cards.length) return "";
-  return panel("CueView", html`<div class="cv-cards">${cards.slice(0, 6).map((c) => html`<a class="cv-card" href="${c.href}">
-      <div class="cv-head">${c.photo}<div><strong>${c.name}</strong><small>${c.sub}</small></div></div>
-      ${c.qs.slice(0, 3).map((q) => html`<p><b>${q.label}</b>${q.answer}</p>`)}
-      <span class="cv-more">Read the full CueView →</span></a>`)}</div>`);
+  return panel("CueView", html`<div class="cv-row">${cards.slice(0, 6).map((c) => html`<a class="cv-chip" href="${c.href}" title="Read ${c.name}'s CueView">
+      ${c.photo}<div><strong>${c.name}</strong><small>${c.sub}</small></div>
+      <span class="cv-qa" aria-label="${c.n} question${c.n === 1 ? "" : "s"} answered">${qaIcon}<b>${c.n}</b></span></a>`)}</div>`);
 }

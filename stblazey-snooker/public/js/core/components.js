@@ -30,6 +30,13 @@ export const isActivePlayer = (p) => !["not_playing", "deceased"].includes(p?.st
  * The trophy picture of a league, competition or award (Admin → Edit → Trophy). Until one is uploaded
  * a placeholder cup stands in — pass { always: false } for small spots that should stay empty instead.
  */
+/**
+ * A league's weekly shield: the picture uploaded for it (Admin → Leagues → Weekly shield), or a gold shield until there is one.
+ * Small — it sits beside the holder's name, it is not a background.
+ */
+export const shieldPicture = (league, cls = "") => (league?.shield_image_url
+  ? html`<img class="shield-pic ${cls}" src="${league.shield_image_url}" alt="" loading="lazy">`
+  : html`<svg class="shield-pic placeholder ${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5.2 3.4 9.7 8 11 4.6-1.3 8-5.8 8-11V5Z"/><path class="shine" d="M12 4.2 6 6.4V11c0 4 2.5 7.5 6 8.8Z"/></svg>`);
 export const trophy = (thing, cls = "", { always = true } = {}) => (thing?.trophy_url || always
   ? html`<img class="trophy ${cls} ${thing?.trophy_url ? "" : "placeholder"}" src="${thing?.trophy_url || "/assets/trophy.svg"}" alt="${thing?.trophy_url ? `${thing?.name ?? ""} trophy` : ""}" loading="lazy">` : "");
 
@@ -356,20 +363,22 @@ export function fixturesTable(ctx, fixtures, { actions, byes = [], forTeam = nul
   /** "won" | "lost" | "drawn" for the team whose list this is. */
   const outcome = (f) => { if (!forTeam || !done(f)) return ""; const s = ctx.scoreOf(f), us = f.home_team_id === forTeam ? s.home : s.away, them = f.home_team_id === forTeam ? s.away : s.home;
     return us > them ? "won" : us < them ? "lost" : "drawn"; };
-  return dataTable([
-    { label: "Date", cell: (f) => fmtDate(f.starts_at) },
+  // On a phone each match is a small block (see ".fx-list" in style.css): the teams and the score on the first line,
+  // the date under them, and any buttons on a line of their own — nothing has to be slid sideways to reach "Enter scorecard".
+  return html`<div class="fx-list">${dataTable([
+    { label: "Date", cell: (f) => fmtDate(f.starts_at), cls: "fx-date" },
     { label: "Fixtures", cell: (f) => (f.bye ? html`<span class="bye-row">${ctx.team.get(f.team_id)?.name} <b>Bye week</b></span>`
-      : html`<a href="${urls.match(f)}">${ctx.team.get(f.home_team_id)?.name} vs ${ctx.team.get(f.away_team_id)?.name}</a>`) },
-    { label: "Results", cell: (f) => (f.bye ? "–" : html`<span class="res-score ${done(f) ? "done" : ""}">${resultText(ctx, f)}</span>${f.status === "in_progress" ? html` <span class="live-dot">Live</span>` : ""}`), cls: "num" },
-    ...(forTeam ? [{ label: "Won / Lost", cell: (f) => outcomeTag(outcome(f)) || "–", cls: "num" }] : []),
+      : html`<a href="${urls.match(f)}">${ctx.team.get(f.home_team_id)?.name} vs ${ctx.team.get(f.away_team_id)?.name}</a>`), cls: "fx-name" },
+    { label: "Results", cell: (f) => (f.bye ? html`<span class="fx-none">–</span>` : html`<span class="res-score ${done(f) ? "done" : ""}">${resultText(ctx, f)}</span>${f.status === "in_progress" ? html` <span class="live-dot">Live</span>` : ""}`), cls: "num fx-res" },
+    ...(forTeam ? [{ label: "Won / Lost", cell: (f) => outcomeTag(outcome(f)) || html`<span class="fx-none">–</span>`, cls: "num fx-out" }] : []),
     { label: "League", cell: (f) => ctx.league.get(f.league_id)?.name, cls: "hide-sm" },
     { label: "Season", cell: () => ctx.season?.name, cls: "hide-sm" },
     { label: "Venue", cell: (f) => { const v = ctx.venue.get(f.venue_id); return v ? html`<a href="${urls.venue(v)}">${v.name}</a>` : "–"; }, cls: "hide-sm" },
     actions
-      ? { label: "", cell: (f) => (f.bye ? "" : actions(f)) }
-      : { label: "Article", cell: (f) => (f.bye ? "No match" : html`<a href="${urls.match(f)}">${ctx.hasResult(f) ? "Recap" : "Preview"}</a>`) },
+      ? { label: "", cell: (f) => (f.bye ? "" : actions(f)), cls: "fx-act" }
+      : { label: "Article", cell: (f) => (f.bye ? "No match" : html`<a href="${urls.match(f)}">${ctx.hasResult(f) ? "Recap" : "Preview"}</a>`), cls: "fx-art" },
     { label: "Postponed", cell: (f) => (f.status === "postponed" ? "Yes" : "-"), cls: "hide-sm" },
-  ], rows, { rowClass: (f) => (f.bye ? "is-bye" : ""), empty: "No fixtures for this season yet." });
+  ], rows, { rowClass: (f) => (f.bye ? "is-bye" : ""), empty: "No fixtures for this season yet." })}</div>`;
 }
 
 /** Compact Home / Results / Away table (team history, past meetings). */

@@ -14,7 +14,7 @@ import { buildBracket, isEntry, roundName } from "../core/bracket.js";
 import { extCounts, EXT_PER_SEASON, POSTPONE_WEEKS, rearrangeBy, RULES } from "../core/rules.js";
 import { CUEVIEW } from "../core/cueview.js";
 import { uploadImage } from "../core/upload.js";
-import { breadcrumb, panel, dataTable, fixturesTable, urls, statusBadge, playerLink, avatar, badge } from "../core/components.js";
+import { breadcrumb, panel, dataTable, fixturesTable, urls, statusBadge, playerLink, avatar, badge, handicapTag, handicapText } from "../core/components.js";
 import { setTitle, navigate, refreshShell } from "../core/router.js";
 import { mustLogin } from "./scorecard.js";
 
@@ -151,9 +151,14 @@ async function snookerTab(el, { ctx, user, team, me }) {
   };
   const form = $("[data-snooker]", el);
   const addPlayer = () => {
-    const box = $("[data-player-add]", el), p = pickable.find((x) => x.full_name.toLowerCase() === box.value.trim().toLowerCase());
-    if (!p) return toast("Choose a player from the list", "error");
-    if (!players.includes(p.id)) players = [...players, p.id];
+    const box = $("[data-player-add]", el), typed = box.value.trim().toLowerCase();
+    if (!typed) return box.focus();
+    // The full name, or enough of it that only one player fits ("pears" → Richard Pearson).
+    const close = pickable.filter((x) => x.full_name.toLowerCase().includes(typed));
+    const p = pickable.find((x) => x.full_name.toLowerCase() === typed) ?? (close.length === 1 ? close[0] : null);
+    if (!p) { toast(close.length ? "More than one player fits — choose one from the list" : "No player with that name — check the spelling", "error"); return box.focus(); }
+    if (players.includes(p.id)) toast(`You already follow ${p.full_name}`);
+    else { players = [...players, p.id]; toast(`${p.full_name} added — press “Save my choices” to keep it`); }
     box.value = ""; chips();
   };
   form.addEventListener("click", (e) => {
@@ -164,6 +169,8 @@ async function snookerTab(el, { ctx, user, team, me }) {
     if (t.matches("[data-reset]")) save(true, { place: "page", teams: [user.profile?.team_id].filter(Boolean), players: [user.profile?.player_id].filter(Boolean), cats: [], sections: null }, "My Snooker reset");
   });
   $("[data-player-add]", el).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addPlayer(); } });
+  // Choosing a name from the list under the box follows that player straight away.
+  $("[data-player-add]", el).addEventListener("suggest:pick", addPlayer);
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const ticked = (name) => [...form.querySelectorAll(`[name=${name}]:checked`)].map((b) => b.value);
@@ -234,9 +241,11 @@ async function squadTab(el, { ctx, user, team, query }) {
   const taken = (i, id, isExt) => picks.some((x, j) => j !== i && x.player_id === id && !!x.ext === isExt);
   const options = (i) => { const cur = picks[i];
     const opt = (p, isExt) => { const sel = cur.player_id === p.id && cur.ext === isExt, off = !sel && taken(i, p.id, isExt);
-      return html`<option value="${isExt ? `${p.id}|ext` : p.id}" ${sel ? "selected" : ""} ${off ? "disabled" : ""}>${p.full_name}${cap(p)}${isExt ? " (Ext)" : ""}${p.needs_review ? " — awaiting approval" : ""}${off ? " — already picked" : ""}</option>`; };
+      return html`<option value="${isExt ? `${p.id}|ext` : p.id}" ${sel ? "selected" : ""} ${off ? "disabled" : ""}>${p.full_name}${cap(p)}${p.needs_review ? "" : ` · ${handicapText(p.handicap)}`}${isExt ? " (Ext)" : ""}${p.needs_review ? " — awaiting approval" : ""}${off ? " — already picked" : ""}</option>`; };
     return html`<option value="">– not picked yet –</option>${squad.map((p) => opt(p, false))}<optgroup label="Playing a second frame as the extra player">${squad.map((p) => opt(p, true))}</optgroup>`; };
-  const rows = () => html`${picks.map((x, i) => html`<label class="squad-row"><span>Frame ${i + 1}</span><select data-pick="${i}" ${locked ? "disabled" : ""}>${options(i)}</select></label>`)}`;
+  // Each frame: the list to pick from (every name with its handicap) and, once picked, that player's handicap in its colour.
+  const hcOf = (id) => { const p = id && squad.find((x) => x.id === id); return !p ? html`<i class="squad-hc none" aria-hidden="true">–</i>` : p.needs_review ? html`<i class="squad-hc none" title="The league sets the handicap when it accepts the player">new</i>` : html`<i class="squad-hc" title="Handicap">${handicapTag(p.handicap)}</i>`; };
+  const rows = () => html`${picks.map((x, i) => html`<label class="squad-row"><span>Frame ${i + 1}</span><select data-pick="${i}" ${locked ? "disabled" : ""}>${options(i)}</select>${hcOf(x.player_id)}</label>`)}`;
   const tag = (p) => (p.needs_review ? html`<span class="new-tag" title="The league has been told and will accept them shortly. You can pick them in the meantime.">Awaiting approval</span>` : "");
 
   mount(el, html`
@@ -256,9 +265,10 @@ async function squadTab(el, { ctx, user, team, query }) {
     ${panel(`${team.name}: the squad`, html`${dataTable([
       { label: "Player", cell: (p) => html`${playerLink(p)} ${tag(p)}` },
       { label: "Position", cell: (p) => p.position, cls: "hide-sm" },
-      { label: "Handicap", cell: (p) => (p.needs_review ? "–" : p.handicap > 0 ? `+${p.handicap}` : p.handicap ?? 0), cls: "num" },
+      { label: "Handicap", cell: (p) => (p.needs_review ? html`<span class="muted" title="The league sets the handicap when it accepts the player">–</span>` : handicapTag(p.handicap)), cls: "num" },
       { label: "Ext games used", cell: (p) => `${ext.get(p.id) ?? 0} of ${EXT_PER_SEASON}`, cls: "num hide-sm" },
     ], squad, { empty: "No players yet." })}
+      <p class="squad-key">Handicaps: <span><b class="hc-val plus">+</b> plus</span><span><b class="hc-val zero">0</b> scratch</span><span><b class="hc-val minus">−</b> minus</span></p>
       <form class="squad-add" data-add autocomplete="off">
         <label for="squad-add-name"><b>Add a player</b> <small>Someone new to the team. Type their full name. The league is told and has the final say; you can pick them straight away.</small></label>
         <div class="squad-add-row"><input id="squad-add-name" type="text" maxlength="80" placeholder="Full name" data-add-name><button class="btn secondary">Add as a new player</button></div>
@@ -441,14 +451,15 @@ async function competitionsTab(el, { ctx, user, team, me }) {
   }).sort((x, y) => (x.m.row.starts_at ?? "").localeCompare(y.m.row.starts_at ?? ""));
   const name = (b, id) => (isEntry(id) ? b.entryById.get(id).name : "To be decided");
 
-  mount(el, html`${panel(`Cup matches for ${team?.name ?? "you"}`, dataTable([
-      { label: "Date", cell: ({ m }) => (m.row.starts_at ? `${fmtDate(m.row.starts_at)} ${fmtTime(m.row.starts_at)}` : "TBC") },
-      { label: "Competition", cell: ({ c, b, m }) => html`<a href="${urls.competition(c)}">${c.name}</a> <small class="muted">${roundName(m.round, b.totalRounds)}</small>` },
-      { label: "Match", cell: ({ b, m }) => html`<a href="/cup-match/${m.row.no ?? m.row.id}">${name(b, m.a)} v ${name(b, m.b)}</a>` },
-      { label: "Score", cell: ({ m }) => (m.row.score_a != null ? `${m.row.score_a} - ${m.row.score_b}` : "–"), cls: "num" },
-      { label: "", cell: ({ b, m }) => (isEntry(m.a) && isEntry(m.b) && canEditCompMatch(user, m.row, [b.entryById.get(m.a), b.entryById.get(m.b)], ctx.players)
+  // On a phone each match is a block, like the fixture list (".fx-list" in style.css), so the button is never off the edge of the screen.
+  mount(el, html`${panel(`Cup matches for ${team?.name ?? "you"}`, html`<div class="fx-list">${dataTable([
+      { label: "Date", cell: ({ m }) => (m.row.starts_at ? `${fmtDate(m.row.starts_at)} ${fmtTime(m.row.starts_at)}` : "TBC"), cls: "fx-date" },
+      { label: "Competition", cell: ({ c, b, m }) => html`<a href="${urls.competition(c)}">${c.name}</a> <small class="muted">${roundName(m.round, b.totalRounds)}</small>`, cls: "fx-comp" },
+      { label: "Match", cell: ({ b, m }) => html`<a href="/cup-match/${m.row.no ?? m.row.id}">${name(b, m.a)} v ${name(b, m.b)}</a>`, cls: "fx-name" },
+      { label: "Score", cell: ({ m }) => (m.row.score_a != null ? `${m.row.score_a} - ${m.row.score_b}` : html`<span class="fx-none">–</span>`), cls: "num fx-res" },
+      { label: "", cls: "fx-act", cell: ({ b, m }) => (isEntry(m.a) && isEntry(m.b) && canEditCompMatch(user, m.row, [b.entryById.get(m.a), b.entryById.get(m.b)], ctx.players)
         ? html`<a class="btn small" href="/cup-scorecard/${m.row.no ?? m.row.id}">${m.row.score_a != null ? "Update scorecard" : "Score this match"}</a>`
         : statusBadge(m.row.status ?? "scheduled")) },
-    ], rows, { empty: "No cup matches for your team yet." }))}
+    ], rows, { empty: "No cup matches for your team yet." })}</div>`)}
     <a class="btn ghost" href="/competitions" style="align-self:start">All competitions</a>`);
 }

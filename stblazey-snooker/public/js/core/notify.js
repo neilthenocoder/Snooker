@@ -88,7 +88,9 @@ export const setNoticeWatcher = (fn) => { onNotice = fn; };
 
 let stop = null;
 const seen = new Set();
-const SHOW_MS = 6000;
+const SHOW_MS = 9000;        // how long a pop-up stays (match news): long enough to read on a phone. Each has a × to close it sooner.
+const NOTICE_MS = 20000;     // breaking news, important updates and offers stay longer
+const HOLD_MS = 2500;        // after a finger or the mouse leaves a pop-up, it stays at least this long
 // Only matches being played around now make pop-ups — so importing old
 // results, or the admin tidying an old scorecard, doesn't flood the screen.
 let tonight = new Set(), checkedAt = 0, recentJoins = [];
@@ -109,26 +111,43 @@ export function popup(message, { kind = "results", avatar = null, icon = null, h
   if (!wantsKind(kind)) return;
   let box = document.querySelector(".live-pops");
   if (!box) { box = document.createElement("div"); box.className = "live-pops"; box.setAttribute("aria-live", "polite"); document.body.append(box); }
-  const el = document.createElement(href ? "a" : "div");
+  // The message (a link when there is somewhere to go) and, beside it, a × to close it now.
+  const el = document.createElement("div");
   el.className = `live-pop ${tone ? `tone-${tone}` : ""}`;
-  if (href) el.href = href;
+  const body = document.createElement(href ? "a" : "div");
+  body.className = "live-pop-body";
+  if (href) body.href = href;
   if (avatar !== null || icon) {
     const img = document.createElement("img");
     img.className = `live-pop-face ${icon ? "icon" : ""}`;
     img.src = icon === "trophy" ? "/assets/trophy.svg" : avatar || "/assets/avatar.svg";
     img.alt = "";
     el.classList.add("with-face");
-    el.append(img);
+    body.append(img);
   }
   const text = document.createElement("span");
   if (label) { const tag = document.createElement("b"); tag.className = "live-pop-tag"; tag.textContent = label; text.append(tag); }
   text.append(message);
-  el.append(text);
+  body.append(text);
+  const x = document.createElement("button");
+  x.type = "button"; x.className = "live-pop-x"; x.setAttribute("aria-label", "Close this message"); x.title = "Close"; x.textContent = "×";
+  el.append(body, x);
   box.append(el);
   // Never more than four on screen at once (a whole scorecard can arrive together).
   while (box.children.length > 4) box.firstElementChild.remove();
-  setTimeout(() => el.classList.add("out"), stay - 400);
-  setTimeout(() => el.remove(), stay);
+
+  // It goes by itself after `stay` — but the clock stops while a finger or the mouse is on it, so there is time to read it.
+  let left = stay, since = Date.now(), timer = null, gone = false;
+  const leave = () => { if (gone) return; gone = true; clearTimeout(timer); el.classList.add("out"); setTimeout(() => el.remove(), 400); };
+  const start = () => { if (gone) return; clearTimeout(timer); since = Date.now(); timer = setTimeout(leave, left); };
+  const hold = () => { if (gone) return; clearTimeout(timer); left = Math.max(HOLD_MS, left - (Date.now() - since)); };
+  for (const [on, off] of [["mouseenter", "mouseleave"], ["touchstart", "touchend"], ["focusin", "focusout"]]) {
+    el.addEventListener(on, hold, { passive: true }); el.addEventListener(off, start, { passive: true });
+  }
+  el.addEventListener("touchcancel", start, { passive: true });
+  x.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); gone = true; clearTimeout(timer); el.remove(); });
+  if (href) body.addEventListener("click", () => setTimeout(leave, 0));      // opened: it has done its job
+  start();
 }
 
 const frameKey = (f, pre = "") => `${pre}f:${f.fixture_id ?? f.match_id}:${f.frame_no}:${f.home_points ?? f.a_points}-${f.away_points ?? f.b_points}`;
@@ -235,12 +254,12 @@ export async function startNotifications() {
       if (!k || !noticeLive(row)) { noticesSeen.delete(row.id); return; }
       if (noticesSeen.has(row.id)) return;
       noticesSeen.add(row.id);
-      return popup(row.title, { kind: k.pref, tone: k.tone, label: k.label, href: safeHref(row.url) || null, stay: 12000 });
+      return popup(row.title, { kind: k.pref, tone: k.tone, label: k.label, href: safeHref(row.url) || null, stay: NOTICE_MS });
     }
     if (t === "articles") {
       if (!row.is_published || newsSeen.has(row.id)) return;
       newsSeen.add(row.id);
-      if (row.breaking) { invalidate(); onNotice(); return popup(row.title, { kind: "breaking", tone: "breaking", label: "Breaking news", href: `/news/${row.slug}`, stay: 12000 }); }
+      if (row.breaking) { invalidate(); onNotice(); return popup(row.title, { kind: "breaking", tone: "breaking", label: "Breaking news", href: `/news/${row.slug}`, stay: NOTICE_MS }); }
       return popup(`News: ${row.title}`, { kind: "news", avatar: row.circle_image_url || row.image_url || "", href: `/news/${row.slug}` });
     }
     // A result being approved (or changed) can put a new team or player on top.

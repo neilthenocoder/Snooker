@@ -205,6 +205,7 @@ export const RESOURCES = {
       { type: "heading", label: "Weekly shield", help: "Whoever holds the shield defends it every match night. If they lose, the winners take it." },
       { name: "shield_name", label: "Shield name (e.g. Victory League Runabout Shield)", type: "text" },
       { name: "shield_team_id", label: "Holder at the start of the season", type: "ref", ref: "teams" },
+      { name: "shield_image_url", label: "Picture of the shield (or its trophy). Shown small beside the holders on the home page and on the shield's own page — a cut-out picture works best: transparent PNG or SVG. A gold shield is drawn until you add one", short: "Shield picture", type: "image", folder: "trophies", maxSize: 600 },
     ],
   },
   seasons: {

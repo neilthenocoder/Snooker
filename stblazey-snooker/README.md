@@ -141,7 +141,7 @@ Tables and rankings count **submitted** and **approved** results. To make tables
 
 **The Players list** in the dashboard shows 50 players at a time, with ‹ › arrows to move on (`pageSize` on the players section in `admin/resources.js`). Search and the team filter look through every page.
 
-**The weekly shield:** set each league's shield name and the holder at the start of the season under Admin → Leagues. From then on it's automatic: the holder's match each week is the shield match (shown on the scorecard and match page), and if they lose, the winners take it. The home page shows who holds it. Each shield has its own **history page** (`/shield/victory-league`, linked from the home page box, the league table and the League page): the current holders, who has won it most, and every shield match of the season in order.
+**The weekly shield:** set each league's shield name, the holder at the start of the season and — if you have one — a **picture of the shield** under Admin → Leagues → Weekly shield (a cut-out picture with a clear background looks best; a gold shield is drawn until you add one). The picture is shown small beside the holders on the home page and on the shield's own page. From then on it's automatic: the holder's match each week is the shield match (shown on the scorecard and match page), and if they lose, the winners take it. The home page shows who holds it. Each shield has its own **history page** (`/shield/victory-league`, linked from the home page box, the league table and the League page): the current holders, who has won it most, and every shield match of the season in order.
 
 **Handicap competitions** (tick "Handicap competition" under Admin → Competitions): the scorecard shows each player's handicap and works out the start for every frame. Scores are entered **as they finish on the scoreboard, start included**; the site refuses a score lower than the start.
 
@@ -247,7 +247,9 @@ For a final (or any match worth watching), one person scores it ball by ball and
 
 Visitors open **`/scoreboard`** (also linked from the League page, the Live page and the home page strip). It needs no refreshing. On a laptop: keys **1–7** pot a ball, **Space** ends the break, **Backspace** undoes.
 
-**Live text.** Under the pad is a **Live text** box: type what is happening ("Great long red to get in") and press **Post**. The line appears under the scoreboard for everyone watching, newest first, with the time and the frame. The × beside a line takes it back. Undo never removes live text. A match keeps its last 150 lines.
+**Live text.** On the pad — under the ball buttons while a frame is on, and there before the match starts too — is a blue-edged **Live text** box: type what is happening ("Great long red to get in") and press **Post**. The line appears under the public scoreboard (`/scoreboard/<number>`, the "see it" link in the box) for everyone watching, newest first, with the time and the frame. The × beside a line takes it back. Undo never removes live text. A match keeps its last 150 lines.
+
+It is in two places: here (**Admin → Live scoreboard → Score it**), and on a **league scorecard's "Ball by ball" view when an admin is the one scoring** — captains score ball by ball without the text box, because live text is the league's voice. To let captains write it too, change `liveText: admin ? … : null` to always give the link in `pages/scorecard.js`. The box and its rules are in `core/live-text.js`.
 
 **The result goes into the draw by itself.** When you set the match up, choose the competition and then **Match in the draw**: the list shows every match of that competition's draw whose two players are known (singles and doubles; a team competition keeps its own scorecard). Choosing one fills in the players, the round and the number of frames. From then on:
 
@@ -362,6 +364,7 @@ Visitors cannot upload pictures on the form (only people with a login can), and 
 - **The person** opens a panel from the right. Logged out it is the login form (there is no separate Login button; `/login` still works). Logged in it shows the person's initials and their links: My Snooker, My Team, Admin dashboard, My Snooker settings, My profile, Password & details and a red **Log out**.
 - **The bell** opens the notifications panel: at the top what the league has sent out lately, then a master switch and a slider for each kind of pop-up — **from the league:** Breaking news, Important updates, Offers; **from the matches:** Results, Breaks, News, Tables & rankings, Competitions, New players — and one for Celebrations (the confetti). The choices are remembered on that phone or computer (no login needed). The kinds are the `NOTIFY_KINDS` list in `core/notify.js`.
 - **Sending a notification** — Admin → Website → **Notifications**: choose Breaking news, Important update or Offer, type the message (and, if you like, a little more and a link) and save. Anyone on the website at that moment gets a pop-up (red, blue or yellow); everyone else sees a **red number on the bell** on their next visit and the message in the list behind it for 14 days, or until the day you choose. Untick “Send it” to take one down. A news article ticked **Breaking news** does the same without typing it twice. These are notifications on the website itself: a phone does not buzz when the site is closed.
+- **How long a pop-up stays.** Match news (results, breaks, new leaders…) stays 9 seconds; the league's own notices stay 20. Every pop-up has a **×** to close it at once, and its clock stops while a finger (or the mouse) is on it, so there is time to read it. Tapping the message itself opens what it is about. The times are the three numbers at the top of `popup()` in `core/notify.js` (`SHOW_MS`, `NOTICE_MS`, `HOLD_MS`).
 - **Add to your home screen** is in the person's panel. On Android and in Chrome it offers the install prompt; on an iPhone it shows the three steps (Share → Add to Home Screen). The name, colours and icons come from `public/manifest.webmanifest` and `public/assets/icon-192.png`, `icon-512.png`, `icon-maskable-512.png` and `apple-touch-icon.png` (180 × 180). **These four were made from the placeholder logo — replace them with the league's real badge**, keeping the same names and sizes (the "maskable" one needs the badge inside the middle 80%, as phones crop it to a circle).
 
 **Getting about.** Public pages have a **← back** link in place of the breadcrumb trail (it goes to the page above: a team → its league, an article → News). The dashboard and the My area keep the trail. On phones a white round **↓** button scrolls a screen down, and a white round **↑** takes you back to the top (on every screen size once you have scrolled).
@@ -389,9 +392,19 @@ For captains and vice captains only. Nobody else sees any of it.
 
 - **The box.** In the days before their team's next match a **Manage team** box sits at the bottom of the home page (and of their My Snooker page): the match, how long to go and whether the team is picked. The × closes it for that match; it is back for the next one. How many days before a match it appears is under **Site settings → Captains: the Manage team box** (3 to start with; 0 switches it off).
 - **The team sheet.** My area → **Manage team**: choose one of the next five matches and pick who plays each frame (a player can be picked a second time as the extra player, as on the card). **Save the team**. It can be changed as often as they like until the match starts.
+- **Handicaps in colour.** Every name in the pick list has its handicap after it ("Frank Opie · +5"); once a player is picked, the handicap shows beside the frame in its colour, and the squad list underneath shows everyone's — the same colours as the Handicaps page (green for plus, pink for minus, grey for scratch).
 - **On the night** the names are already on the scorecard when it is opened, for whichever side has picked. They can still be changed there.
 - **Who can see it.** A team sheet is kept apart from the scorecard, so the other team cannot see it early: only that team's captain and vice captain, and whoever looks after match nights. From the day of the match the other captain can too (it is on the card they both fill in). The database enforces this (`lineups` and `set_lineup()` in `schema.sql`).
 - **Adding a player.** Under the squad list: type a name. If someone with that name is already on the website with no team, they are offered first — choose them and their history stays with them. Otherwise **Add as a new player**. Either way the player can be picked at once, is marked “Awaiting approval”, and waits in the dashboard for the league to accept or reject (see “New players added by captains” in section 3).
+
+## 3l. Phones
+
+Most people use the site on a phone, so a few things are done specially for small screens (all in the last blocks of `public/css/style.css`, marked v15):
+
+- **Nothing you type in is smaller than 16px.** An iPhone zooms the whole page in when you tap a box with smaller text — and after logging in the page used to stay zoomed, so everything was slightly too wide. If you add a form field with its own text size, keep it at 16px or more on phones.
+- **Lists of suggestions** (following a player, choosing your name on the CueView form, the players and venue on the live scoreboard) are the site's own (`core/suggest.js`): the browser's built-in list does not open on iPhones. Any `<input list="…">` with a `<datalist>` gets it automatically.
+- **Tables fit the screen.** Public tables tighten up and their headings wrap; a team's fixture list and the cup matches in My area become one block per match with the buttons underneath; the classic scorecard becomes one block per frame (number down the side, then each team's player, points and breaks); the My area tabs wrap onto short rows so every tab can be seen.
+- **The home page is shorter**: Shield holders are one slim row per shield and CueViews are small cards (photo, name and a Q&A mark with the number of answers) — the answers are one tap away.
 
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
@@ -432,6 +445,9 @@ public/                     ← everything Netlify serves
       markup.js             ← formatted text: headings, bullets, sub-bullets and tables typed as plain text (rules, minutes, info pages)
       live-score.js         ← the rules for scoring a match ball by ball (no HTML, no database)
       score-pad.js          ← the pad a captain scores one league frame on, ball by ball (the scorecard's third view)
+      live-text.js          ← the "Live text" box used on both scoring pads, and how its lines are kept
+      suggest.js            ← the list that opens under a text box as you type (any <input list="…">): our own, because the browser's does not open on iPhones
+      version.js            ← the database version this website expects (see section 7)
       squad.js              ← Manage team: the captains' box on the home page, and helpers for the team sheet
       awards.js             ← the presentation awards: the standard list and what the results say the winners are
       celebrate.js          ← confetti and card: a new highest break, new leaders, a competition winner
@@ -508,6 +524,9 @@ For example, to add a "phone" field to venues, add one line to `RESOURCES.venues
 | Change the background colour of the whole site | Admin → Branding → Other colours → **Page background** (the main colour is there too) |
 | Change the fonts | Admin → Branding → Fonts |
 | Send everyone a notification (breaking news, an important update, an offer) | Admin → Website → Notifications. Or tick “Breaking news” on a news article |
+| Change how long the pop-ups stay on screen | `SHOW_MS` (match news, 9 seconds) and `NOTICE_MS` (the league's notices, 20) at the top of `popup()` in `public/js/core/notify.js` |
+| Add a picture of a league's shield | Admin → Leagues → Edit → Weekly shield → Picture of the shield |
+| Let captains write live text too (not only admins) | `liveText` in `public/js/pages/scorecard.js` (section 3d) |
 | Change when captains see the Manage team box, or switch it off | Admin → Site settings → Captains: the Manage team box (days before the match; 0 = never) |
 | Change how many frames a team sheet has | It follows `framesPerMatch` in `public/js/core/rules.js` (5), like the scorecard |
 | Load something from another website and it doesn't show (a new font service, a video site, a widget) | Add its address to the matching part of `Content-Security-Policy` in `public/_headers` |
@@ -596,7 +615,8 @@ When you get new code files:
 
 1. **Keep your own `public/js/config.js`.** The new copy has empty keys, so don't overwrite yours.
 2. Replace the other files in your repo, then commit and push. Netlify redeploys on its own.
-3. If `supabase/schema.sql` changed, run it again in the SQL Editor. It only adds what's missing and never deletes your data.
+3. If `supabase/schema.sql` changed, run it again: Supabase → **SQL Editor** → New query → paste the **whole** file → **Run**. It only adds what's missing and never deletes your data. It should answer “Success. No rows returned”. If Supabase asks you to confirm because the query “contains destructive operations”, that is expected (it replaces the security rules with the same rules) — confirm. If it answers with an error instead, nothing at all was changed: copy the error and get it looked at before going further.
+   **The website tells you when this step has been missed.** The SQL file ends by writing a version number into the database, and the website knows the number it needs (`public/js/core/version.js`). If the files are uploaded but the SQL has not been run, a red box — **“The database needs updating”** — sits at the top of every page of the admin dashboard until it has, and anything that needed the missing piece says so in plain words instead of showing a database error. (Anyone adding to `schema.sql` later: raise the number at the bottom of that file and the one in `version.js` together.)
    Each new function also needs its environment variables in Netlify (result emails: `RESEND_API_KEY` — section 3f).
 4. **Don't run `seed.sql`, `remove-sample-data.sql` or `real-season-2026-27.sql` again.** An update never needs them. `real-season-2026-27.sql` puts the season back as it was on 8 October 2026, so a second run would wipe every result entered on the website since. `remove-sample-data.sql` deletes the sample players, teams, venues and articles — together with any photos, emblems or details you attached to them — and `seed.sql` puts back blank ones. Only use them if you deliberately want to reset the sample league.
 5. Netlify redeploys the logins function on its own when you push — nothing to do there. If you upload by drag and drop instead, upload the **whole project folder** (not only `public`), or the functions are not updated.

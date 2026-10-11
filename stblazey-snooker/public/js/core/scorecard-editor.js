@@ -152,7 +152,7 @@ export function scorecardEditor(opts) {
   const actionButtons = (list) => html`${list.map((a) => html`<button type="button" class="btn ${a.cls ?? ""}" data-action="${a.key}">${label(a)}</button>`)}`;
 
   // ── classic view: the whole card as a table ────────────────
-  const sideCells = (f, i, side) => html`<td class="sc-players">${f[side].map((slot, j) => html`<div class="sc-slot">
+  const sideCells = (f, i, side) => html`<td class="sc-players" data-team="${sides[side].name ?? ""}">${f[side].map((slot, j) => html`<div class="sc-slot">
       ${picker(f, i, side, j)}
       <input class="sc-breaks" data-i="${i}" data-side="${side}" data-j="${j}" data-k="breaks" value="${slot.breaks}" placeholder="breaks" inputmode="numeric" aria-label="Breaks, e.g. 34, 41">
     </div>`)}${showsStart(f, side) ? html`<small class="sc-start">starts on ${startText(startFor(f, side))}</small>` : ""}</td>
@@ -163,7 +163,7 @@ export function scorecardEditor(opts) {
       <thead><tr><th>Player</th><th>Points</th><th class="sc-no">#</th><th>Player</th><th>Points</th></tr></thead>
       <tbody>${frames.map((f, i) => html`<tr data-row="${i}">
         ${sideCells(f, i, "a")}<td class="sc-no">${f.frame_no}</td>${sideCells(f, i, "b")}</tr>`)}</tbody>
-      ${opts.runningTotal ? html`<tfoot><tr class="sc-total-row"><td>Running total</td><td class="sc-points"><b data-total-a>${totals().a}</b></td><td class="sc-no">=</td><td>Running total</td><td class="sc-points"><b data-total-b>${totals().b}</b></td></tr></tfoot>` : ""}
+      ${opts.runningTotal ? html`<tfoot><tr class="sc-total-row"><td data-team="${sides.a.name ?? ""}">Running total</td><td class="sc-points"><b data-total-a>${totals().a}</b></td><td class="sc-no">=</td><td data-team="${sides.b.name ?? ""}">Running total</td><td class="sc-points"><b data-total-b>${totals().b}</b></td></tr></tfoot>` : ""}
     </table>${opts.runningTotal ? html`<p class="sc-totals"><small>Total points, handicap starts included. If the match finishes level on frames, the higher total wins.</small></p>` : ""}${frameButtons()}`;
 
   // ── guided view ────────────────────────────────────────────
@@ -259,6 +259,7 @@ export function scorecardEditor(opts) {
       }
       pad = scorePad(host, {
         match: row, name: { a: names(f, "a"), b: names(f, "b") }, save: opts.ballByBall.save, scored: !!w && !rescoring.has(i),
+        liveText: opts.ballByBall.liveText ? { href: opts.ballByBall.liveText(row) } : null,
         // The frame is live: save who is playing and mark the match as started, so the public pages show it.
         onStart: () => { dirty = true; run(saveAction, { disabled: false }, "The match is live"); },
         async onFrameEnd(rec) {

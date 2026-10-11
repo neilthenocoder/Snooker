@@ -4,7 +4,7 @@
 import { html, mount, fmtDate } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { shieldHolder, shieldTable, matchScore } from "../core/rules.js";
-import { breadcrumb, panel, dataTable, teamLink, badge, seasonPicker, shortName, urls } from "../core/components.js";
+import { breadcrumb, panel, dataTable, teamLink, badge, seasonPicker, shortName, urls, shieldPicture } from "../core/components.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
 
@@ -31,7 +31,7 @@ export default async function shield(view, { params, query }) {
 
     ${!league.shield_team_id ? html`<div class="notice">This league's shield hasn't been set up yet. The league admin chooses who holds it at the start of the season under Admin → Leagues.</div>` : html`
     <div class="shield-now">
-      <svg class="shield-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5.2 3.4 9.7 8 11 4.6-1.3 8-5.8 8-11V5Z"/></svg>
+      ${shieldPicture(league)}
       <small>${ctx.season?.is_current === false ? "Holders at the end of the season" : "Current holders"}</small>
       ${holder ? html`<a class="shield-team" href="${urls.team(holder)}">${badge(holder)}<strong>${holder.name}</strong></a>` : html`<strong>–</strong>`}
       <span>${since ? `Won it on ${fmtDate(since.starts_at)}` : "Holders since the start of the season"}${defences ? ` · defended it ${defences} time${defences > 1 ? "s" : ""} since` : ""}</span>

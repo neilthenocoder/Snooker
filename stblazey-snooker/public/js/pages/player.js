@@ -140,7 +140,7 @@ export default async function player(view, { params, user }) {
 
     ${panel("Season record", dataTable([
       { label: "Season", cell: (r) => r.season?.name ?? "–" },
-      { label: "League", cell: (r) => r.league?.name ?? "–" },
+      { label: "League", cell: (r) => r.league?.name ?? "–", cls: "hide-sm" },
       { label: "Team", cell: (r) => r.team, cls: "hide-sm" },
       { label: "Played", cell: (r) => r.played, cls: "num" },
       { label: "Won", cell: (r) => r.won, cls: "num" },

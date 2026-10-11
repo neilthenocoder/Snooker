@@ -3,7 +3,7 @@ import { seasonContext } from "../core/context.js";
 import { table, insertMany, setFixtureStatus, save, invalidate, signups, cueviewSubmissions } from "../core/api.js";
 import { isStaff, canOpenSection, isMember } from "../core/auth.js";
 import { rearrangeBy, POSTPONE_WEEKS } from "../core/rules.js";
-import { resetDemo } from "../core/db.js";
+import { resetDemo, databaseVersion, SCHEMA_VERSION } from "../core/db.js";
 import { DEMO_MODE } from "../config.js";
 import { roundRobin, addDays, londonISO } from "../core/schedule.js";
 import { panel, dataTable, statusBadge, urls, breadcrumb } from "../core/components.js";
@@ -80,6 +80,7 @@ export default async function admin(view, { params, user, query }) {
   mount(view, html`<div class="wrap wide">
     ${breadcrumb([["Home", "/"], ["Admin", "/admin"], [title]])}
     <h1>${title}</h1>
+    <div data-db-behind></div>
     <label class="admin-jump">Admin menu
       <select data-admin-jump>${nav.map(([group, items]) => html`<optgroup label="${group}">
         ${items.map(([key, label]) => html`<option value="${key}" data-label="${label}" ${key === section ? "selected" : ""}>${label}</option>`)}</optgroup>`)}</select></label>
@@ -102,6 +103,19 @@ export default async function admin(view, { params, user, query }) {
     </div>
     <button type="button" class="admin-logout admin-logout-m" data-logout>${logoutIcon}<span>Log out</span></button>
   </div>`);
+
+  // The website files and the database are updated separately. If the database is the older of the two, say so —
+  // loudly, on every page of the dashboard — because the newest features cannot work until it has caught up.
+  databaseVersion().then((v) => {
+    const slot = $("[data-db-behind]", view);
+    if (!slot || v === null || v >= SCHEMA_VERSION) return;
+    mount(slot, html`<div class="notice error db-behind" role="alert"><b>The database needs updating — the website is newer than its database.</b>
+      <span>The website files are version ${SCHEMA_VERSION}; the database is ${v ? `version ${v}` : "an older version"}. Until it is updated, the newest features will not save or will show an error.</span>
+      <ol><li>Open <b>Supabase</b> → <b>SQL Editor</b> → New query.</li>
+        <li>Paste the <b>whole</b> of the file <code>supabase/schema.sql</code> (it comes in the website's zip) and press <b>Run</b>. It is safe to run it more than once, and no data is lost.</li>
+        <li>It should answer “Success. No rows returned”. Reload this page: this message goes away.</li></ol>
+      <span>If it shows an error instead, nothing was changed: copy the error and send it to whoever looks after the website.</span></div>`);
+  });
 
   // Fold a group away or open it again (the group you are in always starts open).
   const menu = $(".admin-nav", view);

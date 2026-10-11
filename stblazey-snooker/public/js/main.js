@@ -12,6 +12,7 @@ import { sidebar, crumbs } from "./core/components.js";
 import { openAccount, openNotifications, closeDrawer, initials } from "./core/drawers.js";
 import { toggleFollow } from "./core/my-snooker.js";
 import { openSearch } from "./core/search.js";
+import { initSuggest } from "./core/suggest.js";
 import { footerLink } from "./core/terms.js";
 import { listItems } from "./core/list-field.js";
 import { table, invalidate, settings, nearbyMatches, subscribe, trackPageView, articles, liveMatches } from "./core/api.js";
@@ -494,3 +495,5 @@ subscribe(["fixtures", "competition_matches", "competitions", "live_matches"], r
 setNoticeWatcher(drawBell);
 startNotifications();
 
+// The list of names that opens under a text box as you type (the browser's own does not open on iPhones).
+initSuggest();

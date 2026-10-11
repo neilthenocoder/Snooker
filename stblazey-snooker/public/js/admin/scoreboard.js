@@ -12,9 +12,9 @@ import * as score from "../core/live-score.js";
 import { panel, dataTable, urls } from "../core/components.js";
 import { ballDot } from "../pages/scoreboard.js";
 import { friendly } from "./crud.js";
+import { linesOf, withLine, sayBox } from "../core/live-text.js";
 
 const BEST_OF = [1, 3, 5, 7, 9].filter((n) => n <= score.MAX_BEST_OF);
-const SAY_MAX = 200, SAY_KEEP = 150;      // a line of live text is short; a match keeps its last 150 lines
 /** The parts of a match that a press can change (what Undo puts back). */
 const snap = (m) => ({ status: m.status, frames_a: m.frames_a, frames_b: m.frames_b, state: m.state, started_at: m.started_at ?? null, finished_at: m.finished_at ?? null });
 
@@ -170,26 +170,15 @@ export async function scoreboardPage(el, { user } = {}) {
     };
     const name = { a: nameOf(m, "a"), b: nameOf(m, "b") };
 
-    // Live text: a line typed here appears under the public scoreboard straight away ("Great long red to start").
+    // Live text (core/live-text.js): a line typed here appears under the public scoreboard straight away.
     // It is kept apart from the score, so Undo never takes a line of text away.
-    const lines = () => (Array.isArray(m.commentary) ? m.commentary : []);
     const saveLines = (list) => {
-      m = { ...m, commentary: list.slice(-SAY_KEEP) };
+      m = { ...m, commentary: list };
       queue = queue.then(() => save("live_matches", { id: m.id, commentary: m.commentary, updated_at: new Date().toISOString() }))
         .then(() => {}, (err) => toast(`The live text was not saved: ${friendly(err)}`, "error"));
       draw();
     };
-    const say = (text) => {
-      const t = String(text ?? "").trim().slice(0, SAY_MAX);
-      if (t) saveLines([...lines(), { id: Math.random().toString(36).slice(2, 10), at: new Date().toISOString(), frame: m.state?.frame?.no ?? null, text: t }]);
-    };
-    const sayBox = () => html`<form class="pad-say" data-say autocomplete="off">
-      <label for="pad-say-text"><b>Live text</b> <small>Say what is happening. It appears under the scoreboard for everyone watching.</small></label>
-      <div class="pad-say-row"><input id="pad-say-text" type="text" maxlength="${SAY_MAX}" placeholder="e.g. Great long red to get in — he's on the black" data-say-text>
-        <button class="btn secondary">Post</button></div>
-      ${lines().length ? html`<ul class="pad-said">${lines().slice(-4).reverse().map((l) => html`<li><time>${fmtTime(l.at)}</time><span>${l.text}</span>
-        <button type="button" data-unsay="${l.id}" aria-label="Remove this line" title="Remove">×</button></li>`)}</ul>` : ""}
-    </form>`;
+    const say = (text) => { const now = linesOf(m), next = withLine(now, text, m.state?.frame?.no ?? null); if (next !== now) saveLines(next); };
 
     function draw() {
       const f = m.state?.frame, sit = score.situation(f), on = score.ballOn(f);
@@ -225,6 +214,7 @@ export async function scoreboardPage(el, { user } = {}) {
           <div class="pad-row pad-fouls"><span>Foul by ${name[f.striker]}:</span>${[4, 5, 6, 7].map((n) => html`<button type="button" class="btn small" data-foul="${n}">${n} away</button>`)}
             <button type="button" class="btn small blue" data-free title="After a foul leaves a snooker: the free ball counts as the ball on">Free ball potted</button></div>
           <p class="pad-info"><b>${f.reds}</b> red${f.reds === 1 ? "" : "s"} left · <b>${sit.remaining}</b> on the table · ${sit.ahead ? `${name[sit.ahead]} leads by ${sit.lead}` : "level"}${sit.snookers ? html` · <em>${name[sit.ahead === "a" ? "b" : "a"]} needs snookers</em>` : ""}${f.last ? html` · <span class="muted">${f.last}</span>` : ""}</p>
+          ${sayBox(linesOf(m), { publicHref: urls.scoreboard(m) })}
           <details class="pad-fix" ${fixOpen ? "open" : ""}><summary>Put something right</summary>
             <div class="pad-fix-grid">
               <span>${name.a}'s points</span><span class="btn-row"><button type="button" class="btn small ghost" data-adj="a" data-by="-1">−1</button><button type="button" class="btn small ghost" data-adj="a" data-by="1">+1</button></span>
@@ -246,7 +236,7 @@ export async function scoreboardPage(el, { user } = {}) {
                   Or enter it by hand under <a href="/admin/draws?c=${m.competition_id}" style="font-weight:700">Draws &amp; results</a>.` : ""}</div>
           <div class="btn-row"><button type="button" class="btn ghost" data-undo ${undo.length ? "" : "disabled"}>Undo — the match isn't over</button></div>` : ""}
 
-        ${m.status !== "setup" ? sayBox() : ""}
+        ${live ? "" : sayBox(linesOf(m), { publicHref: urls.scoreboard(m) })}
 
         ${(m.state?.frames ?? []).length ? html`<div style="height:18px"></div>${panel("Frames so far", dataTable([
           { label: "Frame", cell: (r) => r.no, cls: "num" }, { label: name.a, cell: (r) => html`<span class="${r.winner === "a" ? "strong" : ""}">${r.a}</span>`, cls: "num" },
@@ -279,7 +269,7 @@ export async function scoreboardPage(el, { user } = {}) {
       if (!t || t.disabled) return;
       const d = t.dataset;
       if ("padBack" in d) return open(null);
-      if (d.unsay) return saveLines(lines().filter((l) => l.id !== d.unsay));
+      if (d.unsay) return saveLines(linesOf(m).filter((l) => l.id !== d.unsay));
       if (t.closest("[data-say]")) return;                 // "Post" is the form's own button
       if (d.start) return apply(score.start(m, d.start));
       if (d.pot) return press.pot(Number(d.pot));
