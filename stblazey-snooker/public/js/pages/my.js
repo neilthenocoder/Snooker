@@ -112,6 +112,11 @@ async function snookerTab(el, { ctx, user, team, me }) {
           <span><b>Use My Snooker</b><small>Switch it off and you simply get the normal website</small></span></label>
       </div>
 
+      <fieldset class="ms-set-box"><legend>The Home button</legend>
+        <div class="ms-place">${[["page", "Home opens My Snooker", "Your own page comes up whenever you press Home or the logo. The normal home page is one press away."],
+          ["home", "Home shows the normal home page", "My Snooker stays in the menu (the ★), for whenever you want it."]].map(([key, label, help]) => html`<label class="ms-radio"><input type="radio" name="place" value="${key}" ${(prefs.place === "home" ? "home" : "page") === key ? "checked" : ""}>
+          <span><b>${label}</b><small>${help}</small></span></label>`)}</div></fieldset>
+
       <fieldset class="ms-set-box"><legend>Teams I follow</legend>
         <p class="ms-help">The first team you tick is the one your page opens on. Follow more and you get a button for each.</p>
         ${ctx.leagues.map((l) => html`<h4 class="ms-set-h">${l.name}</h4><div class="ms-ticks">${ctx.teamsIn(l.id).map((t) => html`<label class="ms-tick"><input type="checkbox" name="team" value="${t.id}" ${followed.has(t.id) ? "checked" : ""}>
@@ -130,6 +135,8 @@ async function snookerTab(el, { ctx, user, team, me }) {
 
       ${categories.length ? html`<fieldset class="ms-set-box"><legend>News I want</legend>
         <p class="ms-help">For the “Latest news” section. Tick none and you get everything.</p>
+        <label class="ms-tick wide ms-nonews"><input type="checkbox" name="nonews" ${!wants("news") && !wants("team_news") ? "checked" : ""}>
+          <span><b>No news at all</b><small>No news sections on my page (Latest news and Team news are unticked above)</small></span></label>
         <div class="ms-ticks">${categories.map((c) => html`<label class="ms-tick"><input type="checkbox" name="cat" value="${c}" ${prefs.cats.includes(c) ? "checked" : ""}><span>${c}</span></label>`)}</div></fieldset>` : ""}
 
       <div class="btn-row form-actions"><button class="btn">Save my choices</button>
@@ -165,6 +172,13 @@ async function snookerTab(el, { ctx, user, team, me }) {
     if (t.dataset.all) for (const box of form.querySelectorAll("[name=section]")) box.checked = t.dataset.all === "1";
     if (t.matches("[data-reset]")) save(true, { place: "page", teams: [user.profile?.team_id].filter(Boolean), players: [user.profile?.player_id].filter(Boolean), cats: [], sections: null }, "My Snooker reset");
   });
+  // "No news at all" unticks (or ticks back) the two news sections; ticking a news section unticks "No news".
+  form.addEventListener("change", (e) => {
+    const news = [...form.querySelectorAll('[name=section][value="news"], [name=section][value="team_news"]')];
+    if (e.target.name === "nonews") { for (const b of news) b.checked = !e.target.checked; }
+    else if (news.includes(e.target) && form.elements.nonews) form.elements.nonews.checked = news.every((b) => !b.checked);
+    if (e.target.name === "cat" && e.target.checked && form.elements.nonews?.checked) { form.elements.nonews.checked = false; for (const b of news) b.checked = true; }
+  });
   $("[data-player-add]", el).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addPlayer(); } });
   // Choosing a name from the list under the box follows that player straight away.
   $("[data-player-add]", el).addEventListener("suggest:pick", addPlayer);
@@ -175,7 +189,7 @@ async function snookerTab(el, { ctx, user, team, me }) {
     // Keep the order the teams were followed in (so the first stays first), then any newly ticked ones.
     const teams = [...prefs.teams.filter((id) => ticked("team").includes(id)), ...ticked("team").filter((id) => !prefs.teams.includes(id))];
     const turnOn = form.elements.on.checked;
-    save(turnOn, { place: "page", teams, players, cats: ticked("cat"), sections: sections.length === SECTIONS.length ? null : sections },
+    save(turnOn, { place: form.elements.place?.value === "home" ? "home" : "page", teams, players, cats: ticked("cat"), sections: sections.length === SECTIONS.length ? null : sections },
       turnOn ? "My Snooker saved" : "My Snooker switched off");
   });
 }

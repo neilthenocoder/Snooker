@@ -50,7 +50,7 @@ export default async function myteam(view, { user }) {
           : html`Following ${[teams.length ? `${teams.length} team${teams.length > 1 ? "s" : ""}` : "", players.length ? `${players.length} player${players.length > 1 ? "s" : ""}` : ""].filter(Boolean).join(" and ")}`}</p>
       </div>
       <div class="ms-hero-actions">
-        <a class="btn ghost" href="/">Normal home page</a>
+        <a class="btn ghost" href="/?home=1">Normal home page</a>
         <a class="btn small ghost" href="/my/snooker">Change what I see</a>
       </div>
     </header>
@@ -70,7 +70,7 @@ function chooser(view, ctx, crumbs, prefs) {
     <header class="ms-hero"><div class="ms-hero-text"><small class="ms-kicker">${star} My Snooker</small><h1>Choose your team</h1>
       <p>Pick the team you play for or follow. Your page then shows its matches, results, breaks, handicaps and news every time you log in.
         You can follow more teams and players, and choose what you see, whenever you like.</p></div>
-      <div class="ms-hero-actions"><a class="btn ghost" href="/">Normal home page</a><a class="btn small ghost" href="/my/snooker">All the choices</a></div></header>
+      <div class="ms-hero-actions"><a class="btn ghost" href="/?home=1">Normal home page</a><a class="btn small ghost" href="/my/snooker">All the choices</a></div></header>
     ${ctx.leagues.map((l) => html`<h3>${l.name}</h3><div class="cards team-tiles">${ctx.teamsIn(l.id).map((t) => html`<button type="button" class="tile team-tile" data-pick="${t.id}">
       ${badge(t)}<h4>${t.name}</h4><span>Make this my team</span></button>`)}</div>`)}
   </div>`);

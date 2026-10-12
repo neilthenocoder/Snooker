@@ -6,7 +6,7 @@
 import { SITE, DEMO_MODE } from "./config.js";
 import { html, mount, $, ukDay, toast, safeHref } from "./core/dom.js";
 import { applyBranding, loaderOn, loaderOff, layoutFor, TICKER_PX } from "./core/branding.js";
-import { getUser, signOut, mySnookerOn, canOpenSection } from "./core/auth.js";
+import { getUser, signOut, mySnookerOn, mySnookerHome, canOpenSection } from "./core/auth.js";
 import { seasonContext, sideBoxData } from "./core/context.js";
 import { sidebar, crumbs } from "./core/components.js";
 import { openAccount, openNotifications, closeDrawer, initials } from "./core/drawers.js";
@@ -169,7 +169,7 @@ async function drawHeader() {
       <div class="nav-icons">
         <button type="button" class="nav-icon nav-account ${user ? "in" : ""}" data-account-open aria-label="${user ? `My account: ${name}` : "Log in"}" title="${user ? `My account: ${name}` : "Log in"}">
           ${user ? html`<span class="nav-initials">${initials(name)}</span>` : personIcon}</button>
-        ${user && mySnookerOn(user) ? html`<a class="nav-icon nav-mysnooker" href="/myteam" aria-label="My Snooker" title="My Snooker — your own page">${starIcon}</a>` : ""}
+        ${user && mySnookerOn(user) ? html`<a class="nav-icon nav-mysnooker" href="/myteam" aria-label="My Snooker" title="My Snooker — your own page">${starIcon}<b aria-hidden="true">MS</b></a>` : ""}
         <button type="button" class="nav-icon nav-bell" data-bell aria-label="Notifications" title="Notifications">${bell}</button>
         <button type="button" class="nav-icon nav-search" data-search-open aria-label="Search" title="Search">${searchIcon}</button>
         <button type="button" class="nav-icon nav-toggle" data-menu-open aria-label="Menu" aria-expanded="false">${menuIcon}</button>
@@ -230,7 +230,9 @@ function measureHeader() {
   // How tall the bar is at full size: measured without its animation, whatever size it is at this moment.
   head.classList.add("measuring");
   head.classList.remove("stuck");
-  root.setProperty("--header-full", `${bar.getBoundingClientRect().height}px`);
+  // Rounded up to a whole pixel: a header ending part-way through a pixel left a thin line of the page showing
+  // under it for a moment while scrolling (Rich, round 16: "a white line flickers when I scroll").
+  root.setProperty("--header-full", `${Math.ceil(bar.getBoundingClientRect().height)}px`);
   slimHeader();            // drawn again part-way down a page: slim straight away
   void bar.offsetHeight;   // settle before the animation is allowed again
   head.classList.remove("measuring");
@@ -354,10 +356,10 @@ async function renderRoute() {
   trackPageView(location.pathname);
   try {
     const [mod, user, site] = await Promise.all([import(`./pages/${page}.js`), getUser(), settings()]);
-    // My Snooker: someone who is still logged in starts on their own page when they come to the site
-    // (if that is where they chose to have it). Once they have seen it (this visit), Home is the normal home page.
-    // (Until round 15 a logged-in player was taken to My Snooker when they came to the home page. The home page now
-    // stays the home page: My Snooker is in the menu.)
+    // My Snooker sticks (Rich, round 16): for someone who has it switched on and set up, Home is their My Snooker page,
+    // every time — unless they chose "Home shows the normal home page" in their settings. The "Normal home page"
+    // button on My Snooker opens /?home=1, which shows the ordinary home page once (with a bar back to their page).
+    if (page === "home" && mySnookerHome(user) && new URLSearchParams(location.search).get("home") !== "1") return navigate("/myteam", { replace: true });
     document.body.classList.toggle("maintenance", !!site.maintenance_on && !user);
     drawTicker(page === "home" && !(site.maintenance_on && !user));
     if (site.maintenance_on && !user && page !== "login") return holdingPage(view, site);

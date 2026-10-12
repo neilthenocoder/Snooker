@@ -131,14 +131,14 @@ export function panel(title, body, { color = "", href = "", foot = null, cls = "
  *            more: "players" — the word on that button }
  * A highlighted row ("hl") is the top of the table: faded green, like the top of a league table.
  */
-export function dataTable(columns, rows, { highlight = () => false, rowClass = () => "", empty = "Nothing to show yet.", phoneLimit = 0, more = "rows" } = {}) {
+export function dataTable(columns, rows, { highlight = () => false, rowClass = () => "", empty = "Nothing to show yet.", phoneLimit = 0, more = "rows", minHidden = 3 } = {}) {
   if (!rows.length) return html`<div class="empty">${empty}</div>`;
-  const folds = phoneLimit > 0 && rows.length > phoneLimit + 2;      // not worth it for one or two more
+  const folds = phoneLimit > 0 && rows.length >= phoneLimit + minHidden;      // (by default not worth it for one or two more)
   const table = html`<div class="table-scroll"><table class="data">
     <thead><tr>${columns.map((c) => html`<th class="${c.cls || ""}">${c.label}</th>`)}</tr></thead>
     <tbody>${rows.map((r, i) => html`<tr class="${highlight(r) ? "hl" : ""} ${rowClass(r)} ${folds && i >= phoneLimit ? "ph-more" : ""}">${columns.map((c) => html`<td class="${c.cls || ""}" data-label="${c.label}">${c.cell(r, i)}</td>`)}</tr>`)}</tbody>
   </table></div>`;
-  return folds ? html`<div class="table-fold" data-table-fold>${table}<button type="button" class="table-fold-btn" data-fold-toggle data-more="Show all ${rows.length} ${more}" data-less="Show the top ${phoneLimit} only">Show all ${rows.length} ${more}</button></div>` : table;
+  return folds ? html`<div class="table-fold" data-table-fold>${table}<button type="button" class="table-fold-btn" data-fold-toggle data-more="Show all ${rows.length} ${more}" data-less="Show the first ${phoneLimit} only">Show all ${rows.length} ${more}</button></div>` : table;
 }
 /** The points of the player at the top of a ranking table: a green pill, like the top points in a league table. */
 export const topPoints = (r, top) => (r === top && Number(r.pts) > 0 ? html`<span class="lt-pts">${r.pts}</span>` : r.pts);
@@ -208,13 +208,20 @@ export function leagueMarks(ctx, league, { highlightTeamId, shown } = {}) {
     visible.some((r) => downs.has(r)) ? html`<span><span class="lt-zone down">R</span>${nDown > 1 ? `Relegation places (bottom ${nDown})` : "Relegation place"}${zone.below ? `, down to the ${zone.below.name}` : ""}</span>` : "",
     before ? html`<span><span class="lt-mv up"><i>▲</i></span><span class="lt-mv down"><i>▼</i></span>Places moved since last week</span>` : "",
   ].filter(Boolean);
+  // Within the promotion places and within the relegation places every other row is a shade lighter, so two
+  // teams side by side in the same zone can be told apart (Rich, round 16).
+  const upList = [...ups], downList = [...downs];
+  const alt = (r) => (ups.has(r) ? upList.indexOf(r) % 2 === 1 : downs.has(r) ? downList.indexOf(r) % 2 === 1 : false);
   return {
-    highlight: (r) => r === top || mine(r),
-    rowClass: (r) => [r === top ? "lt-top" : "", ups.has(r) ? "lt-up" : "", downs.has(r) ? "lt-down" : "", mine(r) ? "lt-mine" : ""].join(" "),
+    // Only the leader is the big green row. The team someone follows (My Snooker, a team's page) keeps its own
+    // cream row with a dark edge — the same size as the others.
+    highlight: (r) => r === top,
+    rowClass: (r) => [r === top ? "lt-top" : "", ups.has(r) ? "lt-up" : "", downs.has(r) ? "lt-down" : "", alt(r) ? "lt-alt" : "", mine(r) && r !== top ? "lt-mine" : ""].join(" "),
     strong,
     pos: (r) => html`<span class="lt-pos"><b>${r.pos}</b>${move(r)}</span>`,
     team: (r) => html`<span class="lt-team">${teamLink(r.team, strong(r))}${chip(r)}</span>`,
-    pts: (r) => (topPts > 0 && r.pts === topPts ? html`<span class="lt-pts">${r.pts}</span>` : r.pts),
+    // The highest points total in green; the points of the teams in the relegation places in red.
+    pts: (r) => (topPts > 0 && r.pts === topPts ? html`<span class="lt-pts">${r.pts}</span>` : downs.has(r) ? html`<span class="lt-pts down">${r.pts}</span>` : r.pts),
     key: keys.length ? html`<p class="lt-key">${keys}</p>` : "",
   };
 }
@@ -346,8 +353,8 @@ function sideBox(ctx, news, count, box) {
       ? html`<div class="res-list">${rows.map((r) => html`<a class="res-mini" href="${r.href}">
           <small>${r.when ? fmtDate(r.when) : ""}${r.title ? ` · ${r.title}` : ""}</small>
           <span class="${r.won === "h" ? "won" : r.won ? "lost" : ""}">${r.home}</span><b>${r.score}</b><span class="${r.won === "a" ? "won" : r.won ? "lost" : ""}">${r.away}</span></a>`)}</div>`
-      : html`<div class="empty">No results yet.</div>`, { color: "blue", href: "/results" })}
-    <a class="btn-bar" href="/results">See all results</a>`;
+      : html`<div class="empty">No results yet.</div>`, { color: "green", href: "/results" })}
+    <a class="btn-bar green" href="/results">See all results</a>`;
 }
 
 // ── fixtures ──────────────────────────────────────────────────

@@ -150,11 +150,17 @@ export const mySnookerOn = (user) => !!user?.profile && user.profile.my_snooker 
 /** Have they chosen anything to follow yet? */
 export const mySnookerSetUp = (user) => { const p = myPrefs(user); return p.teams.length + p.players.length > 0; };
 /**
- * Where My Snooker shows. Since Rich's thirteenth round it is always its own page (/myteam), reached from the menu:
- * the home page stays the normal home page for everyone. (The old "on the home page" / "both" choice is ignored.)
+ * Where My Snooker shows: always its own page (/myteam), never mixed into the home page (Rich, round 15).
+ * "place" now only says what the Home button does: "page" (and the old "both") = Home opens My Snooker;
+ * "home" = Home shows the normal home page and My Snooker stays in the menu. See mySnookerHome().
  */
 export const mySnookerOnHome = () => false;
 export const mySnookerOwnPage = (user) => mySnookerOn(user);
+/**
+ * Does Home take them to their My Snooker page? Yes, once it is switched on and set up (following a team or a player) —
+ * unless they chose "Home shows the normal home page" (saved as place: "home"). Rich, round 16: it should stick.
+ */
+export const mySnookerHome = (user) => mySnookerOn(user) && mySnookerSetUp(user) && myPrefs(user).place !== "home";
 /** A plain player login: no dashboard, no captain's tools. My Snooker is their home. */
 export const isPlainPlayer = (user) => !!user?.profile && !isStaff(user) && !isCaptain(user);
 /** Where someone lands after logging in: officers on the dashboard, captains in My Team, players on their own My Snooker page (or the home page, if that is where they put it). */

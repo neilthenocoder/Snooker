@@ -55,6 +55,10 @@ export async function toggleFollow(user, kind, id) {
   return now;
 }
 
+/** The captain first, then the vice captain, then everyone else by name (Team & handicaps). */
+const RANK = { "Team Captain": 0, "Captain": 0, "Vice Captain": 1 };
+const bySeniority = (list) => [...list].sort((a, b) => (RANK[a.position] ?? 2) - (RANK[b.position] ?? 2) || a.full_name.localeCompare(b.full_name));
+
 // ── the view ───────────────────────────────────────────────────
 /** Everything the view needs, loaded once. */
 export async function mySnookerData() {
@@ -176,7 +180,7 @@ function view(user, { ctx, news, comps, site = {} }, prefs, teams, teamId, home)
         { label: "Played", cell: (p) => lineOf(p)?.played ?? 0, cls: "num" },
         { label: "Won", cell: (p) => lineOf(p)?.won ?? 0, cls: "num" },
         { label: "Pts", cell: (p) => lineOf(p)?.pts ?? 0, cls: "num strong" },
-      ], squad, { rowClass: (p) => (followIds.has(p.id) ? "lt-mine" : ""), empty: "No players listed yet." }), { foot: { href: "/handicaps", label: "Every team's handicaps" } })),
+      ], bySeniority(squad), { rowClass: (p) => (followIds.has(p.id) ? "lt-mine" : ""), empty: "No players listed yet.", phoneLimit: 5, minHidden: 1, more: "players" }), { foot: { href: "/handicaps", label: "Every team's handicaps" } })),
     players: () => (followed.length ? panel("Players I follow", html`<div class="ms-players">${followed.map((p) => { const l = lineOf(p); return html`<a class="ms-player" href="${urls.player(p)}">
         ${avatar(p, "ms-player-photo")}<span><strong>${p.full_name}</strong><small>${ctx.team.get(p.team_id)?.name ?? "No team this season"}</small></span>
         <dl><div><dt>Hcp</dt><dd>${handicapTag(p.handicap)}</dd></div><div><dt>Played</dt><dd>${l?.played ?? 0}</dd></div><div><dt>Won</dt><dd>${l?.won ?? 0}</dd></div>

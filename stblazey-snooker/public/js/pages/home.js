@@ -2,6 +2,7 @@ import { html, mount, $, $$, fmtDate, fmtTime, cssUrl, ukDay, todayUK, safeHref 
 import { TICKER_PX } from "../core/branding.js";
 import { sideName, matchLabel, onTable } from "../core/live-score.js";
 import { mountSquadBox } from "../core/squad.js";
+import { mySnookerOn, mySnookerSetUp, mySnookerTeamId, mySnookerHome } from "../core/auth.js";
 import { openForEntry } from "./enter.js";
 import { seasonContext, sideBoxData } from "../core/context.js";
 import { articles, settings, upcomingMatches, loadCompetitions, subscribe, table, liveMatches } from "../core/api.js";
@@ -52,6 +53,9 @@ export default async function home(view, { user } = {}) {
     </section>
     <div class="wrap layout" style="margin-top:30px">
       <div class="stack">
+        ${user && mySnookerOn(user) ? html`<a class="ms-bar" href="${mySnookerSetUp(user) ? "/myteam" : "/my/snooker"}"><b>★ My Snooker</b>
+          <span>${mySnookerSetUp(user) ? html`${ctx.team.get(mySnookerTeamId(user))?.name ?? "The players you follow"}: matches, results, breaks and news${mySnookerHome(user) ? " — the Home button takes you there" : ""}` : "Follow your team and players, and get your own page"}</span>
+          <i>${mySnookerSetUp(user) ? "Back to my page →" : "Set it up →"}</i></a>` : ""}
         <div class="home-top">
         <nav class="quick-links" aria-label="Quick links">
           <a style="background:var(--yellow);color:#1b0e06" href="/competitions">${quickIcon.competitions}<span>Competitions</span></a>
@@ -68,7 +72,7 @@ export default async function home(view, { user } = {}) {
         ${site.shields_show !== false ? shieldsBox(ctx) : ""}
         ${spotlights(ctx, site)}
         ${site.cueviews_show !== false ? cueviewBox(ctx, news) : ""}
-        ${panel("Latest Competitions", html`<div class="list-rows" style="background:var(--cream)">
+        ${panel("Latest Competitions", html`<div class="list-rows comp-cols" style="background:var(--cream)">
           ${comps.length ? comps.map(({ c, season, progress }) => html`<a href="${urls.competition(c)}">${c.image_url ? picture(c.image_url) : html`<div class="ph trophy-ph">${trophy(c)}</div>`}<div><strong>${c.name}</strong><small>${c.kind}${season ? ` · ${season.name}` : ""}</small>${progress}</div></a>`)
             : html`<div class="empty">No competitions yet.</div>`}
         </div>`, { color: "yellow", href: "/competitions" })}

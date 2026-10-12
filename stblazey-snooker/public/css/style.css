@@ -3037,3 +3037,48 @@ table.data tbody tr.total-row td { background: var(--head-row); font-weight: 700
 .appicon-previews .ai-apple { border-radius: 14px; }
 .appicon-previews .ai-round { border-radius: 50%; }
 .appicon-previews figcaption { font-size: 11px; font-weight: 400; color: var(--muted); }
+
+/* ══ v17: Rich's fourteenth round ════════════════════════════════════════════════════ */
+/* My Snooker settings: two choices for the Home button; "No news at all" above the news categories. */
+.ms-place { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ms-nonews { margin-bottom: 10px; }
+/* League tables: the relegation places' points in a red pill (like the leader's green one); within the promotion
+   places and within the relegation places, every other row a lighter shade so neighbours stand apart. */
+.lt-pts.down { background: var(--red); }
+table.data tbody tr.lt-up.lt-alt td { background: #ecf8ed; }
+table.data tbody tr.lt-down.lt-alt td { background: #fcedf0; }
+/* The team you follow: cream with a dark edge, the same size as the other rows (it was green and bigger). */
+table.data tbody tr.lt-mine td { background: var(--lt-mine); }
+/* A league table in a narrow column — the sidebar, the side of My Snooker — tightens up like it does on a phone,
+   so every column fits and the leader's name stays on one line. (Container query: it goes by the table's own width.) */
+.lt-panel { container-type: inline-size; }
+@container (max-width: 480px) {
+  .lt-panel table.data { font-size: 13px; }
+  .lt-panel table.data th, .lt-panel table.data td { padding-left: 4px; padding-right: 4px; }
+  .lt-panel table.data th:first-child, .lt-panel table.data td:first-child { padding-left: 8px; }
+  .lt-panel table.data th:last-child, .lt-panel table.data td:last-child { padding-right: 8px; }
+  .lt-panel table.data th { font-size: 12px; white-space: normal; }
+  .lt-panel table.data tbody tr.hl td { font-size: 14px; padding-top: 10px; padding-bottom: 10px; }
+  .lt-panel table.data tbody tr.hl .badge, .lt-panel table.data .badge { width: 24px; height: 24px; font-size: 9px; }
+  .lt-panel .team-cell { gap: 6px; }
+  .lt-panel .lt-pos { flex-direction: column; gap: 2px; }
+  .lt-panel .lt-mv { min-width: 0; font-size: 11px; }
+  .lt-panel .lt-zone { width: 17px; height: 17px; font-size: 10px; }
+  .lt-panel .lt-team { gap: 5px; }
+  .lt-panel .lt-pts { min-width: 0; padding: 2px 7px; }
+}
+/* 1. The menu bar while scrolling: drawn on its own layer, so no hairline of the page flickers under it. */
+.site-header { will-change: transform; transform: translateZ(0); }
+/* 4. Latest Competitions on the home page: two columns on bigger screens, instead of one long list with empty space beside it. */
+@media (min-width: 640px) {
+  .list-rows.comp-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 18px; padding-bottom: 8px; }
+}
+/* 5. Latest Results (home page and side column): green, the colour of Fixtures & Results — blue is News now. */
+.panel-head.green { background: var(--green); color: #fff; }
+a.panel-head.green:hover { color: #fff; }
+.btn-bar.green { background: var(--green); }
+/* 6. The My Snooker star in the menu bar carries the letters MS, like the initials beside it. */
+.nav-icon.nav-mysnooker { position: relative; }
+.nav-icon.nav-mysnooker svg { width: 34px; height: 34px; }
+.nav-icon.nav-mysnooker b { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-38%); text-align: center; font: 700 9.5px/1 var(--font-head); letter-spacing: -.02em; color: #1b0e06; pointer-events: none; }
+.nav-icon.nav-mysnooker:hover b { color: var(--yellow); }
