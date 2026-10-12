@@ -219,9 +219,10 @@ const SLIM_AT = 120, FULL_AT = 60;
 let headerWatch = null, headerSlim = false;
 /** Slim or full size, from how far the page is scrolled (remembered, so a redrawn bar comes back the same size). */
 function slimHeader() {
-  if (!headerSlim && window.scrollY > SLIM_AT) headerSlim = true;
-  else if (headerSlim && window.scrollY < FULL_AT) headerSlim = false;
-  $(".site-header")?.classList.toggle("stuck", headerSlim);
+  // Round 17: the bar no longer gets slimmer when scrolling. Getting slimmer needed a see-through strip under
+  // the bar (so the page would not move), and that strip showed the page scrolling behind it — the "white line
+  // under the menu". The bar is now one solid height all the time: nothing to flicker, nothing to shake.
+  $(".site-header")?.classList.remove("stuck");
 }
 function measureHeader() {
   const head = $(".site-header"), bar = $(".site-bar");

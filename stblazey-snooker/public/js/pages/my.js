@@ -107,7 +107,7 @@ async function snookerTab(el, { ctx, user, team, me }) {
           ${on ? html`<a class="btn green" href="/myteam">Open my page</a>` : ""}
         </div>
         <p>Your own page of the league: follow the teams and players you care about, and tick everything you want to see on it — as much or as little as you like.
-          Open it any time from the menu (<b>★ My Snooker</b>). The normal home page stays as it is.</p>
+          Open it any time from the menu (<b>★ My Snooker</b>) — and choose below whether the Home button takes you there.</p>
         <label class="ms-switch"><input type="checkbox" name="on" ${on ? "checked" : ""}><span class="ms-slider" aria-hidden="true"></span>
           <span><b>Use My Snooker</b><small>Switch it off and you simply get the normal website</small></span></label>
       </div>
@@ -139,7 +139,7 @@ async function snookerTab(el, { ctx, user, team, me }) {
           <span><b>No news at all</b><small>No news sections on my page (Latest news and Team news are unticked above)</small></span></label>
         <div class="ms-ticks">${categories.map((c) => html`<label class="ms-tick"><input type="checkbox" name="cat" value="${c}" ${prefs.cats.includes(c) ? "checked" : ""}><span>${c}</span></label>`)}</div></fieldset>` : ""}
 
-      <div class="btn-row form-actions"><button class="btn">Save my choices</button>
+      <div class="btn-row form-actions" data-ms-actions><button class="btn green">Save my choices</button><span class="ms-unsaved">Not saved yet</span>
         <button type="button" class="btn ghost" data-reset>Reset</button>
         <span class="muted" style="font-size:13px"><b>Reset</b>: switched on, ${team ? `following ${team.name}` : "following nobody"}${me ? ` and ${me.full_name}` : ""}, every section.</span></div>
     </form>`);
@@ -172,6 +172,11 @@ async function snookerTab(el, { ctx, user, team, me }) {
     if (t.dataset.all) for (const box of form.querySelectorAll("[name=section]")) box.checked = t.dataset.all === "1";
     if (t.matches("[data-reset]")) save(true, { place: "page", teams: [user.profile?.team_id].filter(Boolean), players: [user.profile?.player_id].filter(Boolean), cats: [], sections: null }, "My Snooker reset");
   });
+  // Anything changed: the Save bar at the bottom of the screen says so until it is saved.
+  const dirty = () => $("[data-ms-actions]", el)?.classList.add("dirty");
+  form.addEventListener("change", dirty);
+  form.addEventListener("click", (e) => { if (e.target.closest("[data-unfollow], [data-player-add-btn], [data-all]")) dirty(); });
+  $("[data-player-add]", el).addEventListener("suggest:pick", dirty);
   // "No news at all" unticks (or ticks back) the two news sections; ticking a news section unticks "No news".
   form.addEventListener("change", (e) => {
     const news = [...form.querySelectorAll('[name=section][value="news"], [name=section][value="team_news"]')];

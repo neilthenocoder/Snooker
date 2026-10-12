@@ -3067,8 +3067,6 @@ table.data tbody tr.lt-mine td { background: var(--lt-mine); }
   .lt-panel .lt-team { gap: 5px; }
   .lt-panel .lt-pts { min-width: 0; padding: 2px 7px; }
 }
-/* 1. The menu bar while scrolling: drawn on its own layer, so no hairline of the page flickers under it. */
-.site-header { will-change: transform; transform: translateZ(0); }
 /* 4. Latest Competitions on the home page: two columns on bigger screens, instead of one long list with empty space beside it. */
 @media (min-width: 640px) {
   .list-rows.comp-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 18px; padding-bottom: 8px; }
@@ -3082,3 +3080,32 @@ a.panel-head.green:hover { color: #fff; }
 .nav-icon.nav-mysnooker svg { width: 34px; height: 34px; }
 .nav-icon.nav-mysnooker b { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-38%); text-align: center; font: 700 9.5px/1 var(--font-head); letter-spacing: -.02em; color: #1b0e06; pointer-events: none; }
 .nav-icon.nav-mysnooker:hover b { color: var(--yellow); }
+
+/* ══ v18: the menu bar is one solid bar ══════════════════════════════════════════════
+   It used to get slimmer once you scrolled, keeping a see-through strip below it so the page would not move.
+   That strip showed the page scrolling underneath — the white band under the menu. Now the header is exactly
+   as tall as the bar, at every scroll position, with nothing see-through around it. */
+.site-header { min-height: 0; pointer-events: auto; }
+.site-header.stuck .wrap { padding-top: 18px; padding-bottom: 18px; }
+.site-header.stuck .logo img { height: var(--nav-h); }
+@media (max-width: 900px) {
+  .site-header.stuck .wrap { padding-top: 10px; padding-bottom: 10px; }
+  .site-header.stuck .logo img { height: 44px; }
+}
+
+/* My Snooker settings: "Save my choices" sits at the bottom of the screen the whole time, so nobody has to
+   scroll to the end of the form to save (and leave thinking it was saved). It turns yellow with "Not saved yet"
+   as soon as anything is changed. */
+.ms-set .form-actions { position: sticky; bottom: 0; z-index: 30; margin: 0 -1px; padding: 12px 74px 12px 16px; background: #fff;
+  border-top: 1px solid var(--head-row); box-shadow: 0 -8px 20px rgba(0, 0, 0, .08); }
+.ms-set .form-actions.dirty { background: #fff8db; border-top-color: var(--yellow); }
+.ms-set .form-actions .ms-unsaved { display: none; font-weight: 700; color: #7a5b00; font-size: 14px; }
+.ms-set .form-actions.dirty .ms-unsaved { display: inline; }
+@media (max-width: 640px) {
+  .ms-set .form-actions { padding: 10px 64px 10px 12px; }
+  .ms-set .form-actions { flex-wrap: nowrap; gap: 8px; }
+  .ms-set .form-actions .btn.green { flex: 1 1 auto; }
+  .ms-set .form-actions [data-reset] { flex: none; padding-left: 14px; padding-right: 14px; }
+  .ms-set .form-actions > .muted, .ms-set .form-actions.dirty .ms-unsaved { display: none; }
+  .ms-set .form-actions.dirty .btn.green::after { content: " •"; color: var(--yellow); }
+}
