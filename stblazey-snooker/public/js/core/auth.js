@@ -4,9 +4,16 @@ import { db, run } from "./db.js";
 
 let cached;
 
+/** Wait for something at most `ms` milliseconds (then go on as if it had failed). */
+const within = (promise, ms) => Promise.race([promise, new Promise((_, no) => setTimeout(() => no(new Error("timed out")), ms))]);
+
 export async function getUser() {
   if (cached !== undefined) return cached;
-  const { data: { session } } = await db.auth.getSession();
+  // Reading the saved login can hang on a phone (an old login whose refresh never answers, Safari holding a lock
+  // after the tab slept). Rather than keep the loading screen up forever, go on as logged out after 8 seconds.
+  let session = null;
+  try { ({ data: { session } } = await within(db.auth.getSession(), 8000)); }
+  catch (err) { console.warn("Could not read the saved login:", err.message); return (cached = null); }
   if (!session) return (cached = null);
   const profile = await run(db.from("profiles").select("*").eq("id", session.user.id).maybeSingle()).catch(() => null);
   // What this role may use in the dashboard — set by the Master Admin under Admin → Roles & permissions.

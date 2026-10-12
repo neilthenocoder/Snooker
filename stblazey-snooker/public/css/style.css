@@ -3109,3 +3109,33 @@ a.panel-head.green:hover { color: #fff; }
   .ms-set .form-actions > .muted, .ms-set .form-actions.dirty .ms-unsaved { display: none; }
   .ms-set .form-actions.dirty .btn.green::after { content: " •"; color: var(--yellow); }
 }
+
+/* ══ v19: one Breaks box — the top three on a podium, the next few listed underneath ══════════ */
+.bk-podium { display: grid; grid-template-columns: 1fr 1.15fr 1fr; align-items: end; gap: 6px; padding: 14px 10px 0; background: #fff; }
+.bk-pod { display: grid; justify-items: center; gap: 3px; min-width: 0; padding: 10px 4px 10px; border-radius: 10px 10px 0 0; color: var(--ink); text-align: center; }
+.bk-pod:hover { color: var(--ink); }
+.bk-pod .avatar { width: 46px; height: 46px; }
+.bk-pod b { font: 700 30px/1 var(--font-head); }
+.bk-pod small { max-width: 100%; font-size: 12px; font-weight: 700; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+.bk-rank { font: 700 11px/1 var(--font-head); text-transform: uppercase; letter-spacing: .06em; padding: 3px 7px; border-radius: 10px; color: #fff; }
+.bk-pod.p1 { background: linear-gradient(#fff6d6, #ffeaa3); padding-top: 14px; padding-bottom: 16px; }
+.bk-pod.p1 .avatar { width: 62px; height: 62px; box-shadow: 0 0 0 3px #f0b323; }
+.bk-pod.p1 b { font-size: 44px; }
+.bk-pod.p1 .bk-rank { background: #c99400; }
+.bk-pod.p2 { background: linear-gradient(#f7f7f5, #e7e7e2); }
+.bk-pod.p2 .bk-rank { background: #8a8a85; }
+.bk-pod.p3 { background: linear-gradient(#fbf0e6, #f1dcc6); }
+.bk-pod.p3 .bk-rank { background: #a8662d; }
+.bk-pod.empty { visibility: hidden; }
+.bk-rest { border-top: 3px solid var(--head-row); }
+.bk-box .new-badge { margin-left: 8px; }
+
+/* Latest Competitions: two columns on phones too (Rich, round 18) — a smaller picture and tighter text so each fits. */
+@media (max-width: 639px) {
+  .list-rows.comp-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 8px; padding-bottom: 8px; }
+  .list-rows.comp-cols a { grid-template-columns: 36px minmax(0, 1fr); gap: 6px; }
+  .list-rows.comp-cols img, .list-rows.comp-cols .ph { width: 36px; height: 36px; }
+  .list-rows.comp-cols a > div { padding: 7px 6px; font-size: 12px; min-width: 0; }
+  .list-rows.comp-cols strong { font-size: 13.5px; line-height: 1.2; overflow-wrap: anywhere; }
+  .list-rows.comp-cols small { font-size: 11px; }
+}

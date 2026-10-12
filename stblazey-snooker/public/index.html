@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Between the two "social" marks: the title, the preview shown when a link is shared, and the icons.
+  <!-- Between the two "social" marks: the title, the preview shown when a link is shared, and the icons
+       (the favicon and the home-screen icon are only added once they have been uploaded under Admin → Branding).
        On Netlify they are filled in for each page from Admin → Site settings / Branding and the news articles
        (netlify/edge-functions/social.js). What is written here is used if that cannot run. -->
   <!--social-->
@@ -14,8 +15,6 @@
   <meta property="og:title" content="St Blazey and District Snooker League">
   <meta property="og:description" content="Fixtures, results, league tables, breaks and rankings for the St Blazey and District Snooker League, established 1941.">
   <meta name="twitter:card" content="summary">
-  <link rel="icon" href="/assets/logo.svg">
-  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <!--/social-->
   <!-- "Add to home screen": the name, icon and colours a phone uses when the site is saved like an app. -->
   <link rel="manifest" href="/manifest.webmanifest">
@@ -28,14 +27,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Questrial&display=swap" rel="stylesheet">
   <!-- The loading screen's few rules are here as well as in the stylesheet, so it is black from the very first moment. -->
-  <style>.boot{position:fixed;inset:0;z-index:200;background:#000;display:grid;place-items:center}.boot img{width:min(180px,42vw);max-height:42vh}.boot.off{display:none}</style>
+  <style>.boot{position:fixed;inset:0;z-index:200;background:#000;display:grid;place-items:center}.boot img{width:min(180px,42vw);max-height:42vh}.boot.off{display:none}.boot-help{position:absolute;left:50%;bottom:12vh;transform:translateX(-50%);width:min(420px,88vw);display:grid;gap:10px;text-align:center;color:#fff;font:15px/1.45 system-ui,sans-serif}.boot-help p{margin:0 0 4px}.boot-help button{padding:13px 16px;border:0;background:#e4002b;color:#fff;font:700 15px system-ui,sans-serif;cursor:pointer}.boot-help button+button{background:#2a2a2a}.boot-help small{color:#bbb;font-size:12.5px}</style>
   <link rel="stylesheet" href="/css/style.css">
   <script type="module" src="/js/main.js"></script>
 </head>
 <body>
   <!-- Loading screen: black, with the logo pulsing, until the page is ready.
        (The logo and colours chosen under Admin → Branding are remembered in the browser, so they show at once.) -->
-  <div id="boot" class="boot" role="status" aria-label="Loading"><img src="/assets/logo.svg" alt=""></div>
+  <div id="boot" class="boot" role="status" aria-label="Loading"><img alt="" hidden></div>
   <script src="/js/boot.js"></script>
   <div id="ticker"></div>
   <div id="site-header"></div>

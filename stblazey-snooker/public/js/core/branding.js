@@ -135,6 +135,7 @@ export function paint(brand) {
   boot?.classList.toggle("off", brand.loaderShow === false);
   const logo = boot?.querySelector("img");
   if (logo && brand.loader && logo.getAttribute("src") !== brand.loader) logo.src = brand.loader;
+  if (logo) logo.hidden = !brand.loader;      // no logo uploaded: a plain black loading screen, no stand-in
 }
 
 /** Apply the site settings, and remember them for the next visit's loading screen. */

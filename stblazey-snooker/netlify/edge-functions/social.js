@@ -69,8 +69,8 @@ function head({ title, text, image, url, type, favicon, apple }) {
     `<meta name="twitter:title" content="${esc(title)}">`,
     `<meta name="twitter:description" content="${esc(text)}">`,
     image ? `<meta name="twitter:image" content="${esc(image)}">` : "",
-    `<link rel="icon" href="${esc(favicon)}">`,
-    `<link rel="apple-touch-icon" href="${esc(apple)}">`,
+    favicon ? `<link rel="icon" href="${esc(favicon)}">` : "",
+    apple ? `<link rel="apple-touch-icon" href="${esc(apple)}">` : "",
   ].filter(Boolean).join("\n  ");
 }
 
@@ -115,7 +115,7 @@ export default async (request, context) => {
       type: "article",
     } : { title: siteTitle, text: siteText, image: siteImage, type: "website" };
     const filled = head({ ...meta, url: `${url.origin}${url.pathname}`,
-      favicon: web(s.favicon_url) || web(icons.i192) || "/assets/logo.svg", apple: web(icons.apple) || "/assets/apple-touch-icon.png" });
+      favicon: web(s.favicon_url) || web(icons.i192), apple: web(icons.apple) });     // only what was uploaded: no stand-in logo
     const out = page.replace(/<!--social-->[\s\S]*?<!--\/social-->/, `<!--social-->\n  ${filled}\n  <!--/social-->`);
     const headers = new Headers(response.headers);
     headers.delete("content-length");

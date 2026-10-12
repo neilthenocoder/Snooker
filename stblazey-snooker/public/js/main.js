@@ -194,11 +194,16 @@ async function drawHeader() {
     </div>`);
   // The favicon and the iPhone home-screen icon (Admin → Branding). On Netlify they are already in the page
   // (netlify/edge-functions/social.js); this keeps them right in the preview and straight after a change.
+  // Only what has been uploaded: with nothing uploaded there is no icon at all (no stand-in logo).
   const icons = site.app_icons ?? {};
-  const icon = document.querySelector("link[rel=icon]");
-  if (icon) icon.href = site.favicon_url || icons.i192 || "/assets/logo.svg";
-  const apple = document.querySelector("link[rel=apple-touch-icon]");
-  if (apple && icons.apple) apple.href = icons.apple;
+  const setLink = (rel, href) => {
+    let link = document.querySelector(`link[rel="${rel}"]`);
+    if (!href) return link?.remove();
+    if (!link) { link = document.createElement("link"); link.rel = rel; document.head.append(link); }
+    if (link.getAttribute("href") !== href) link.href = href;
+  };
+  setLink("icon", site.favicon_url || icons.i192 || "");
+  setLink("apple-touch-icon", icons.apple || "");
   drawBell();
   refreshLive();
   measureHeader();
@@ -374,7 +379,7 @@ async function renderRoute() {
   } catch (err) {
     console.error(err);
     mount(view, html`<div class="wrap"><div class="notice error">Something went wrong: ${err.message}</div></div>`);
-  } finally { loaderOff(); }
+  } finally { loaderOff(); window.sbdslStarted = true; }     // (the safety net in boot.js stands down)
 }
 
 /** Admins and officers get an "Edit this page" button that opens the right part of the dashboard. */

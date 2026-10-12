@@ -12,12 +12,8 @@ import { html, fmtDate, safeHref } from "./dom.js";
 import { loadCompetitions, competitionBreaks, table } from "./api.js";
 import { buildBracket } from "./bracket.js";
 import { cupResults } from "./context.js";
-import { sidebar, panel, newsMini, topBreakPanel, dataTable, playerLink, leagueTablePanel, urls, outcomeTag } from "./components.js";
+import { sidebar, panel, newsMini, breaksBox, leagueTablePanel, urls, outcomeTag } from "./components.js";
 
-const breakList = (title, breaks) => (breaks.length > 1 ? panel(title, html`<div class="no-head">${dataTable([
-  { label: "Player", cell: (x) => playerLink(x.player) },
-  { label: "Break", cell: (x) => x.value, cls: "num strong" },
-], breaks.slice(1, 7))}</div>`) : "");
 const newsBox = (title, list, more = "/news") => (list.length ? panel(title, html`<div>${list.slice(0, 4).map(newsMini)}</div>`, { color: "blue", foot: { href: more, label: "More news" } }) : "");
 
 /** Returns the sidebar for this page, or null for the standard one. */
@@ -40,8 +36,7 @@ export async function contextSidebar(ctx, news, box, { page, group, about }) {
     const name = c ? c.name : "Competitions";
     const champion = (x) => { const b = buildBracket(data.entries.filter((e) => e.competition_id === x.id), data.matches.filter((m) => m.competition_id === x.id)); return b.champion ? b.entryById.get(b.champion)?.name : null; };
     return html`<aside class="sidebar">
-      ${topBreakPanel(`${name} Highest Break`, breaks[0])}
-      ${breakList(`${name} Breaks`, breaks)}
+      ${breaksBox(`${name} Breaks`, breaks)}
       ${results.length ? panel(c ? "Latest results" : "Latest competition results", html`<div class="res-list">${results.map((r) => html`<a class="res-mini" href="${r.href}">
         <small>${r.when ? fmtDate(r.when) : ""}${c ? "" : ` · ${r.title}`}</small><span class="${r.won === "h" ? "won" : r.won ? "lost" : ""}">${r.home}</span><b>${r.score}</b><span class="${r.won === "a" ? "won" : r.won ? "lost" : ""}">${r.away}</span></a>`)}</div>`, { color: "blue" }) : ""}
       ${dates.length ? panel("Key dates", html`<div class="list-links">${dates.map((d) => html`<a href="${safeHref(d.url) || "/calendar"}"><b>${fmtDate(d.starts_on)}</b> ${d.title}</a>`)}</div>`, { color: "yellow" }) : ""}

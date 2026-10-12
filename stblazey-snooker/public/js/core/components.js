@@ -291,6 +291,31 @@ export function topBreakPanel(title, best) {
   return panel(html`${title}${best && isRecent(best.when) ? html`<span class="new-badge">NEW</span>` : ""}`, body);
 }
 
+/**
+ * One "Breaks" box (Rich, round 18): the three highest at the top — 1st in the middle, 2nd and 3rd either side —
+ * then the next few in a list underneath. `list` = [{ value, player, when }], highest first.
+ * Options: limit (how many in all, default 7), more = { href, label } for a link at the bottom.
+ */
+export function breaksBox(title, list, { limit = 7, more = null } = {}) {
+  const top = list.slice(0, 3), rest = list.slice(3, limit);
+  const place = ["1st", "2nd", "3rd"];
+  const slot = (b, i) => (b ? html`<a class="bk-pod p${i + 1}" href="${b.player ? urls.player(b.player) : "#"}" title="${place[i]}: ${b.player?.full_name ?? ""} ${b.value}">
+      <span class="bk-rank">${place[i]}</span>${avatar(b.player)}<b>${b.value}</b><small>${b.player?.full_name ?? ""}</small></a>` : html`<span class="bk-pod empty"></span>`);
+  const body = !list.length ? html`<div class="empty">No breaks recorded yet.</div>` : html`
+    <div class="bk-podium">${slot(top[1], 1)}${slot(top[0], 0)}${slot(top[2], 2)}</div>
+    ${rest.length ? html`<div class="no-head bk-rest">${dataTable([
+      { label: "", cell: (b, i) => i + 4, cls: "num" },
+      { label: "Player", cell: (b) => playerLink(b.player) },
+      { label: "Break", cell: (b) => b.value, cls: "num strong" },
+    ], rest)}</div>` : ""}`;
+  return panel(html`${title}${top[0] && isRecent(top[0].when) ? html`<span class="new-badge">NEW</span>` : ""}`, body, { foot: more, cls: "bk-box" });
+}
+/** A league's Breaks box, for the side column. */
+export const leagueBreaksBox = (ctx, league) => {
+  const list = ctx.breaksIn(league.id).map((b) => ({ ...b, when: b.fixture?.starts_at }));
+  return breaksBox(`${shortName(league)} Breaks`, list, { more: list.length > 7 ? { href: `${urls.standings(league)}#breaks`, label: "View all breaks" } : null });
+};
+
 export function highestBreakPanel(ctx, league) {
   const best = ctx.breaksIn(league.id)[0];
   return topBreakPanel(`${shortName(league)} Highest Break`, best && { ...best, when: best.fixture?.starts_at });
@@ -325,7 +350,7 @@ export function sidebar(ctx, news = [], { leagues = ctx.leagues, top = "", count
   return html`<aside class="sidebar">
     ${top}
     ${sideBox(ctx, news, count, box)}
-    ${leagues.map((l) => html`${highestBreakPanel(ctx, l)}${breaksPanel(ctx, l, { limit: 2 })}${rankingsPanel(ctx, l, { limit: 4 })}`)}
+    ${leagues.map((l) => html`${leagueBreaksBox(ctx, l)}${rankingsPanel(ctx, l, { limit: 4 })}`)}
   </aside>`;
 }
 

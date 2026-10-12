@@ -3,7 +3,7 @@ import { table, articles, loadCompetitions, subscribe, competitionBreaks, signup
 import { openForEntry } from "./enter.js";
 import { buildBracket, progressText, isEntry } from "../core/bracket.js";
 import { bracketView, wireBracket, roundCards, standingsTable } from "../core/bracket-view.js";
-import { breadcrumb, panel, urls, topBreakPanel, dataTable, playerLink, shortName, trophy, newsStrip } from "../core/components.js";
+import { breadcrumb, panel, urls, breaksBox, shortName, trophy, newsStrip } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import notFound from "./not-found.js";
 
@@ -73,11 +73,7 @@ export default async function competition(view, { params }) {
           <div>${roundCards(b, venueById, c.round_deadlines)}</div>
         </div>
         <aside class="sidebar">
-          ${topBreakPanel(`${c.name} Highest Break`, breaks[0])}
-          ${breaks.length > 1 ? panel(`${c.name} Breaks`, html`<div class="no-head">${dataTable([
-            { label: "Player", cell: (x) => playerLink(x.player) },
-            { label: "Break", cell: (x) => x.value, cls: "num strong" },
-          ], breaks.slice(0, 6))}</div>`) : ""}
+          ${breaksBox(`${c.name} Breaks`, breaks)}
           ${panel("At a glance", html`<div class="glance">
             <div><b>${entries.length}</b>Entrants</div>
             <div><b>${real.filter((m) => m.played).length}/${real.length}</b>Matches played</div>
