@@ -100,7 +100,7 @@ export function openAccount(user, { message = "" } = {}) {
       ${link(mySnookerOn(user) ? "/myteam" : "/my/snooker", ICON.star, "My Snooker", mySnookerOn(user) ? "Your own page: the teams and players you follow" : "Switched off — press to switch it on")}
       ${isMember(user) && !isPlainPlayer(user) ? link("/my", ICON.team, "My Team", "Scorecards, fixtures and your team") : ""}
       ${isStaff(user) ? link("/admin", ICON.admin, "Admin dashboard", "Everything your role looks after") : ""}
-      ${link("/my/snooker", ICON.cog, "My Snooker settings", "Who you follow, what you see and where")}
+      ${link("/my/snooker", ICON.cog, "My Snooker settings", "Who you follow and what you see on your page")}
       ${p.player_id ? link("/my/profile", ICON.team, "My profile", "Your photo, bio and CueView") : ""}
       ${link("/my/details", ICON.key, "Password & details")}
     </nav>

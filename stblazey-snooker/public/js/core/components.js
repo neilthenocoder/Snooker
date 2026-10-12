@@ -126,15 +126,22 @@ export function panel(title, body, { color = "", href = "", foot = null, cls = "
 
 /**
  * columns: [{ label, cell: (row, i) => content, cls?: "num" | "right" | "hide-sm" }]
- * options: { highlight: (row) => bool, rowClass: (row) => "class", empty: "text" }
+ * options: { highlight: (row) => bool, rowClass: (row) => "class", empty: "text",
+ *            phoneLimit: n — only the first n rows show (on phones and big screens alike), with a "Show all" button under them (long lists of players),
+ *            more: "players" — the word on that button }
+ * A highlighted row ("hl") is the top of the table: faded green, like the top of a league table.
  */
-export function dataTable(columns, rows, { highlight = () => false, rowClass = () => "", empty = "Nothing to show yet." } = {}) {
+export function dataTable(columns, rows, { highlight = () => false, rowClass = () => "", empty = "Nothing to show yet.", phoneLimit = 0, more = "rows" } = {}) {
   if (!rows.length) return html`<div class="empty">${empty}</div>`;
-  return html`<div class="table-scroll"><table class="data">
+  const folds = phoneLimit > 0 && rows.length > phoneLimit + 2;      // not worth it for one or two more
+  const table = html`<div class="table-scroll"><table class="data">
     <thead><tr>${columns.map((c) => html`<th class="${c.cls || ""}">${c.label}</th>`)}</tr></thead>
-    <tbody>${rows.map((r, i) => html`<tr class="${highlight(r) ? "hl" : ""} ${rowClass(r)}">${columns.map((c) => html`<td class="${c.cls || ""}" data-label="${c.label}">${c.cell(r, i)}</td>`)}</tr>`)}</tbody>
+    <tbody>${rows.map((r, i) => html`<tr class="${highlight(r) ? "hl" : ""} ${rowClass(r)} ${folds && i >= phoneLimit ? "ph-more" : ""}">${columns.map((c) => html`<td class="${c.cls || ""}" data-label="${c.label}">${c.cell(r, i)}</td>`)}</tr>`)}</tbody>
   </table></div>`;
+  return folds ? html`<div class="table-fold" data-table-fold>${table}<button type="button" class="table-fold-btn" data-fold-toggle data-more="Show all ${rows.length} ${more}" data-less="Show the top ${phoneLimit} only">Show all ${rows.length} ${more}</button></div>` : table;
 }
+/** The points of the player at the top of a ranking table: a green pill, like the top points in a league table. */
+export const topPoints = (r, top) => (r === top && Number(r.pts) > 0 ? html`<span class="lt-pts">${r.pts}</span>` : r.pts);
 
 export const tile = (title, text, href, cls = "") =>
   html`<a class="tile ${cls}" href="${href}"><h4>${title}</h4><span class="tile-go">Click here to view</span>${text ? html`<p>${text}</p>` : ""}</a>`;
@@ -241,8 +248,8 @@ export function rankingsPanel(ctx, league, { limit = Infinity } = {}) {
       { label: "Lost", cell: (r) => r.lost, cls: "num" },
       { label: "Break pts", cell: (r) => r.breakPts, cls: "num" },
     ]),
-    { label: "Pts", cell: (r) => r.pts, cls: "num strong" },
-  ], rows, { highlight: (r) => r === rows[0], empty: "No frames played yet." });
+    { label: "Pts", cell: (r) => topPoints(r, rows[0]), cls: "num strong" },
+  ], rows, { highlight: (r) => r === rows[0], empty: "No frames played yet.", phoneLimit: Number.isFinite(limit) ? 0 : 10, more: "players" });
   return panel(`${shortName(league)} Rankings`, noHead(table, limit), {
     foot: Number.isFinite(limit) ? { href: `${urls.standings(league)}#players`, label: "View all players" } : null,
   });
@@ -258,8 +265,8 @@ export function breaksPanel(ctx, league, { limit = Infinity } = {}) {
       { label: "Team", cell: (b) => teamLink(ctx.team.get(b.player?.team_id)), cls: "hide-sm" },
       { label: "Date", cell: (b) => html`<a href="${urls.match(b.fixture)}">${fmtDate(b.fixture.starts_at)}</a>` },
     ]),
-    { label: "Break", cell: (b) => b.value, cls: "num strong" },
-  ], rows, { empty: "No breaks recorded yet." });
+    { label: "Break", cell: (b) => (!Number.isFinite(limit) && b === rows[0] ? html`<span class="lt-pts">${b.value}</span>` : b.value), cls: "num strong" },
+  ], rows, { highlight: (b) => !Number.isFinite(limit) && b === rows[0], empty: "No breaks recorded yet.", phoneLimit: Number.isFinite(limit) ? 0 : 10, more: "breaks" });
   return panel(`${shortName(league)} Breaks`, noHead(table, limit), {
     foot: Number.isFinite(limit) && all.length ? { href: `${urls.standings(league)}#breaks`, label: "View all breaks" } : null,
   });

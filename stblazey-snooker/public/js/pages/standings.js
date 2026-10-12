@@ -17,10 +17,8 @@ export default async function standings(view, { params, query }) {
     <div class="title-trophy">${trophy(league)}<div>
       <h1 class="with-emblem">${league.logo_url ? emblem(league) : ""}${league.name} ${ctx.season?.name}</h1>${seasonPicker(ctx)}</div></div></div>
     ${leagueTablePanel(ctx, league)}
-    <div class="grid-2" style="gap:30px">
-      <div id="players">${rankingsPanel(ctx, league)}</div>
-      <div id="breaks">${breaksPanel(ctx, league)}</div>
-    </div>
+    <div id="players">${rankingsPanel(ctx, league)}</div>
+    <div id="breaks">${breaksPanel(ctx, league)}</div>
     ${league.shield_team_id ? html`<a class="btn-bar" href="${urls.shield(league)}${query.get("season") ? `?season=${query.get("season")}` : ""}">🛡 ${league.shield_name || "Shield"}: who holds it and where it has been</a>` : ""}
     <p class="muted">${RULES_TEXT}</p>
   </div>`);

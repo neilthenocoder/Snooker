@@ -59,8 +59,8 @@ export default async function archive(view) {
         { label: "Player", cell: (b) => playerLink(b.player) },
         { label: "Season", cell: (b) => b.season.name, cls: "hide-sm" },
         { label: "Date", cell: (b) => html`<a href="${urls.match(b.fixture)}">${fmtDate(b.fixture.starts_at)}</a>` },
-        { label: "Break", cell: (b) => b.value, cls: "num strong" },
-      ], allBreaks, { highlight: (b) => b === allBreaks[0], empty: "No breaks recorded yet." }))}
+        { label: "Break", cell: (b) => (b === allBreaks[0] ? html`<span class="lt-pts">${b.value}</span>` : b.value), cls: "num strong" },
+      ], allBreaks, { highlight: (b) => b === allBreaks[0], empty: "No breaks recorded yet.", phoneLimit: 10, more: "breaks" }))}
       ${panel("Most league titles", dataTable([
         { label: "Team", cell: (t) => teamLink(t.team) },
         { label: "Titles", cell: (t) => t.n, cls: "num strong" },

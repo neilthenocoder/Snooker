@@ -6,7 +6,7 @@ import { html, mount, $, toast, fmtDate, fmtTime, toLocalInput, fromLocalInput, 
 import { table, save, remove, invalidate } from "../core/api.js";
 import { slugify } from "../core/schedule.js";
 import { dataTable, panel } from "../core/components.js";
-import { uploadImage, uploadFile } from "../core/upload.js";
+import { uploadImage, uploadFile, makeAppIcons } from "../core/upload.js";
 import { markup, MARKUP_HELP } from "../core/markup.js";
 import { pickImage, uploadFiles } from "./picker.js";
 import { listField, wireListFields, listItems } from "../core/list-field.js";
@@ -46,12 +46,17 @@ function display(field, value, refs) {
     case "select": return optionLabel(field, value);
     case "color": return html`<span class="swatch" style="background:${value}"></span>`;
     case "image": return html`<img class="thumb" src="${value}" alt="">`;
+    case "appicon": return value?.i192 ? html`<img class="thumb" src="${value.i192}" alt="">` : "–";
     case "gallery": return `${value.length} picture${value.length === 1 ? "" : "s"}`;
     case "list": return listItems(value).join(", ");
     case "tags": return (value ?? []).map((id) => (field.store ? id : labelOf(refs[field.ref].find((r) => r.id === id)))).join(", ") || (field.empty ?? "–");
     default: return String(value).length > 60 ? `${String(value).slice(0, 60)}…` : value;
   }
 }
+
+const appIconPreviews = (icons) => (icons.apple ? html`<figure><img src="${icons.apple}" alt="" class="ai-apple"><figcaption>iPhone</figcaption></figure>
+  <figure><img src="${icons.maskable}" alt="" class="ai-round"><figcaption>Android</figcaption></figure>
+  <figure><img src="${icons.i192}" alt="" class="ai-plain"><figcaption>Installed app</figcaption></figure>` : html`<p class="muted">No app icon yet: phones use the standard one.</p>`);
 
 const galleryThumbs = (name, urls) => html`${urls.map((u, i) => html`<figure class="gal-thumb"><img src="${u}" alt="">
   <button type="button" data-gal-remove="${name}" data-i="${i}" aria-label="Remove">×</button></figure>`)}`;
@@ -95,11 +100,22 @@ function input(field, row, refs, rows) {
       // Optional colours can be left on the standard one: the picker only counts when "Use my own" is ticked.
       return field.optional ? html`<span class="color-field">${picker}<label class="check"><input type="checkbox" data-own-color="${name}" ${set ? "checked" : ""}> Use my own colour</label></span>` : picker;
     }
+    case "appicon": {
+      // One square picture in; the four PNG sizes phones and browsers ask for come out (makeAppIcons in core/upload.js).
+      const icons = value && typeof value === "object" ? value : {};
+      return html`<div class="appicon-field">
+        <div class="appicon-previews" data-appicon-previews="${name}">${appIconPreviews(icons)}</div>
+        <div class="btn-row">
+          <label class="btn small secondary">Upload app icon<input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden data-appicon-upload="${name}"></label>
+          <button type="button" class="btn small ghost" data-appicon-clear="${name}">Remove</button>
+        </div>
+        <input type="hidden" name="${name}" value="${JSON.stringify(icons)}"></div>`;
+    }
     case "image": return html`<div class="image-field">
       <img class="image-preview ${field.round ? "round" : ""} ${value ? "" : "hidden"}" src="${value}" alt="" data-preview="${name}">
       <div class="btn-row">
         <button type="button" class="btn small blue" data-library="${name}" data-folder="${field.folder ?? "misc"}" data-max="${field.maxSize ?? 1600}">Choose from library</button>
-        <label class="btn small secondary">Upload image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" hidden data-upload="${name}" data-folder="${field.folder ?? "misc"}" data-max="${field.maxSize ?? 1600}"></label>
+        <label class="btn small secondary">Upload image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" hidden data-upload="${name}" data-folder="${field.folder ?? "misc"}" data-max="${field.maxSize ?? 1600}" data-format="${field.format ?? "webp"}"></label>
         <button type="button" class="btn small ghost" data-clear-image="${name}">Remove</button>
       </div>
       <input type="text" ${a(attrs)} value="${value}" placeholder="…or paste an image link" data-image-url></div>`;
@@ -139,6 +155,7 @@ function collect(form, res, editing) {
     if (["number", "range"].includes(f.type)) v = v === "" ? null : Number(v);
     else if (f.type === "datetime") v = fromLocalInput(v);
     else if (["gallery", "tags"].includes(f.type)) v = JSON.parse(v || "[]");
+    else if (f.type === "appicon") v = JSON.parse(v || "{}");
     else if (f.type !== "checkbox" && v === "") v = null;
     if (f.type === "password" && !v) continue;
     if (f.in) row[f.in] = { ...(editing[f.in] ?? {}), ...(row[f.in] ?? {}), [f.name]: v ?? "" };
@@ -159,7 +176,7 @@ function formFields(res, editing, refs, rows) {
     const help = f.help ? html`<small class="help">${f.help}</small>` : "";
     if (f.type === "checkbox") return html`<label class="check">${input(f, editing, refs, rows)}${f.label}</label>`;
     // Image and gallery fields contain their own buttons, so they sit in a <div> rather than a <label>.
-    if (["image", "gallery", "tags", "list", "file"].includes(f.type)) return html`<div class="field-label" style="grid-column:1/-1">${caption}${help}${input(f, editing, refs, rows)}</div>`;
+    if (["image", "gallery", "tags", "list", "file", "appicon"].includes(f.type)) return html`<div class="field-label" style="grid-column:1/-1">${caption}${help}${input(f, editing, refs, rows)}</div>`;
     // Formatted text: the typing help underneath, and a button to see how it will look.
     if (f.formatted) return html`<div class="field-label formatted-field" style="grid-column:1/-1"><label>${caption}${help}${input(f, editing, refs, rows)}</label>
       <small class="help">${MARKUP_HELP}</small>
@@ -317,11 +334,25 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
       finally { label.firstChild.textContent = "Upload a PDF"; doc.value = ""; }
       return;
     }
+    const icon = e.target.closest("[data-appicon-upload]");
+    if (icon) {
+      if (!icon.files[0]) return;
+      const label = icon.closest("label"), name = icon.dataset.appiconUpload;
+      label.firstChild.textContent = "Making the icons…";
+      try {
+        const icons = await makeAppIcons(icon.files[0], { background: form()?.elements.app_icon_bg?.value || "#000000" });
+        form().elements[name].value = JSON.stringify(icons);
+        mount(form().querySelector(`[data-appicon-previews="${name}"]`), appIconPreviews(icons));
+        toast("App icon made — press Save to keep it");
+      } catch (err) { toast(err.message, "error"); }
+      finally { label.firstChild.textContent = "Upload app icon"; icon.value = ""; }
+      return;
+    }
     const input = e.target.closest("[data-upload]");
     if (!input?.files[0]) return;
     const label = input.closest("label");
     label.firstChild.textContent = "Uploading…";
-    try { setImage(input.dataset.upload, await uploadImage(input.files[0], { folder: input.dataset.folder, maxSize: Number(input.dataset.max) })); toast("Image uploaded — press Save to keep it"); }
+    try { setImage(input.dataset.upload, await uploadImage(input.files[0], { folder: input.dataset.folder, maxSize: Number(input.dataset.max), format: input.dataset.format })); toast("Image uploaded — press Save to keep it"); }
     catch (err) { toast(err.message, "error"); }
     finally { label.firstChild.textContent = "Upload image"; input.value = ""; }
   });
@@ -346,6 +377,7 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
     if (t.matches("[data-new]")) { editing = { ...filters }; drawForm(); }
     if (t.matches("[data-cancel]")) { editing = null; drawForm(); }
     if (t.matches("[data-clear-image]")) setImage(t.dataset.clearImage, "");
+    if (t.matches("[data-appicon-clear]")) { const n = t.dataset.appiconClear; form().elements[n].value = "{}"; mount(form().querySelector(`[data-appicon-previews="${n}"]`), appIconPreviews({})); }
     if (t.matches("[data-file-clear]")) setFile(t.dataset.fileClear, "");
     if (t.matches("[data-preview-markup]")) {
       const pv = $(`[data-markup-preview="${t.dataset.previewMarkup}"]`, form());

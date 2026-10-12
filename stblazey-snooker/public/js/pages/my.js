@@ -5,8 +5,9 @@
 // A player's login has no tools: the one thing they control here is My Snooker (their own page, /myteam).
 import { html, mount, $, readForm, toast, fmtDate, fmtTime, confirmBox } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
-import { loadCompetitions, updateMyPlayer, addPlayerToTeam, seasonFrames, setFixtureStatus, setMyPrefs, table, teamLineups, setLineup, claimPlayer } from "../core/api.js";
+import { settings, loadCompetitions, updateMyPlayer, addPlayerToTeam, seasonFrames, setFixtureStatus, setMyPrefs, table, teamLineups, setLineup, claimPlayer } from "../core/api.js";
 import { upcomingFor, pickedCount, dayText, untilText, fixtureLine } from "../core/squad.js";
+import { deadlineWarnings, deadlineList } from "../core/comp-deadlines.js";
 import { SECTIONS, prefsToSave } from "../core/my-snooker.js";
 import { listField, wireListFields } from "../core/list-field.js";
 import { isCaptain, isMember, isPlainPlayer, mySnookerOn, myPrefs, refreshUser, canEditFixture, canPostpone, canEditCompMatch, canAddMatchPhotos, changePassword, roleText } from "../core/auth.js";
@@ -83,7 +84,8 @@ function postponedNotices(ctx, team) {
 
 const noTeam = html`<div class="notice error">Your login isn't linked to a team yet. Please contact the league secretary.</div>`;
 
-// ── My Snooker: who they follow, what they see, and where ──────
+// ── My Snooker: who they follow and what they see ──────────────
+// (It is always a page of its own — /myteam, "My Snooker" in the menu. The home page stays the same for everyone.)
 // Every login has this tab. It changes what THEY see on the website; it gives no extra rights.
 async function snookerTab(el, { ctx, user, team, me }) {
   const on = mySnookerOn(user);
@@ -96,8 +98,6 @@ async function snookerTab(el, { ctx, user, team, me }) {
   const teamName = (p) => ctx.team.get(p.team_id)?.name ?? "no team";
   const chips = () => mount($("[data-chips]", el), players.length ? html`${players.map((id) => { const p = ctx.player.get(id); return html`<span class="chip">${p.full_name} <small class="muted">${teamName(p)}</small>
     <button type="button" data-unfollow="${id}" aria-label="Stop following ${p.full_name}">×</button></span>`; })}` : html`<span class="muted">Nobody yet. Add a player below, or press Follow on any player's page.</span>`);
-  const place = [["page", "On my own page", "A separate page, My Snooker. It opens when you come to the website; the normal home page is one press away."],
-    ["home", "On the home page", "Your choices sit at the top of the normal home page."], ["both", "Both", "Your own page, and at the top of the home page too."]];
 
   mount(el, html`
     <form class="form ms-set" data-snooker>
@@ -106,14 +106,11 @@ async function snookerTab(el, { ctx, user, team, me }) {
           <div><small>My Snooker</small><h2>${on ? "Your own view of the league" : "Switched off"}</h2></div>
           ${on ? html`<a class="btn green" href="/myteam">Open my page</a>` : ""}
         </div>
-        <p>Follow the teams and players you care about, choose what you want to see, and choose where it shows. It changes what <b>you</b> see and nothing else.</p>
+        <p>Your own page of the league: follow the teams and players you care about, and tick everything you want to see on it — as much or as little as you like.
+          Open it any time from the menu (<b>★ My Snooker</b>). The normal home page stays as it is.</p>
         <label class="ms-switch"><input type="checkbox" name="on" ${on ? "checked" : ""}><span class="ms-slider" aria-hidden="true"></span>
           <span><b>Use My Snooker</b><small>Switch it off and you simply get the normal website</small></span></label>
       </div>
-
-      <fieldset class="ms-set-box"><legend>Where do you want it?</legend>
-        <div class="ms-place">${place.map(([key, label, help]) => html`<label class="ms-radio"><input type="radio" name="place" value="${key}" ${prefs.place === key ? "checked" : ""}>
-          <span><b>${label}</b><small>${help}</small></span></label>`)}</div></fieldset>
 
       <fieldset class="ms-set-box"><legend>Teams I follow</legend>
         <p class="ms-help">The first team you tick is the one your page opens on. Follow more and you get a button for each.</p>
@@ -137,7 +134,7 @@ async function snookerTab(el, { ctx, user, team, me }) {
 
       <div class="btn-row form-actions"><button class="btn">Save my choices</button>
         <button type="button" class="btn ghost" data-reset>Reset</button>
-        <span class="muted" style="font-size:13px"><b>Reset</b>: switched on, ${team ? `following ${team.name}` : "following nobody"}${me ? ` and ${me.full_name}` : ""}, every section, on your own page.</span></div>
+        <span class="muted" style="font-size:13px"><b>Reset</b>: switched on, ${team ? `following ${team.name}` : "following nobody"}${me ? ` and ${me.full_name}` : ""}, every section.</span></div>
     </form>`);
   chips();
 
@@ -178,7 +175,7 @@ async function snookerTab(el, { ctx, user, team, me }) {
     // Keep the order the teams were followed in (so the first stays first), then any newly ticked ones.
     const teams = [...prefs.teams.filter((id) => ticked("team").includes(id)), ...ticked("team").filter((id) => !prefs.teams.includes(id))];
     const turnOn = form.elements.on.checked;
-    save(turnOn, { place: form.elements.place.value || "page", teams, players, cats: ticked("cat"), sections: sections.length === SECTIONS.length ? null : sections },
+    save(turnOn, { place: "page", teams, players, cats: ticked("cat"), sections: sections.length === SECTIONS.length ? null : sections },
       turnOn ? "My Snooker saved" : "My Snooker switched off");
   });
 }
@@ -442,7 +439,9 @@ function detailsTab(el, { user, team, me }) {
 
 // ── Competitions ───────────────────────────────────────────────
 async function competitionsTab(el, { ctx, user, team, me }) {
-  const data = await loadCompetitions();
+  const [data, site] = await Promise.all([loadCompetitions(), settings().catch(() => ({}))]);
+  // Deadlines first: what is due soon, who is at home and who must contact whom (core/comp-deadlines.js).
+  const deadlines = deadlineList(deadlineWarnings(user, ctx, data, site), { title: "Your deadlines" });
   const mine = (e) => e && ((team && e.team_id === team.id) || (me && e.player_id === me.id) || (team && ctx.player.get(e.player_id)?.team_id === team.id));
   const rows = data.competitions.flatMap((c) => {
     const entries = data.entries.filter((e) => e.competition_id === c.id);
@@ -452,7 +451,7 @@ async function competitionsTab(el, { ctx, user, team, me }) {
   const name = (b, id) => (isEntry(id) ? b.entryById.get(id).name : "To be decided");
 
   // On a phone each match is a block, like the fixture list (".fx-list" in style.css), so the button is never off the edge of the screen.
-  mount(el, html`${panel(`Cup matches for ${team?.name ?? "you"}`, html`<div class="fx-list">${dataTable([
+  mount(el, html`${deadlines}${panel(`Cup matches for ${team?.name ?? "you"}`, html`<div class="fx-list">${dataTable([
       { label: "Date", cell: ({ m }) => (m.row.starts_at ? `${fmtDate(m.row.starts_at)} ${fmtTime(m.row.starts_at)}` : "TBC"), cls: "fx-date" },
       { label: "Competition", cell: ({ c, b, m }) => html`<a href="${urls.competition(c)}">${c.name}</a> <small class="muted">${roundName(m.round, b.totalRounds)}</small>`, cls: "fx-comp" },
       { label: "Match", cell: ({ b, m }) => html`<a href="/cup-match/${m.row.no ?? m.row.id}">${name(b, m.a)} v ${name(b, m.b)}</a>`, cls: "fx-name" },

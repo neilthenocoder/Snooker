@@ -52,7 +52,8 @@ export const AREAS = [
   ["fixtures", "Fixtures", "Add and edit fixtures, the fixture generator"],
   ["league", "League", "Leagues, teams, players, venues, seasons"],
   ["handicaps", "Handicaps", "Change handicaps, run the yearly review"],
-  ["competitions", "Competitions", "Competitions, entries to approve, draws, cup scorecards, live scoreboard, presentation awards, key dates"],
+  ["competitions", "Competitions", "Competitions, entries to approve, draws, cup scorecards, presentation awards, key dates"],
+  ["livescoring", "Live scoring (ball by ball)", "Score a match ball by ball: the live scoreboard for finals (Admin → Live scoreboard), and the “Ball by ball” view on any scorecard they can open. The only part that can be given to captains and vice captains too"],
   ["website", "News & website", "News, categories, announcements, key dates, meetings, info pages and rules, sponsors, presentation awards, image library"],
   ["settings", "Settings & branding", "Site settings, home page, branding, result emails, statistics"],
   ["people", "Logins", "Create, change and remove logins (never a Master Admin's)"],
@@ -60,12 +61,21 @@ export const AREAS = [
 const ALL_AREAS = AREAS.map(([key]) => key);
 /** The roles whose permissions can be set (everyone except the Master Admin, captains and players). */
 export const OFFICER_ROLES = ["league_admin", "competition_secretary", "league_secretary", "committee_member", "president", "vice_chairman", "chairman"];
+/**
+ * Captains and vice captains have their team's tools by right (scorecards, Manage team…) and no part of the dashboard.
+ * The one thing that can be switched on for them, role by role, is live scoring (Rich, round 15: off unless ticked).
+ */
+export const TEAM_ROLES = ["captain", "vice_captain"];
+export const TEAM_ROLE_AREAS = ["livescoring"];
+/** Areas that are not a part of the dashboard: having one does not make someone "staff". */
+const NOT_DASHBOARD = ["livescoring"];
 /** What each role starts with (also the fallback if the permissions table can't be read). */
 export const DEFAULT_AREAS = {
   league_admin: ALL_AREAS,
-  competition_secretary: ["handicaps", "competitions"],
+  competition_secretary: ["handicaps", "competitions", "livescoring"],
   league_secretary: ["league", "handicaps"],
   committee_member: ["website", "settings"], president: ["website", "settings"], vice_chairman: ["website", "settings"], chairman: ["website", "settings"],
+  captain: [], vice_captain: [],
 };
 /**
  * Which area each admin section belongs to. "master" = Master Admin only;
@@ -78,7 +88,7 @@ export const SECTION_AREA = {
   leagues: "league", teams: "league", players: "league", venues: "league", seasons: "league",
   handicaps: "handicaps",
   competitions: "competitions", entries: "competitions", draws: "competitions",
-  scoreboard: { any: ["competitions", "matchnights"] }, awards: { any: ["website", "competitions"] }, key_dates: { any: ["website", "competitions"] },
+  scoreboard: "livescoring", awards: { any: ["website", "competitions"] }, key_dates: { any: ["website", "competitions"] },
   meetings: "website", emails: "settings",
   accounts: "people", roles: "master", activity: "master", backup: "master",
   articles: "website", categories: "website", announcements: "website", notices: "website", media: "website", pages: "website", sponsors: "website", merchandise: "website",
@@ -94,7 +104,9 @@ export const canManage = (user, area) => isMaster(user) || (!!user && (user.area
 /** Looks after match nights: may approve results and edit any scorecard. (Older name, kept for the pages that use it.) */
 export const isAdmin = (user) => canManage(user, "matchnights");
 /** Anyone with at least one part of the admin dashboard. */
-export const isStaff = (user) => isMaster(user) || (user?.areas ?? []).length > 0;
+export const isStaff = (user) => isMaster(user) || (user?.areas ?? []).some((a) => !NOT_DASHBOARD.includes(a));
+/** May this person score a match ball by ball (Admin → Roles & permissions → Live scoring)? */
+export const canLiveScore = (user) => canManage(user, "livescoring");
 /** May this person open the given admin section? */
 export const canOpenSection = (user, section) => {
   const need = SECTION_AREA[section];
@@ -137,9 +149,12 @@ export const mySnookerTeamId = (user) => myPrefs(user).teams[0] ?? null;
 export const mySnookerOn = (user) => !!user?.profile && user.profile.my_snooker !== false;
 /** Have they chosen anything to follow yet? */
 export const mySnookerSetUp = (user) => { const p = myPrefs(user); return p.teams.length + p.players.length > 0; };
-/** Should their choices show on the real home page / do they have the separate page as their start page? */
-export const mySnookerOnHome = (user) => mySnookerOn(user) && mySnookerSetUp(user) && ["home", "both"].includes(myPrefs(user).place);
-export const mySnookerOwnPage = (user) => mySnookerOn(user) && ["page", "both"].includes(myPrefs(user).place);
+/**
+ * Where My Snooker shows. Since Rich's thirteenth round it is always its own page (/myteam), reached from the menu:
+ * the home page stays the normal home page for everyone. (The old "on the home page" / "both" choice is ignored.)
+ */
+export const mySnookerOnHome = () => false;
+export const mySnookerOwnPage = (user) => mySnookerOn(user);
 /** A plain player login: no dashboard, no captain's tools. My Snooker is their home. */
 export const isPlainPlayer = (user) => !!user?.profile && !isStaff(user) && !isCaptain(user);
 /** Where someone lands after logging in: officers on the dashboard, captains in My Team, players on their own My Snooker page (or the home page, if that is where they put it). */

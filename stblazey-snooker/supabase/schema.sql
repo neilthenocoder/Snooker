@@ -481,7 +481,8 @@ alter table competition_frames add constraint competition_frames_b_points_check 
 
 -- Roles & permissions: which parts of the dashboard each officer role may use.
 -- Only the Master Admin can change this (Admin → Roles & permissions); the Master Admin always has everything.
--- Areas: matchnights, fixtures, league, handicaps, competitions, website, settings, people.
+-- Areas: matchnights, fixtures, league, handicaps, competitions, livescoring, website, settings, people.
+-- (livescoring is not a part of the dashboard: it is the one area captains and vice captains can be given.)
 create table if not exists role_permissions (
   role text primary key,
   areas text[] not null default '{}',
@@ -777,7 +778,7 @@ create or replace function public.is_staff() returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from profiles p where p.id = auth.uid() and (
     p.role = 'admin'
-    or exists (select 1 from role_permissions rp where rp.role = p.role and cardinality(rp.areas) > 0)
+    or exists (select 1 from role_permissions rp where rp.role = p.role and cardinality(array_remove(rp.areas, 'livescoring')) > 0)
   ));
 $$;
 
@@ -1222,8 +1223,9 @@ begin
   -- Meetings: the website team; unpublished ones are hidden from the public.
   execute 'create policy "admin write" on meetings for all using (public.can_manage(''website'')) with check (public.can_manage(''website''))';
   execute 'create policy "public read" on meetings for select using (is_published or public.can_manage(''website''))';
-  -- The live scoreboard: whoever looks after competitions or match nights.
-  execute 'create policy "admin write" on live_matches for all using (public.can_manage(''competitions'') or public.can_manage(''matchnights'')) with check (public.can_manage(''competitions'') or public.can_manage(''matchnights''))';
+  -- The live scoreboard: officers who have "Live scoring" under Admin → Roles & permissions. (Captains and vice captains
+  -- given live scoring are not officers: they only reach the frames of their own team's matches — "captain write" below.)
+  execute 'create policy "admin write" on live_matches for all using (public.can_manage(''livescoring'') and public.is_staff()) with check (public.can_manage(''livescoring'') and public.is_staff())';
   -- Who gets the result emails: private (settings & branding only).
   execute 'create policy "admin write" on private_settings for all using (public.can_manage(''settings'')) with check (public.can_manage(''settings''))';
   -- The activity log: read by the Master Admin only; written only by the triggers below.
@@ -1617,8 +1619,8 @@ alter table live_matches add constraint live_matches_size_check
 create unique index if not exists live_matches_fixture_frame_key on live_matches (fixture_id, frame_no) where fixture_id is not null;
 drop policy if exists "captain write" on live_matches;
 create policy "captain write" on live_matches for all
-  using (fixture_id is not null and public.can_edit_fixture(fixture_id))
-  with check (fixture_id is not null and comp_match_id is null and competition_id is null and public.can_edit_fixture(fixture_id));
+  using (fixture_id is not null and public.can_manage('livescoring') and public.can_edit_fixture(fixture_id))
+  with check (fixture_id is not null and comp_match_id is null and competition_id is null and public.can_manage('livescoring') and public.can_edit_fixture(fixture_id));
 
 -- 4. Manage team: the players a captain picks ahead of a match night. One row per match and team;
 --    picks = [{ "player_id": …, "ext": false }, …] in frame order. It is kept apart from the scorecard so the
@@ -1715,6 +1717,44 @@ end $$;
 -- the holders on the home page and on the shield's own page; a gold shield is drawn until one is added.
 alter table leagues add column if not exists shield_image_url text;
 
+-- ── v14: Rich's thirteenth round of feedback ────────────────────
+-- A small list of one-time steps already done, so that re-running this file never repeats them
+-- (and never undoes a choice made since in the dashboard). Only this file writes to it.
+create table if not exists schema_steps (step text primary key, done_at timestamptz not null default now());
+alter table schema_steps enable row level security;
+
+-- 1. Live scoring (ball by ball) is a permission of its own (Admin → Roles & permissions → Live scoring).
+--    Captains and vice captains have a row too — empty, so they cannot score ball by ball unless it is ticked.
+--    The first time this runs, every role that could use the live scoreboard before (competitions or match nights) keeps it.
+insert into role_permissions (role, areas) values ('captain', '{}'), ('vice_captain', '{}') on conflict (role) do nothing;
+do $$
+begin
+  if not exists (select 1 from schema_steps where step = 'v14 live scoring') then
+    update role_permissions set areas = array_append(areas, 'livescoring')
+     where ('competitions' = any(areas) or 'matchnights' = any(areas)) and not ('livescoring' = any(areas));
+    insert into schema_steps (step) values ('v14 live scoring');
+  end if;
+end $$;
+
+-- 2. Competition deadlines: the day the home player must have contacted their opponent, for each round
+--    ({ "1": "2026-10-10", … }, beside round_deadlines), and a match switched round when they didn't.
+alter table competitions add column if not exists round_contact jsonb not null default '{}'::jsonb;
+alter table competition_matches add column if not exists home_switched boolean not null default false;
+--    How long before a deadline the warnings start, and the rule an away player is told (Site settings → Competitions).
+alter table settings add column if not exists comp_warn_days int not null default 14;
+alter table settings add column if not exists comp_contact_rule text;
+
+-- 3. Sharing on social media and the app icons (Admin → Site settings → Sharing, Admin → Branding → App icon).
+--    The preview a link shows on Facebook, WhatsApp, X…: for the whole site, and for each news article.
+alter table settings add column if not exists social_title text;
+alter table settings add column if not exists social_description text;
+alter table settings add column if not exists social_image_url text;
+alter table articles add column if not exists social_image_url text;
+alter table articles add column if not exists social_description text;
+--    The icon on a phone's home screen / an installed app: { apple: 180px, i192, i512, maskable } (PNG links), and its background.
+alter table settings add column if not exists app_icons jsonb not null default '{}'::jsonb;
+alter table settings add column if not exists app_icon_bg text not null default '#000000';
+
 -- ── v8: give existing rows their short web addresses ────────────
 -- (Done down here, after the activity log has been told to ignore these columns.)
 update players set slug = slug where coalesce(slug, '') = '';
@@ -1776,7 +1816,7 @@ create policy "images admin delete" on storage.objects for delete to authenticat
 -- when everything above it has run. If the website files are uploaded without this file being run, the admin
 -- dashboard says "The database needs updating" at the top of every page.
 -- When something is added to this file that the website needs: raise this number and the one in version.js.
-create or replace function public.schema_version() returns int language sql immutable as $$ select 13 $$;
+create or replace function public.schema_version() returns int language sql immutable as $$ select 14 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

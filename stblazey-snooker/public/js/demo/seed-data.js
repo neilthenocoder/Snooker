@@ -258,7 +258,8 @@ export function buildSeed() {
       starts_at: londonISO(addDays(firstDate, (r.round - 1) * 14), "19:30"), venue_id: pick(venues).id, ...r,
     }));
     // Each round has to be played by the Sunday after its match night.
-    for (const round of new Set(rows.map((r) => r.round))) comp.round_deadlines[round] = addDays(firstDate, (round - 1) * 14 + 5);
+    comp.round_contact = {};
+    for (const round of new Set(rows.map((r) => r.round))) { comp.round_deadlines[round] = addDays(firstDate, (round - 1) * 14 + 5); comp.round_contact[round] = addDays(firstDate, (round - 1) * 14 - 2); }
     // Play matches in bracket order so later rounds have real entrants.
     for (let round = 1; round <= fullRounds + 1; round++) {
       const list = rows.filter((r) => r.round === round);
@@ -339,6 +340,7 @@ export function buildSeed() {
     text_sizes: {}, celebrate_breaks: "season", feature_announcements: true, feature_style: "scroll", key_dates_show: true, key_dates_count: 5,
     bacs_details: "Account name: St Blazey & District Snooker League (placeholder)\nSort code: 00-00-00\nAccount number: 00000000", entry_pay_days: 7,
     facebook_url: "https://www.facebook.com/", x_url: "https://x.com/", instagram_url: "https://www.instagram.com/", youtube_url: "https://www.youtube.com/",
+    comp_warn_days: 14, comp_contact_rule: "", social_title: "", social_description: "", social_image_url: "", app_icons: {}, app_icon_bg: "#000000",
   }];
   const media = [0, 1, 2, 3, 4, 5, 11, 12].map((n) => ({ id: uuid(), url: img(n), path: null, name: `Sample photo ${n + 1}`, category: n > 10 ? "Galleries" : "News", created_at: `2026-09-${String(10 + n).padStart(2, "0")}T12:00:00Z` }));
 
@@ -435,9 +437,10 @@ export function buildSeed() {
   ];
   // What each officer role may use in the dashboard (the Master Admin can change it under Roles & permissions).
   const role_permissions = [
-    ["league_admin", ["matchnights", "fixtures", "league", "handicaps", "competitions", "website", "settings", "people"]],
-    ["competition_secretary", ["handicaps", "competitions"]], ["league_secretary", ["league", "handicaps"]],
+    ["league_admin", ["matchnights", "fixtures", "league", "handicaps", "competitions", "livescoring", "website", "settings", "people"]],
+    ["competition_secretary", ["handicaps", "competitions", "livescoring"]], ["league_secretary", ["league", "handicaps"]],
     ["committee_member", ["website", "settings"]], ["president", ["website", "settings"]], ["vice_chairman", ["website", "settings"]], ["chairman", ["website", "settings"]],
+    ["captain", []], ["vice_captain", []],
   ].map(([role, areas]) => ({ role, areas }));
 
   // ── Wave 6 samples ──

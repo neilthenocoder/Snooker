@@ -3,12 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Between the two "social" marks: the title, the preview shown when a link is shared, and the icons.
+       On Netlify they are filled in for each page from Admin → Site settings / Branding and the news articles
+       (netlify/edge-functions/social.js). What is written here is used if that cannot run. -->
+  <!--social-->
   <title>St Blazey and District Snooker League</title>
   <meta name="description" content="Fixtures, results, league tables, breaks and rankings for the St Blazey and District Snooker League, established 1941.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="St Blazey and District Snooker League">
+  <meta property="og:title" content="St Blazey and District Snooker League">
+  <meta property="og:description" content="Fixtures, results, league tables, breaks and rankings for the St Blazey and District Snooker League, established 1941.">
+  <meta name="twitter:card" content="summary">
   <link rel="icon" href="/assets/logo.svg">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <!--/social-->
   <!-- "Add to home screen": the name, icon and colours a phone uses when the site is saved like an app. -->
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <meta name="theme-color" content="#000000">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">

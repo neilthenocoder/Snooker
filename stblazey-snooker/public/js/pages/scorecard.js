@@ -2,7 +2,7 @@ import { html, mount, $, toast } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { loadFixture, saveScorecard, setFixtureStatus, seasonFrames, setScorecardPhoto, addPlayerToTeam, sendResultEmail, fixtureBoards, save, lineupsFor } from "../core/api.js";
 import { extCounts, isShieldMatch } from "../core/rules.js";
-import { canEditFixture, isAdmin } from "../core/auth.js";
+import { canEditFixture, isAdmin, canLiveScore } from "../core/auth.js";
 import { uploadImage } from "../core/upload.js";
 import { scorecardEditor, breaksText } from "../core/scorecard-editor.js";
 import { breadcrumb, statusBadge, urls } from "../core/components.js";
@@ -92,7 +92,8 @@ export default async function scorecard(view, { params, user }) {
     frames: cardFrames,
     // The third view: each frame scored ball by ball. A frame gets its own scoreboard row (tied to this match),
     // which is what visitors watch; the score and breaks come back onto this card when the frame ends.
-    ballByBall: {
+    // Only for those given "Live scoring" under Admin → Roles & permissions (captains and vice captains: not unless ticked).
+    ballByBall: !canLiveScore(user) ? null : {
       async open(f) {
         const a = f.a[0] ?? null, b = f.b[0] ?? null;
         const row = (await fixtureBoards(fx.id)).find((m) => m.frame_no === f.frame_no);

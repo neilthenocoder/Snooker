@@ -118,9 +118,11 @@ export async function draws(el, { user } = {}) {
     })}</div>` : ""}
 
     ${b.totalRounds ? panel("3. Round deadlines", html`<form class="form" data-deadlines>
-      <p style="margin-top:0">The date each round must be played by. It's shown on the competition page next to the round.</p>
-      <div class="deadline-grid">${b.rounds.map((_, i) => html`<label>${roundName(i + 1, b.totalRounds)}
-        <input type="date" name="round_${i + 1}" value="${c.round_deadlines?.[i + 1] ?? ""}"></label>`)}</div>
+      <p style="margin-top:0">The date each round must be played by — shown on the competition page next to the round. Players (and captains, in a team competition) get a warning in their own area as it comes up.
+        <b>Contact by</b> (optional) is the day the home player must have contacted their opponent: until then the away player is told to wait for the call; after it, they are told the rule for when nobody has been in touch (Site settings → Competitions).</p>
+      <div class="deadline-grid">${b.rounds.map((_, i) => html`<fieldset class="deadline-round"><legend>${roundName(i + 1, b.totalRounds)}</legend>
+        <label>Play by <input type="date" name="round_${i + 1}" value="${c.round_deadlines?.[i + 1] ?? ""}"></label>
+        <label>Contact by <input type="date" name="contact_${i + 1}" value="${c.round_contact?.[i + 1] ?? ""}"></label></fieldset>`)}</div>
       <div class="btn-row"><button class="btn green">Save deadlines</button></div></form>`) : ""}
 
     ${b.totalRounds ? panel("4. Pairings, dates & results", html`<div class="table-scroll"><table class="data results-edit">
@@ -140,7 +142,7 @@ export async function draws(el, { user } = {}) {
           <td class="num" style="white-space:nowrap">${m.isBye ? html`<span class="muted">bye</span>` : html`
             <input type="number" min="0" max="99" name="score_a" value="${m.row.score_a ?? ""}" style="width:58px" ${ready ? "" : "disabled"}> –
             <input type="number" min="0" max="99" name="score_b" value="${m.row.score_b ?? ""}" style="width:58px" ${ready ? "" : "disabled"}>`}</td>
-          <td>${pickSide("b")}</td>
+          <td>${pickSide("b")}${m.isBye ? "" : html`<label class="home-switch" title="The home player didn't contact their opponent in time: the second-named is now at home"><input type="checkbox" name="home_switched" ${m.row.home_switched ? "checked" : ""}> now at home</label>`}</td>
           <td>${m.isBye ? "" : html`<input type="datetime-local" name="starts_at" value="${toLocalInput(m.row.starts_at)}">`}</td>
           <td>${m.isBye ? "" : html`<select name="venue_id"><option value="">–</option>${venues.map((v) => html`<option value="${v.id}" ${v.id === m.row.venue_id ? "selected" : ""}>${v.name}</option>`)}</select>`}</td>
           <td style="white-space:nowrap">${!m.row.id ? "" : html`<button class="btn small green" data-save-row>Save</button>
@@ -172,7 +174,10 @@ export async function draws(el, { user } = {}) {
     e.preventDefault();
     const v = readForm(e.target);
     const round_deadlines = Object.fromEntries(b.rounds.map((_, i) => [i + 1, v[`round_${i + 1}`]]).filter(([, d]) => d));
-    await save("competitions", { id: c.id, round_deadlines });
+    const round_contact = Object.fromEntries(b.rounds.map((_, i) => [i + 1, v[`contact_${i + 1}`]]).filter(([, d]) => d));
+    const late = b.rounds.map((_, i) => i + 1).find((r) => round_contact[r] && round_deadlines[r] && round_contact[r] > round_deadlines[r]);
+    if (late) return toast(`${roundName(late, b.totalRounds)}: the contact date must be before the play-by date`, "error");
+    await save("competitions", { id: c.id, round_deadlines, round_contact });
     toast("Deadlines saved"); redraw();
   }));
 
@@ -269,6 +274,7 @@ export async function draws(el, { user } = {}) {
       const row = { id: tr.dataset.row, entry_a: get("entry_a").value || null, entry_b: get("entry_b").value || null };
       if (get("score_a")) Object.assign(row, { score_a: num("score_a"), score_b: num("score_b") });
       if (get("starts_at")) Object.assign(row, { starts_at: fromLocalInput(get("starts_at").value), venue_id: get("venue_id").value || null });
+      if (get("home_switched")) row.home_switched = get("home_switched").checked;
       if (row.entry_a && row.entry_a === row.entry_b) return toast("Someone can't play themselves", "error");
       if ((row.score_a == null) !== (row.score_b == null)) return toast("Enter both scores (or neither)", "error");
       if ("score_a" in row) row.status = row.score_a != null ? "completed" : "scheduled";

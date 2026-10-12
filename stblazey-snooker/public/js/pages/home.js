@@ -5,14 +5,13 @@ import { mountSquadBox } from "../core/squad.js";
 import { openForEntry } from "./enter.js";
 import { seasonContext, sideBoxData } from "../core/context.js";
 import { articles, settings, upcomingMatches, loadCompetitions, subscribe, table, liveMatches } from "../core/api.js";
+import { deadlineWarnings, deadlineBar } from "../core/comp-deadlines.js";
 import { matchScore, shieldHolder } from "../core/rules.js";
 import { buildBracket, isEntry } from "../core/bracket.js";
 import { answered, articleCueview } from "../core/cueview.js";
 import { leagueTablePanel, sidebar, panel, picture, urls, badge, avatar, articleThumb, shortName, latestNews, trophy, shieldPicture } from "../core/components.js";
 import { SITE } from "../config.js";
 import { setTitle, adminEdit } from "../core/router.js";
-import { mySnookerOn, mySnookerTeamId, mySnookerSetUp, mySnookerOnHome, mySnookerOwnPage } from "../core/auth.js";
-import { mountMySnooker, mySnookerStar } from "../core/my-snooker.js";
 import { competitionSummaries } from "./competitions.js";
 
 const ROTATE_MS = 7000;      // banner: time each article is shown
@@ -39,8 +38,7 @@ export default async function home(view, { user } = {}) {
   // This season's competitions (ones with no season set count as current).
   const comps = allComps.filter(({ c }) => !c.season_id || c.season_id === ctx.season?.id);
   view.classList.add("flush");
-  // My Snooker at the top of the home page, for those who chose to have it here.
-  const onHome = mySnookerOnHome(user);
+  // The home page is the same for everyone (My Snooker is a page of its own, in the menu).
 
   mount(view, html`
     <section class="hero" style="${site.hero_image_url ? `--hero-img:${cssUrl(site.hero_image_url)}` : ""}">
@@ -52,15 +50,8 @@ export default async function home(view, { user } = {}) {
       </div>
       <div class="live-strip-wrap"><div class="wrap"><div class="live-strip" data-strip></div></div></div>
     </section>
-    ${onHome ? html`<div class="wrap" style="margin-top:30px"><section class="ms ms-home" aria-label="My Snooker">
-      <header class="ms-home-head"><h2>${mySnookerStar} My Snooker</h2>
-        <span class="btn-row">${mySnookerOwnPage(user) ? html`<a class="btn small ghost" href="/myteam">Open my page</a>` : ""}<a class="btn small ghost" href="/my/snooker">Change what I see</a></span></header>
-      <div data-my-snooker></div></section></div>` : ""}
     <div class="wrap layout" style="margin-top:30px">
       <div class="stack">
-        ${!onHome && user && mySnookerOn(user) ? html`<a class="ms-bar" href="${mySnookerSetUp(user) ? "/myteam" : "/my/snooker"}"><b>My Snooker</b>
-          <span>${mySnookerSetUp(user) ? html`${ctx.team.get(mySnookerTeamId(user))?.name ?? "The players you follow"}: matches, results, breaks and news` : "Follow your team and players, and get your own page"}</span>
-          <i>${mySnookerSetUp(user) ? "Open my page →" : "Set it up →"}</i></a>` : ""}
         <div class="home-top">
         <nav class="quick-links" aria-label="Quick links">
           <a style="background:var(--yellow);color:#1b0e06" href="/competitions">${quickIcon.competitions}<span>Competitions</span></a>
@@ -69,6 +60,7 @@ export default async function home(view, { user } = {}) {
           <a style="background:var(--green)" href="/fixtures">${quickIcon.fixtures}<span>Fixtures</span></a>
         </nav>
         ${featureBox(site, notices, today)}
+        ${user ? deadlineBar(deadlineWarnings(user, ctx, await loadCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] })), site)) : ""}
         ${entering.length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${entering.map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
         ${keyDates(site, dates, allComps.map((x) => x.c), today)}
         </div>
@@ -84,7 +76,6 @@ export default async function home(view, { user } = {}) {
       ${sidebar(ctx, latestNews(news, site, slides.map((a) => a.id)), { count: site.latest_news_count || 1, box })}
     </div>`);
 
-  const stopMine = onHome ? await mountMySnooker($("[data-my-snooker]", view), user, { home: true }) : () => {};
   // Captains and vice captains: the "Manage team" box at the bottom of the screen in the days before a match.
   const stopSquad = await mountSquadBox(user, ctx, site).catch(() => () => {});
 
@@ -165,7 +156,7 @@ export default async function home(view, { user } = {}) {
   strip.addEventListener("click", (e) => { const b = e.target.closest("[data-strip-move]"); if (b) move(Number(b.dataset.stripMove)); });
   const carousel = setInterval(() => { if (!stripPaused && !document.hidden) move(1); }, CAROUSEL_MS);
 
-  return () => { clearInterval(timer); clearInterval(carousel); clearInterval(featureTimer); unsubscribe(); stopMine(); stopSquad(); window.removeEventListener("resize", kdFit); };
+  return () => { clearInterval(timer); clearInterval(carousel); clearInterval(featureTimer); unsubscribe(); stopSquad(); window.removeEventListener("resize", kdFit); };
 }
 
 /** One banner article: headline, category and date, a small "continue reading" — all linking to the article. */
@@ -344,11 +335,12 @@ function spotlights(ctx, site) {
   const p = site.player_of_week_show && ctx.player.get(site.player_of_week_id);
   const t = site.team_of_week_show && ctx.team.get(site.team_of_week_id);
   if (!p && !t) return "";
+  // A slim card each (picture on the left, the words beside it), so the two take little room on a phone.
   return html`<div class="spotlights">
-    ${p ? html`<a class="spotlight" href="${urls.player(p)}"><span class="spot-label">Player of the week</span>
-      ${avatar(p, "spot-photo")}<strong>${p.full_name}</strong><small>${ctx.team.get(p.team_id)?.name ?? ""}</small><p>${site.player_of_week_text ?? ""}</p></a>` : ""}
-    ${t ? html`<a class="spotlight" href="${urls.team(t)}"><span class="spot-label">Team of the week</span>
-      <span class="spot-badge">${badge(t)}</span><strong>${t.name}</strong><small>${ctx.league.get(t.league_id)?.name ?? ""}</small><p>${site.team_of_week_text ?? ""}</p></a>` : ""}
+    ${p ? html`<a class="spotlight" href="${urls.player(p)}">${avatar(p, "spot-photo")}
+      <div><span class="spot-label">Player of the week</span><strong>${p.full_name}</strong><small>${ctx.team.get(p.team_id)?.name ?? ""}</small>${site.player_of_week_text ? html`<p>${site.player_of_week_text}</p>` : ""}</div></a>` : ""}
+    ${t ? html`<a class="spotlight" href="${urls.team(t)}"><span class="spot-badge">${badge(t)}</span>
+      <div><span class="spot-label">Team of the week</span><strong>${t.name}</strong><small>${ctx.league.get(t.league_id)?.name ?? ""}</small>${site.team_of_week_text ? html`<p>${site.team_of_week_text}</p>` : ""}</div></a>` : ""}
   </div>`;
 }
 

@@ -8,11 +8,12 @@
 // ─────────────────────────────────────────────────────────────
 import { html, mount, fmtDate, fmtTime } from "./dom.js";
 import { seasonContext } from "./context.js";
-import { articles, loadCompetitions, setMyPrefs } from "./api.js";
+import { articles, loadCompetitions, setMyPrefs, settings } from "./api.js";
+import { deadlineWarnings, deadlineList } from "./comp-deadlines.js";
 import { myPrefs, mySnookerOn, refreshUser } from "./auth.js";
 import { buildBracket, isEntry, roundName } from "./bracket.js";
 import { answered } from "./cueview.js";
-import { panel, dataTable, leagueTablePanel, playerLink, handicapTag, urls, badge, avatar, resultText, articleThumb, picture, outcomeTag } from "./components.js";
+import { panel, dataTable, leagueTablePanel, playerLink, handicapTag, urls, badge, avatar, resultText, articleThumb, picture, outcomeTag, topPoints } from "./components.js";
 import { refreshShell } from "./router.js";
 
 /** Every section someone can have on their page: [key, name, what it shows]. This is also the order they appear in. */
@@ -57,8 +58,8 @@ export async function toggleFollow(user, kind, id) {
 // ── the view ───────────────────────────────────────────────────
 /** Everything the view needs, loaded once. */
 export async function mySnookerData() {
-  const [ctx, news, comps] = await Promise.all([seasonContext(), articles().catch(() => []), loadCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] }))]);
-  return { ctx, news, comps };
+  const [ctx, news, comps, site] = await Promise.all([seasonContext(), articles().catch(() => []), loadCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] })), settings().catch(() => ({}))]);
+  return { ctx, news, comps, site };
 }
 
 /**
@@ -84,7 +85,7 @@ export async function mountMySnooker(el, user, { home = false, data = null } = {
   return () => el.removeEventListener("click", onClick);
 }
 
-function view(user, { ctx, news, comps }, prefs, teams, teamId, home) {
+function view(user, { ctx, news, comps, site = {} }, prefs, teams, teamId, home) {
   const wants = (key) => !prefs.sections || prefs.sections.includes(key);
   const team = ctx.team.get(teamId);
   const league = team && ctx.league.get(team.league_id);
@@ -175,7 +176,7 @@ function view(user, { ctx, news, comps }, prefs, teams, teamId, home) {
         { label: "Played", cell: (p) => lineOf(p)?.played ?? 0, cls: "num" },
         { label: "Won", cell: (p) => lineOf(p)?.won ?? 0, cls: "num" },
         { label: "Pts", cell: (p) => lineOf(p)?.pts ?? 0, cls: "num strong" },
-      ], squad, { highlight: (p) => followIds.has(p.id), empty: "No players listed yet." }), { foot: { href: "/handicaps", label: "Every team's handicaps" } })),
+      ], squad, { rowClass: (p) => (followIds.has(p.id) ? "lt-mine" : ""), empty: "No players listed yet." }), { foot: { href: "/handicaps", label: "Every team's handicaps" } })),
     players: () => (followed.length ? panel("Players I follow", html`<div class="ms-players">${followed.map((p) => { const l = lineOf(p); return html`<a class="ms-player" href="${urls.player(p)}">
         ${avatar(p, "ms-player-photo")}<span><strong>${p.full_name}</strong><small>${ctx.team.get(p.team_id)?.name ?? "No team this season"}</small></span>
         <dl><div><dt>Hcp</dt><dd>${handicapTag(p.handicap)}</dd></div><div><dt>Played</dt><dd>${l?.played ?? 0}</dd></div><div><dt>Won</dt><dd>${l?.won ?? 0}</dd></div>
@@ -186,13 +187,13 @@ function view(user, { ctx, news, comps }, prefs, teams, teamId, home) {
         { label: "Break", cell: (b) => b.value, cls: "num strong" },
       ], teamBreaks.slice(0, limit), { empty: "No breaks of 30 or more yet this season." }))),
     table: () => (league ? leagueTablePanel(ctx, league, { highlightTeamId: team.id, ...(home ? { limit: 6 } : {}) }) : ""),
-    rankings: () => { if (!league) return ""; const rows = ctx.rankings(league.id).slice(0, home ? 5 : 10);
+    rankings: () => { if (!league) return ""; const all = ctx.rankings(league.id), top = all[0], rows = all.slice(0, home ? 5 : 10);
       return panel(`${league.short_name || league.name} rankings`, dataTable([
         { label: "", cell: (r) => r.pos, cls: "num" },
         { label: "Player", cell: (r) => playerLink(r.player) },
         { label: "Won", cell: (r) => r.won, cls: "num" },
-        { label: "Pts", cell: (r) => r.pts, cls: "num strong" },
-      ], rows, { highlight: (r) => squadIds.has(r.player.id) || followIds.has(r.player.id), empty: "No frames played yet." }),
+        { label: "Pts", cell: (r) => topPoints(r, top), cls: "num strong" },
+      ], rows, { highlight: (r) => r === top, rowClass: (r) => (r !== top && (squadIds.has(r.player.id) || followIds.has(r.player.id)) ? "lt-mine" : ""), empty: "No frames played yet." }),
       { foot: { href: urls.season(ctx.season, "rankings", league), label: "The full rankings" } }); },
     cueviews: () => (cvPeople.length ? panel("CueViews", html`<div class="ms-news-list">${cvPeople.slice(0, home ? 3 : 6).map((p) => html`<a class="ms-news" href="${urls.player(p)}#cueview">
         ${avatar(p, "ms-news-pic round")}<span><small>${ctx.team.get(p.team_id)?.name ?? ""}</small><strong>${p.full_name}</strong></span></a>`)}</div>`) : ""),
@@ -203,7 +204,10 @@ function view(user, { ctx, news, comps }, prefs, teams, teamId, home) {
   const drawn = shown.map((k) => [k, parts[k]()]).filter(([, body]) => body);
   const col = (keys) => drawn.filter(([k]) => keys.includes(k)).map(([k, body]) => html`<section class="ms-sec ms-sec-${k}">${body}</section>`);
   const side = drawn.filter(([k]) => !MAIN.includes(k));
+  // Their own cup matches with a deadline coming up (or gone by) come first, whatever sections they ticked.
+  const deadlines = deadlineList(deadlineWarnings(user, ctx, comps, site), { title: "Your competition deadlines" });
   return html`
+    ${deadlines}
     ${teams.length > 1 ? html`<nav class="ms-teams" aria-label="The teams you follow">${teams.map((t) => html`<button type="button" class="${t.id === teamId ? "on" : ""}" data-ms-team="${t.id}">${badge(t)}<span>${t.name}</span></button>`)}</nav>` : ""}
     ${!team && !followed.length ? html`<div class="notice" style="margin:0">You are not following a team or a player yet. <a href="/my/snooker" style="font-weight:700;color:var(--red)">Choose who to follow</a></div>` : ""}
     <div class="ms-grid ${side.length && drawn.length > side.length ? "" : "one"}">

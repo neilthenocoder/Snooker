@@ -9,7 +9,7 @@
 import { html, mount, fmtDate } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { table } from "../core/api.js";
-import { breadcrumb, panel, dataTable, playerLink, teamLink, urls, seasonShort, breaksPanel, trophy, leagueMarks } from "../core/components.js";
+import { breadcrumb, panel, dataTable, playerLink, teamLink, urls, seasonShort, breaksPanel, trophy, leagueMarks, topPoints } from "../core/components.js";
 import { RULES_TEXT } from "../core/rules.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
@@ -123,8 +123,8 @@ function rankings(view, ctx, season, league) {
       { label: "Won", cell: (r) => r.won, cls: "num" },
       { label: "Lost", cell: (r) => r.lost, cls: "num hide-sm" },
       { label: "Break pts", cell: (r) => r.breakPts || "–", cls: "num hide-sm" },
-      { label: "Points", cell: (r) => r.pts, cls: "num strong" },
-    ], rows, { highlight: (r) => r === rows[0], empty: "No frames played yet." }))}
+      { label: "Points", cell: (r) => topPoints(r, rows[0]), cls: "num strong" },
+    ], rows, { highlight: (r) => r === rows[0], empty: "No frames played yet.", phoneLimit: 10, more: "players" }))}
     <p class="muted">${RULES_TEXT} A player appears here once they have played a frame.</p>
     ${more(ctx, season, "rankings", league)}
   </div>`);
@@ -151,7 +151,7 @@ function breaks(view, ctx, season, league) {
       { label: "Position", cell: (r) => r.player.position, cls: "hide-sm" },
       { label: "Latest", cell: (r) => fmtDate(r.last), cls: "hide-sm" },
       { label: "Brks", cell: (r) => html`<span class="break-list">${r.values.map((v, i) => html`<b class="${i ? "" : "best"}">${v}</b>`)}</span>`, cls: "num strong" },
-    ], rows, { highlight: (r) => r === rows[0], empty: "No breaks of 30 or more recorded yet." }))}
+    ], rows, { highlight: (r) => r === rows[0], empty: "No breaks of 30 or more recorded yet.", phoneLimit: 10, more: "players" }))}
     ${rows.length ? breaksPanel(ctx, league) : ""}
     <p class="muted">Breaks of 30 and over are recorded. Each one also earns ranking points: 30–39 = 3, 40–49 = 4, and so on.</p>
     ${more(ctx, season, "breaks", league)}

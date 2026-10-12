@@ -150,7 +150,7 @@ export default async function player(view, { params, user }) {
       { label: "Best break", cell: (r) => r.best || "–", cls: "num" },
       { label: "Ranking pts", cell: (r) => r.pts, cls: "num strong" },
     ], seasonRows.length ? [...seasonRows, { total: true, season: { name: "Total" }, league: { name: "–" }, team: "–", ...total }] : [],
-    { highlight: (r) => r.total, empty: "No frames played yet." }))}
+    { rowClass: (r) => (r.total ? "total-row" : ""), empty: "No frames played yet." }))}
 
     <div class="grid-2" style="gap:30px;align-items:start">
       ${panel("Breaks", dataTable([

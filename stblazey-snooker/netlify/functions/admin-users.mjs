@@ -32,7 +32,9 @@ export default async (req) => {
   const mine = areasOf(me?.role);
   if (!master && !mine.includes("people")) return json(403, { error: "Your login isn't allowed to manage logins." });
   // Nobody can hand out more than they have themselves: a role is "within reach" when everything it can do, the caller can do too.
-  const withinReach = (r) => master || (r !== "admin" && areasOf(r).every((a) => mine.includes(a)));
+  // (Live scoring is left out of the comparison: it is set for a whole role by the Master Admin — captains can have it —
+  //  and is not a part of the dashboard, so it must not stop someone with "Logins" from making a captain's login.)
+  const withinReach = (r) => master || (r !== "admin" && areasOf(r).filter((a) => a !== "livescoring").every((a) => mine.includes(a)));
 
   // 2. Validate input.
   let body;

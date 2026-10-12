@@ -128,7 +128,7 @@ Result emails need one more variable (and a second once the league's domain is v
    - **2 Frames** — one frame at a time: home player on top, away player below. Type each **frame score**, add any **breaks** one by one, then press **Save frame**. It moves to the next frame; the numbers jump to any frame and **Skip** leaves one for later. The live strip, the **Live** page and the match page update for everyone within a second or two.
    - **3 Finish** — a summary of all the frames, the **photo of the paper scorecard** (opens the phone camera) and **Submit results**. **A result cannot be submitted without the photo** — the database refuses it, not just the page. Before it's sent, a box asks them to be certain the scores are correct and in the right columns.
    - **Classic card** (the switch above the steps) shows the whole card in one table instead — breaks are typed as `34, 41` next to the player. The site remembers which view each person prefers.
-   - **Ball by ball** (the third choice on the switch, league matches only) is the step-by-step card with a **scoring pad** in place of the score boxes: press who breaks off, then a ball each time one is potted, **End of break** on a miss, the foul buttons, and **End the frame**. The match shows as live from the first press. Visitors watch that frame on the Live scoreboard (the home page strip, the Live page and the match page all link to it), and when the frame ends its score and every break of 30 or more are put on the card for the captain. The three views can be mixed: score one frame on the pad and type the next. A frame that was started on the pad and left is no longer shown as live after three hours, or as soon as the card is submitted.
+   - **Ball by ball** (the third choice on the switch, league matches only — and **only for people given "Live scoring"** under Admin → Roles & permissions: officers who have it, and captains and vice captains only if it is ticked for them; it is off for them to start with) is the step-by-step card with a **scoring pad** in place of the score boxes: press who breaks off, then a ball each time one is potted, **End of break** on a miss, the foul buttons, and **End the frame**. The match shows as live from the first press. Visitors watch that frame on the Live scoreboard (the home page strip, the Live page and the match page all link to it), and when the frame ends its score and every break of 30 or more are put on the card for the captain. The three views can be mixed: score one frame on the pad and type the next. A frame that was started on the pad and left is no longer shown as live after three hours, or as soon as the card is submitted.
 3. **Admin** opens **Results to approve**, checks the scorecard and its photo, and presses **Approve**. Approved results are locked for captains, but the admin can still edit them.
 
 Tables and rankings count **submitted** and **approved** results. To make tables move live during the evening instead, add `"in_progress"` to `countedStatuses` in `public/js/core/rules.js`.
@@ -239,6 +239,8 @@ In a scorecard file, a player written as `Ben Rothwell (Ext)` is Ben Rothwell pl
 
 For a final (or any match worth watching), one person scores it ball by ball and everyone else watches the score move.
 
+**Who can.** Anyone whose role has **Live scoring** ticked under Admin → Roles & permissions — to start with the League Admin and the Competition Secretary (and the Master Admin, always). It is the one permission that can also be ticked for captains and vice captains; ticked for them, it gives them the Ball by ball view on their own team's scorecards and nothing else (not this page, not the dashboard). The database keeps to the same rule.
+
 1. **Admin → Live scoreboard → Set up a match.** Choose the competition (optional), a round or title ("Final"), the two players — start typing and pick **any player from any team**, or type a name that isn't in the list — and the number of frames: best of 1, 3, 5, 7 or **9 (first to 5)**. A date and time shows it as "coming up" on the website.
 2. Press **Score it**, then the name of whoever breaks off. The match is now **Live**: the menu's Live button turns green and it appears in the home page strip.
 3. Press a **ball** each time one is potted. The pad adds the points to the player at the table, keeps the break, counts the reds and shows the points left ("needs snookers" when it comes to it). **End of break** passes the table to the other player. **Foul: 4 / 5 / 6 / 7 away** gives the points to the opponent. **Free ball potted** scores the ball "on" without taking a ball off the table.
@@ -336,11 +338,12 @@ Modelled on "My Sport" on the BBC website. **Everyone with a login has it** — 
 
 - **Following.** A person follows as many **teams** and **players** as they like. The quick way is the **☆ Follow** button on any team or player page (pressed again, it unfollows). Someone who is not logged in is shown the login panel.
 - **What they see.** Thirteen sections, each one ticked or unticked: Next match, Team summary, Results, Fixtures, Competitions, Team news, Latest news (all of it, or only the news categories they pick), Team & handicaps, Players I follow, Breaks, League table, Rankings and CueViews. A section with nothing to show leaves no gap. With more than one team followed, buttons along the top switch between them.
-- **Where it shows.** Their choice of three: **on my own page** (`/myteam`), **on the home page** (their block sits above the normal home page), or **both**.
-- **Where it is set up:** My area → **My Snooker** (`/my/snooker`; the person icon in the menu bar → *My Snooker settings*). One form: on/off, where it shows, teams, players, sections, news categories, **Save my choices** and **Reset**.
+- **Where it shows.** On its own page, **`/myteam`** — opened from the menu at any time: the gold **★** beside the person's initials on a computer, **★ My Snooker** in the menu on a phone, and *My Snooker* in the person's panel. The home page stays the normal home page for everyone (since round 15 there is no "on the home page" or "both" any more — a choice saved before is simply ignored).
+- **Where it is set up:** My area → **My Snooker** (`/my/snooker`; the person icon in the menu bar → *My Snooker settings*). One form: on/off, teams, players, the sections they want to see (as many as they like), news categories, **Save my choices** and **Reset**.
 - **Starting point.** A login linked to a team or a player starts off following them. One linked to nobody is asked to pick a team the first time (`/myteam`).
-- **After logging in:** officers land on the dashboard and captains on My Team, as before. A plain **Player** login lands on their page (or on the home page, if that is where they chose to see it).
-- **Coming back later** still logged in, the site opens on their page once per visit when they chose "my own page"; after that Home is the normal home page. On the home page a dark bar, **My Snooker: back to my page**, takes them back.
+- **After logging in:** officers land on the dashboard and captains on My Team, as before. A plain **Player** login lands on their My Snooker page.
+- **Coming back later** still logged in, the website opens on the normal home page; My Snooker is one press away in the menu.
+- **Competition deadlines** for their own cup matches are at the top of their page, whatever sections they ticked (section 3m).
 - **A Player login needs no link** to a player or a team (Admin → People → Logins → Add new, role **Player**). Link it to a player profile only if that person should also edit their own photo, bio and CueView.
 
 The choices are saved with the login, so they follow the person from phone to computer. Where it is in the code: `core/my-snooker.js` (the sections and the Follow button — add a section there), `pages/myteam.js`, the My Snooker tab in `pages/my.js`, `myPrefs()` and `homeFor()` in `core/auth.js`, and `set_my_prefs()` in `schema.sql` (the only thing a login may change about itself; saved in `profiles.my_prefs`).
@@ -397,6 +400,27 @@ For captains and vice captains only. Nobody else sees any of it.
 - **Who can see it.** A team sheet is kept apart from the scorecard, so the other team cannot see it early: only that team's captain and vice captain, and whoever looks after match nights. From the day of the match the other captain can too (it is on the card they both fill in). The database enforces this (`lineups` and `set_lineup()` in `schema.sql`).
 - **Adding a player.** Under the squad list: type a name. If someone with that name is already on the website with no team, they are offered first — choose them and their history stays with them. Otherwise **Add as a new player**. Either way the player can be picked at once, is marked “Awaiting approval”, and waits in the dashboard for the league to accept or reject (see “New players added by captains” in section 3).
 
+## 3m. Competition deadlines and who arranges the match
+
+Every round of a competition can have a **play-by date** and a **contact-by date** (Admin → Competitions → Draws & results → 3. Round deadlines). In a draw the first-named is the **home** player (or team) and arranges the match; the away player waits to be contacted.
+
+- **The warnings.** A player with a login linked to their player profile — or, in a team competition, the team's captain and vice captain — sees their own cup matches coming up in **My area → Competitions**, at the top of their **My Snooker** page, and (in the last week, or when it is overdue) in a yellow or red bar on the home page. Each says when it must be played by, whether they are **at home** ("contact your opponent and arrange it by …") or **away** ("your opponent should contact you by …"), and once the contact-by date has passed without a date being set, what the away player is entitled to do. Warnings start **14 days** before the deadline (Admin → Site settings → Competitions: deadline warnings) and stop once the match has a date or a result.
+- **The rule** shown to an away player whose opponent has not been in touch is in Site settings too — to start with: *the match is switched; the away player becomes the home player and offers three dates; in a competition where the opponent would get 5 extra points, the new home player gets 10*. **Check the wording against the league's competition rules** and change it there.
+- **Switching a match.** When that happens, tick **now at home** under the second-named player on that match in Draws & results and press Save: both players' warnings then say who is at home.
+- Where it is in the code: `core/comp-deadlines.js` (the wording is all there); the dates are `competitions.round_deadlines` and `round_contact`, the switch is `competition_matches.home_switched`.
+
+## 3n. Sharing links, and the app icon
+
+**What a shared link shows.** When a link to the website is posted on Facebook, WhatsApp, X, iMessage and the like, they show a title, a line of text and a picture. They read it from the page's head without running the website's JavaScript, so it is put there on Netlify's side, page by page, by **`netlify/edge-functions/social.js`**:
+
+- **News articles** (`/news/…`): the article's own **Social preview** (Admin → News → the article: a picture, ideally 1200 × 630, and a sentence) — or, left empty, its headline, intro and background picture.
+- **Every other page:** Admin → **Site settings → Sharing on social media** (title, text and picture).
+- Pictures uploaded for previews are kept as JPEG, which every service reads. The services keep their own copy for a while; Facebook's **Sharing Debugger** (developers.facebook.com/tools/debug) fetches a page again at once.
+
+**The app icon.** Admin → **Branding → App icon**: upload one square picture (512 × 512 or bigger; PNG or SVG with a clear background is best) after choosing the background colour. The site makes the four PNGs phones and browsers ask for — iPhone "Add to Home Screen" (180 px), Android and installed apps (192 and 512 px) and Android's round icons (512 px, the badge in the middle) — and uses them in the page and in `/manifest.webmanifest`. The **favicon** (browser tab) is just above it; left empty, the app icon is used. A phone that already added the site keeps the old icon until it is removed from the home screen and added again.
+
+**How it runs.** The edge function is deployed with the site (GitHub or the Netlify CLI, as in section 2d — not Netlify Drop). It reads the Supabase address and public key from `public/js/config.js` (or from the `SUPABASE_URL` / `SUPABASE_ANON_KEY` environment variables, if set), reads only public things (the site settings and published articles), keeps the settings for a minute, and waits at most 1.5 seconds: if anything goes wrong the page goes out exactly as `public/index.html` has it, between the `<!--social-->` marks.
+
 ## 3l. Phones
 
 Most people use the site on a phone, so a few things are done specially for small screens (all in the last blocks of `public/css/style.css`, marked v15):
@@ -404,7 +428,8 @@ Most people use the site on a phone, so a few things are done specially for smal
 - **Nothing you type in is smaller than 16px.** An iPhone zooms the whole page in when you tap a box with smaller text — and after logging in the page used to stay zoomed, so everything was slightly too wide. If you add a form field with its own text size, keep it at 16px or more on phones.
 - **Lists of suggestions** (following a player, choosing your name on the CueView form, the players and venue on the live scoreboard) are the site's own (`core/suggest.js`): the browser's built-in list does not open on iPhones. Any `<input list="…">` with a `<datalist>` gets it automatically.
 - **Tables fit the screen.** Public tables tighten up and their headings wrap; a team's fixture list and the cup matches in My area become one block per match with the buttons underneath; the classic scorecard becomes one block per frame (number down the side, then each team's player, points and breaks); the My area tabs wrap onto short rows so every tab can be seen.
-- **The home page is shorter**: Shield holders are one slim row per shield and CueViews are small cards (photo, name and a Q&A mark with the number of answers) — the answers are one tap away.
+- **Tables look like the league table.** The row at the top is faded green with its points (or break) in a green pill; pink is kept for what needs a warning (relegation places, losses). Long lists of players — rankings, breaks — show the top ten with a **Show all** button under them, on phones and big screens alike. The rankings and breaks of a league each take the full width, one under the other.
+- **The home page is shorter**: Shield holders are one slim row per shield, Player and Team of the week are slim cards, and CueViews are small cards (photo, name and a Q&A mark with the number of answers) — the answers are one tap away.
 
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
@@ -446,6 +471,7 @@ public/                     ← everything Netlify serves
       live-score.js         ← the rules for scoring a match ball by ball (no HTML, no database)
       score-pad.js          ← the pad a captain scores one league frame on, ball by ball (the scorecard's third view)
       live-text.js          ← the "Live text" box used on both scoring pads, and how its lines are kept
+      comp-deadlines.js     ← competition deadline warnings: whose match, who is at home, what to do (section 3m)
       suggest.js            ← the list that opens under a text box as you type (any <input list="…">): our own, because the browser's does not open on iPhones
       version.js            ← the database version this website expects (see section 7)
       squad.js              ← Manage team: the captains' box on the home page, and helpers for the team sheet
@@ -498,6 +524,8 @@ netlify/functions/
   result-email.mjs          ← emails the results secretary when a card is submitted (through Resend)
 netlify/lib/
   result-email-template.mjs ← what that email says
+netlify/edge-functions/
+  social.js                 ← fills in each page's sharing preview and the app icons on Netlify's side (section 3n)
 real-data/2026-27/          ← the real season collected from the old website (see its README)
 scripts/
   build-seed.mjs            ← writes supabase/seed.sql from the sample data
@@ -550,7 +578,13 @@ For example, to add a "phone" field to venues, add one line to `RESOURCES.venues
 | Add a key date | Admin → Key dates |
 | Upload a trophy picture | Admin → Leagues / Competitions / Presentation awards → Edit → Trophy (transparent PNG or SVG) |
 | Set up presentation night | Admin → Presentation awards → choose the season → Add the standard list → Fill in from the results → fill in the rest |
-| Score a final ball by ball | Admin → Live scoreboard |
+| Score a final ball by ball | Admin → Live scoreboard (needs "Live scoring" — Admin → Roles & permissions) |
+| Let captains score ball by ball on their scorecards | Admin → Roles & permissions → Live scoring → tick Captain / Vice Captain |
+| Set a round's play-by and contact-by dates, or switch who is at home | Admin → Competitions → Draws & results (sections 3 and 4) |
+| Change when deadline warnings start, or the rule an away player is told | Admin → Site settings → Competitions: deadline warnings |
+| Change what a shared link shows | Admin → Site settings → Sharing on social media; a news article: News → the article → Social preview |
+| Change the phone home-screen / installed app icon, or the favicon | Admin → Branding → App icon (and Favicon just above it) |
+| Change how many players a long table shows before "Show all" | `phoneLimit: 10` where the table is drawn (`rankingsPanel` / `breaksPanel` in `core/components.js`, `pages/seasons.js`) |
 | Add the minutes of a meeting | Admin → Meetings → Edit → Minutes (typed) or the PDF |
 | Add or change the rules | Admin → Info pages & rules → tick "Show on the Rules page" on each set of rules |
 | Write a sponsor's page | Admin → Sponsors → Edit → The sponsor's page |

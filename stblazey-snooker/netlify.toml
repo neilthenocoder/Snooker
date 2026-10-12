@@ -2,6 +2,8 @@
 [build]
   publish = "public"
   functions = "netlify/functions"
+  # Runs in front of every page: the preview shown when a link is shared, and the app icons (social.js).
+  edge_functions = "netlify/edge-functions"
   # No build step: the site is plain HTML/CSS/JS. Netlify still installs
   # package.json dependencies for the function.
   command = ""

@@ -2968,3 +2968,72 @@ svg.shield-pic.placeholder .shine { fill: rgba(255, 255, 255, .35); }
   .ms-tick { min-width: 0; }
   .ms-tick > span { overflow-wrap: anywhere; }
 }
+
+/* ══ v16: Rich's thirteenth round ═══════════════════════════════════════════════════════ */
+/* 1. Every table looks like the league table: the row at the top is faded green (it was pink), with the
+      points in a green pill on the player rankings. Pink stays for what needs a warning (relegation, losses). */
+table.data tbody tr.hl td { background: var(--lt-top); font-weight: 700; }
+table.data tbody tr.hl .lt-pts { font-size: inherit; }
+/* a totals line (a player's "Total" season row) is bold on grey, not a highlight */
+table.data tbody tr.total-row td { background: var(--head-row); font-weight: 700; }
+/* A long list of players (rankings, breaks) shows the first ten — on phones and on big screens — with a button for the rest. */
+.table-fold:not(.open) tr.ph-more { display: none; }
+.table-fold-btn { display: block; width: 100%; padding: 13px 14px; border: 0; border-top: 1px solid var(--head-row); background: #fff; color: var(--red);
+  font: 700 14px var(--font-head); text-transform: uppercase; letter-spacing: .03em; cursor: pointer; }
+.table-fold-btn:hover { background: #fff7f8; }
+.table-fold-btn::after { content: " ▾"; }
+.table-fold.open .table-fold-btn::after { content: " ▴"; }
+/* 3. My Snooker is its own page, opened from the menu: on big screens a gold star beside the person's initials,
+      on phones the "★ My Snooker" button in the menu. The home page stays the same for everyone. */
+.nav-icon.nav-mysnooker svg { fill: var(--yellow); }
+.nav-icon.nav-mysnooker:hover svg { fill: #1b0e06; }
+@media (max-width: 520px) { .nav-icon.nav-mysnooker { display: none; } }
+/* 4. Player and Team of the week: a slim card each — picture on the left, the words beside it — instead of two tall boxes. */
+.spotlights { gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.spotlight { display: flex; align-items: center; gap: 14px; padding: 12px 14px; text-align: left; justify-items: initial; }
+.spotlight > div { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.spotlight .spot-label { position: static; justify-self: start; margin-bottom: 4px; padding: 3px 8px; font-size: 11px; }
+.spotlight .spot-photo { flex: none; width: 60px; height: 60px; margin: 0; border-width: 3px; }
+.spotlight .spot-badge { flex: none; }
+.spotlight .spot-badge .badge { width: 60px; height: 60px; margin: 0; font-size: 17px; }
+.spotlight strong { font-size: 18px; line-height: 1.1; }
+.spotlight small { font-size: 12.5px; }
+.spotlight p { margin: 3px 0 0; font-size: 13px; line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+/* 4b. Roles & permissions: the captain and vice captain columns (live scoring only) are set apart. */
+.perm-table .perm-team { background: #f6f5ee; }
+.perm-table thead th.perm-team { background: #e9e7da; }
+.perm-table .perm-na span { color: #b8b6aa; }
+/* 4c. Competition deadlines (core/comp-deadlines.js): the list in My area and on My Snooker, and the bar on the home page. */
+.cd-box { background: #fff; border-left: 5px solid var(--yellow); padding: 14px 16px; }
+.cd-head { margin: 0 0 10px; font-size: 17px; }
+.cd-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.cd-item { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; align-items: start; padding: 10px 12px; border-radius: 8px; background: #f7f6ef; }
+.cd-item.soon { background: #fff4d6; }
+.cd-item.late { background: #fde7ec; }
+.cd-ico { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #fff; font: 700 15px/1 var(--font-head); }
+.cd-item.late .cd-ico { background: var(--red); color: #fff; }
+.cd-item a { color: var(--ink); }
+.cd-item a:hover b { color: var(--red); }
+.cd-item b { display: block; font-size: 15px; line-height: 1.3; }
+.cd-item p { margin: 4px 0 0; font-size: 14px; line-height: 1.45; }
+.cd-bar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 4px 14px; padding: 10px 14px; background: #fff4d6; border-left: 5px solid var(--yellow); color: var(--ink); font-size: 14px; }
+.cd-bar.late { background: #fde7ec; border-left-color: var(--red); }
+.cd-bar:hover { color: var(--ink); filter: brightness(.98); }
+.cd-bar b { font: 700 13px var(--font-head); text-transform: uppercase; letter-spacing: .03em; }
+.cd-bar span { min-width: 0; }
+.cd-bar i { font-style: normal; font-weight: 700; color: var(--red); white-space: nowrap; }
+@media (max-width: 720px) { .cd-bar { grid-template-columns: minmax(0, 1fr) auto; } .cd-bar span { grid-column: 1 / -1; grid-row: 2; } }
+.deadline-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+.deadline-round { margin: 0; padding: 10px 12px 2px; border: 1px solid var(--head-row); border-radius: 8px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 10px; min-width: 0; }
+.deadline-round input { min-width: 0; }
+.deadline-round legend { padding: 0 6px; font: 700 13px var(--font-head); text-transform: uppercase; }
+.deadline-round label { margin-bottom: 8px; font-size: 12px; }
+.home-switch { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 12px; font-weight: 400; color: var(--muted); white-space: nowrap; cursor: pointer; }
+.home-switch input { width: 16px; height: 16px; margin: 0; }
+/* 5. Admin → Branding → App icon: how the icon will look on an iPhone, an Android phone and as an installed app. */
+.appicon-previews { display: flex; flex-wrap: wrap; gap: 16px; margin: 6px 0 10px; }
+.appicon-previews figure { margin: 0; display: grid; justify-items: center; gap: 4px; }
+.appicon-previews img { width: 64px; height: 64px; background: repeating-conic-gradient(#eee 0 25%, #fff 0 50%) 0 0 / 12px 12px; }
+.appicon-previews .ai-apple { border-radius: 14px; }
+.appicon-previews .ai-round { border-radius: 50%; }
+.appicon-previews figcaption { font-size: 11px; font-weight: 400; color: var(--muted); }

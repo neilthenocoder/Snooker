@@ -6,7 +6,7 @@
 import { SITE, DEMO_MODE } from "./config.js";
 import { html, mount, $, ukDay, toast, safeHref } from "./core/dom.js";
 import { applyBranding, loaderOn, loaderOff, layoutFor, TICKER_PX } from "./core/branding.js";
-import { getUser, signOut, isPlainPlayer, mySnookerOn, mySnookerSetUp, mySnookerOwnPage, canOpenSection } from "./core/auth.js";
+import { getUser, signOut, mySnookerOn, canOpenSection } from "./core/auth.js";
 import { seasonContext, sideBoxData } from "./core/context.js";
 import { sidebar, crumbs } from "./core/components.js";
 import { openAccount, openNotifications, closeDrawer, initials } from "./core/drawers.js";
@@ -147,6 +147,7 @@ function drawBell() {
 }
 
 const personIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2a8 8 0 0 1 6.3 12.9c-1.3-1.8-3.6-2.9-6.3-2.9s-5 1.1-6.3 2.9A8 8 0 0 1 12 4Zm0 2.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm0 9.5c2 0 3.7.8 4.8 2.2a8 8 0 0 1-9.6 0c1.1-1.4 2.8-2.2 4.8-2.2Z"/></svg>`;
+const starIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.5 2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5-4.9-4.5 6.6-.8Z"/></svg>`;
 const menuIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3Zm0 5h18v2H3Zm0 5h18v2H3Z"/></svg>`;
 // The pages in the menu bar, in order: [class (its colour), address, name].
 const MENU = [["nav-home", "/", "Home"], ["nav-comps", "/competitions", "Competitions"], ["nav-fixtures", "/fixtures", "Fixtures"], ["nav-league", "/league", "League"], ["nav-news", "/news", "News"]];
@@ -168,6 +169,7 @@ async function drawHeader() {
       <div class="nav-icons">
         <button type="button" class="nav-icon nav-account ${user ? "in" : ""}" data-account-open aria-label="${user ? `My account: ${name}` : "Log in"}" title="${user ? `My account: ${name}` : "Log in"}">
           ${user ? html`<span class="nav-initials">${initials(name)}</span>` : personIcon}</button>
+        ${user && mySnookerOn(user) ? html`<a class="nav-icon nav-mysnooker" href="/myteam" aria-label="My Snooker" title="My Snooker — your own page">${starIcon}</a>` : ""}
         <button type="button" class="nav-icon nav-bell" data-bell aria-label="Notifications" title="Notifications">${bell}</button>
         <button type="button" class="nav-icon nav-search" data-search-open aria-label="Search" title="Search">${searchIcon}</button>
         <button type="button" class="nav-icon nav-toggle" data-menu-open aria-label="Menu" aria-expanded="false">${menuIcon}</button>
@@ -184,13 +186,19 @@ async function drawHeader() {
         <a href="/calendar">Calendar</a><a href="/results">Results</a><a href="/handicaps">Handicaps</a><a href="/players">Our Players</a><a href="/seasons">Seasons</a><a href="/scoreboard">Live scoreboard</a>
       </div>
       <div class="menu-foot">
+        ${user && mySnookerOn(user) ? html`<a class="btn green" href="/myteam">★ My Snooker</a>` : ""}
         <button type="button" class="btn ${user ? "secondary" : ""}" data-account-open>${user ? html`My account · ${name.split(" ")[0]}` : "Log in"}</button>
         <button type="button" class="btn ghost" data-search-open>Search</button>
         <button type="button" class="btn ghost" data-bell>Notifications</button>
       </div>
     </div>`);
+  // The favicon and the iPhone home-screen icon (Admin → Branding). On Netlify they are already in the page
+  // (netlify/edge-functions/social.js); this keeps them right in the preview and straight after a change.
+  const icons = site.app_icons ?? {};
   const icon = document.querySelector("link[rel=icon]");
-  if (icon) icon.href = site.favicon_url || "/assets/logo.svg";
+  if (icon) icon.href = site.favicon_url || icons.i192 || "/assets/logo.svg";
+  const apple = document.querySelector("link[rel=apple-touch-icon]");
+  if (apple && icons.apple) apple.href = icons.apple;
   drawBell();
   refreshLive();
   measureHeader();
@@ -314,8 +322,6 @@ function holdingPage(view, site) {
 
 // ── routing ────────────────────────────────────────────────────
 let cleanup = null;
-// Set by the My Snooker page (pages/myteam.js) the first time it is shown in this visit.
-const mySnookerSeen = () => { try { return !!sessionStorage.getItem("sbds-my-snooker-seen"); } catch { return true; } };
 
 async function navigate(path, { replace = false } = {}) {
   if (path !== location.pathname + location.search + location.hash)
@@ -350,7 +356,8 @@ async function renderRoute() {
     const [mod, user, site] = await Promise.all([import(`./pages/${page}.js`), getUser(), settings()]);
     // My Snooker: someone who is still logged in starts on their own page when they come to the site
     // (if that is where they chose to have it). Once they have seen it (this visit), Home is the normal home page.
-    if (page === "home" && mySnookerOn(user) && mySnookerOwnPage(user) && (mySnookerSetUp(user) || isPlainPlayer(user)) && !mySnookerSeen()) return navigate("/myteam", { replace: true });
+    // (Until round 15 a logged-in player was taken to My Snooker when they came to the home page. The home page now
+    // stays the home page: My Snooker is in the menu.)
     document.body.classList.toggle("maintenance", !!site.maintenance_on && !user);
     drawTicker(page === "home" && !(site.maintenance_on && !user));
     if (site.maintenance_on && !user && page !== "login") return holdingPage(view, site);
@@ -497,3 +504,13 @@ startNotifications();
 
 // The list of names that opens under a text box as you type (the browser's own does not open on iPhones).
 initSuggest();
+
+// A long table of players shows the top ten: "Show all" opens the rest (and closes them again).
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-fold-toggle]");
+  if (!b) return;
+  const box = b.closest("[data-table-fold]"), open = !box.classList.contains("open");
+  box.classList.toggle("open", open);
+  b.textContent = open ? b.dataset.less : b.dataset.more;
+  if (!open) box.scrollIntoView({ block: "nearest" });
+});

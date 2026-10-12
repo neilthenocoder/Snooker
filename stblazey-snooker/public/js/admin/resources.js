@@ -27,6 +27,7 @@ import { ROLE_LABEL, TEAM_ROLE_LABEL } from "../core/auth.js";
 import { refreshShell } from "../core/router.js";
 import { FONTS, LAYOUT_GROUPS, LAYOUT_LABELS, TEXT_SIZES, parseFontEmbed } from "../core/branding.js";
 import { MEETING_KINDS, PLAYER_STATUS, footerSuggestions } from "../core/terms.js";
+import { CONTACT_RULE } from "../core/comp-deadlines.js";
 
 /** Fill in an award's shown name from the player or team picked for it (unless a different name was typed). */
 function awardName(row, refs, prefix) {
@@ -262,6 +263,9 @@ export const RESOURCES = {
       { name: "lead", label: "Lead text (bold opening paragraph)", type: "textarea", rows: 3 },
       { name: "body", label: "Match report / article text", type: "textarea", rows: 12,
         help: "Blank line = new paragraph. Type [quote] on its own line where the quote box should go (otherwise it goes after the first paragraph)." },
+      { type: "heading", label: "Social preview (optional)", help: "What a link to this article shows when it is shared on Facebook, WhatsApp, X and the rest: the headline, a line of text and a picture. Leave these empty and the intro and the background image are used." },
+      { name: "social_image_url", label: "Picture for the preview (wide: 1200 × 630 is ideal)", type: "image", folder: "news", maxSize: 1200, format: "jpeg" },
+      { name: "social_description", label: "Text for the preview (a sentence or two — leave empty to use the intro)", type: "textarea", rows: 2 },
       { name: "quote_text", label: "Quote (optional)", type: "textarea", rows: 2 },
       { name: "quote_author", label: "Quote by", type: "text" },
       { type: "heading", label: "CueView interview (optional)", help: "For an interview with anyone — a professional, a guest, a past player. It appears on the article in the CueView style. Leave any question blank to hide it." },
@@ -435,7 +439,10 @@ export const RESOURCES = {
       { type: "heading", label: "Logos" },
       { name: "logo_url", label: "Main logo (SVG or PNG — shown top left, at the height of the menu)", type: "image", folder: "branding", maxSize: 400 },
       { name: "loading_logo_url", label: "Loading logo (pulses in the middle of the black loading screen — leave empty to use the main logo)", type: "image", folder: "branding", maxSize: 600 },
-      { name: "favicon_url", label: "Favicon (the little browser-tab icon — square)", type: "image", folder: "branding", maxSize: 128 },
+      { name: "favicon_url", label: "Favicon (the little browser-tab icon — square; kept as a PNG so every browser shows it. Leave empty to use the app icon below)", type: "image", folder: "branding", maxSize: 128, format: "png" },
+      { type: "heading", label: "App icon (phone home screen and installed app)", help: "What a phone shows when someone adds the website to their home screen, and a computer for the installed app. Upload one square picture — the badge on its own, 512 × 512 or bigger; PNG or SVG with a clear background is best — and the four sizes phones and browsers ask for are made from it. Choose the background colour first: iPhones and round Android icons fill the space around the badge with it. Phones that already added the site may keep the old icon until it is removed and added again." },
+      { name: "app_icon_bg", label: "Background colour behind the badge", type: "color", default: "#000000" },
+      { name: "app_icons", label: "App icon", type: "appicon" },
       { type: "heading", label: "Menu and section colours", help: "Each menu button has its own colour, and the pages in that part of the site use it for their headers." },
       { name: "color_home", label: "Home (standard: brown)", type: "color", optional: true, default: "#4b2019" },
       { name: "color_competitions", label: "Competitions & Handicaps (standard: gold)", type: "color", optional: true, default: "#fbb61a" },
@@ -482,6 +489,9 @@ export const RESOURCES = {
       { name: "shields_show", label: "Show who holds each league's shield", type: "checkbox" },
       { type: "heading", label: "Captains: the Manage team box", help: "A box at the bottom of the home page that only captains and vice captains see, in the days before their team's next match. It takes them to My area → Manage team, where they pick who plays each frame (it is then on the scorecard on the night) and can add a new player. They can close the box; it comes back for the next match." },
       { name: "squad_box_days", label: "Show it this many days before the match (0 = never show it)", type: "number", default: 3, min: 0, max: 14 },
+      { type: "heading", label: "Competitions: deadline warnings", help: "Players (and captains, for team competitions) are warned in their own area — and in a bar on the home page in the last week — about their cup matches as each round's deadline comes up: who is at home, and who must contact whom. The deadlines and the “contact by” dates are set for each round under Draws & results." },
+      { name: "comp_warn_days", label: "Start warning this many days before a round's deadline", type: "number", default: 14, min: 1, max: 60 },
+      { name: "comp_contact_rule", label: "What the away player is told when the home player hasn't been in touch by the “contact by” date", type: "textarea", placeholder: CONTACT_RULE },
       { type: "heading", label: "Home page: feature box", help: "A coloured strip under the Competitions / Calendar / Handicaps / Fixtures buttons — for announcing something new." },
       { name: "feature_show", label: "Show the feature box", type: "checkbox" },
       { name: "feature_label", label: "Pulsing label (e.g. NEW)", type: "text", default: "NEW" },
@@ -536,6 +546,10 @@ export const RESOURCES = {
       { name: "footer_credit_show", label: "Show a credit after the copyright line", type: "checkbox", default: true },
       { name: "footer_credit_text", label: "The credit", type: "text", placeholder: "Created by White River Design Studio" },
       { name: "footer_credit_url", label: "Where the credit links to (optional)", type: "text", placeholder: "https://…" },
+      { type: "heading", label: "Sharing on social media", help: "What a link to the website shows when it is shared on Facebook, WhatsApp, X and the rest: a title, a line of text and a picture. News articles have their own (News → the article → Social preview); every other page uses these. The services keep a copy of a preview for a while, so a change can take a few days to show on a link that was shared before." },
+      { name: "social_title", label: "Title (leave empty to use the league's name)", type: "text", placeholder: "St Blazey and District Snooker League", wide: true },
+      { name: "social_description", label: "Text (a sentence or two)", type: "textarea", rows: 2, placeholder: "Fixtures, results, league tables, breaks and rankings for the St Blazey and District Snooker League, established 1941." },
+      { name: "social_image_url", label: "Picture (wide: 1200 × 630 is ideal — the logo on a coloured background, or a photo of the club)", type: "image", folder: "branding", maxSize: 1200, format: "jpeg" },
       { type: "heading", label: "Social links (footer)", help: "Paste the full address of each page. Blank ones aren't shown." },
       { name: "facebook_url", label: "Facebook", type: "text", placeholder: "https://www.facebook.com/…" },
       { name: "x_url", label: "X (Twitter)", type: "text", placeholder: "https://x.com/…" },
