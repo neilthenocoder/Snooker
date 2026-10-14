@@ -1,5 +1,5 @@
 // The logged-in area ("dashboard") for captains, vice captains and players.
-//   Captains and vice captains:  My Team · Manage team · Fixtures · Profile · User details · Competitions · My Snooker
+//   Captains and vice captains:  My Team · Manage team · Fixtures · Write news · Profile · User details · Competitions · My Snooker
 //   Players:                     My Snooker · (Profile and Competitions, if the login is linked to a player or team) · User details
 //   Officers with no team:       My Snooker · User details (their tools are in the admin dashboard)
 // A player's login has no tools: the one thing they control here is My Snooker (their own page, /myteam).
@@ -10,7 +10,7 @@ import { upcomingFor, pickedCount, dayText, untilText, fixtureLine } from "../co
 import { deadlineWarnings, deadlineList } from "../core/comp-deadlines.js";
 import { SECTIONS, prefsToSave } from "../core/my-snooker.js";
 import { listField, wireListFields } from "../core/list-field.js";
-import { isCaptain, isMember, isPlainPlayer, mySnookerOn, myPrefs, refreshUser, canEditFixture, canPostpone, canEditCompMatch, canAddMatchPhotos, changePassword, roleText } from "../core/auth.js";
+import { canWriteNews, isStaff, isCaptain, isMember, isPlainPlayer, mySnookerOn, myPrefs, refreshUser, canEditFixture, canPostpone, canEditCompMatch, canAddMatchPhotos, changePassword, roleText } from "../core/auth.js";
 import { buildBracket, isEntry, roundName } from "../core/bracket.js";
 import { extCounts, EXT_PER_SEASON, POSTPONE_WEEKS, rearrangeBy, RULES } from "../core/rules.js";
 import { CUEVIEW } from "../core/cueview.js";
@@ -18,13 +18,15 @@ import { uploadImage } from "../core/upload.js";
 import { breadcrumb, panel, dataTable, fixturesTable, urls, statusBadge, playerLink, avatar, badge, handicapTag, handicapText } from "../core/components.js";
 import { setTitle, navigate, refreshShell } from "../core/router.js";
 import { mustLogin } from "./scorecard.js";
+import { newsWizardPage } from "../admin/news-wizard.js";
 
-const LABEL = { snooker: "My Snooker", team: "My Team", squad: "Manage team", fixtures: "Fixtures", profile: "Profile", details: "User details", competitions: "Competitions" };
+const LABEL = { news: "Write news", snooker: "My Snooker", team: "My Team", squad: "Manage team", fixtures: "Fixtures", profile: "Profile", details: "User details", competitions: "Competitions" };
 /** The tabs this login gets. Everyone has My Snooker; what else they have is as it always was. */
 function tabsFor(user) {
   if (!isMember(user)) return ["snooker", "details"];                       // an officer with no team or player
   // "Manage team" (the team sheet, and adding players) is for captains and vice captains only.
-  if (!isPlainPlayer(user)) return ["team", ...(isCaptain(user) ? ["squad"] : []), "fixtures", "profile", "details", "competitions", "snooker"];
+  // "Write news" (Rich, round 20): captains and vice captains with the Write news permission (on to start with).
+  if (!isPlainPlayer(user)) return ["team", ...(isCaptain(user) ? ["squad"] : []), "fixtures", ...(canWriteNews(user) && !isStaff(user) ? ["news"] : []), "profile", "details", "competitions", "snooker"];
   const p = user.profile ?? {};
   return ["snooker", ...(p.player_id ? ["profile"] : []), ...(p.player_id || p.team_id ? ["competitions"] : []), "details"];
 }
@@ -65,7 +67,7 @@ export default async function my(view, { params, user, query }) {
     try { await setFixtureStatus(fx.id, "postponed"); toast("Match postponed"); navigate(location.pathname, { replace: true }); }
     catch (err) { toast(err.message, "error"); }
   });
-  const sections = { snooker: snookerTab, team: teamTab, squad: squadTab, fixtures: fixturesTab, profile: profileTab, details: detailsTab, competitions: competitionsTab };
+  const sections = { news: (el) => newsWizardPage(el), snooker: snookerTab, team: teamTab, squad: squadTab, fixtures: fixturesTab, profile: profileTab, details: detailsTab, competitions: competitionsTab };
   return sections[tab](body, { ctx, user, team, me, query });
 }
 

@@ -34,7 +34,7 @@ export default async (req) => {
   // Nobody can hand out more than they have themselves: a role is "within reach" when everything it can do, the caller can do too.
   // (Live scoring is left out of the comparison: it is set for a whole role by the Master Admin — captains can have it —
   //  and is not a part of the dashboard, so it must not stop someone with "Logins" from making a captain's login.)
-  const withinReach = (r) => master || (r !== "admin" && areasOf(r).filter((a) => a !== "livescoring").every((a) => mine.includes(a)));
+  const withinReach = (r) => master || (r !== "admin" && areasOf(r).filter((a) => a !== "livescoring" && a !== "news").every((a) => mine.includes(a)));
 
   // 2. Validate input.
   let body;

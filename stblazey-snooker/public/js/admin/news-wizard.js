@@ -3,14 +3,18 @@
 //  The same news article as Admin → News, one question at a time, for anyone who finds the full form a lot
 //  (Rich, round 20): headline → category → sub headline → the story → a quote → pictures → this week's
 //  results, league positions and breaks → check and publish. Every answer is kept on this device as it is
-//  typed, so closing the page by mistake loses nothing. Saved articles are edited in Admin → News as usual.
+//  typed, so closing the page by mistake loses nothing.
+//  Used in two places: Admin → Website → Write news step by step (officers), and My area → Write news (captains and
+//  vice captains). Anyone with "Write news" sees their own articles under it and can change them here; the
+//  News & website officers also have the full list in Admin → News.
 // ─────────────────────────────────────────────────────────────
 import { html, mount, $, toast, todayUK, fmtDate } from "../core/dom.js";
 import { table, save } from "../core/api.js";
 import { slugify } from "../core/schedule.js";
 import { uploadImage } from "../core/upload.js";
 import { pickImage } from "./picker.js";
-import { getUser } from "../core/auth.js";
+import { getUser, canManage } from "../core/auth.js";
+import { panel } from "../core/components.js";
 
 const DRAFT = "sbdsl-news-draft";
 const STEPS = [
@@ -27,27 +31,43 @@ const dropDraft = () => { try { localStorage.removeItem(DRAFT); } catch { /* not
 const hasWords = (s) => !!(s.title || s.lead || s.body || s.image_url);
 
 export async function newsWizardPage(el) {
-  const [categories, leagues, articles, user] = await Promise.all([table("categories", "sort"), table("leagues", "sort"), table("articles", "published_at"), getUser()]);
+  const [categories, leagues, user] = await Promise.all([table("categories", "sort"), table("leagues", "sort"), getUser()]);
+  let articles = await table("articles", "published_at");
+  const fullNews = canManage(user, "website");
+  const mine = () => articles.filter((a) => a.created_by && a.created_by === user?.id).sort((a, b) => String(b.published_at).localeCompare(String(a.published_at)));
   let s = readDraft() ?? blank();
   let busy = false;
+  /** An article already saved, back into the steps to change it. */
+  const load = (a) => ({ ...blank(), id: a.id, slug: a.slug, is_published: a.is_published, step: 0,
+    title: a.title ?? "", category: a.category ?? "", lead: a.lead ?? "", body: a.body ?? "", quote_text: a.quote_text ?? "", quote_author: a.quote_author ?? "",
+    image_url: a.image_url ?? "", circle_image_url: a.circle_image_url ?? "", published_at: a.published_at ?? todayUK(),
+    weekly: !!(a.show_results || a.show_standings || a.show_breaks), league_id: a.league_id ?? "", week_ending: a.week_ending ?? "",
+    show_results: a.league_id ? !!a.show_results : true, show_standings: a.league_id ? !!a.show_standings : true, show_breaks: a.league_id ? !!a.show_breaks : true });
+  const myList = () => {
+    const list = mine();
+    return list.length ? panel("Your articles", html`<div class="nw-mine">${list.slice(0, 30).map((a) => html`<div>
+      <span><b>${a.title}</b><small>${fmtDate(a.published_at)} · ${a.is_published ? "On the website" : "Draft — not on the website"}${s.id === a.id ? " · changing it now" : ""}</small></span>
+      <span class="btn-row">${a.is_published ? html`<a class="btn small ghost" href="/news/${a.slug}">See it</a>` : ""}<button type="button" class="btn small" data-edit="${a.id}">Change it</button></span></div>`)}</div>`) : "";
+  };
 
   const draw = () => {
     const step = STEPS[s.step][0];
     mount(el, html`<div class="nw">
       <ol class="nw-steps" aria-label="Steps">${STEPS.map(([key, label], i) => html`<li class="${i < s.step ? "done" : i === s.step ? "on" : ""}">
         ${i < s.step ? html`<button type="button" data-go="${i}" title="Back to ${label}"><b>${i + 1}</b><span>${label}</span></button>` : html`<span><b>${i + 1}</b><span>${label}</span></span>`}</li>`)}</ol>
-      <p class="nw-count">Step ${s.step + 1} of ${STEPS.length}</p>
+      <p class="nw-count">${s.id ? html`<span class="nw-editing">Changing “${s.title || "an article"}”</span> · ` : ""}Step ${s.step + 1} of ${STEPS.length}</p>
       <form class="nw-card" data-nw novalidate>${body(step)}
         <div class="nw-buttons">
           ${s.step > 0 ? html`<button type="button" class="btn ghost" data-back>← Back</button>` : html`<span></span>`}
           ${step === "check"
-            ? html`<span class="nw-go"><button type="button" class="btn secondary" data-publish="draft">Save as a draft</button><button type="button" class="btn green big" data-publish="now">Publish now</button></span>`
+            ? html`<span class="nw-go"><button type="button" class="btn secondary" data-publish="draft">${s.id && s.is_published ? "Take it off the website (draft)" : "Save as a draft"}</button><button type="button" class="btn green big" data-publish="now">${s.id && s.is_published ? "Save the changes" : "Publish now"}</button></span>`
             : html`<span class="nw-go">${["quote", "pictures", "weekly"].includes(step) ? html`<button type="button" class="btn ghost" data-skip>Skip this step</button>` : ""}<button class="btn green big">Next →</button></span>`}
         </div>
       </form>
       <p class="muted nw-foot">Everything you type is kept on this device until the article is saved, so you can leave and carry on later.
-        ${hasWords(s) ? html`<button type="button" class="linkish" data-restart>Start a new article instead</button>` : ""}
-        To change an article after it is saved, use <a href="/admin/articles">News</a>.</p>
+        ${hasWords(s) || s.id ? html`<button type="button" class="linkish" data-restart>${s.id ? "Stop changing it and write a new article" : "Start a new article instead"}</button>` : ""}
+        ${fullNews ? html`Every article is also in <a href="/admin/articles">News</a>.` : ""}</p>
+      ${myList()}
     </div>`);
     const first = el.querySelector("[data-nw] input:not([type=checkbox]):not([type=file]), [data-nw] textarea");
     if (first && step !== "check") first.focus({ preventScroll: true });
@@ -98,7 +118,7 @@ export async function newsWizardPage(el) {
             ? [s.show_results && "results", s.show_standings && "league positions", s.show_breaks && "breaks"].filter(Boolean).join(", ") + ` — week ending ${fmtDate(s.week_ending || s.published_at)}` : "None")}
         </dl>
         <label>Date on the article<input type="date" name="published_at" value="${s.published_at}"></label>
-        <p class="nw-tip">“Publish now” puts it on the website straight away. “Save as a draft” keeps it hidden — publish it later from News.</p>`;
+        <p class="nw-tip">“Publish now” puts it on the website straight away. “Save as a draft” keeps it hidden — publish it later from “Your articles” below.</p>`;
       default: return "";
     }
   };
@@ -167,8 +187,15 @@ export async function newsWizardPage(el) {
     const clear = t.closest("[data-clear]");
     if (clear) { s[clear.dataset.clear] = ""; keepDraft(s); return draw(); }
     if (t.closest("[data-restart]")) {
-      if (!confirm("Start a new article? What you have typed here so far is thrown away.")) return;
+      if (!confirm(s.id ? "Stop changing this article? Changes not saved yet are lost (the article itself stays as it was)." : "Start a new article? What you have typed here so far is thrown away.")) return;
       dropDraft(); s = blank(); return draw();
+    }
+    const edit = t.closest("[data-edit]");
+    if (edit) {
+      const a = articles.find((x) => x.id === edit.dataset.edit);
+      if (!a) return;
+      if (hasWords(s) && s.id !== a.id && !confirm("Change this article instead? What you have typed in the steps so far is thrown away.")) return;
+      s = load(a); keepDraft(s); draw(); el.scrollIntoView({ block: "start", behavior: "smooth" }); return;
     }
     const pub = t.closest("[data-publish]");
     if (pub && !busy) {
@@ -176,16 +203,22 @@ export async function newsWizardPage(el) {
       if (!s.title.trim() || !s.category || !s.body.trim()) { toast("The headline, category and story are needed — go back and add them.", "error"); return; }
       busy = true; pub.disabled = true;
       try {
-        const saved = await save("articles", articleRow(s, pub.dataset.publish === "now", articles, user));
+        let row = articleRow(s, pub.dataset.publish === "now", articles, user), saved;
+        try { saved = await save("articles", row); }
+        catch (err) {
+          // Someone else's draft (which this login can't see) may already have that web address: add a few letters.
+          if (s.id || !/duplicate|unique|slug/i.test(err.message)) throw err;
+          saved = await save("articles", { ...row, slug: `${row.slug}-${Math.random().toString(36).slice(2, 6)}` });
+        }
         dropDraft();
+        articles = await table("articles", "published_at");
         const published = saved.is_published;
         s = blank();
         mount(el, html`<div class="nw"><div class="nw-card nw-done">
           <h2>${published ? "It's on the website" : "Saved as a draft"}</h2>
-          <p>${published ? "Your article is published." : "It is saved but hidden. Publish it from News when it is ready."}</p>
+          <p>${published ? "Your article is published." : "It is saved but hidden. Find it under “Your articles” and publish it when it is ready."}</p>
           <div class="btn-row">${published ? html`<a class="btn green big" href="/news/${saved.slug}">See the article</a>` : ""}
-            <a class="btn secondary" href="/admin/articles?edit=${saved.id}">Open it in News</a>
-            <button type="button" class="btn ghost" data-again>Write another</button></div></div></div>`);
+            <button type="button" class="btn secondary" data-again>Write another</button></div></div>${myList()}</div>`);
         $("[data-again]", el).onclick = () => draw();
       } catch (err) { toast(err.message, "error"); pub.disabled = false; }
       finally { busy = false; }
@@ -196,10 +229,10 @@ export async function newsWizardPage(el) {
 
 /** The wizard's answers as a row of the articles table (the same columns Admin → News fills in). */
 function articleRow(s, publish, existing, user) {
-  const taken = new Set(existing.map((a) => a.slug));
+  const taken = new Set(existing.filter((a) => a.id !== s.id).map((a) => a.slug));
   const base = slugify(s.title) || "news";
-  let slug = base, n = 1;
-  while (taken.has(slug)) slug = `${base}-${++n}`;
+  let slug = s.id && s.slug ? s.slug : base, n = 1;
+  if (!s.id) while (taken.has(slug)) slug = `${base}-${++n}`;
   const firstPara = s.body.split(/\n\s*\n/).map((p) => p.trim()).find(Boolean) ?? "";
   const intro = (s.lead || firstPara).replace(/\s+/g, " ").trim();
   const weekly = !!s.weekly;
@@ -211,6 +244,6 @@ function articleRow(s, publish, existing, user) {
     image_url: s.image_url || null, circle_image_url: s.circle_image_url || null,
     league_id: weekly ? s.league_id || null : null, week_ending: weekly ? s.week_ending || null : null,
     show_results: weekly && !!s.show_results, show_standings: weekly && !!s.show_standings, show_breaks: weekly && !!s.show_breaks,
-    author: user?.profile?.full_name || null,
+    ...(s.id ? { id: s.id } : { author: user?.profile?.full_name || null, created_by: user?.id ?? null }),
   };
 }

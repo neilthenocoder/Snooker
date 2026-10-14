@@ -437,10 +437,10 @@ export function buildSeed() {
   ];
   // What each officer role may use in the dashboard (the Master Admin can change it under Roles & permissions).
   const role_permissions = [
-    ["league_admin", ["matchnights", "fixtures", "league", "handicaps", "competitions", "livescoring", "website", "settings", "people"]],
-    ["competition_secretary", ["handicaps", "competitions", "livescoring"]], ["league_secretary", ["league", "handicaps"]],
-    ["committee_member", ["website", "settings"]], ["president", ["website", "settings"]], ["vice_chairman", ["website", "settings"]], ["chairman", ["website", "settings"]],
-    ["captain", []], ["vice_captain", []],
+    ["league_admin", ["matchnights", "fixtures", "league", "handicaps", "competitions", "livescoring", "news", "website", "settings", "people"]],
+    ["competition_secretary", ["handicaps", "competitions", "livescoring", "news"]], ["league_secretary", ["league", "handicaps", "news"]],
+    ["committee_member", ["website", "settings", "news"]], ["president", ["website", "settings", "news"]], ["vice_chairman", ["website", "settings", "news"]], ["chairman", ["website", "settings", "news"]],
+    ["captain", ["news"]], ["vice_captain", ["news"]],
   ].map(([role, areas]) => ({ role, areas }));
 
   // ── Wave 6 samples ──

@@ -3240,3 +3240,14 @@ img.trophy { border-radius: 0; object-fit: contain; }
   .nw-go .btn { flex: 1; }
 }
 .nw-card textarea[name=lead], .nw-card textarea[name=quote_text] { min-height: 96px; }
+/* Round 20b — "the whole site in Space Grotesk" (Rich): buttons don't take the page's font by themselves (browsers
+   give them their own), so every button now takes it too. Buttons with their own style (.btn etc.) keep theirs. */
+button { font-family: inherit; }
+/* Write news: "Your articles" under the steps (change your own). */
+.nw .panel { margin-top: 22px; }
+.nw-mine > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; background: #fff; border-bottom: 1px solid #ecebe2; }
+.nw-mine b { display: block; }
+.nw-mine small { color: var(--muted); }
+.nw-mine .btn-row { flex: none; gap: 6px; }
+.nw-editing { color: var(--red); }
+@media (max-width: 639px) { .nw-mine > div { flex-direction: column; align-items: flex-start; } }

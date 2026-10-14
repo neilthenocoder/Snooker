@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────
 import { html, mount, $, readForm, toast, fmtDate, safeHref } from "./dom.js";
 import { DEMO_MODE } from "../config.js";
-import { signIn, homeFor, isStaff, isMember, isPlainPlayer, roleText, mySnookerOn } from "./auth.js";
+import { signIn, homeFor, isStaff, isMember, isPlainPlayer, roleText, mySnookerOn, canWriteNews } from "./auth.js";
 import { notificationsOn, setNotifications, NOTIFY_KINDS, notifyPrefs, setNotifyPref, latestNotices, markNoticesSeen, seenNotices, NOTICE_KIND } from "./notify.js";
 import { navigate, refreshShell } from "./router.js";
 
@@ -16,6 +16,7 @@ const ICON = {
   star: ico("m12 2.6 2.9 6 6.5.9-4.7 4.6 1.1 6.5-5.8-3.1-5.8 3.1 1.1-6.5L2.6 9.5l6.5-.9Z"),
   team: ico("M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8v-1c0-2.8 3.1-5 7-5s7 2.2 7 5v1Z"),
   admin: ico("M4 4h7v7H4Zm9 0h7v4h-7ZM4 13h7v7H4Zm9-3h7v10h-7Z"),
+  pen: ico("M3 17.2V21h3.8l11-11-3.8-3.8ZM20.7 7a1 1 0 0 0 0-1.4l-2.3-2.3a1 1 0 0 0-1.4 0l-1.8 1.8 3.8 3.8Z"),
   cog: ico("M4 6h9v2H4Zm13 0h3v2h-3Zm-2-2h2v6h-2ZM4 11h3v2H4Zm7 0h9v2h-9ZM7 9h2v6H7Zm-3 7h9v2H4Zm13 0h3v2h-3Zm-2-2h2v6h-2Z"),
   key: ico("M14 3a7 7 0 0 0-6.7 9L2 17.3V22h4.7v-2.3H9v-2.3h2.3l1.4-1.4A7 7 0 1 0 14 3Zm2.5 4a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6Z"),
   phone: ico("M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm0 3v13h10V5Zm5 14.2a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z"),
@@ -100,6 +101,7 @@ export function openAccount(user, { message = "" } = {}) {
       ${link(mySnookerOn(user) ? "/myteam" : "/my/snooker", ICON.star, "My Snooker", mySnookerOn(user) ? "Your own page: the teams and players you follow" : "Switched off — press to switch it on")}
       ${isMember(user) && !isPlainPlayer(user) ? link("/my", ICON.team, "My Team", "Scorecards, fixtures and your team") : ""}
       ${isStaff(user) ? link("/admin", ICON.admin, "Admin dashboard", "Everything your role looks after") : ""}
+      ${canWriteNews(user) ? link(isStaff(user) ? "/admin/write" : "/my/news", ICON.pen, "Write news", "Step by step: headline, story, pictures, this week's tables") : ""}
       ${link("/my/snooker", ICON.cog, "My Snooker settings", "Who you follow and what you see on your page")}
       ${p.player_id ? link("/my/profile", ICON.team, "My profile", "Your photo, bio and CueView") : ""}
       ${link("/my/details", ICON.key, "Password & details")}

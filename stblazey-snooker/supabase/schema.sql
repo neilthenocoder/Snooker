@@ -178,6 +178,9 @@ alter table articles add column if not exists show_breaks boolean not null defau
 alter table articles add column if not exists show_results boolean not null default false;
 alter table articles add column if not exists show_standings boolean not null default false;
 alter table articles add column if not exists featured boolean not null default true;
+-- Round 20: who wrote it (captains, vice captains and officers with "Write news" can change only their own).
+alter table articles add column if not exists created_by uuid;
+alter table articles alter column created_by set default auth.uid();
 -- Info pages and venues: picture galleries (lists of image links)
 alter table pages add column if not exists gallery jsonb not null default '[]'::jsonb;
 alter table venues add column if not exists phone text;
@@ -773,12 +776,13 @@ language sql stable security definer set search_path = public as $$
   ));
 $$;
 
--- Anyone with a part of the admin dashboard (they may upload pictures).
+-- Anyone with a part of the admin dashboard (they may upload pictures). Live scoring and Write news are not parts of
+-- the dashboard: captains and vice captains can have them without becoming officers.
 create or replace function public.is_staff() returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from profiles p where p.id = auth.uid() and (
     p.role = 'admin'
-    or exists (select 1 from role_permissions rp where rp.role = p.role and cardinality(array_remove(rp.areas, 'livescoring')) > 0)
+    or exists (select 1 from role_permissions rp where rp.role = p.role and cardinality(array_remove(array_remove(rp.areas, 'livescoring'), 'news')) > 0)
   ));
 $$;
 
@@ -1243,7 +1247,8 @@ create policy "admin write" on competition_signups for all using (public.can_man
 create policy "staff read" on handicap_changes for select using (public.can_manage('handicaps') or public.can_manage('league'));
 
 -- Unpublished articles are hidden from the public.
-create policy "public read" on articles for select using (is_published or public.can_manage('website'));
+-- (A news writer also sees their own drafts.)
+create policy "public read" on articles for select using (is_published or public.can_manage('website') or (created_by = auth.uid() and public.can_manage('news')));
 
 -- Logins: you can see your own profile; whoever manages logins sees everyone's. Emails are never public.
 create policy "public read" on profiles for select using (id = auth.uid() or public.can_manage('people'));
@@ -1767,11 +1772,11 @@ drop policy if exists "own pictures read" on media;
 drop policy if exists "own pictures add" on media;
 drop policy if exists "own pictures change" on media;
 drop policy if exists "own pictures delete" on media;
-create policy "own pictures read" on media for select using (public.is_master() or (owner_id = auth.uid() and public.is_staff()));
-create policy "own pictures add" on media for insert with check (public.is_staff() and (owner_id = auth.uid() or public.is_master()));
-create policy "own pictures change" on media for update using (public.is_master() or (owner_id = auth.uid() and public.is_staff()))
-  with check (public.is_master() or (owner_id = auth.uid() and public.is_staff()));
-create policy "own pictures delete" on media for delete using (public.is_master() or (owner_id = auth.uid() and public.is_staff()));
+create policy "own pictures read" on media for select using (public.is_master() or (owner_id = auth.uid() and (public.is_staff() or public.can_manage('news'))));
+create policy "own pictures add" on media for insert with check ((public.is_staff() or public.can_manage('news')) and (owner_id = auth.uid() or public.is_master()));
+create policy "own pictures change" on media for update using (public.is_master() or (owner_id = auth.uid() and (public.is_staff() or public.can_manage('news'))))
+  with check (public.is_master() or (owner_id = auth.uid() and (public.is_staff() or public.can_manage('news'))));
+create policy "own pictures delete" on media for delete using (public.is_master() or (owner_id = auth.uid() and (public.is_staff() or public.can_manage('news'))));
 -- 2. Emails (Admin → Emails): the Master Admin is copied on every submitted result; the captains and vice captains
 --    of both teams get a copy of their own card; new competition entries are emailed to the competition secretary.
 alter table private_settings add column if not exists results_copy_master boolean not null default true;
@@ -1779,6 +1784,50 @@ alter table private_settings add column if not exists results_copy_captains bool
 alter table private_settings add column if not exists entries_email_on boolean not null default false;
 alter table private_settings add column if not exists entries_email_to text;
 alter table competition_signups add column if not exists emailed_at timestamptz;
+
+-- 3. Writing news (Rich, round 20): captains, vice captains and every officer — not players or visitors.
+--    A permission of its own, "Write news" (Admin → Roles & permissions), like live scoring: it is not a part of the
+--    dashboard, so captains who have it stay captains. They write with "Write news step by step" (My area → Write news)
+--    and can change only their own articles; officers with "News & website" still look after every article.
+--    The first time this runs, every officer role, captains and vice captains get it.
+do $$
+begin
+  if not exists (select 1 from schema_steps where step = 'v15 write news') then
+    update role_permissions set areas = array_append(areas, 'news') where not ('news' = any(areas));
+    insert into schema_steps (step) values ('v15 write news');
+  end if;
+end $$;
+drop policy if exists "news writers add" on articles;
+drop policy if exists "news writers change" on articles;
+drop policy if exists "news writers delete" on articles;
+create policy "news writers add" on articles for insert with check (public.can_manage('news') and created_by = auth.uid());
+create policy "news writers change" on articles for update using (public.can_manage('news') and created_by = auth.uid()) with check (public.can_manage('news') and created_by = auth.uid());
+create policy "news writers delete" on articles for delete using (public.can_manage('news') and created_by = auth.uid());
+--    Someone who can only write news cannot make their article "breaking news" (a pop-up for everyone) or put it in the
+--    News page's featured boxes, and an article always stays its writer's. The News & website officers can do all of it.
+create or replace function public.guard_article() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null or public.can_manage('website') then return new; end if;
+  if tg_op = 'INSERT' then
+    new.created_by := auth.uid(); new.breaking := false; new.hub_featured := false;
+  else
+    new.created_by := old.created_by; new.breaking := old.breaking; new.hub_featured := old.hub_featured;
+  end if;
+  return new;
+end $$;
+drop trigger if exists guard_article on articles;
+create trigger guard_article before insert or update on articles for each row execute function public.guard_article();
+
+-- 4. "Try the whole site in Space Grotesk" (Rich, round 20): once, the fonts chosen under Admin → Branding go back to
+--    the standard (Space Grotesk for headings and text). Another font can be chosen there again afterwards.
+do $$
+begin
+  if not exists (select 1 from schema_steps where step = 'v15 space grotesk') then
+    update settings set font_head = null, font_body = null where id = 1;
+    insert into schema_steps (step) values ('v15 space grotesk');
+  end if;
+end $$;
 
 -- ── v8: give existing rows their short web addresses ────────────
 -- (Done down here, after the activity log has been told to ignore these columns.)
@@ -1830,16 +1879,17 @@ create policy "images admin insert" on storage.objects for insert to authenticat
     or ((name like 'scorecards/%' or name like 'matchnight/%') and exists (select 1 from public.profiles where id = auth.uid()
           and (role in ('captain', 'vice_captain') or team_role in ('captain', 'vice_captain'))))
     or (name like 'players/%' and exists (select 1 from public.profiles where id = auth.uid() and player_id is not null))
+    or (name like 'news/%' and public.can_manage('news'))
   ));
 -- Listing files (needed to delete one): the Master Admin all of them, an officer their own. Viewing a picture by its
 -- link needs nothing — the bucket is public.
 create policy "images own list" on storage.objects for select to authenticated
-  using (bucket_id = 'images' and (public.is_master() or (public.is_staff() and (owner = auth.uid() or owner_id = auth.uid()::text))));
+  using (bucket_id = 'images' and (public.is_master() or ((public.is_staff() or public.can_manage('news')) and (owner = auth.uid() or owner_id = auth.uid()::text))));
 -- Changing or deleting a file: the Master Admin, or the officer who uploaded it (round 20: everyone's own pictures).
 create policy "images admin update" on storage.objects for update to authenticated
-  using (bucket_id = 'images' and (public.is_master() or (public.is_staff() and (owner = auth.uid() or owner_id = auth.uid()::text))));
+  using (bucket_id = 'images' and (public.is_master() or ((public.is_staff() or public.can_manage('news')) and (owner = auth.uid() or owner_id = auth.uid()::text))));
 create policy "images admin delete" on storage.objects for delete to authenticated
-  using (bucket_id = 'images' and (public.is_master() or (public.is_staff() and (owner = auth.uid() or owner_id = auth.uid()::text))));
+  using (bucket_id = 'images' and (public.is_master() or ((public.is_staff() or public.can_manage('news')) and (owner = auth.uid() or owner_id = auth.uid()::text))));
 
 -- ── the version of this file ─────────────────────────────────────
 -- KEEP THIS AT THE VERY END. The website asks the database for this number (public/js/core/version.js holds
