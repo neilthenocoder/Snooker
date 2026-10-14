@@ -4,8 +4,13 @@
 import { db } from "./db.js";
 import { DEMO_MODE } from "../config.js";
 import { addToLibrary } from "./api.js";
+import { getUser } from "./auth.js";
 
 const MAX_BYTES = 5 * 1024 * 1024;
+/** What a phone photo can be when it is chosen (it is made much smaller before it is stored). */
+const MAX_PICKED = 40 * 1024 * 1024;
+/** The size a stored picture aims for: about 300 KB, however big the photo that was chosen (Neil, round 20). */
+export const TARGET_BYTES = 300 * 1024;
 
 /** Image library categories, and which one each upload folder files into. */
 export const MEDIA_CATEGORIES = ["General", "News", "Players", "Emblems & logos", "Trophies", "Venues", "Competitions", "Sponsors", "Galleries"];
@@ -15,12 +20,14 @@ const FOLDER_CATEGORY = { news: "News", players: "Players", teams: "Emblems & lo
  * library: true adds the picture to the admin's image library (admins only);
  * pass false for uploads by captains and players.
  */
-export async function uploadImage(file, { folder = "misc", maxSize = 1600, library = folder !== "scorecards", category = FOLDER_CATEGORY[folder] ?? "General", format = "webp" } = {}) {
-  if (!file || !/^image\/(jpeg|png|webp|gif|svg\+xml)$/.test(file.type)) throw new Error("Please choose a JPG, PNG, WebP, GIF or SVG image.");
-  // SVG logos and animated GIFs are kept as they are; everything else is resized and converted to WebP.
+export async function uploadImage(file, { folder = "misc", maxSize = 1600, library = folder !== "scorecards", category = FOLDER_CATEGORY[folder] ?? "General", format = "webp", target = TARGET_BYTES } = {}) {
+  // HEIC/HEIF is what iPhones take photos in: tried too (Safari can read them), and turned into WebP/JPEG like the rest.
+  if (!file || !/^image\/(jpeg|png|webp|gif|svg\+xml|heic|heif)$/.test(file.type)) throw new Error("Please choose a JPG, PNG, WebP, GIF or SVG image.");
+  if (file.size > MAX_PICKED) throw new Error("That picture is over 40 MB — please choose a smaller one.");
+  // SVG logos and animated GIFs are kept as they are; everything else is made smaller and turned into WebP.
   const asIs = file.type === "image/gif" || file.type === "image/svg+xml";
   // format: "webp" (small — most pictures), "png" (the favicon: every browser shows it) or "jpeg" (social previews: Facebook, WhatsApp and the rest all read it).
-  const blob = asIs ? file : await resize(file, DEMO_MODE ? Math.min(maxSize, 800) : maxSize, format);
+  const blob = asIs ? file : await shrink(file, DEMO_MODE ? Math.min(maxSize, 800) : maxSize, format, target);
   if (blob.size > MAX_BYTES) throw new Error("That image is over 5 MB even after shrinking — please use a smaller one.");
   let url, path = null;
   if (DEMO_MODE) url = await toDataUrl(blob);
@@ -32,7 +39,11 @@ export async function uploadImage(file, { folder = "misc", maxSize = 1600, libra
     url = db.storage.from("images").getPublicUrl(path).data.publicUrl;
   }
   // Everything except scorecard photos goes into the image library for re-use.
-  if (library) await addToLibrary({ url, path, name: file.name.slice(0, 120), category });
+  // It goes into the uploader's own pictures (only they and the Master Admin can see them there).
+  if (library) {
+    const me = await getUser().catch(() => null);
+    await addToLibrary({ url, path, name: file.name.slice(0, 120), category, ...(me ? { owner_id: me.id, owner_name: me.profile?.full_name || me.email || "" } : {}) });
+  }
   return url;
 }
 
@@ -53,16 +64,73 @@ export async function uploadFile(file, { folder = "files" } = {}) {
   return db.storage.from("images").getPublicUrl(path).data.publicUrl;
 }
 
-async function resize(file, maxSize, format = "webp") {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
+/**
+ * Make a picture ready for the website, whatever was chosen (a 10 MB phone photo included):
+ *   - at most `maxSize` pixels on its longest side (1600 for most pictures — sharp on any screen);
+ *   - WebP, the small modern format. iPhones and Macs (Safari) cannot make WebP in the browser,
+ *     so there it becomes a JPEG instead, made to the same size;
+ *   - about 300 KB at most (`target`; a photo of a paper scorecard may be bigger, to stay readable): the quality is stepped down until it fits, and if a very detailed photo
+ *     still doesn't, it is made a little smaller (never under 1000 pixels).
+ * PNG (the favicon) is only resized.
+ */
+export async function shrink(file, maxSize, format = "webp", target = TARGET_BYTES) {
+  const source = await decode(file);
+  const type = format === "png" ? "image/png" : format === "jpeg" || !(await canMakeWebp()) ? "image/jpeg" : "image/webp";
+  const [w, h] = dims(source);
+  let size = Math.min(maxSize, Math.max(w, h));
+  for (;;) {
+    const canvas = draw(source, size, type);
+    if (type === "image/png") return toBlob(canvas, type);
+    let blob = null;
+    for (const quality of [0.82, 0.74, 0.66, 0.58, 0.5]) {
+      blob = await toBlob(canvas, type, quality);
+      if (blob.size <= target) return blob;
+    }
+    if (size <= 1000) return blob;              // as small as it should go: keep the best of it
+    size = Math.max(1000, Math.round(size * 0.8));
+  }
+}
+
+const dims = (source) => [source.naturalWidth || source.width, source.naturalHeight || source.height];
+
+function draw(source, longest, type) {
+  const [w, h] = dims(source);
+  const scale = Math.min(1, longest / Math.max(w, h));
   const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  const type = { png: "image/png", jpeg: "image/jpeg" }[format] ?? "image/webp";
-  const blob = await new Promise((res) => canvas.toBlob(res, type, 0.85));
-  return blob ?? new Promise((res) => canvas.toBlob(res, "image/jpeg", 0.85));
+  canvas.width = Math.max(1, Math.round(w * scale));
+  canvas.height = Math.max(1, Math.round(h * scale));
+  const g = canvas.getContext("2d");
+  // A JPEG has no see-through parts: a logo with a transparent background goes on white, not black.
+  if (type === "image/jpeg") { g.fillStyle = "#fff"; g.fillRect(0, 0, canvas.width, canvas.height); }
+  g.imageSmoothingQuality = "high";
+  g.drawImage(source, 0, 0, canvas.width, canvas.height);
+  return canvas;
+}
+
+const toBlob = (canvas, type, quality) => new Promise((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error("This browser couldn't process that picture — try another one."))), type, quality));
+
+/** Read the picture (the right way up: phone photos carry their turn in the file). */
+async function decode(file) {
+  try { return await createImageBitmap(file, { imageOrientation: "from-image" }); }
+  catch {
+    // Some browsers can only read some formats (e.g. an iPhone's HEIC) through an <img>.
+    return new Promise((res, rej) => {
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); res(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("That picture couldn't be read — please choose a JPG or PNG.")); };
+      img.src = url;
+    });
+  }
+}
+
+/** Can this browser make WebP? (Chrome, Edge, Firefox, Android: yes. Safari: no — it quietly makes a PNG instead.) */
+let webp;
+function canMakeWebp() {
+  if (webp === undefined) {
+    const c = document.createElement("canvas"); c.width = c.height = 2;
+    webp = toBlob(c, "image/webp", 0.8).then((b) => b.type === "image/webp").catch(() => false);
+  }
+  return webp;
 }
 
 const toDataUrl = (blob) => new Promise((res, rej) => {

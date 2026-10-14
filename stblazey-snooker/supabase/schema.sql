@@ -1189,7 +1189,7 @@ begin
     execute format('drop policy if exists "admin write" on %I', t);
   end loop;
 
-  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','frames','breaks','pages','sponsors','competitions','competition_entries','competition_matches','categories','media','settings','competition_frames','competition_breaks','announcements','role_permissions','key_dates','awards','live_matches','byes'] loop
+  foreach t in array array['seasons','leagues','venues','teams','players','fixtures','frames','breaks','pages','sponsors','competitions','competition_entries','competition_matches','categories','settings','competition_frames','competition_breaks','announcements','role_permissions','key_dates','awards','live_matches','byes'] loop
     execute format('create policy "public read" on %I for select using (true)', t);
   end loop;
 
@@ -1230,8 +1230,7 @@ begin
   execute 'create policy "admin write" on private_settings for all using (public.can_manage(''settings'')) with check (public.can_manage(''settings''))';
   -- The activity log: read by the Master Admin only; written only by the triggers below.
   execute 'create policy "public read" on audit_log for select using (public.is_master())';
-  -- The image library is shared by everyone who can upload pictures.
-  execute 'create policy "admin write" on media for all using (public.is_staff()) with check (public.is_staff())';
+  -- The image library ("media"): each person's own pictures — see "Round 20" further down.
 end $$;
 
 -- Entry-form entries (with contact details) and the handicap log are for officers only.
@@ -1755,6 +1754,32 @@ alter table articles add column if not exists social_description text;
 alter table settings add column if not exists app_icons jsonb not null default '{}'::jsonb;
 alter table settings add column if not exists app_icon_bg text not null default '#000000';
 
+-- ── Round 20 ─────────────────────────────────────────────────────
+-- 1. Everyone's own pictures. Each picture in the image library belongs to the person who uploaded it: they see
+--    their own, and only the Master Admin sees everybody's (Admin → Image library → "Whose pictures").
+--    Pictures uploaded before this (no owner) are the Master Admin's. The files themselves stay public — a picture
+--    in a news article has to be seen by everyone — but nobody else can list, rename or delete them.
+alter table media add column if not exists owner_id uuid;
+alter table media alter column owner_id set default auth.uid();
+alter table media add column if not exists owner_name text;
+create index if not exists media_owner_idx on media (owner_id);
+drop policy if exists "own pictures read" on media;
+drop policy if exists "own pictures add" on media;
+drop policy if exists "own pictures change" on media;
+drop policy if exists "own pictures delete" on media;
+create policy "own pictures read" on media for select using (public.is_master() or (owner_id = auth.uid() and public.is_staff()));
+create policy "own pictures add" on media for insert with check (public.is_staff() and (owner_id = auth.uid() or public.is_master()));
+create policy "own pictures change" on media for update using (public.is_master() or (owner_id = auth.uid() and public.is_staff()))
+  with check (public.is_master() or (owner_id = auth.uid() and public.is_staff()));
+create policy "own pictures delete" on media for delete using (public.is_master() or (owner_id = auth.uid() and public.is_staff()));
+-- 2. Emails (Admin → Emails): the Master Admin is copied on every submitted result; the captains and vice captains
+--    of both teams get a copy of their own card; new competition entries are emailed to the competition secretary.
+alter table private_settings add column if not exists results_copy_master boolean not null default true;
+alter table private_settings add column if not exists results_copy_captains boolean not null default true;
+alter table private_settings add column if not exists entries_email_on boolean not null default false;
+alter table private_settings add column if not exists entries_email_to text;
+alter table competition_signups add column if not exists emailed_at timestamptz;
+
 -- ── v8: give existing rows their short web addresses ────────────
 -- (Done down here, after the activity log has been told to ignore these columns.)
 update players set slug = slug where coalesce(slug, '') = '';
@@ -1796,6 +1821,7 @@ on conflict (id) do update set public = true, file_size_limit = excluded.file_si
 drop policy if exists "images admin insert" on storage.objects;
 drop policy if exists "images admin update" on storage.objects;
 drop policy if exists "images admin delete" on storage.objects;
+drop policy if exists "images own list" on storage.objects;
 -- Captains may also upload photos of paper scorecards (scorecards/) and of the
 -- match night (matchnight/), and anyone linked to a player profile may upload
 -- their own photos (players/ only).
@@ -1805,10 +1831,15 @@ create policy "images admin insert" on storage.objects for insert to authenticat
           and (role in ('captain', 'vice_captain') or team_role in ('captain', 'vice_captain'))))
     or (name like 'players/%' and exists (select 1 from public.profiles where id = auth.uid() and player_id is not null))
   ));
+-- Listing files (needed to delete one): the Master Admin all of them, an officer their own. Viewing a picture by its
+-- link needs nothing — the bucket is public.
+create policy "images own list" on storage.objects for select to authenticated
+  using (bucket_id = 'images' and (public.is_master() or (public.is_staff() and (owner = auth.uid() or owner_id = auth.uid()::text))));
+-- Changing or deleting a file: the Master Admin, or the officer who uploaded it (round 20: everyone's own pictures).
 create policy "images admin update" on storage.objects for update to authenticated
-  using (bucket_id = 'images' and public.is_staff());
+  using (bucket_id = 'images' and (public.is_master() or (public.is_staff() and (owner = auth.uid() or owner_id = auth.uid()::text))));
 create policy "images admin delete" on storage.objects for delete to authenticated
-  using (bucket_id = 'images' and public.is_staff());
+  using (bucket_id = 'images' and (public.is_master() or (public.is_staff() and (owner = auth.uid() or owner_id = auth.uid()::text))));
 
 -- ── the version of this file ─────────────────────────────────────
 -- KEEP THIS AT THE VERY END. The website asks the database for this number (public/js/core/version.js holds
@@ -1816,7 +1847,7 @@ create policy "images admin delete" on storage.objects for delete to authenticat
 -- when everything above it has run. If the website files are uploaded without this file being run, the admin
 -- dashboard says "The database needs updating" at the top of every page.
 -- When something is added to this file that the website needs: raise this number and the one in version.js.
-create or replace function public.schema_version() returns int language sql immutable as $$ select 14 $$;
+create or replace function public.schema_version() returns int language sql immutable as $$ select 15 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

@@ -22,7 +22,7 @@ A fast, plain HTML/CSS/JavaScript website (no build step) with:
 - **My Snooker** (`/myteam`): everyone with a login makes the site their own — the teams and players they follow, the sections they want (next match, results, fixtures, competitions, news, handicaps, breaks, table, rankings, CueViews), shown on their own page, on the home page, or both (section 3h).
 - **Menu bar and side panels**: the menu bar stays at the top as you scroll; on phones the menu opens over the whole screen; a person icon opens the login / My account panel; the site can be **added to a phone's home screen** (section 3j).
 - **Merchandise** (`/merchandise`) and a **CueView form** (`/cueview`) that players fill in themselves and the league approves (section 3i).
-- **Result emails**: the results secretary is emailed as soon as a captain submits a card (through Resend — see section 3f).
+- **Emails**: the results secretary (and the Master Admin, always) is emailed as soon as a captain submits a card, the captains and vice captains of both teams get a copy of their card, and the competition secretary is emailed each new competition entry (through Resend — see section 3f).
 - **Short web addresses**: `/match/2627-14`, `/player/sam-bolitho`, `/cup-match/27`.
 - **Automatic calculations**: league tables (P/W/L/F/A/Pts), player rankings (5 pts per frame won plus break points), highest breaks and all breaks.
 
@@ -296,7 +296,7 @@ A match scored without a link (a friendly, an exhibition) changes nothing in any
 
 **Text sizes** (Admin → Branding → Text sizes): the size in pixels of page titles, headings, box headings, tables, the menu, buttons and normal text. An empty box keeps the standard size.
 
-## 3f. Result emails (Resend)
+## 3f. Emails: results and competition entries (Resend)
 
 When a captain presses **Submit results**, the website can email the results secretary: the score, every frame, the breaks, who submitted it, a link to the photo and a button to **Results to approve**. One email per submitted card. Emails are sent through [Resend](https://resend.com) by a small server function (`netlify/functions/result-email.mjs`); the free plan (100 emails a day, 3,000 a month) is far more than a league needs.
 
@@ -305,7 +305,7 @@ When a captain presses **Submit results**, the website can email the results sec
 1. Create a free account at <https://resend.com>, signing up with **the email address you want the test to arrive at**.
 2. In Resend → **API Keys → Create API Key** ("Sending access" is enough). Copy it — it starts `re_` and is shown once.
 3. In Netlify → **Site configuration → Environment variables**, add `RESEND_API_KEY` with that key and tick **Contains secret values**. Then **Deploys → Trigger deploy**.
-4. On the website: **Admin → Result emails**. In **Send to** type the email address of your Resend account, press **Save**, then **Send a test email**. It arrives from `onboarding@resend.dev` within a minute (look in spam the first time).
+4. On the website: **Admin → Emails**. In **Send to** type the email address of your Resend account, press **Save**, then **Send a test email**. It arrives from `onboarding@resend.dev` within a minute (look in spam the first time).
 5. For the real thing: tick **Send an email when a scorecard is submitted**, Save, then log in as a captain and submit a card. The email arrives; pressing Submit twice doesn't send two.
 
 Until a domain is verified, Resend only delivers to the address of the Resend account itself. Any other address gets the message "Resend is still in test mode…" under the test button — that's the signal to do the next part.
@@ -316,11 +316,18 @@ Until a domain is verified, Resend only delivers to the address of the Resend ac
 2. Resend shows a short list of **DNS records** (they prove the league owns the domain: SPF and DKIM). Add each one exactly as shown, wherever the domain's DNS is managed — the company the domain was bought from, or Netlify if the domain uses Netlify DNS. Don't change or remove any record that is already there.
 3. Back in Resend press **Verify**. It usually takes a few minutes, sometimes a few hours.
 4. In Netlify add `RESULTS_EMAIL_FROM`, for example `St Blazey Snooker League <results@mail.stblazeydistrictsnooker.co.uk>` — the part after the `@` must be the domain you verified. Optionally add `SITE_URL` (the website's address). Trigger a deploy.
-5. In **Admin → Result emails** put the results secretary's address in **Send to** (one per line, up to 10), Save, and **Send a test email** again. Under the button it now says who it went to and which address it came from.
+5. In **Admin → Emails** put the results secretary's address in **Send to** (one per line, up to 10), Save, and **Send a test email** again. Under the button it now says who it went to and which address it came from.
 
 Handing over: the Resend account should end up belonging to the league. Either create it with a league email address from the start, or add Rich to the Resend team later and make a fresh API key (then replace `RESEND_API_KEY` in Netlify and delete the old key in Resend).
 
-Good to know: the addresses are kept in a private table that visitors and captains can't read. An email problem never stops a result being submitted. If a card is sent back to the captain and submitted again, the email is sent again.
+**Who gets what** (Admin → Emails):
+
+- **Result emails** — the addresses in *Send to*, plus every Master Admin login (tick *Always send a copy to the Master Admin*, on to start with), so the Master Admin gets every submitted result. With *Send the captains and vice captains of both teams a copy* ticked (on to start with), each captain and vice captain of the two teams also gets their own copy of the card, to the address they log in with — one email each, so nobody sees anyone else's address, with a link to the match page instead of the "approve" button. A bad captain's address never stops the officials' email.
+- **Competition entry emails** — each time someone enters on the entry form (`/enter`), the competition secretary gets one email: who entered, their contact, each competition, the fee and the pay-by date, and a button to *Entries to approve*. Put the address in its own *Send to* and tick the box. Each entry is emailed once (`competition_signups.emailed_at`).
+
+The copies to the Master Admin, the captains and the competition secretary need the league's domain verified in Resend (until then, Resend only delivers to its own account's address).
+
+Good to know: the addresses are kept in a private table that visitors and captains can't read. An email problem never stops a result being submitted or an entry being made. If a card is sent back to the captain and submitted again, the email is sent again.
 
 ## 3g. Short web addresses
 
@@ -422,6 +429,14 @@ Every round of a competition can have a **play-by date** and a **contact-by date
 
 **How it runs.** The edge function is deployed with the site (GitHub or the Netlify CLI, as in section 2d — not Netlify Drop). It reads the Supabase address and public key from `public/js/config.js` (or from the `SUPABASE_URL` / `SUPABASE_ANON_KEY` environment variables, if set), reads only public things (the site settings and published articles), keeps the settings for a minute, and waits at most 1.5 seconds: if anything goes wrong the page goes out exactly as `public/index.html` has it, between the `<!--social-->` marks.
 
+## 3o. Writing news step by step, and everyone's own pictures
+
+**Write news step by step** (Admin → Website, and the green bar at the top of Admin → News) is the same news article as the full form, one question at a time, for anyone who finds the full form a lot: headline → category (big buttons) → sub headline → the story → a quote (or skip) → pictures (take or choose a photo, or pick one already uploaded) → this week's results, league positions and breaks (three ticks; the website fills them in from the scorecards) → check and publish (or save as a draft). What has been typed is kept on that device until it is saved, so closing the page by mistake loses nothing. Headlines are typed in by the writer (the site has no AI to write one). Saved articles are changed in Admin → News as usual.
+
+**Pictures are made small automatically.** Any picture uploaded anywhere on the site — a 10 MB phone photo included — is made at most 1600–1800 pixels on its longest side and about **300 KB** (the quality is stepped down until it fits; a very detailed photo is also made a little smaller). It is stored as **WebP**; on iPhones and Macs (Safari, which cannot make WebP in the browser) it is stored as a JPEG of the same size instead. Photos of paper scorecards aim for about 700 KB, so the writing stays readable. iPhone HEIC photos are read too.
+
+**Everyone has their own pictures.** What someone uploads goes into *their* image library (Admin → Website → Image library): they see only their own; the **Master Admin sees everybody's** (choose under *Whose pictures*) and can use or delete any of them. Pictures uploaded before this change are the Master Admin's. The database enforces this (`media.owner_id`; the file store lets an officer delete only their own files). A picture's link itself is public — it has to be, to show in a news article — so "private" means nobody else can list, rename or delete it.
+
 ## 3l. Phones
 
 Most people use the site on a phone, so a few things are done specially for small screens (all in the last blocks of `public/css/style.css`, marked v15):
@@ -430,7 +445,8 @@ Most people use the site on a phone, so a few things are done specially for smal
 - **Lists of suggestions** (following a player, choosing your name on the CueView form, the players and venue on the live scoreboard) are the site's own (`core/suggest.js`): the browser's built-in list does not open on iPhones. Any `<input list="…">` with a `<datalist>` gets it automatically.
 - **Tables fit the screen.** Public tables tighten up and their headings wrap; a team's fixture list and the cup matches in My area become one block per match with the buttons underneath; the classic scorecard becomes one block per frame (number down the side, then each team's player, points and breaks); the My area tabs wrap onto short rows so every tab can be seen.
 - **League tables:** the leader is the green row with its points in a green pill; the relegation places are pink with their points in a red pill; inside the promotion places and inside the relegation places every other row is a lighter shade. The team someone follows is cream with a dark edge, the same size as the rest. In a narrow column (the sidebar, the side of My Snooker) a league table tightens up by itself so every column fits (a container query on `.lt-panel`).
-- **Latest Results** (home page box and its button) is green, the colour of Fixtures & Results; **Latest Competitions** is in two columns on bigger screens.
+- **Latest Results** (home page box and its button) is green, the colour of Fixtures & Results. **Latest Competitions** is two columns of white cards on every screen, the cards in a row always the same height; on a phone each card has the trophy on top and the words under it. A trophy or emblem is never cropped or rounded off: it sits whole in its circle.
+- **The menu bar on a phone** has the person button (once logged in: the person icon in white on red, rather than initials), the My Snooker ★ (just the star), the bell, search and the menu.
 - **Tables look like the league table.** The row at the top is faded green with its points (or break) in a green pill; pink is kept for what needs a warning (relegation places, losses). Long lists of players — rankings, breaks — show the top ten with a **Show all** button under them, on phones and big screens alike. The rankings and breaks of a league each take the full width, one under the other.
 - **The home page is shorter**: Shield holders are one slim row per shield, Player and Team of the week are slim cards, and CueViews are small cards (photo, name and a Q&A mark with the number of answers) — the answers are one tap away.
 
@@ -514,7 +530,8 @@ public/                     ← everything Netlify serves
       awards.js             ← Presentation awards (the season list and its two tools)
       scoreboard.js         ← Live scoreboard: setting a match up, the ball-by-ball control pad, and writing the result into the draw
       cueviews.js           ← CueViews to approve (sent in on the /cueview form)
-      emails.js             ← Result emails: who gets them, and the test button
+      emails.js             ← Emails: who gets the result and entry emails, and the test buttons
+      news-wizard.js        ← Write news step by step (Website → Write news step by step)
     demo/seed-data.js       ← sample league (imaginary players)
 supabase/
   schema.sql                ← tables + security rules + image storage (safe to re-run)
@@ -553,7 +570,7 @@ For example, to add a "phone" field to venues, add one line to `RESOURCES.venues
 | Change a menu button's colour (and its section's headers) | Admin → Branding → Menu and section colours. Tick "Use my own colour" and pick; untick to go back to the standard one |
 | Stop sections using their menu colour for headers | Admin → Branding → untick "Colour-code each section" (headers go back to the main colour) |
 | Change the background colour of the whole site | Admin → Branding → Other colours → **Page background** (the main colour is there too) |
-| Change the fonts | Admin → Branding → Fonts |
+| Change the fonts | Admin → Branding → Fonts (standard: Space Grotesk for headings and body text; Questrial is still in the Body text list) |
 | Send everyone a notification (breaking news, an important update, an offer) | Admin → Website → Notifications. Or tick “Breaking news” on a news article |
 | Change how long the pop-ups stay on screen | `SHOW_MS` (match news, 9 seconds) and `NOTICE_MS` (the league's notices, 20) at the top of `popup()` in `public/js/core/notify.js` |
 | Add a picture of a league's shield | Admin → Leagues → Edit → Weekly shield → Picture of the shield |
@@ -600,7 +617,7 @@ For example, to add a "phone" field to venues, add one line to `RESOURCES.venues
 | Use the real badge as the phone home-screen icon | Admin → Branding → App icon (and Favicon) — nothing in the files |
 | Change the green and red used for won and lost | `--win` and `--loss` in `public/css/style.css` (v11 block) |
 | Show 25 or 100 rows per page in a dashboard list | `PAGE_SIZE` in `public/js/admin/crud.js` (or `pageSize` on one section in `resources.js`) |
-| Choose who is emailed when a card is submitted | Admin → Result emails |
+| Choose who is emailed when a card is submitted | Admin → Emails |
 | Change the News menu button's colour | Admin → Branding → Menu and section colours → News (standard: blue) |
 | Choose what the side column's top box shows | Admin → Site settings → Side column: top box (latest league results, competition results, both, latest news, or nothing; heading; how many; one league) |
 | Decide what a role can see and do | Admin → Roles & permissions (Master Admin) |
@@ -676,7 +693,7 @@ When you get new code files:
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` and `RESEND_API_KEY` are only in Netlify environment variables, never in any file. In Netlify, tick “Contains secret values” for both.
 - [ ] Two-step login switched on for your own **Supabase**, **Netlify**, **Resend** and domain accounts. Whoever gets into one of those has the whole site, whatever the website's own rules say.
 - [ ] Supabase → Advisors → **Security Advisor** shows no errors (run `supabase/schema.sql` first).
-- [ ] Test it: Admin → Result emails → Send a test email arrives; then submit a card as a captain and check the email.
+- [ ] Test it: Admin → Emails → Send a test email arrives; then submit a card as a captain and check the email.
 - [ ] Test it: log in as one captain, then try to open another team's scorecard URL. It should say "Scorecard locked".
 - [ ] Test it: as a captain, try **Submit results** without a photo. It should be refused.
 - [ ] Test it: log in as an officer (e.g. a Committee Member) and open `/admin/fixtures`. It should say the login doesn't include that part.

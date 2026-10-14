@@ -73,7 +73,7 @@ export default async function home(view, { user } = {}) {
         ${spotlights(ctx, site)}
         ${site.cueviews_show !== false ? cueviewBox(ctx, news) : ""}
         ${panel("Latest Competitions", html`<div class="list-rows comp-cols" style="background:var(--cream)">
-          ${comps.length ? comps.map(({ c, season, progress }) => html`<a href="${urls.competition(c)}">${c.image_url ? picture(c.image_url) : html`<div class="ph trophy-ph">${trophy(c)}</div>`}<div><strong>${c.name}</strong><small>${c.kind}${season ? ` · ${season.name}` : ""}</small>${progress}</div></a>`)
+          ${comps.length ? comps.map(({ c, season, progress }) => html`<a href="${urls.competition(c)}">${c.image_url ? html`<span class="cc-pic">${picture(c.image_url)}</span>` : html`<div class="ph trophy-ph">${trophy(c)}</div>`}<div><strong>${c.name}</strong><small>${c.kind}${season ? ` · ${season.name}` : ""}</small><span class="cc-prog">${progress}</span></div></a>`)
             : html`<div class="empty">No competitions yet.</div>`}
         </div>`, { color: "yellow", href: "/competitions" })}
       </div>

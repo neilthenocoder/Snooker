@@ -145,7 +145,7 @@ export default async function scorecard(view, { params, user }) {
       if (!input.files[0]) return;
       try {
         toast("Uploading photo…");
-        const url = await uploadImage(input.files[0], { folder: "scorecards", maxSize: 2000, library: false });
+        const url = await uploadImage(input.files[0], { folder: "scorecards", maxSize: 2000, library: false, target: 700 * 1024 });
         await setScorecardPhoto(fx.id, url);
         fx.scorecard_url = url;
         editor.redraw();

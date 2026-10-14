@@ -23,6 +23,7 @@ import { backupPage } from "../admin/backup.js";
 import { awardsPage } from "../admin/awards.js";
 import { scoreboardPage } from "../admin/scoreboard.js";
 import { emailsPage } from "../admin/emails.js";
+import { newsWizardPage } from "../admin/news-wizard.js";
 import { cueviewsPage } from "../admin/cueviews.js";
 
 
@@ -36,12 +37,12 @@ const NAV = [
   ["League", [["leagues", "Leagues"], ["teams", "Teams"], ["players", "Players"], ["cueviews", "CueViews to approve"], ["handicaps", "Handicaps"], ["venues", "Venues"], ["seasons", "Seasons"]]],
   ["Competitions", [["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws & results"], ["scoreboard", "Live scoreboard"], ["awards", "Presentation awards"]]],
   ["People", [["accounts", "Logins"]]],
-  ["Website", [["articles", "News"], ["categories", "News categories"], ["announcements", "Announcements"], ["notices", "Notifications"], ["key_dates", "Key dates"], ["meetings", "Meetings"], ["media", "Image library"], ["pages", "Info pages & rules"], ["merchandise", "Merchandise"], ["sponsors", "Sponsors"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["emails", "Result emails"], ["stats", "Statistics"]]],
+  ["Website", [["articles", "News"], ["write", "Write news step by step"], ["categories", "News categories"], ["announcements", "Announcements"], ["notices", "Notifications"], ["key_dates", "Key dates"], ["meetings", "Meetings"], ["media", "Image library"], ["pages", "Info pages & rules"], ["merchandise", "Merchandise"], ["sponsors", "Sponsors"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["emails", "Emails"], ["stats", "Statistics"]]],
   // Only the Master Admin sees these.
   ["Master Admin", [["roles", "Roles & permissions"], ["activity", "Activity log"], ["backup", "Backup"]]],
 ];
 const SPECIAL = { overview, results, generator, draws, media: mediaPage, stats: statsPage, import: importPage, handicaps: handicapsPage, entries: entriesPage,
-  roles: rolesPage, activity: activityPage, backup: backupPage, awards: awardsPage, scoreboard: scoreboardPage, emails: emailsPage, cueviews: cueviewsPage };
+  roles: rolesPage, activity: activityPage, backup: backupPage, awards: awardsPage, scoreboard: scoreboardPage, emails: emailsPage, cueviews: cueviewsPage, write: newsWizardPage };
 // Menu items that show a red number when something is waiting.
 const COUNTS = { players: "Players waiting to be accepted", entries: "Entries waiting for payment", cueviews: "CueViews waiting to be checked" };
 const COUNT_WORD = { players: "new", entries: "waiting", cueviews: "waiting" };
@@ -188,7 +189,13 @@ export default async function admin(view, { params, user, query }) {
   if (SPECIAL[section]) return SPECIAL[section](body, { user, onChange: drawCounts });
   if (RESOURCES[section]) {
     const current = (await table("seasons", "name")).find((s) => s.is_current);
-    return crud(body, RESOURCES[section], {
+    // News: the easy way in, for anyone who finds the full form a lot.
+    let into = body;
+    if (section === "articles" && !query.get("edit")) {
+      mount(body, html`<a class="nw-invite" href="/admin/write"><b>✎ Write news step by step</b><span>One question at a time: headline, category, story, quote, pictures and this week's tables.</span></a><div></div>`);
+      into = body.lastElementChild;
+    }
+    return crud(into, RESOURCES[section], {
       // A list can be opened already filtered, e.g. /admin/fixtures?status=approved (the Overview boxes do this).
       preset: { ...(["fixtures", "byes"].includes(section) && current ? { season_id: current.id } : {}),
         ...Object.fromEntries((RESOURCES[section].filters ?? []).filter((f) => query.get(f)).map((f) => [f, query.get(f)])) },

@@ -467,8 +467,14 @@ export async function sendResultEmail(fixtureId) {
   try { return await callFunction("result-email", { action: "submitted", fixture_id: fixtureId }); }
   catch (err) { console.warn("Result email not sent:", err.message); return { error: err.message }; }
 }
-/** Send a test email to the addresses saved in the dashboard. */
-export async function testResultEmail() {
+/** Send a test email to the addresses saved in the dashboard (which: "results" or "entries"). */
+export async function testResultEmail(which = "results") {
   if (DEMO_MODE) throw new Error("Emails are only sent on the live site — the demo has no email service.");
-  return callFunction("result-email", { action: "test" });
+  return callFunction("result-email", { action: "test", which });
+}
+/** Tell the competition secretary about entries just made on the entry form. Never throws: the entry is made either way. */
+export async function sendEntriesEmail(ids) {
+  if (DEMO_MODE || !ids?.length) return { demo: DEMO_MODE };
+  try { return await callFunction("result-email", { action: "entries", ids }); }
+  catch (err) { console.warn("Entries email not sent:", err.message); return { error: err.message }; }
 }

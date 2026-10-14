@@ -9,7 +9,7 @@ const CACHE = "sbdsl-brand";
 /** Fonts offered in Admin → Branding (all free from Google Fonts). The first of each is the standard one. */
 export const FONTS = {
   head: ["Space Grotesk", "Oswald", "Bebas Neue", "Barlow Condensed", "Montserrat", "Poppins", "Archivo", "Roboto Condensed", "Teko", "Anton"],
-  body: ["Questrial", "Inter", "Open Sans", "Roboto", "Lato", "Nunito", "Source Sans 3", "Plus Jakarta Sans", "Poppins", "Montserrat"],
+  body: ["Space Grotesk", "Questrial", "Inter", "Open Sans", "Roboto", "Lato", "Nunito", "Source Sans 3", "Plus Jakarta Sans", "Poppins", "Montserrat"],
 };
 
 /** The parts of the site that can each have their own page layout (Admin → Branding → Page layout). */

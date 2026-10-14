@@ -9,7 +9,7 @@ import { applyBranding, loaderOn, loaderOff, layoutFor, TICKER_PX } from "./core
 import { getUser, signOut, mySnookerOn, mySnookerHome, canOpenSection } from "./core/auth.js";
 import { seasonContext, sideBoxData } from "./core/context.js";
 import { sidebar, crumbs } from "./core/components.js";
-import { openAccount, openNotifications, closeDrawer, initials } from "./core/drawers.js";
+import { openAccount, openNotifications, closeDrawer } from "./core/drawers.js";
 import { toggleFollow } from "./core/my-snooker.js";
 import { openSearch } from "./core/search.js";
 import { initSuggest } from "./core/suggest.js";
@@ -168,8 +168,8 @@ async function drawHeader() {
       </nav>
       <div class="nav-icons">
         <button type="button" class="nav-icon nav-account ${user ? "in" : ""}" data-account-open aria-label="${user ? `My account: ${name}` : "Log in"}" title="${user ? `My account: ${name}` : "Log in"}">
-          ${user ? html`<span class="nav-initials">${initials(name)}</span>` : personIcon}</button>
-        ${user && mySnookerOn(user) ? html`<a class="nav-icon nav-mysnooker" href="/myteam" aria-label="My Snooker" title="My Snooker — your own page">${starIcon}<b aria-hidden="true">MS</b></a>` : ""}
+          ${personIcon}</button>
+        ${user && mySnookerOn(user) ? html`<a class="nav-icon nav-mysnooker" href="/myteam" aria-label="My Snooker" title="My Snooker — your own page">${starIcon}</a>` : ""}
         <button type="button" class="nav-icon nav-bell" data-bell aria-label="Notifications" title="Notifications">${bell}</button>
         <button type="button" class="nav-icon nav-search" data-search-open aria-label="Search" title="Search">${searchIcon}</button>
         <button type="button" class="nav-icon nav-toggle" data-menu-open aria-label="Menu" aria-expanded="false">${menuIcon}</button>

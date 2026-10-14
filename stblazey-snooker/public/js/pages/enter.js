@@ -3,7 +3,7 @@
 // Each entry then waits for the competition secretary to confirm the fee has
 // been paid (Admin → Entries to approve). Unpaid entries lapse on their pay-by date.
 import { html, mount, toast, fmtDate, paragraphs } from "../core/dom.js";
-import { table, loadCompetitions, settings, enterCompetitions } from "../core/api.js";
+import { table, loadCompetitions, settings, enterCompetitions, sendEntriesEmail } from "../core/api.js";
 import { breadcrumb, shortName, isActivePlayer } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 
@@ -131,6 +131,7 @@ export default async function enter(view, { query }) {
       t.disabled = true;
       try {
         state.made = await enterCompetitions(state.playerId, chosen().map((c) => c.id), state.contact.trim(), state.partners);
+        sendEntriesEmail((state.made ?? []).map((m) => m.id));     // the competition secretary is emailed (Admin → Emails)
         state.step = 4; draw();
       } catch (err) { toast(err.message, "error"); t.disabled = false; }
     }
