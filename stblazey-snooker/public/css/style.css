@@ -3251,3 +3251,31 @@ button { font-family: inherit; }
 .nw-mine .btn-row { flex: none; gap: 6px; }
 .nw-editing { color: var(--red); }
 @media (max-width: 639px) { .nw-mine > div { flex-direction: column; align-items: flex-start; } }
+
+/* ── v21 (round 21) ─────────────────────────────────────────────── */
+/* 2. Team emblems were cut off at the bottom on phones: an emblem's box is also called "logo", so on phones it took the
+      menu bar logo's height (44px) inside its 24px circle. An emblem picture now always fits its box, whole. */
+.badge.logo img { width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; border-radius: 0; }
+.award-face.emblem img, .award-face img.trophy { object-fit: contain; }
+/* The ticker on phones: a tap counted as "the finger is over it" and kept it paused, so ▶ could not start it again.
+   Only a real mouse pauses it on hover now; on a touch screen the button alone stops and starts it. */
+@media (hover: none) {
+  .ticker:hover:not(.paused) .ticker-track { animation-play-state: running; }
+  .feature-box.scrolling:hover:not(:focus-within) .ticker-track { animation-play-state: running; }
+}
+/* 4. The notifications panel: room under each heading ("FROM THE LEAGUE") before its box. */
+.drawer-h { margin: 14px 0 6px; }
+.award-face.emblem .badge.logo { padding: 7px; background: #fff; }
+/* Round 21: news waiting for the Master Admin's approval. */
+.art-preview { margin: 0; text-align: center; }
+.art-league { margin: 18px 0 -4px; font-size: 22px; }
+.appr { display: grid; grid-template-columns: 200px 1fr; gap: 18px; background: #fff; padding: 16px; border-left: 6px solid var(--yellow); }
+.appr img, .appr-ph { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background: #e9e7da; }
+.appr h3 { margin: 4px 0 8px; text-transform: none; letter-spacing: 0; font-size: 21px; }
+.appr small { color: var(--muted); }
+.appr-lead { font-weight: 700; margin: 0 0 6px; }
+.appr-text { margin: 0 0 14px; color: #333; white-space: pre-line; }
+@media (max-width: 639px) { .appr { grid-template-columns: 1fr; } }
+/* (A percentage height inside a grid box is ignored, so a tall emblem grew past its box: the box is a plain block now.) */
+.badge.logo { display: block; }
+.badge.logo img { display: block; object-position: center; }

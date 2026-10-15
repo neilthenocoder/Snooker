@@ -1,7 +1,7 @@
 import { html, mount, $, toast, readForm, fmtDate, fmtTime, fromLocalInput, safeHref } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { table, insertMany, setFixtureStatus, save, invalidate, signups, cueviewSubmissions } from "../core/api.js";
-import { isStaff, canOpenSection, isMember } from "../core/auth.js";
+import { isStaff, isMaster, canOpenSection, isMember } from "../core/auth.js";
 import { rearrangeBy, POSTPONE_WEEKS } from "../core/rules.js";
 import { resetDemo, databaseVersion, SCHEMA_VERSION } from "../core/db.js";
 import { DEMO_MODE } from "../config.js";
@@ -24,6 +24,7 @@ import { awardsPage } from "../admin/awards.js";
 import { scoreboardPage } from "../admin/scoreboard.js";
 import { emailsPage } from "../admin/emails.js";
 import { newsWizardPage } from "../admin/news-wizard.js";
+import { newsApprovePage, waitingNews } from "../admin/news-approve.js";
 import { cueviewsPage } from "../admin/cueviews.js";
 
 
@@ -37,15 +38,15 @@ const NAV = [
   ["League", [["leagues", "Leagues"], ["teams", "Teams"], ["players", "Players"], ["cueviews", "CueViews to approve"], ["handicaps", "Handicaps"], ["venues", "Venues"], ["seasons", "Seasons"]]],
   ["Competitions", [["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws & results"], ["scoreboard", "Live scoreboard"], ["awards", "Presentation awards"]]],
   ["People", [["accounts", "Logins"]]],
-  ["Website", [["articles", "News"], ["write", "Write news step by step"], ["categories", "News categories"], ["announcements", "Announcements"], ["notices", "Notifications"], ["key_dates", "Key dates"], ["meetings", "Meetings"], ["media", "Image library"], ["pages", "Info pages & rules"], ["merchandise", "Merchandise"], ["sponsors", "Sponsors"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["emails", "Emails"], ["stats", "Statistics"]]],
+  ["Website", [["articles", "News"], ["approvals", "News to approve"], ["write", "Write news step by step"], ["categories", "News categories"], ["announcements", "Announcements"], ["notices", "Notifications"], ["key_dates", "Key dates"], ["meetings", "Meetings"], ["media", "Image library"], ["pages", "Info pages & rules"], ["merchandise", "Merchandise"], ["sponsors", "Sponsors"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["emails", "Emails"], ["stats", "Statistics"]]],
   // Only the Master Admin sees these.
   ["Master Admin", [["roles", "Roles & permissions"], ["activity", "Activity log"], ["backup", "Backup"]]],
 ];
 const SPECIAL = { overview, results, generator, draws, media: mediaPage, stats: statsPage, import: importPage, handicaps: handicapsPage, entries: entriesPage,
-  roles: rolesPage, activity: activityPage, backup: backupPage, awards: awardsPage, scoreboard: scoreboardPage, emails: emailsPage, cueviews: cueviewsPage, write: newsWizardPage };
+  roles: rolesPage, activity: activityPage, backup: backupPage, awards: awardsPage, scoreboard: scoreboardPage, emails: emailsPage, cueviews: cueviewsPage, write: newsWizardPage, approvals: newsApprovePage };
 // Menu items that show a red number when something is waiting.
-const COUNTS = { players: "Players waiting to be accepted", entries: "Entries waiting for payment", cueviews: "CueViews waiting to be checked" };
-const COUNT_WORD = { players: "new", entries: "waiting", cueviews: "waiting" };
+const COUNTS = { players: "Players waiting to be accepted", entries: "Entries waiting for payment", cueviews: "CueViews waiting to be checked", approvals: "News waiting for your approval" };
+const COUNT_WORD = { players: "new", entries: "waiting", cueviews: "waiting", approvals: "waiting" };
 // A small picture for each group of the menu.
 const ico = (d) => html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
 const GROUP_ICON = {
@@ -172,6 +173,7 @@ export default async function admin(view, { params, user, query }) {
       players: canOpenSection(user, "players") ? (await table("players", "full_name")).filter((p) => p.needs_review).length : 0,
       entries: canOpenSection(user, "entries") ? (await signups().catch(() => [])).filter((r) => r.status === "pending").length : 0,
       cueviews: canOpenSection(user, "cueviews") ? (await cueviewSubmissions().catch(() => [])).filter((r) => r.status === "pending").length : 0,
+      approvals: canOpenSection(user, "approvals") ? (await waitingNews().catch(() => [])).length : 0,
     };
     for (const [key, n] of Object.entries(waiting)) {
       const badge = $(`[data-count="${key}"]`, view);
@@ -192,7 +194,7 @@ export default async function admin(view, { params, user, query }) {
     // News: the easy way in, for anyone who finds the full form a lot.
     let into = body;
     if (section === "articles" && !query.get("edit")) {
-      mount(body, html`<a class="nw-invite" href="/admin/write"><b>✎ Write news step by step</b><span>One question at a time: headline, category, story, quote, pictures and this week's tables.</span></a><div></div>`);
+      mount(body, html`${isMaster(user) ? "" : html`<div class="notice">Articles you publish go to the Master Admin to approve before they appear on the website (they show as not published until then).</div>`}<a class="nw-invite" href="/admin/write"><b>✎ Write news step by step</b><span>One question at a time: headline, category, story, quote, pictures and this week's tables.</span></a><div></div>`);
       into = body.lastElementChild;
     }
     return crud(into, RESOURCES[section], {
@@ -216,10 +218,12 @@ async function overview(el, { user }) {
     ["Approved", count("approved"), "fixtures", "/admin/fixtures?status=approved"], ["Awaiting approval", count("submitted"), "results", "/admin/results"], ["Live now", count("in_progress"), "results", "/admin/results"],
   ];
   const fresh = ctx.players.filter((p) => p.needs_review);
+  const news = canOpenSection(user, "approvals") ? await waitingNews().catch(() => []) : [];
   const late = ctx.fixtures.filter((f) => f.status === "postponed" && Date.parse(rearrangeBy(f)) < Date.now());
   mount(el, html`
     ${fresh.length ? html`<div class="notice todo"><b>${fresh.length} player${fresh.length > 1 ? "s" : ""} added by captains ${fresh.length > 1 ? "are" : "is"} waiting for you to accept ${fresh.length > 1 ? "them" : "them"}.</b> Press a name to set the handicap (saving accepts them), or use “Accept” and “Reject” in the <a href="/admin/players" style="font-weight:700">Players list</a>. Captains can already pick them.
       <div class="todo-list">${fresh.map((p) => html`<a href="/admin/players?edit=${p.id}">${p.full_name} <small>${ctx.team.get(p.team_id)?.name ?? "no team"}</small></a>`)}</div></div>` : ""}
+    ${news.length ? html`<div class="notice todo"><b>${news.length} news article${news.length > 1 ? "s are" : " is"} waiting for your approval.</b> <a href="/admin/approvals" style="font-weight:700">News to approve</a></div>` : ""}
     ${unpaid.length ? html`<div class="notice todo"><b>${unpaid.length} competition entr${unpaid.length > 1 ? "ies are" : "y is"} waiting for payment to be confirmed.</b> <a href="/admin/entries" style="font-weight:700">Entries to approve</a></div>` : ""}
     ${late.length ? html`<div class="notice error"><b>${late.length} postponed match${late.length > 1 ? "es have" : " has"} passed the ${POSTPONE_WEEKS}-week limit.</b> <a href="/admin/results" style="font-weight:700">Rearrange them</a></div>` : ""}
     <div class="stats">${stats.map(([l, n, section, href]) => (canOpenSection(user, section)

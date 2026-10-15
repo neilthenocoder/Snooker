@@ -25,7 +25,7 @@ const LABEL = { news: "Write news", snooker: "My Snooker", team: "My Team", squa
 function tabsFor(user) {
   if (!isMember(user)) return ["snooker", "details"];                       // an officer with no team or player
   // "Manage team" (the team sheet, and adding players) is for captains and vice captains only.
-  // "Write news" (Rich, round 20): captains and vice captains with the Write news permission (on to start with).
+  // "Write news": captains and vice captains, only if the Master Admin ticks Write news for them (off to start with).
   if (!isPlainPlayer(user)) return ["team", ...(isCaptain(user) ? ["squad"] : []), "fixtures", ...(canWriteNews(user) && !isStaff(user) ? ["news"] : []), "profile", "details", "competitions", "snooker"];
   const p = user.profile ?? {};
   return ["snooker", ...(p.player_id ? ["profile"] : []), ...(p.player_id || p.team_id ? ["competitions"] : []), "details"];

@@ -440,7 +440,7 @@ export function buildSeed() {
     ["league_admin", ["matchnights", "fixtures", "league", "handicaps", "competitions", "livescoring", "news", "website", "settings", "people"]],
     ["competition_secretary", ["handicaps", "competitions", "livescoring", "news"]], ["league_secretary", ["league", "handicaps", "news"]],
     ["committee_member", ["website", "settings", "news"]], ["president", ["website", "settings", "news"]], ["vice_chairman", ["website", "settings", "news"]], ["chairman", ["website", "settings", "news"]],
-    ["captain", ["news"]], ["vice_captain", ["news"]],
+    ["captain", []], ["vice_captain", []],
   ].map(([role, areas]) => ({ role, areas }));
 
   // ── Wave 6 samples ──

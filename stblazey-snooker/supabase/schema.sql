@@ -1789,12 +1789,18 @@ alter table competition_signups add column if not exists emailed_at timestamptz;
 --    A permission of its own, "Write news" (Admin → Roles & permissions), like live scoring: it is not a part of the
 --    dashboard, so captains who have it stay captains. They write with "Write news step by step" (My area → Write news)
 --    and can change only their own articles; officers with "News & website" still look after every article.
---    The first time this runs, every officer role, captains and vice captains get it.
+--    The first time this runs, every officer role gets it. Captains and vice captains don't (Rich changed his mind:
+--    officers only for now — it can be ticked for them later in Admin → Roles & permissions).
 do $$
 begin
   if not exists (select 1 from schema_steps where step = 'v15 write news') then
-    update role_permissions set areas = array_append(areas, 'news') where not ('news' = any(areas));
+    update role_permissions set areas = array_append(areas, 'news') where role not in ('captain', 'vice_captain') and not ('news' = any(areas));
     insert into schema_steps (step) values ('v15 write news');
+  end if;
+  -- The zip before this one gave it to captains and vice captains too: take that back, once.
+  if not exists (select 1 from schema_steps where step = 'v15 news officers only') then
+    update role_permissions set areas = array_remove(areas, 'news') where role in ('captain', 'vice_captain');
+    insert into schema_steps (step) values ('v15 news officers only');
   end if;
 end $$;
 drop policy if exists "news writers add" on articles;
@@ -1805,10 +1811,22 @@ create policy "news writers change" on articles for update using (public.can_man
 create policy "news writers delete" on articles for delete using (public.can_manage('news') and created_by = auth.uid());
 --    Someone who can only write news cannot make their article "breaking news" (a pop-up for everyone) or put it in the
 --    News page's featured boxes, and an article always stays its writer's. The News & website officers can do all of it.
+--    And (Rich, round 21) nothing goes live until the Master Admin approves it: an article anyone else publishes is kept
+--    off the website and marked "waiting for approval" (Admin → Master Admin → News to approve). Changing an article that
+--    is already live does not take it down.
+alter table articles add column if not exists awaiting_approval boolean not null default false;
+create index if not exists articles_awaiting_idx on articles (awaiting_approval) where awaiting_approval;
 create or replace function public.guard_article() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  if auth.uid() is null or public.can_manage('website') then return new; end if;
+  if auth.uid() is null or public.is_master() then
+    if new.is_published then new.awaiting_approval := false; end if;
+    return new;
+  end if;
+  if new.is_published and (tg_op = 'INSERT' or not old.is_published) then
+    new.is_published := false; new.awaiting_approval := true;
+  end if;
+  if public.can_manage('website') then return new; end if;
   if tg_op = 'INSERT' then
     new.created_by := auth.uid(); new.breaking := false; new.hub_featured := false;
   else

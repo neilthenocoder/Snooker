@@ -1,6 +1,7 @@
 import { html, mount, fmtDate, paragraphs, cssUrl, ukDay } from "../core/dom.js";
 import { seasonContext, sideBoxData } from "../core/context.js";
-import { articles } from "../core/api.js";
+import { articles, table } from "../core/api.js";
+import { getUser, isMaster, canManage } from "../core/auth.js";
 import { addDays } from "../core/schedule.js";
 import { breadcrumb, panel, dataTable, quoteBox, playerLink, teamLink, leagueTablePanel, urls, cueviewSection, gallery, newsStrip, videoEmbed, shareBar, readTime, categoriesOf } from "../core/components.js";
 import { SITE } from "../config.js";
@@ -10,7 +11,13 @@ import notFound from "./not-found.js";
 
 export default async function article(view, { params }) {
   const [ctx, news, box] = await Promise.all([seasonContext(), articles(), sideBoxData()]);
-  const a = news.find((x) => x.slug === params.slug);
+  let a = news.find((x) => x.slug === params.slug), preview = false;
+  // Not on the website yet: the Master Admin (approving it), the News & website officers and its writer can still read it.
+  if (!a) {
+    const user = await getUser();
+    const hidden = user ? (await table("articles", "published_at")).find((x) => x.slug === params.slug) : null;
+    if (hidden && (isMaster(user) || canManage(user, "website") || (hidden.created_by && hidden.created_by === user.id))) { a = hidden; preview = true; }
+  }
   if (!a) return notFound(view);
   setTitle(a.title);
   adminEdit("articles", a.id);
@@ -21,8 +28,9 @@ export default async function article(view, { params }) {
   const weekEnd = (a.week_ending || a.published_at || "").slice(0, 10);
   const weekStart = weekEnd ? addDays(weekEnd, -6) : null;
   const inWeek = (iso) => weekStart && ukDay(iso) >= weekStart && ukDay(iso) <= weekEnd;
-  const weekFixtures = league ? ctx.fixturesIn(league.id).filter((f) => inWeek(f.starts_at) && ctx.hasResult(f)) : [];
-  const weekBreaks = league ? ctx.breaksIn(league.id).filter((b) => b.fixture && inWeek(b.fixture.starts_at)) : [];
+  // The weekly tables: for the league chosen, or for every league when none is (Rich, round 21: "all leagues").
+  const roundLeagues = league ? [league] : a.week_ending && (a.show_breaks || a.show_results || a.show_standings) ? ctx.leagues : [];
+  const many = roundLeagues.length > 1;
   // Match night photos the home captains added to that week's matches (the round-up's league, or every league).
   const isRoundup = league || a.week_ending;
   const photoMatches = isRoundup && a.show_photos !== false
@@ -37,6 +45,7 @@ export default async function article(view, { params }) {
   const video = videoEmbed(a.video_url);
 
   mount(view, html`
+    ${preview ? html`<div class="notice error art-preview">${a.awaiting_approval ? "Waiting for the Master Admin's approval — " : ""}this article is not on the website yet. Only you can see this page.</div>` : ""}
     <header class="art-hero" style="${a.image_url ? `--art-img:${cssUrl(a.image_url)}` : ""}">
       <div class="wrap">
         ${breadcrumb([["Home", "/"], ["News", "/news"], [a.title]])}
@@ -55,18 +64,22 @@ export default async function article(view, { params }) {
       </article>
       <div class="stack art-extra">
         ${cueviewSection(a.cueview_name || a.title, articleCueview(a).filter((q) => q.key !== "hand"))}
-        ${a.show_breaks && league ? panel(`Top breaks of the week — ${league.name}`, dataTable([
-          { label: "Player", cell: (b) => playerLink(b.player) },
-          { label: "Team", cell: (b) => teamLink(ctx.team.get(b.player?.team_id)), cls: "hide-sm" },
-          { label: "Date", cell: (b) => html`<a href="${urls.match(b.fixture)}">${fmtDate(b.fixture.starts_at)}</a>` },
-          { label: "Break", cell: (b) => b.value, cls: "num strong" },
-        ], weekBreaks.slice(0, 10), { empty: "No breaks recorded that week." })) : ""}
-        ${a.show_results && league ? panel(`Team results — week ending ${fmtDate(weekEnd)}`, dataTable([
-          { label: "Home", cell: (f) => teamLink(ctx.team.get(f.home_team_id)) },
-          { label: "Score", cell: (f) => { const s = ctx.scoreOf(f); return html`<a class="res-score done" href="${urls.match(f)}">${s.home} - ${s.away}</a>`; }, cls: "num" },
-          { label: "Away", cell: (f) => teamLink(ctx.team.get(f.away_team_id)) },
-        ], weekFixtures, { empty: "No results that week." })) : ""}
-        ${a.show_standings && league ? leagueTablePanel(ctx, league) : ""}
+        ${roundLeagues.map((lg) => {
+          const weekFixtures = ctx.fixturesIn(lg.id).filter((f) => inWeek(f.starts_at) && ctx.hasResult(f));
+          const weekBreaks = ctx.breaksIn(lg.id).filter((b) => b.fixture && inWeek(b.fixture.starts_at));
+          return html`${many ? html`<h3 class="art-league">${lg.name}</h3>` : ""}
+          ${a.show_breaks ? panel(`Top breaks of the week — ${lg.name}`, dataTable([
+            { label: "Player", cell: (b) => playerLink(b.player) },
+            { label: "Team", cell: (b) => teamLink(ctx.team.get(b.player?.team_id)), cls: "hide-sm" },
+            { label: "Date", cell: (b) => html`<a href="${urls.match(b.fixture)}">${fmtDate(b.fixture.starts_at)}</a>` },
+            { label: "Break", cell: (b) => b.value, cls: "num strong" },
+          ], weekBreaks.slice(0, 10), { empty: "No breaks recorded that week." })) : ""}
+          ${a.show_results ? panel(`Team results${many ? ` — ${lg.name}` : ""} — week ending ${fmtDate(weekEnd)}`, dataTable([
+            { label: "Home", cell: (f) => teamLink(ctx.team.get(f.home_team_id)) },
+            { label: "Score", cell: (f) => { const sc = ctx.scoreOf(f); return html`<a class="res-score done" href="${urls.match(f)}">${sc.home} - ${sc.away}</a>`; }, cls: "num" },
+            { label: "Away", cell: (f) => teamLink(ctx.team.get(f.away_team_id)) },
+          ], weekFixtures, { empty: "No results that week." })) : ""}
+          ${a.show_standings ? leagueTablePanel(ctx, lg) : ""}`; })}
         ${photoMatches.length ? html`<div class="mn-week"><h3>Match night photos</h3>
           ${photoMatches.map((f) => html`<div class="mn-match"><a href="${urls.match(f)}">${ctx.team.get(f.home_team_id)?.name} v ${ctx.team.get(f.away_team_id)?.name}</a>${gallery(f.gallery)}</div>`)}</div>` : ""}
         <div class="art-foot">${shareBar(a.title, urls.article(a))}<a class="btn ghost" href="/news">More news</a></div>

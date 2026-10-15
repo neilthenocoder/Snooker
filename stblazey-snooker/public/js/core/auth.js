@@ -72,7 +72,7 @@ export const OFFICER_ROLES = ["league_admin", "competition_secretary", "league_s
 /**
  * Captains and vice captains have their team's tools by right (scorecards, Manage team…) and no part of the dashboard.
  * What can be switched on for them, role by role: live scoring (Rich, round 15: off unless ticked) and writing news
- * (Rich, round 20: on to start with — captains, vice captains and every officer write news; players and visitors don't).
+ * (Rich, round 21: officers only for now — it can be ticked for captains and vice captains later; never players or visitors).
  */
 export const TEAM_ROLES = ["captain", "vice_captain"];
 export const TEAM_ROLE_AREAS = ["livescoring", "news"];
@@ -84,7 +84,7 @@ export const DEFAULT_AREAS = {
   competition_secretary: ["handicaps", "competitions", "livescoring", "news"],
   league_secretary: ["league", "handicaps", "news"],
   committee_member: ["website", "settings", "news"], president: ["website", "settings", "news"], vice_chairman: ["website", "settings", "news"], chairman: ["website", "settings", "news"],
-  captain: ["news"], vice_captain: ["news"],
+  captain: [], vice_captain: [],
 };
 /**
  * Which area each admin section belongs to. "master" = Master Admin only;
@@ -99,7 +99,7 @@ export const SECTION_AREA = {
   competitions: "competitions", entries: "competitions", draws: "competitions",
   scoreboard: "livescoring", awards: { any: ["website", "competitions"] }, key_dates: { any: ["website", "competitions"] },
   meetings: "website", emails: "settings",
-  accounts: "people", roles: "master", activity: "master", backup: "master",
+  accounts: "people", approvals: "master", roles: "master", activity: "master", backup: "master",
   articles: "website", write: { any: ["website", "news"] }, categories: "website", announcements: "website", notices: "website", media: { any: ["website", "news"] }, pages: "website", sponsors: "website", merchandise: "website",
   cueviews: "league",
   branding: "settings", settings: "settings", stats: "settings",
