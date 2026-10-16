@@ -534,3 +534,10 @@ export function checkLinks(urls) {
   if (DEMO_MODE) return Promise.resolve({ results: urls.map((url) => ({ url, status: 0, note: "Not checked in the demo" })) });
   return callFunction("link-check", { urls });
 }
+
+// ── Round 23 ─────────────────────────────────────────────────────
+/** Add or change a row whose key isn't "id" (e.g. hall_of_fame_contacts by entry_id). */
+export async function upsertRow(tableName, row, onConflict) { await run(db.from(tableName).upsert(row, { onConflict }).select()); invalidate(); }
+/** A memory sent in on the Hall of Fame form (anyone; it waits for the league). */
+export const submitMemory = (entry) => run(db.rpc("submit_memory", { p: entry }));
+export const hallOfFame = () => selectAll(() => db.from("hall_of_fame").select("*").order("sort").order("created_at", { ascending: false }));

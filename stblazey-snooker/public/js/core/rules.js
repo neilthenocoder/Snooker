@@ -14,9 +14,13 @@ export const RULES = {
   // Set to true if the league decides extra frames should count for the player too.
   extCountsForRanking: false,
   // Which fixture statuses count towards tables and rankings.
-  // Add "in_progress" here if you want tables to move live during the evening.
-  countedStatuses: ["submitted", "approved"],
+  // Rich, round 23: tables, rankings and breaks move live during the evening, as frames are saved
+  // ("in_progress"), with a note that they are not official until the result is approved.
+  countedStatuses: ["in_progress", "submitted", "approved"],
 };
+/** Counted, but not official yet: the scorecard is still being filled in, or waits for approval. */
+export const isProvisional = (fixture) => ["in_progress", "submitted"].includes(fixture?.status);
+export const PROVISIONAL_NOTE = "Includes scores from matches still being played or waiting for approval — not official until the result is approved.";
 
 /** Every status a fixture can have, in match-night order. */
 export const STATUSES = ["scheduled", "in_progress", "submitted", "approved", "postponed"];
@@ -38,7 +42,7 @@ export function teamMatchPoints({ framesFor }) {
 export const RULES_TEXT = `Team points: 1 per frame won. Player ranking: ${RULES.frameWinPoints} points per frame won, ` +
   `plus break points (${RULES.breakMinimum}–39 = 3, 40–49 = 4 … up to ${RULES.maxBreakPoints} for 140+). ` +
   `${RULES.extCountsForRanking ? "" : "A frame played as the extra (Ext) player counts for the team, not for the player's ranking. "}` +
-  `Only ${RULES.countedStatuses.join(" and ")} results count.`;
+  `Scores count as soon as they are saved on match night; they are official once the result is approved.`;
 
 /** "home" | "away" | null (frame not finished / not entered). */
 export function frameWinner(frame) {

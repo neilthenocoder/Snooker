@@ -14,7 +14,7 @@ import { friendly } from "./crud.js";
 
 const PAGES = [["/", "Home"], ["/competitions", "Competitions"], ["/fixtures", "Fixtures"], ["/results", "Results"], ["/league", "League"], ["/news", "News"], ["/live", "Live"],
   ["/calendar", "Calendar"], ["/players", "Our Players"], ["/seasons", "Seasons"], ["/handicaps", "Handicaps"], ["/venues", "Venues"], ["/rules", "Rules"], ["/meetings", "Meetings"],
-  ["/marketplace", "Marketplace"], ["/merchandise", "Merchandise"], ["/presentation", "Presentation night"], ["/archive", "Archive"], ["/enter", "Enter a competition"], ["/newsletter", "Newsletter sign-up"], ["/scoreboard", "Live scoreboard"]];
+  ["/marketplace", "Marketplace"], ["/merchandise", "Merchandise"], ["/presentation", "Presentation night"], ["/archive", "Archive"], ["/enter", "Enter a competition"], ["/newsletter", "Newsletter sign-up"], ["/scoreboard", "Live scoreboard"], ["/hall-of-fame", "Hall of Fame"], ["/downloads", "Downloads"], ["/sponsorship", "Sponsorship"]];
 
 export async function menuPage(el) {
   const [site, infoPages] = await Promise.all([settings(), table("pages", "sort").catch(() => [])]);

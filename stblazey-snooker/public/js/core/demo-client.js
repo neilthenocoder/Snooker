@@ -8,7 +8,7 @@
 import { buildSeed } from "../demo/seed-data.js";
 import { SCHEMA_VERSION } from "./version.js";
 
-const KEY = "sbdsl-demo-db-v13";
+const KEY = "sbdsl-demo-db-v14";
 const SESSION_KEY = "sbdsl-demo-session";
 const store = typeof localStorage !== "undefined" ? localStorage : (() => {
   const m = new Map();
@@ -178,7 +178,7 @@ function shortAddress(table, row) {
     for (let n = 2; rows.some((r) => r !== row && r.slug === slug); n++) slug = `${base}-${n}`;
     row.slug = slug;
   }
-  if (["competition_matches", "live_matches", "market_ads"].includes(table) && row.no == null) row.no = Math.max(0, ...rows.map((r) => Number(r.no) || 0)) + 1;
+  if (["competition_matches", "live_matches", "market_ads", "hall_of_fame"].includes(table) && row.no == null) row.no = Math.max(0, ...rows.map((r) => Number(r.no) || 0)) + 1;
 }
 
 // Mirrors the activity-log triggers in supabase/schema.sql (audit_row / audit_added).
@@ -567,6 +567,16 @@ export const demoClient = {
       const fails = mine.filter((a) => !a.ok && Date.parse(a.at) > lastOk && Date.now() - Date.parse(a.at) < s.lockout_minutes * 60e3);
       const last = Math.max(0, ...fails.map((a) => Date.parse(a.at)));
       return { data: fails.length >= s.max_attempts ? Math.max(1, Math.ceil((last + s.lockout_minutes * 60e3 - Date.now()) / 1000)) : 0, error: null };
+    }
+    if (name === "submit_memory") {
+      const p = args.p ?? {};
+      if (String(p.title ?? "").trim().length < 3) return { data: null, error: { message: "Please give it a title" } };
+      if (String(p.submitted_by ?? "").trim().length < 2) return { data: null, error: { message: "Please type your name" } };
+      const row = { id: newId(), category: p.category || "Memory", title: p.title.trim(), subject: p.subject || null, year: p.year || null, achievements: p.achievements || null, body: p.body || null,
+        images: Array.isArray(p.images) ? p.images.slice(0, 12) : [], quote: p.quote || null, quote_by: p.quote_by || null, status: "pending", featured: false, submitted_by: p.submitted_by.trim(), sort: 1, created_at: new Date().toISOString() };
+      (state.tables.hall_of_fame ??= []).push(row); shortAddress("hall_of_fame", row);
+      if (p.contact) (state.tables.hall_of_fame_contacts ??= []).push({ id: newId(), entry_id: row.id, contact: p.contact });
+      persist(); return { data: row.id, error: null };
     }
     if (name === "login_record") {
       (state.tables.login_attempts ??= []).push({ id: Date.now(), email: String(args.p_email ?? "").trim().toLowerCase(), ip: "this browser", ok: !!args.p_ok, at: new Date().toISOString() });

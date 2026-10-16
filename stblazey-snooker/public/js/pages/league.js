@@ -20,6 +20,10 @@ const BUILT_IN = [
   ["Season review", "The season at a glance: honours, top players and the numbers", "/season-review"],
   ["Live scoreboard", "Finals scored ball by ball, as they happen", "/scoreboard"],
   ["Sadly no longer with us", "Remembering the players and friends the league has lost", "/in-memoriam"],
+  ["Hall of Fame", "The players, teams and moments that made the league — and share a memory", "/hall-of-fame"],
+  ["Downloads", "Posters, rules for the club wall and competition entry forms", "/downloads"],
+  ["Marketplace", "Cues, cases and kit for sale between players", "/marketplace"],
+  ["Sponsorship", "Gold, Silver and Bronze packages for businesses", "/sponsorship"],
 ];
 
 export default async function league(view) {

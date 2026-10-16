@@ -1,7 +1,7 @@
-import { html, mount, paragraphs } from "../core/dom.js";
+import { html, mount, paragraphs, fmtDate, fmtTime } from "../core/dom.js";
 import { seasonContext, sideBoxData } from "../core/context.js";
 import { articles } from "../core/api.js";
-import { breadcrumb, sidebar, dataTable, panel, teamLink, urls, gallery, quoteBox, picture, fixturesTable, emblem } from "../core/components.js";
+import { breadcrumb, dataTable, panel, teamLink, urls, gallery, quoteBox, picture, fixturesTable, emblem, breaksBox, newsMini } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import notFound from "./not-found.js";
 
@@ -67,6 +67,31 @@ export default async function venue(view, { params }) {
       ], teams)) : ""}
       ${upcoming.length ? panel("Next matches here", fixturesTable(ctx, upcoming)) : ""}
     </div>
-    ${sidebar(ctx, news, { box })}
+    ${venueSidebar(ctx, news, v, teams)}
   </div>`);
+}
+
+/**
+ * The side column of a venue's page is about that venue only (Rich, round 23 — not the general league boxes):
+ * results and breaks made here, the next matches here, and news of the teams based here.
+ * A side advert aimed at this venue (Admin → Website → Side adverts) goes on top of it.
+ */
+function venueSidebar(ctx, news, v, teams) {
+  const here = ctx.fixtures.filter((f) => f.venue_id === v.id);
+  const played = here.filter((f) => ctx.hasResult(f)).sort((a, b) => b.starts_at.localeCompare(a.starts_at)).slice(0, 5);
+  const next = here.filter((f) => f.status === "scheduled" && Date.parse(f.starts_at) > Date.now() - 6 * 36e5).sort((a, b) => a.starts_at.localeCompare(b.starts_at)).slice(0, 4);
+  const ids = new Set(here.map((f) => f.id));
+  const breaks = ctx.breaks.filter((b) => ids.has(b.fixture_id)).map((b) => ({ ...b, player: ctx.player.get(b.player_id), when: ctx.fixture.get(b.fixture_id)?.starts_at }))
+    .filter((b) => b.player).sort((a, b) => b.value - a.value);
+  const names = teams.map((t) => t.name.toLowerCase());
+  const teamNews = news.filter((a) => names.some((n) => `${a.title} ${a.excerpt ?? ""}`.toLowerCase().includes(n)) || String(a.body ?? "").toLowerCase().includes(v.name.toLowerCase())).slice(0, 4);
+  const team = (id) => ctx.team.get(id)?.name ?? "?";
+  return html`<aside class="sidebar venue-side">
+    ${panel(`Latest results at ${v.name}`, played.length ? html`<div class="res-list">${played.map((f) => { const sc = ctx.scoreOf(f); return html`<a class="res-mini" href="${urls.match(f)}">
+        <small>${fmtDate(f.starts_at)}</small><span class="${sc.home > sc.away ? "won" : sc.home < sc.away ? "lost" : ""}">${team(f.home_team_id)}</span><b>${sc.home} – ${sc.away}</b><span class="${sc.away > sc.home ? "won" : sc.away < sc.home ? "lost" : ""}">${team(f.away_team_id)}</span></a>`; })}</div>`
+      : html`<div class="empty">No results here yet this season.</div>`, { color: "green" })}
+    ${next.length ? panel(`Next at ${v.name}`, html`<div class="list-links">${next.map((f) => html`<a href="${urls.match(f)}"><b>${fmtDate(f.starts_at)} ${fmtTime(f.starts_at)}</b> ${team(f.home_team_id)} v ${team(f.away_team_id)}</a>`)}</div>`, { color: "yellow" }) : ""}
+    ${breaksBox(`Breaks at ${v.name}`, breaks)}
+    ${teamNews.length ? panel(teams.length === 1 ? `${teams[0].name} news` : "News from here", html`<div>${teamNews.map(newsMini)}</div>`, { color: "blue" }) : ""}
+  </aside>`;
 }

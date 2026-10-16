@@ -1,7 +1,7 @@
 // Turns raw season data into lookups and calculated tables (via rules.js).
 import { loadSeason, currentSeason, settings, loadCompetitions } from "./api.js";
 import { buildBracket, winnerSide } from "./bracket.js";
-import { leagueTable, playerRankings, matchScore, isCounted } from "./rules.js";
+import { leagueTable, playerRankings, matchScore, isCounted, isProvisional } from "./rules.js";
 import { ukDay } from "./dom.js";
 
 /** The Monday (YYYY-MM-DD, UK) of the week an ISO date and time falls in. */
@@ -64,6 +64,8 @@ export async function seasonContext(seasonId) {
     }),
     rankings: (leagueId) => once(`rk:${leagueId}`, () =>
       playerRankings(ctx.playersIn(leagueId), ctx.fixturesIn(leagueId), framesByFixture, raw.breaks)),
+    // Does this league's table include any result that isn't approved yet? (Rich, round 23: the note under the tables.)
+    provisionalIn: (leagueId) => ctx.fixturesIn(leagueId).some((f) => isProvisional(f) && (framesByFixture.get(f.id)?.length ?? 0) > 0),
     breaksIn: (leagueId) => once(`br:${leagueId}`, () => {
       const fx = new Set(ctx.fixturesIn(leagueId).filter(isCounted).map((f) => f.id));
       return raw.breaks.filter((b) => fx.has(b.fixture_id))

@@ -157,11 +157,13 @@ const breakKey = (b, pre = "") => `${pre}b:${b.fixture_id ?? b.match_id}:${b.fra
  * Is this break a new best — of the season in its league or competition, or (if the
  * setting says so) of the last seven days? Returns the words for the card, or null.
  */
+/** Small print on a live celebration (Rich, round 23): it pops up the moment the break is saved. */
+const UNOFFICIAL = "This break is not official until the scorecard has been submitted and approved.";
 async function recordBreak(row, isCup, mode) {
   if (mode === "off" || row.value < RULES.breakMinimum) return null;
   invalidate();
   const weekAgo = new Date(Date.now() - 7 * 864e5).toISOString();
-  let others, where, href;
+  let others, where, href, note = "";
   if (isCup) {
     const [matches, comps] = await Promise.all([table("competition_matches", "round"), table("competitions", "sort")]);
     const match = matches.find((m) => m.id === row.match_id), comp = comps.find((c) => c.id === match?.competition_id);
@@ -170,6 +172,7 @@ async function recordBreak(row, isCup, mode) {
     others = (await competitionBreaks(inComp.map((m) => m.id))).filter((b) => b.id !== row.id)
       .map((b) => ({ value: b.value, when: inComp.find((m) => m.id === b.match_id)?.starts_at ?? "" }));
     where = comp.name; href = `/cup-match/${match.no ?? match.id}`;
+    if (match.status !== "completed") note = UNOFFICIAL;
   } else {
     const { seasonContext } = await import("./context.js");
     const ctx = await seasonContext();
@@ -183,10 +186,11 @@ async function recordBreak(row, isCup, mode) {
     all.delete(row.id);
     others = [...all.values()];
     where = league.name; href = `/match/${fx.code || fx.id}`;
+    if (fx.status !== "approved") note = UNOFFICIAL;
   }
   const best = (list) => Math.max(0, ...list.map((b) => b.value));
-  if (row.value > best(others)) return { what: "New highest break of the season", where, href };
-  if (mode === "week" && row.value > best(others.filter((b) => b.when >= weekAgo))) return { what: "Highest break of the week", where, href };
+  if (row.value > best(others)) return { what: "New highest break of the season", where, href, note };
+  if (mode === "week" && row.value > best(others.filter((b) => b.when >= weekAgo))) return { what: "Highest break of the week", where, href, note };
   return null;
 }
 

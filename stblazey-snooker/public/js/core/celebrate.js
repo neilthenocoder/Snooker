@@ -67,6 +67,7 @@ export function celebrate(info) {
       <p class="celebrate-who">${info.name}</p>
       <p class="celebrate-where">${info.where ?? ""}</p>
       ${info.href ? html`<a class="btn small" href="${info.href}">${info.hrefLabel ?? "See the match"}</a>` : ""}
+      ${info.note ? html`<p class="celebrate-note">${info.note}</p>` : ""}
     </div>`);
   document.body.append(box);
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;

@@ -38,6 +38,7 @@ import { performancePage } from "../admin/performance.js";
 import { securityPage } from "../admin/security.js";
 import { versionsPage } from "../admin/versions.js";
 import { SITE_VERSION } from "../core/release.js";
+import { handicapSuggestPage } from "../admin/handicap-suggest.js";
 
 
 /** Watches the height of the dashboard menu (see where the menu is drawn). */
@@ -47,17 +48,17 @@ let navWatch = null;
 const NAV = [
   ["Match nights", [["overview", "Overview"], ["results", "Results to approve"]]],
   ["Fixtures", [["fixtures", "All fixtures"], ["byes", "Bye weeks"], ["generator", "Fixture generator"], ["import", "Import from CSV"]]],
-  ["League", [["leagues", "Leagues"], ["teams", "Teams"], ["players", "Players"], ["cueviews", "CueViews to approve"], ["handicaps", "Handicaps"], ["venues", "Venues"], ["seasons", "Seasons"]]],
+  ["League", [["leagues", "Leagues"], ["teams", "Teams"], ["players", "Players"], ["cueviews", "CueViews to approve"], ["handicaps", "Handicaps"], ["handicap_suggest", "Suggested handicaps"], ["venues", "Venues"], ["seasons", "Seasons"]]],
   ["Competitions", [["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws & results"], ["scoreboard", "Live scoreboard"], ["awards", "Presentation awards"]]],
   ["People", [["accounts", "Logins"]]],
-  ["Website", [["articles", "News"], ["approvals", "News to approve"], ["write", "Write news step by step"], ["categories", "News categories"], ["announcements", "Announcements"], ["notices", "Notifications"], ["popups", "Pop-up adverts"], ["key_dates", "Key dates"], ["meetings", "Meetings"], ["media", "Image library"], ["pages", "Info pages & rules"], ["merchandise", "Merchandise"], ["market", "Marketplace adverts"], ["market_categories", "Marketplace categories"], ["comments", "Comments"], ["sponsors", "Sponsors"], ["menu", "Menu"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["seo", "SEO"], ["emails", "Emails"], ["links", "Link checker"], ["performance", "Performance"], ["stats", "Statistics"]]],
+  ["Website", [["articles", "News"], ["approvals", "News to approve"], ["write", "Write news step by step"], ["categories", "News categories"], ["announcements", "Announcements"], ["notices", "Notifications"], ["popups", "Pop-up adverts"], ["key_dates", "Key dates"], ["meetings", "Meetings"], ["media", "Image library"], ["pages", "Info pages & rules"], ["merchandise", "Merchandise"], ["market", "Marketplace adverts"], ["market_categories", "Marketplace categories"], ["comments", "Comments"], ["sponsors", "Sponsors"], ["sponsor_packages", "Sponsorship packages"], ["ads", "Side adverts"], ["downloads", "Downloads"], ["hall_of_fame", "Hall of Fame"], ["page_settings_23", "Sponsorship, downloads & Hall of Fame pages"], ["menu", "Menu"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["seo", "SEO"], ["emails", "Emails"], ["links", "Link checker"], ["performance", "Performance"], ["stats", "Statistics"]]],
   ["Newsletter", [["campaigns", "Campaigns"], ["subscribers", "Subscribers"], ["newsletter_setup", "Sign-up pop-up"]]],
   // Only the Master Admin sees these.
   ["Master Admin", [["roles", "Roles & permissions"], ["security", "Security"], ["versions", "Version history"], ["activity", "Activity log"], ["backup", "Backup"]]],
 ];
 const SPECIAL = { overview, results, generator, draws, media: mediaPage, stats: statsPage, import: importPage, handicaps: handicapsPage, entries: entriesPage,
   roles: rolesPage, activity: activityPage, backup: backupPage, awards: awardsPage, scoreboard: scoreboardPage, emails: emailsPage, cueviews: cueviewsPage, write: newsWizardPage, approvals: newsApprovePage,
-  campaigns: campaignsPage, subscribers: subscribersPage, market: marketPage, comments: commentsPage, menu: menuPage, seo: seoPage, links: linksPage, performance: performancePage, security: securityPage, versions: versionsPage };
+  campaigns: campaignsPage, subscribers: subscribersPage, market: marketPage, comments: commentsPage, menu: menuPage, seo: seoPage, links: linksPage, performance: performancePage, security: securityPage, versions: versionsPage, handicap_suggest: handicapSuggestPage };
 // Menu items that show a red number when something is waiting.
 const COUNTS = { players: "Players waiting to be accepted", entries: "Entries waiting for payment", cueviews: "CueViews waiting to be checked", approvals: "News waiting for your approval", market: "Adverts waiting for approval" };
 const COUNT_WORD = { players: "new", entries: "waiting", cueviews: "waiting", approvals: "waiting", market: "waiting" };

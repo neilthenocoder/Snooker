@@ -630,6 +630,17 @@ The league table is decided on frames won: one point for every frame.
       newsletter_subscribers: [], newsletter_campaigns: [], popups: [], match_comments: [], seo_pages: [], site_versions: [], login_attempts: [],
       market_categories: ["Cues", "Cases & accessories", "Tables", "Clothing", "Other"].map((name, i) => ({ id: uuid(), name, sort: i + 1 })),
       market_ads: [],
+      // Round 23: side adverts, sponsorship packages, downloads, Hall of Fame.
+      ads: [], downloads: [], hall_of_fame_contacts: [],
+      sponsor_packages: [
+        { id: uuid(), name: "Gold", price: "£250", period: "a season", colour: "#d4a017", summary: "Sample package — change it under Website → Sponsorship packages.", benefits: "Banner at the top of the sponsors at the bottom of every page\nSide advert on the website all season\nLogo on the presentation night programme", includes_advert: true, sort: 1, is_active: true },
+        { id: uuid(), name: "Silver", price: "£150", period: "a season", colour: "#9aa3ad", summary: "Sample package.", benefits: "Banner at the bottom of every page\nSide advert for half a season", includes_advert: true, sort: 2, is_active: true },
+        { id: uuid(), name: "Bronze", price: "£75", period: "a season", colour: "#b36b2c", summary: "Sample package.", benefits: "Banner at the bottom of every page", includes_advert: false, sort: 3, is_active: true },
+      ],
+      hall_of_fame: [
+        { id: uuid(), no: 1, category: "Hall of Fame", title: "Ten league titles in a row", subject: players[0].full_name, player_id: players[0].id, team_id: players[0].team_id, year: "2010–2020", achievements: "Ten Victory League titles\nHighest break of the season six times\nCounty singles finalist", body: "A sample entry: change or remove it under Admin → Website → Hall of Fame.", images: [], quote: "The best player I ever shared a table with.", quote_by: "A team-mate", status: "approved", featured: true, submitted_by: null, sort: 1, created_at: new Date().toISOString() },
+        { id: uuid(), no: 2, category: "History", title: "The league is founded", subject: "St Blazey and District Snooker League", year: "1941", achievements: null, body: "A sample history entry.", images: [], quote: null, quote_by: null, status: "approved", featured: false, submitted_by: null, sort: 2, created_at: new Date().toISOString() },
+      ],
       security_settings: [{ id: 1, login_slug: null, hide_login_button: false, login_access: "all", mfa_roles: [], block_common_names: true,
         common_names: "admin\nadministrator\nroot\ntest\nuser\nguest\ninfo\nwebmaster\nsupport\ndemo", max_attempts: 5, lockout_minutes: 15 }],
       merchandise: [

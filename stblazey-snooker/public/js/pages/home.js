@@ -42,7 +42,8 @@ export default async function home(view, { user } = {}) {
   // The home page is the same for everyone (My Snooker is a page of its own, in the menu).
 
   mount(view, html`
-    <section class="hero" style="${site.hero_image_url ? `--hero-img:${cssUrl(site.hero_image_url)}` : ""}">
+    <section class="hero hero-l-${heroLayout(site)}" style="${site.hero_image_url ? `--hero-img:${cssUrl(site.hero_image_url)}` : ""}">
+      ${heroLayout(site) === "big" ? html`<div class="hero-bgs" aria-hidden="true">${slides.map((a, i) => html`<div class="hero-bg ${i ? "" : "on"}" style="${a.image_url || a.circle_image_url ? `background-image:${cssUrl(a.image_url || a.circle_image_url)}` : ""}"></div>`)}</div>` : ""}
       <div class="wrap hero-inner">
         <div class="hero-slides" data-slides>
           ${slides.length ? slides.map((a, i) => heroSlide(a, i === 0)) : html`<div class="hero-slide on"><div class="hero-text"><h2><span>${SITE.name}</span></h2><p class="hero-meta">Established ${SITE.established}</p></div></div>`}
@@ -89,6 +90,7 @@ export default async function home(view, { user } = {}) {
   const show = (i) => {
     current = (i + slideEls.length) % slideEls.length;
     slideEls.forEach((s, j) => s.classList.toggle("on", j === current));
+    $$(".hero-bg", view).forEach((s, j) => s.classList.toggle("on", j === current));
     dots.forEach((d, j) => d.classList.toggle("on", j === current));
   };
   dots.forEach((d) => d.addEventListener("click", () => show(Number(d.dataset.dot))));
@@ -162,6 +164,9 @@ export default async function home(view, { user } = {}) {
 
   return () => { clearInterval(timer); clearInterval(carousel); clearInterval(featureTimer); unsubscribe(); stopSquad(); window.removeEventListener("resize", kdFit); };
 }
+
+/** The banner's layout (Admin → Site settings → Home page banner — Rich, round 23): picture beside, one big picture, or headline only. */
+const heroLayout = (site) => (["big", "text"].includes(site.hero_layout) ? site.hero_layout : "side");
 
 /** One banner article: headline, category and date, a small "continue reading" — all linking to the article. */
 function heroSlide(a, on) {

@@ -7,6 +7,7 @@
 // ─────────────────────────────────────────────────────────────
 import { html, mount, $, readForm, toast, fmtDate, safeHref } from "./dom.js";
 import { DEMO_MODE } from "../config.js";
+import { canInstall, installApp } from "./install.js";
 import { signInChecked, homeFor, isStaff, isMember, isPlainPlayer, roleText, mySnookerOn, canWriteNews } from "./auth.js";
 import { notificationsOn, setNotifications, NOTIFY_KINDS, notifyPrefs, setNotifyPref, latestNotices, markNoticesSeen, seenNotices, NOTICE_KIND } from "./notify.js";
 import { navigate, refreshShell } from "./router.js";
@@ -157,33 +158,12 @@ export async function openNotifications({ onChange = () => {} } = {}) {
 }
 
 // ── add to home screen ─────────────────────────────────────────
-// Android and desktop Chrome offer an install prompt (kept here until someone asks for it);
-// on an iPhone or iPad it is done from the Share button, so we show how.
-let installEvent = null;
-if (typeof window !== "undefined") {
-  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvent = e; });
-  window.addEventListener("appinstalled", () => { installEvent = null; });
-}
-const isStandalone = () => (typeof matchMedia === "function" && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
-const isApple = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+// One press where the browser allows it, a picture guide on iPhone (core/install.js).
 function installBlock() {
-  if (isStandalone()) return "";
+  if (!canInstall()) return "";
   return html`<div class="drawer-install">
-    <button type="button" class="drawer-link as-btn" data-install><span class="drawer-ico">${ICON.phone}</span><span><b>Add to your home screen</b><small>Open the website like an app, straight from your phone's home screen</small></span>${ICON.go}</button>
-    <div class="install-how" data-install-how hidden></div></div>`;
+    <button type="button" class="drawer-link as-btn" data-install><span class="drawer-ico">${ICON.phone}</span><span><b>Add to your home screen</b><small>Open the website like an app, straight from your phone's home screen</small></span>${ICON.go}</button></div>`;
 }
 function wireInstall(el) {
-  $("[data-install]", el)?.addEventListener("click", async () => {
-    if (installEvent) {
-      installEvent.prompt();
-      const choice = await installEvent.userChoice.catch(() => null);
-      if (choice?.outcome === "accepted") { installEvent = null; toast("Added to your home screen"); }
-      return;
-    }
-    const how = $("[data-install-how]", el);
-    mount(how, isApple()
-      ? html`<ol><li>Press the <b>Share</b> button at the bottom of Safari (the square with an arrow pointing up).</li><li>Scroll down and choose <b>Add to Home Screen</b>.</li><li>Press <b>Add</b>.</li></ol>`
-      : html`<ol><li>Open your browser's menu (the three dots, top right).</li><li>Choose <b>Add to Home screen</b> or <b>Install app</b>.</li><li>Press <b>Add</b> (or <b>Install</b>).</li></ol>`);
-    how.hidden = !how.hidden;
-  });
+  $("[data-install]", el)?.addEventListener("click", () => { closeDrawer(); installApp(); });
 }

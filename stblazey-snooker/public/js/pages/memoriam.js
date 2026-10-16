@@ -3,7 +3,8 @@
 // a few words of tribute are optional.
 import { html, mount } from "../core/dom.js";
 import { table } from "../core/api.js";
-import { breadcrumb, urls } from "../core/components.js";
+import { breadcrumb, urls, gallery } from "../core/components.js";
+import { markup } from "../core/markup.js";
 import { listItems } from "../core/list-field.js";
 import { setTitle, adminEdit } from "../core/router.js";
 
@@ -26,6 +27,7 @@ export default async function memoriam(view) {
       ${breadcrumb([["Home", "/"], ["Our League", "/league"], ["In memoriam"]])}
       <h1>Sadly no longer with us</h1>
       <p>Remembering the players and friends of the league who are no longer with us. They are part of this league's story, and their results stay in its records.</p>
+      <p><a class="btn small ghost mem-share" href="/hall-of-fame/submit">Share a memory of someone</a></p>
     </div></section>
     <div class="wrap mem-list">
       ${list.length ? list.map((p) => html`<article class="mem-card">
@@ -33,6 +35,8 @@ export default async function memoriam(view) {
         <div><h2><a href="${urls.player(p)}">${p.full_name}</a></h2>
           <p class="mem-years">${[lifeYears(p), clubs(p)].filter(Boolean).join(" · ")}</p>
           ${p.memorial ? html`<p class="mem-words">${p.memorial}</p>` : ""}
+          ${p.memorial_story || p.memorial_gallery?.length ? html`<details class="mem-story"><summary>Read their story</summary>
+            ${p.memorial_story ? html`<div class="rich">${markup(p.memorial_story)}</div>` : ""}${p.memorial_gallery?.length ? gallery(p.memorial_gallery) : ""}</details>` : ""}
           <a class="mem-link" href="${urls.player(p)}">Their record in the league</a></div>
       </article>`) : html`<div class="empty box">No one is listed here.</div>`}
     </div>`);

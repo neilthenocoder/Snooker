@@ -6,7 +6,7 @@ import { html, mount, $, toast, fmtDate, fmtTime, toLocalInput, fromLocalInput, 
 import { table, save, remove, invalidate } from "../core/api.js";
 import { slugify } from "../core/schedule.js";
 import { dataTable, panel } from "../core/components.js";
-import { uploadImage, uploadFile, makeAppIcons } from "../core/upload.js";
+import { uploadImage, uploadFile, makeAppIcons, DOC_ACCEPT } from "../core/upload.js";
 import { markup, MARKUP_HELP } from "../core/markup.js";
 import { pickImage, uploadFiles } from "./picker.js";
 import { listField, wireListFields, listItems } from "../core/list-field.js";
@@ -26,7 +26,7 @@ const key = (f) => (f.in ? `${f.in}__${f.name}` : f.name);
 const valueOf = (f, row) => (f.in ? row[f.in]?.[f.name] : row[f.name]);
 
 async function loadRefs(res) {
-  const names = [...new Set(res.fields.filter((f) => ["ref", "tags"].includes(f.type) || f.suggest).map((f) => f.ref ?? f.suggest))];
+  const names = [...new Set([...res.fields.filter((f) => ["ref", "tags"].includes(f.type) || f.suggest).map((f) => f.ref ?? f.suggest), ...res.fields.flatMap((f) => f.needs ?? [])])];
   const byName = { players: "full_name" };
   const order = { leagues: "sort", categories: "sort", competitions: "sort", fixtures: "starts_at", articles: "published_at", pages: "sort" };
   const loaded = await Promise.all(names.map((n) => table(n, order[n] ?? byName[n] ?? "name")));
@@ -82,7 +82,7 @@ function input(field, row, refs, rows) {
       <output>${value || field.default || field.min || 0}</output></span>`;
     case "file": return html`<div class="file-field">
       <div class="btn-row">
-        <label class="btn small secondary">Upload a PDF<input type="file" accept="application/pdf" hidden data-file-upload="${name}" data-folder="${field.folder ?? "files"}"></label>
+        <label class="btn small secondary">${field.anyDoc ? "Upload a file" : "Upload a PDF"}<input type="file" accept="${field.anyDoc ? DOC_ACCEPT : "application/pdf"}" hidden data-file-upload="${name}" data-folder="${field.folder ?? "files"}" ${field.anyDoc ? a("data-any") : ""}></label>
         <a class="btn small ghost ${value ? "" : "hidden"}" href="${value}" target="_blank" rel="noopener" data-file-open="${name}">Open it</a>
         <button type="button" class="btn small ghost" data-file-clear="${name}">Remove</button>
       </div>
@@ -138,8 +138,10 @@ function input(field, row, refs, rows) {
     }
     case "ref": return html`<select ${a(attrs)}><option value="">– none –</option>${refs[field.ref].map((r) => html`<option value="${refValue(field, r)}" ${refValue(field, r) === value ? "selected" : ""}>${labelOf(r)}</option>`)}</select>`;
     default: {
-      const list = field.list ? html`<datalist id="dl-${name}">${[...new Set(rows.map((r) => valueOf(field, r)).filter(Boolean))].map((o) => html`<option value="${o}">`)}</datalist>` : "";
-      return html`<input type="text" ${a(attrs)} ${field.list ? a(`list="dl-${name}"`) : ""} ${field.maxLength ? a(`maxlength="${Number(field.maxLength)}"`) : ""} value="${value}" placeholder="${field.placeholder ?? ""}">${list}`;
+      // A text box can offer choices as you type: the values already used (list: true), or its own (choices: (refs) => [[value, label]]).
+      const list = field.choices ? html`<datalist id="dl-${name}">${field.choices(refs).map(([v, l]) => html`<option value="${v}">${l}</option>`)}</datalist>`
+        : field.list ? html`<datalist id="dl-${name}">${[...new Set(rows.map((r) => valueOf(field, r)).filter(Boolean))].map((o) => html`<option value="${o}">`)}</datalist>` : "";
+      return html`<input type="text" ${a(attrs)} ${field.list || field.choices ? a(`list="dl-${name}"`) : ""} ${field.maxLength ? a(`maxlength="${Number(field.maxLength)}"`) : ""} value="${value}" placeholder="${field.placeholder ?? ""}">${list}`;
     }
   }
 }
@@ -208,6 +210,7 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
   const load = async () => {
     invalidate();
     rows = [...(await table(res.table, res.order))];
+    if (res.load) rows = await res.load(rows);      // a section can add to each row (e.g. an info page's SEO, kept in seo_pages)
     if (res.desc) rows.reverse();
   };
 
@@ -329,9 +332,9 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
       if (!doc.files[0]) return;
       const label = doc.closest("label");
       label.firstChild.textContent = "Uploading…";
-      try { setFile(doc.dataset.fileUpload, await uploadFile(doc.files[0], { folder: doc.dataset.folder })); toast("Document uploaded — press Save to keep it"); }
+      try { setFile(doc.dataset.fileUpload, await uploadFile(doc.files[0], { folder: doc.dataset.folder, any: "any" in doc.dataset })); toast("Document uploaded — press Save to keep it"); }
       catch (err) { toast(err.message, "error"); }
-      finally { label.firstChild.textContent = "Upload a PDF"; doc.value = ""; }
+      finally { label.firstChild.textContent = "any" in doc.dataset ? "Upload a file" : "Upload a PDF"; doc.value = ""; }
       return;
     }
     const icon = e.target.closest("[data-appicon-upload]");

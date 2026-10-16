@@ -481,6 +481,26 @@ Most people use the site on a phone, so a few things are done specially for smal
 **Two-step login:** tick roles under Security → Two-step login (set it up for yourself first). Lost phone: Security → Reset their two-step login. If the Master Admin loses theirs: Supabase → Authentication → Users → the user → remove the MFA factor.
 **Custom login address:** after choosing one, `/login` shows “page not found”; tell officers and captains the new address.
 
+## 3q. Round 23: live tables, add to home screen, adverts, sponsorship, downloads, Hall of Fame
+
+**After uploading, run the whole of `supabase/schema.sql` again** (database version 17).
+
+| What | Where |
+|---|---|
+| Tables, rankings and breaks move live as frames are saved; anything not yet approved is marked * with a note. The highest-break confetti pops up the moment the break is saved, with “not official until the scorecard has been submitted and approved” | automatic (`countedStatuses` in `core/rules.js`) |
+| Add to home screen: one press on Chrome / Edge / Samsung Internet; on iPhone a picture guide (••• → Share → View More → Add to Home Screen). In the phone menu, in My account, and offered by a small bar on phones from the second page (“×” hides it for 30 days) | `core/install.js` |
+| SEO section in the Info page editor (also listed in Website → SEO) | Admin → Website → Info pages & rules |
+| Home banner layout: picture beside the headline, one big picture across the banner, or headline only | Admin → Site settings → Home page banner |
+| Side adverts: everywhere, or only on one venue / team / competition / league, or a kind of page (presentation night, in memoriam…). Pages without a side column show them under the heading | Admin → Website → Side adverts |
+| Venue pages have their own side column: results, next matches, breaks and news from that venue | /venue/… |
+| Sponsorship packages (Gold / Silver / Bronze…) on /sponsorship; each sponsor can be put on a package | Admin → Website → Sponsorship packages, Sponsors |
+| League downloads (/downloads): PDF, Word, Excel, PowerPoint or pictures; logged-in only by default | Admin → Website → Downloads |
+| Hall of Fame (/hall-of-fame) and “Share a memory” (/hall-of-fame/submit, waits for approval) | Admin → Website → Hall of Fame |
+| In memoriam: each player's story and pictures (“Read their story”) | Admin → Players → the player |
+| Suggested handicaps for the yearly review (nothing changes until Apply) | Admin → League → Suggested handicaps |
+| “? Rules help” on the scorecards and the live scoreboard: searches the league's rules and a short guide to the rules of snooker | scorecards |
+| Latest results: team emblems, score pills; hover (or tap ⌄) for every frame, the best break and the venue | side column |
+
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
 | Rule | Current setting |

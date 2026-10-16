@@ -16,6 +16,7 @@ export const SEO_PAGES = [
   ["/live", "Live"], ["/calendar", "Calendar"], ["/players", "Our players"], ["/seasons", "Seasons"], ["/archive", "Archive"], ["/handicaps", "Handicaps"],
   ["/venues", "Venues"], ["/rules", "Rules"], ["/meetings", "Meetings"], ["/presentation", "Presentation night"], ["/in-memoriam", "In memoriam"],
   ["/merchandise", "Merchandise"], ["/marketplace", "Marketplace"], ["/enter", "Competition entry form"], ["/cueview", "CueView form"], ["/scoreboard", "Live scoreboard"],
+  ["/hall-of-fame", "Hall of Fame"], ["/downloads", "League downloads"], ["/sponsorship", "Sponsorship"],
 ];
 
 const norm = (path) => (String(path || "/").replace(/\/+$/, "") || "/").toLowerCase();

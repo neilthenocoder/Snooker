@@ -1,6 +1,7 @@
 // Reusable building blocks. Every table, panel and card on the site
 // is drawn by one of these functions — change it here, it changes everywhere.
 import { html, fmtDate, fmtTime } from "./dom.js";
+import { isProvisional, PROVISIONAL_NOTE, frameWinner } from "./rules.js";
 
 // ── URLs (one place to change the site's link structure) ──────
 // Matches, cup matches and players have short addresses (/match/2627-14, /cup-match/27, /player/sam-bolitho);
@@ -141,7 +142,9 @@ export function dataTable(columns, rows, { highlight = () => false, rowClass = (
   return folds ? html`<div class="table-fold" data-table-fold>${table}<button type="button" class="table-fold-btn" data-fold-toggle data-more="Show all ${rows.length} ${more}" data-less="Show the first ${phoneLimit} only">Show all ${rows.length} ${more}</button></div>` : table;
 }
 /** A break, highlighted (Rich, round 22): every break shown on the site — league or competition — is in a gold pill. */
-export const breakTag = (v) => (v ? html`<span class="tally brk">${v}</span>` : "–");
+export const breakTag = (v, provisional = false) => (v ? html`<span class="tally brk ${provisional ? "prov" : ""}" title="${provisional ? "Not official until the result is approved" : ""}">${v}${provisional ? "*" : ""}</span>` : "–");
+/** Under a table, rankings or breaks that include scores not approved yet (Rich, round 23). */
+export const provisionalNote = (ctx, league) => (ctx.provisionalIn?.(league.id) ? html`<p class="table-note prov-note">* ${PROVISIONAL_NOTE}</p>` : "");
 /** "Chris Rowe 34, Pete Tregear 41" with each break highlighted. `list` = [{ name, value, extra }] */
 export const breakList = (list) => (list.length ? html`<span class="brk-list">${list.map((b) => html`<span class="brk-item">${b.name} ${breakTag(b.value)}${b.extra ? html` <small class="muted">${b.extra}</small>` : ""}</span>`)}</span>` : "–");
 /** The points of the player at the top of a ranking table: a green pill, like the top points in a league table. */
@@ -245,7 +248,7 @@ export function leagueTablePanel(ctx, league, { limit = Infinity, highlightTeamI
     { label: "A", cell: (r) => r.a, cls: "num" },
     { label: "P", cell: m.pts, cls: "num strong" },
   ], rows, { highlight: m.highlight, rowClass: m.rowClass, empty: "No teams in this league yet." });
-  return panel(html`${trophy(league, "tiny", { always: false })}${league.name} Table`, html`${table}${m.key}`, {
+  return panel(html`${trophy(league, "tiny", { always: false })}${league.name} Table`, html`${table}${m.key}${provisionalNote(ctx, league)}`, {
     foot: Number.isFinite(limit) ? { href: urls.standings(league), label: "View full table" } : null, cls: "lt-panel",
   });
 }
@@ -263,7 +266,7 @@ export function rankingsPanel(ctx, league, { limit = Infinity } = {}) {
     ]),
     { label: "Pts", cell: (r) => topPoints(r, rows[0]), cls: "num strong" },
   ], rows, { highlight: (r) => r === rows[0], empty: "No frames played yet.", phoneLimit: Number.isFinite(limit) ? 0 : 10, more: "players" });
-  return panel(`${shortName(league)} Rankings`, noHead(table, limit), {
+  return panel(`${shortName(league)} Rankings`, html`${noHead(table, limit)}${provisionalNote(ctx, league)}`, {
     foot: Number.isFinite(limit) ? { href: `${urls.standings(league)}#players`, label: "View all players" } : null,
   });
 }
@@ -278,9 +281,9 @@ export function breaksPanel(ctx, league, { limit = Infinity } = {}) {
       { label: "Team", cell: (b) => teamLink(ctx.team.get(b.player?.team_id)), cls: "hide-sm" },
       { label: "Date", cell: (b) => html`<a href="${urls.match(b.fixture)}">${fmtDate(b.fixture.starts_at)}</a>` },
     ]),
-    { label: "Break", cell: (b) => (!Number.isFinite(limit) && b === rows[0] ? html`<span class="lt-pts">${b.value}</span>` : breakTag(b.value)), cls: "num strong" },
+    { label: "Break", cell: (b) => (!Number.isFinite(limit) && b === rows[0] ? html`<span class="lt-pts">${b.value}${isProvisional(b.fixture) ? "*" : ""}</span>` : breakTag(b.value, isProvisional(b.fixture))), cls: "num strong" },
   ], rows, { highlight: (b) => !Number.isFinite(limit) && b === rows[0], empty: "No breaks recorded yet.", phoneLimit: Number.isFinite(limit) ? 0 : 10, more: "breaks" });
-  return panel(`${shortName(league)} Breaks`, noHead(table, limit), {
+  return panel(`${shortName(league)} Breaks`, html`${noHead(table, limit)}${provisionalNote(ctx, league)}`, {
     foot: Number.isFinite(limit) && all.length ? { href: `${urls.standings(league)}#breaks`, label: "View all breaks" } : null,
   });
 }
@@ -377,13 +380,31 @@ function sideBox(ctx, news, count, box) {
   }
   const league = mode === "cup" ? [] : ctx.fixtures
     .filter((f) => ctx.hasResult(f) && f.status !== "in_progress" && (!site.side_box_league || f.league_id === site.side_box_league))
-    .map((f) => { const s = ctx.scoreOf(f); return { when: f.starts_at, home: ctx.team.get(f.home_team_id)?.name, away: ctx.team.get(f.away_team_id)?.name, score: `${s.home} – ${s.away}`, href: urls.match(f), won: s.home > s.away ? "h" : s.away > s.home ? "a" : "" }; });
+    .map((f) => { const s = ctx.scoreOf(f); return { fx: f, when: f.starts_at, homeTeam: ctx.team.get(f.home_team_id), awayTeam: ctx.team.get(f.away_team_id), home: ctx.team.get(f.home_team_id)?.name, away: ctx.team.get(f.away_team_id)?.name,
+      hs: s.home, as: s.away, score: `${s.home} – ${s.away}`, href: urls.match(f), won: s.home > s.away ? "h" : s.away > s.home ? "a" : "" }; });
   const cups = mode === "results" ? [] : box?.cups ?? [];
   const rows = [...league, ...cups].sort((a, b) => String(b.when ?? "").localeCompare(String(a.when ?? ""))).slice(0, Math.max(1, site.side_box_count || 5));
+  // Rich, round 23: more visual — emblems and a score pill — and point at (or tap) a result to see more:
+  // every frame, the best break, the venue and a link to the full scorecard.
+  const more = (r) => {
+    if (!r.fx) return "";
+    const frames = ctx.framesOf(r.fx.id), brk = ctx.breaksOf(r.fx.id).sort((a, b) => b.value - a.value)[0];
+    const pname = (id) => ctx.player.get(id)?.full_name?.split(" ").slice(-1)[0] ?? "–";
+    return html`<div class="res-more">
+      ${frames.length ? html`<ol class="res-frames">${frames.map((fr) => { const w = frameWinner(fr); return html`<li class="${w === "home" ? "h" : w === "away" ? "a" : ""}"><span>${pname(fr.home_player_id)}</span><b>${fr.home_points ?? "–"}–${fr.away_points ?? "–"}</b><span>${pname(fr.away_player_id)}</span></li>`; })}</ol>` : ""}
+      <p class="res-facts">${brk ? html`Best break: ${breakTag(brk.value, isProvisional(r.fx))} ${ctx.player.get(brk.player_id)?.full_name ?? ""}` : "No breaks of 30+"}${ctx.venue.get(r.fx.venue_id) ? html` · ${ctx.venue.get(r.fx.venue_id).name}` : ""}${isProvisional(r.fx) ? html` · <em>waiting for approval</em>` : ""}</p>
+      <a class="res-go" href="${r.href}">Full scorecard →</a></div>`;
+  };
   return html`${panel(site.side_box_title || "Latest Results", rows.length
-      ? html`<div class="res-list">${rows.map((r) => html`<a class="res-mini" href="${r.href}">
+      ? html`<div class="res-list res-rich">${rows.map((r) => (r.fx ? html`<div class="res-card" tabindex="0">
+          <a class="res-mini" href="${r.href}"><small>${r.when ? fmtDate(r.when) : ""}${r.title ? ` · ${r.title}` : ""}</small>
+            <span class="res-team ${r.won === "h" ? "won" : r.won ? "lost" : ""}">${badge(r.homeTeam ?? { name: r.home })}<em>${r.home}</em></span>
+            <b class="res-pill"><i class="${r.won === "h" ? "w" : ""}">${r.hs}</i><i class="${r.won === "a" ? "w" : ""}">${r.as}</i></b>
+            <span class="res-team ${r.won === "a" ? "won" : r.won ? "lost" : ""}"><em>${r.away}</em>${badge(r.awayTeam ?? { name: r.away })}</span></a>
+          <button type="button" class="res-toggle" data-res-more aria-label="More about this result" aria-expanded="false">⌄</button>${more(r)}</div>`
+        : html`<a class="res-mini" href="${r.href}">
           <small>${r.when ? fmtDate(r.when) : ""}${r.title ? ` · ${r.title}` : ""}</small>
-          <span class="${r.won === "h" ? "won" : r.won ? "lost" : ""}">${r.home}</span><b>${r.score}</b><span class="${r.won === "a" ? "won" : r.won ? "lost" : ""}">${r.away}</span></a>`)}</div>`
+          <span class="${r.won === "h" ? "won" : r.won ? "lost" : ""}">${r.home}</span><b>${r.score}</b><span class="${r.won === "a" ? "won" : r.won ? "lost" : ""}">${r.away}</span></a>`))}</div>`
       : html`<div class="empty">No results yet.</div>`, { color: "green", href: "/results" })}
     <a class="btn-bar green" href="/results">See all results</a>`;
 }

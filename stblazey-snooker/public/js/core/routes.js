@@ -55,4 +55,9 @@ export const ROUTES = [
   ["/marketplace/:id/edit", "market-edit"],
   ["/unsubscribe", "unsubscribe"],
   ["/newsletter", "unsubscribe"],
+  // Round 23
+  ["/sponsorship", "sponsorship"],
+  ["/downloads", "downloads"],
+  ["/hall-of-fame", "hall-of-fame"],
+  ["/hall-of-fame/:id", "hall-of-fame"],
 ];

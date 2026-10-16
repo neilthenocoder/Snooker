@@ -141,6 +141,8 @@ export const SECTION_AREA = {
   popups: "website", market: "website", market_categories: "website", comments: "website", links: "website",
   seo: "settings", menu: "settings", performance: "settings",
   security: "master", versions: "master",
+  // Round 23
+  handicap_suggest: "handicaps", ads: "website", sponsor_packages: "website", downloads: "website", hall_of_fame: "website", page_settings_23: "website",
 };
 
 const roleOf = (user) => user?.profile?.role;

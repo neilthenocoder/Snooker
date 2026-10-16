@@ -22,7 +22,7 @@ export const STANDARD_MENU = [
 export const STANDARD_MORE = [
   { label: "Calendar", href: "/calendar" }, { label: "Results", href: "/results" }, { label: "Handicaps", href: "/handicaps" },
   { label: "Our Players", href: "/players" }, { label: "Seasons", href: "/seasons" }, { label: "Live scoreboard", href: "/scoreboard" },
-  { label: "Marketplace", href: "/marketplace" },
+  { label: "Marketplace", href: "/marketplace" }, { label: "Hall of Fame", href: "/hall-of-fame" }, { label: "Downloads", href: "/downloads" },
 ];
 
 const HEX = /^#[0-9a-f]{6}$/i;

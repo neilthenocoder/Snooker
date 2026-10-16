@@ -1882,7 +1882,7 @@ end $$;
 -- A public "images" bucket: anyone can view pictures; admins and league
 -- officers can upload or delete them. Max 5 MB; images, plus PDFs (meeting minutes).
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('images', 'images', true, 5242880, array['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'application/pdf'])
+values ('images', 'images', true, 5242880, array['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'])
 on conflict (id) do update set public = true, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists "images admin insert" on storage.objects;
@@ -1900,6 +1900,8 @@ create policy "images admin insert" on storage.objects for insert to authenticat
     or (name like 'news/%' and public.can_manage('news'))
     -- Round 22: anyone logged in may add the picture of their own marketplace advert (market/ only).
     or (name like 'market/%' and auth.uid() is not null)
+    -- Round 23: pictures for a memory sent in for the Hall of Fame / history pages.
+    or (name like 'memories/%' and auth.uid() is not null)
   ));
 -- Listing files (needed to delete one): the Master Admin all of them, an officer their own. Viewing a picture by its
 -- link needs nothing — the bucket is public.
@@ -2267,13 +2269,141 @@ begin
   end loop;
 end $$;
 
+-- ── Round 23 (Rich's feedback, 16 Oct) ──────────────────────────
+-- 1. The home page banner's layout on big screens (Admin → Site settings → Home page banner):
+--    'side' = headline with the picture beside it, 'big' = the article's picture across the whole banner, 'text' = headline only.
+alter table settings add column if not exists hero_layout text not null default 'side';
+alter table settings drop constraint if exists settings_hero_layout_check;
+alter table settings add constraint settings_hero_layout_check check (hero_layout in ('side', 'big', 'text'));
+
+-- 2. Paid adverts in the side column (Admin → Website → Side adverts), shown everywhere or only on chosen pages:
+--    one venue, one team, one competition, one league, or a kind of page (presentation night, in memoriam…).
+create table if not exists ads (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (length(name) between 1 and 120),
+  image_url text,
+  heading text check (length(heading) <= 120),
+  body text check (length(body) <= 500),
+  link_url text check (length(link_url) <= 500),
+  button_text text check (length(button_text) <= 40),
+  target text not null default 'all' check (target in ('all', 'page', 'venue', 'team', 'competition', 'league')),
+  target_ref text check (length(target_ref) <= 200),
+  sponsor_id uuid references sponsors on delete set null,
+  starts_on date,
+  ends_on date,
+  is_active boolean not null default true,
+  sort int not null default 1,
+  created_at timestamptz not null default now()
+);
+
+-- 3. Sponsorship packages (Gold / Silver / Bronze…) shown on /sponsorship; each sponsor can be on one.
+create table if not exists sponsor_packages (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (length(name) between 1 and 60),
+  price text check (length(price) <= 60),
+  period text check (length(period) <= 60),
+  summary text check (length(summary) <= 400),
+  benefits text check (length(benefits) <= 3000),
+  colour text check (colour is null or colour ~ '^#[0-9a-fA-F]{6}$'),
+  includes_advert boolean not null default true,
+  sort int not null default 1,
+  is_active boolean not null default true
+);
+alter table sponsors add column if not exists package_id uuid references sponsor_packages on delete set null;
+alter table settings add column if not exists sponsorship_intro text;
+alter table settings add column if not exists sponsorship_contact text;
+
+-- 4. League downloads (/downloads): posters, rules for the club wall, entry forms… Logged-in people by default.
+create table if not exists downloads (
+  id uuid primary key default gen_random_uuid(),
+  title text not null check (length(title) between 1 and 160),
+  description text check (length(description) <= 600),
+  category text not null default 'General' check (length(category) <= 60),
+  file_url text not null,
+  members_only boolean not null default true,
+  sort int not null default 1,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+alter table settings add column if not exists downloads_intro text;
+
+-- 5. In memoriam: a player's story (their history in the league) and pictures, beside the few words of tribute.
+alter table players add column if not exists memorial_story text;
+alter table players add column if not exists memorial_gallery jsonb not null default '[]'::jsonb;
+
+-- 6. Hall of Fame and memories (/hall-of-fame, /hall-of-fame/submit): achievements past and present, and memories people
+--    send in. A memory waits for the league (Admin → Website → Hall of Fame). The sender's contact details are kept apart
+--    (hall_of_fame_contacts), so they are never public.
+create table if not exists hall_of_fame (
+  id uuid primary key default gen_random_uuid(),
+  no bigint generated by default as identity,
+  category text not null default 'Hall of Fame' check (length(category) between 1 and 60),
+  title text not null check (length(title) between 1 and 160),
+  subject text check (length(subject) <= 160),
+  player_id uuid references players on delete set null,
+  team_id uuid references teams on delete set null,
+  year text check (length(year) <= 40),
+  achievements text check (length(achievements) <= 3000),
+  body text check (length(body) <= 20000),
+  images jsonb not null default '[]'::jsonb check (jsonb_typeof(images) = 'array'),
+  quote text check (length(quote) <= 600),
+  quote_by text check (length(quote_by) <= 120),
+  status text not null default 'approved' check (status in ('pending', 'approved', 'rejected')),
+  featured boolean not null default false,
+  submitted_by text check (length(submitted_by) <= 120),
+  sort int not null default 1,
+  created_at timestamptz not null default now()
+);
+create table if not exists hall_of_fame_contacts (
+  entry_id uuid primary key references hall_of_fame on delete cascade,
+  contact text check (length(contact) <= 300)
+);
+alter table settings add column if not exists hof_intro text;
+create or replace function public.submit_memory(p jsonb) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare new_id uuid; imgs jsonb := coalesce(p->'images', '[]'::jsonb);
+begin
+  if length(trim(coalesce(p->>'title', ''))) < 3 then raise exception 'Please give it a title'; end if;
+  if length(trim(coalesce(p->>'submitted_by', ''))) < 2 then raise exception 'Please type your name'; end if;
+  if jsonb_typeof(imgs) <> 'array' or jsonb_array_length(imgs) > 12 then raise exception 'Twelve pictures at most, please'; end if;
+  -- Only pictures uploaded on this website.
+  if exists (select 1 from jsonb_array_elements_text(imgs) u where not public.is_site_image(u, 'memories')) then raise exception 'Pictures must be uploaded on this website'; end if;
+  insert into hall_of_fame (category, title, subject, year, achievements, body, images, quote, quote_by, status, submitted_by)
+  values (left(coalesce(nullif(trim(p->>'category'), ''), 'Memory'), 60), left(trim(p->>'title'), 160), left(nullif(trim(p->>'subject'), ''), 160),
+    left(nullif(trim(p->>'year'), ''), 40), left(nullif(trim(p->>'achievements'), ''), 3000), left(nullif(trim(p->>'body'), ''), 20000), imgs,
+    left(nullif(trim(p->>'quote'), ''), 600), left(nullif(trim(p->>'quote_by'), ''), 120), 'pending', left(trim(p->>'submitted_by'), 120))
+  returning id into new_id;
+  if nullif(trim(p->>'contact'), '') is not null then insert into hall_of_fame_contacts (entry_id, contact) values (new_id, left(trim(p->>'contact'), 300)); end if;
+  return new_id;
+end $$;
+grant execute on function public.submit_memory(jsonb) to anon, authenticated;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['ads','sponsor_packages','downloads','hall_of_fame','hall_of_fame_contacts'] loop
+    execute format('alter table %I enable row level security', t);
+    execute format('drop policy if exists "public read" on %I', t);
+    execute format('drop policy if exists "admin write" on %I', t);
+  end loop;
+end $$;
+create policy "public read" on ads for select using (is_active or public.can_manage('website'));
+create policy "admin write" on ads for all using (public.can_manage('website')) with check (public.can_manage('website'));
+create policy "public read" on sponsor_packages for select using (is_active or public.can_manage('website'));
+create policy "admin write" on sponsor_packages for all using (public.can_manage('website')) with check (public.can_manage('website'));
+create policy "public read" on downloads for select using ((is_active and (not members_only or auth.uid() is not null)) or public.can_manage('website'));
+create policy "admin write" on downloads for all using (public.can_manage('website')) with check (public.can_manage('website'));
+create policy "public read" on hall_of_fame for select using (status = 'approved' or public.can_manage('website'));
+create policy "admin write" on hall_of_fame for all using (public.can_manage('website')) with check (public.can_manage('website'));
+create policy "admin write" on hall_of_fame_contacts for all using (public.can_manage('website')) with check (public.can_manage('website'));
+
 -- ── the version of this file ─────────────────────────────────────
 -- KEEP THIS AT THE VERY END. The website asks the database for this number (public/js/core/version.js holds
 -- the one it expects). Because it is the last thing in the file, the database only reports the new number
 -- when everything above it has run. If the website files are uploaded without this file being run, the admin
 -- dashboard says "The database needs updating" at the top of every page.
 -- When something is added to this file that the website needs: raise this number and the one in version.js.
-create or replace function public.schema_version() returns int language sql immutable as $$ select 16 $$;
+create or replace function public.schema_version() returns int language sql immutable as $$ select 17 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

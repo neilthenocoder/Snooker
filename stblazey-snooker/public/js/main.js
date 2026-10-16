@@ -26,6 +26,9 @@ import { applySeo } from "./core/seo.js";
 import { loginGate } from "./core/api.js";
 import { showPopups, openNewsletter } from "./core/popups.js";
 import { ROUTES } from "./core/routes.js";
+import { placeAds } from "./core/ads.js";
+import { rulesHelpButton } from "./core/rules-help.js";
+import { canInstall, installApp, offerInstall } from "./core/install.js";
 
 // Every address of the website and the page that draws it: core/routes.js (the link checker uses the list too).
 
@@ -37,7 +40,7 @@ const SECTION = {
   fixtures: "fixtures", team: "fixtures", match: "fixtures", calendar: "fixtures", live: "fixtures", results: "fixtures",
   league: "league", standings: "league", shield: "league", archive: "league", seasons: "league", players: "league", player: "league",
   venues: "league", venue: "league", page: "league", presentation: "league", memoriam: "league", meetings: "league", rules: "league", sponsor: "league",
-  merchandise: "league", cueview: "league", marketplace: "league", "market-ad": "league", "market-edit": "league",
+  merchandise: "league", cueview: "league", marketplace: "league", "market-ad": "league", "market-edit": "league", sponsorship: "league", downloads: "league", "hall-of-fame": "league",
   news: "news", article: "news",
   login: "login", my: "login", myteam: "login", scorecard: "login", "cup-scorecard": "login",
 };
@@ -152,6 +155,7 @@ async function drawHeader() {
         ${noLogin ? "" : html`<button type="button" class="btn ${user ? "secondary" : ""}" data-account-open>${user ? html`My account · ${name.split(" ")[0]}` : "Log in"}</button>`}
         <button type="button" class="btn ghost" data-search-open>Search</button>
         <button type="button" class="btn ghost" data-bell>Notifications</button>
+        ${canInstall() ? html`<button type="button" class="btn green menu-a2hs" data-install-app>＋ Add to home screen</button>` : ""}
       </div>
     </div>`);
   // The favicon and the iPhone home-screen icon (Admin → Branding). On Netlify they are already in the page
@@ -344,9 +348,13 @@ async function renderRoute() {
     cleanup = await mod.default(view, { params, user, query: new URLSearchParams(location.search) });
     await applyLayout(view, page);
     applySeo(site, location.pathname).catch(() => {});
+    // Side adverts (Admin → Website → Side adverts): everywhere, or only on this venue / team / kind of page.
+    if (!["admin", "login", "my", "scorecard", "cup-scorecard", "unsubscribe", "not-found", "market-edit"].includes(page)) placeAds(view, page, params).catch(() => {});
     // Pop-up adverts (home page) and the newsletter sign-up (Admin → Website → Pop-up adverts / Newsletter).
-    if (!["admin", "login", "my", "scorecard", "cup-scorecard", "unsubscribe", "not-found"].includes(page)) showPopups(page, site, user);
+    if (!["admin", "login", "my", "scorecard", "cup-scorecard", "unsubscribe", "not-found"].includes(page)) { showPopups(page, site, user); offerInstall(); }
     drawEditButton(user, page);
+    // "Stuck?" — search the league's rules and the rules of snooker from any scorecard (Rich, round 23).
+    if (["scorecard", "cup-scorecard"].includes(page) || (page === "admin" && params.section === "scoreboard")) rulesHelpButton(); else document.querySelector(".rh-btn")?.remove();
     if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView();
     else window.scrollTo(0, 0);
     drawScrollHint();
@@ -436,6 +444,9 @@ document.addEventListener("click", async (e) => {
   const shot = e.target.closest("[data-lightbox]");
   if (shot) return openLightbox(shot.dataset.lightbox);
   if (e.target.closest("[data-search-open]")) { setMenu(false); return openSearch(); }
+  if (e.target.closest("[data-install-app]")) { setMenu(false); return installApp(); }
+  const resMore = e.target.closest("[data-res-more]");
+  if (resMore) { const card = resMore.closest(".res-card"), open = card.classList.toggle("open"); resMore.setAttribute("aria-expanded", String(open)); return; }
   if (e.target.closest("[data-newsletter-open]")) { e.preventDefault(); setMenu(false); return openNewsletter(await settings()); }
   if (e.target.closest("[data-bell]")) { setMenu(false); return openNotifications({ onChange: drawBell }); }
   if (!a || a.target || a.hasAttribute("download") || e.metaKey || e.ctrlKey || e.shiftKey) return;

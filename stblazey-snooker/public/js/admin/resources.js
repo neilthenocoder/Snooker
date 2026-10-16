@@ -29,6 +29,8 @@ import { FONTS, LAYOUT_GROUPS, LAYOUT_LABELS, TEXT_SIZES, parseFontEmbed } from 
 import { MEETING_KINDS, PLAYER_STATUS, footerSuggestions } from "../core/terms.js";
 import { CONTACT_RULE } from "../core/comp-deadlines.js";
 import { HEADLINE_MAX } from "../core/components.js";
+import { AD_PAGES } from "../core/ads.js";
+import { save, seoPages, saveSeoPage, deleteSeoPage, allRows, upsertRow } from "../core/api.js";
 
 /** Fill in an award's shown name from the player or team picked for it (unless a different name was typed). */
 function awardName(row, refs, prefix) {
@@ -165,6 +167,8 @@ export const RESOURCES = {
       { type: "heading", label: "In memoriam", help: "Only for a player whose status is “Sadly no longer with us”: they are listed on the “Sadly no longer with us” page (/in-memoriam) and their own page carries a tribute." },
       { name: "died_on", label: "Date they died (optional — only the year is shown)", type: "date" },
       { name: "memorial", label: "A few words of tribute (optional)", type: "textarea", rows: 3 },
+      { name: "memorial_story", label: "Their story in the league (optional — clubs, titles, famous matches, memories; shown on the In memoriam page under “Read their story”)", type: "textarea", rows: 8, formatted: true },
+      { name: "memorial_gallery", label: "Pictures for their story (optional)", type: "gallery" },
       { type: "heading", label: "Web address" },
       { name: "slug", label: "Web address (auto — the end of /player/…; leave empty and it is made from the name)", type: "text", placeholder: "made from the name" },
       { type: "heading", label: "CueView interview", help: "Leave any question blank to hide it on the player's page." },
@@ -335,7 +339,24 @@ export const RESOURCES = {
       { name: "show_in_league", label: "Show as a tile on the League page", type: "checkbox", default: true },
       { name: "show_in_footer", label: "Show as a link in the footer (to choose the links and their order yourself, or add other pages: Site settings → Footer)", short: "Footer", type: "checkbox" },
       { name: "show_in_rules", label: "Show on the Rules page (/rules) as one of its tabs — e.g. “League rules” and “Rules of the game”", short: "Rules page", type: "checkbox" },
+      // Rich, round 23: each page's SEO is set here as well (the same as Website → SEO → Page settings for this page).
+      { type: "heading", label: "SEO", help: "How this page shows up in Google and when it is shared. Leave the boxes empty to use the site's own title, description and picture (Website → SEO)." },
+      { name: "seo_title", label: "SEO title (about 60 letters)", type: "text", wide: true, maxLength: 120 },
+      { name: "seo_description", label: "SEO description (about 160 letters)", type: "textarea", rows: 2 },
+      { name: "seo_image", label: "Page image (the picture when the page is shared — 1200 × 630 is ideal)", type: "image", folder: "branding", maxSize: 1200, format: "jpeg" },
+      { name: "seo_index", label: "Search engines — show this page in Google and other search engines", type: "checkbox", default: true },
+      { name: "seo_search", label: "Site search — show this page in the website's own search", type: "checkbox", default: true },
     ],
+    load: async (rows) => { const seo = await seoPages().catch(() => []); return rows.map((r) => { const s = seo.find((x) => x.path === `/page/${r.slug}`);
+      return { ...r, seo_title: s?.title ?? "", seo_description: s?.description ?? "", seo_image: s?.image_url ?? "", seo_index: !s?.noindex, seo_search: !s?.hide_in_search }; }); },
+    save: async (row) => {
+      const { seo_title, seo_description, seo_image, seo_index, seo_search, ...page } = row;
+      const saved = await save("pages", page);
+      const path = `/page/${saved.slug}`, any = seo_title || seo_description || seo_image || !seo_index || !seo_search;
+      if (any) await saveSeoPage({ path, title: seo_title || null, description: seo_description || null, image_url: seo_image || null, noindex: !seo_index, hide_in_search: !seo_search });
+      else await deleteSeoPage(path).catch(() => {});
+      return saved;
+    },
     rowActions: [{ label: "View", href: (row) => (row.show_in_rules ? `/rules?p=${row.slug}` : `/page/${row.slug}`) }],
   },
   merchandise: {
@@ -353,13 +374,14 @@ export const RESOURCES = {
     ],
   },
   sponsors: {
-    label: "Sponsors", table: "sponsors", order: "sort", columns: ["image_url", "name", "url", "sort"],
+    label: "Sponsors", table: "sponsors", order: "sort", columns: ["image_url", "name", "package_id", "url", "sort"],
     intro: "Each sponsor's banner at the bottom of every page opens that sponsor's own page on this website, written here. Their website is one click further on.",
     fields: [
       { name: "name", label: "Name", type: "text", required: true },
       { name: "url", label: "Their website", type: "text", placeholder: "https://…" },
       { name: "image_url", label: "Banner image (736×104 works well)", type: "image", folder: "sponsors", maxSize: 1000 },
       { name: "sort", label: "Display order", type: "number", default: 1 },
+      { name: "package_id", label: "Sponsorship package (Gold, Silver, Bronze… — Website → Sponsorship packages)", short: "Package", type: "ref", ref: "sponsor_packages" },
       { type: "heading", label: "The sponsor's page", help: "What visitors see when they click the banner. Leave it all empty and the page simply thanks the sponsor and links to their website." },
       { name: "about", label: "About the sponsor", type: "textarea", rows: 8, formatted: true },
       { name: "photo_url", label: "Photo (their premises, van, team…)", type: "image", folder: "sponsors", maxSize: 1400 },
@@ -477,6 +499,8 @@ export const RESOURCES = {
       { type: "heading", label: "Home page banner", help: "The logo, colours and fonts are under Website → Branding." },
       { name: "hero_image_url", label: "Home page banner background (leave blank for the standard photo)", type: "image", folder: "branding", maxSize: 2000 },
       { name: "hero_count", label: "How many news articles rotate in the banner", type: "number", default: 4 },
+      { name: "hero_layout", label: "Banner layout", type: "select", options: ["side", "big", "text"], default: "side",
+        labels: { side: "Headline with the article's picture beside it", big: "Big: the article's picture across the whole banner (like World Snooker)", text: "Headline only (the background photo above)" } },
       { type: "heading", label: "Player of the week" },
       { name: "player_of_week_show", label: "Show on the home page", type: "checkbox" },
       { name: "player_of_week_id", label: "Player", type: "ref", ref: "players" },
@@ -610,6 +634,103 @@ export const RESOURCES = {
       { name: "newsletter_title", label: "Heading", type: "text", placeholder: "Get the league news by email", wide: true },
       { name: "newsletter_text", label: "Text", type: "textarea", rows: 3, placeholder: "Results, competition draws, presentation night and league news — straight to your inbox. Unsubscribe any time with the link at the bottom of every email." },
       { name: "newsletter_footer_link", label: "Show “✉ Sign up to the newsletter” at the bottom of every page", type: "checkbox", default: true },
+    ],
+  },
+  // ── Round 23 ───────────────────────────────────────────────────
+  ads: {
+    label: "Side adverts", table: "ads", order: "sort", filters: ["target"], columns: ["image_url", "name", "target", "target_ref", "ends_on", "is_active"],
+    intro: "Paid adverts at the top of the side column (or, on a page without one, a strip under the heading). Show one everywhere, or only on one venue's page (an advert for that club), one team, one competition, one league, or a kind of page — presentation night (the band, the tickets), in memoriam (a florist)… An advert aimed at the page comes first; at most two show at once. Nothing shows until an advert is added.",
+    fields: [
+      { name: "name", label: "Name (only seen here — e.g. the advertiser)", short: "Name", type: "text", required: true },
+      { name: "image_url", label: "Advert picture (300 × 250 or 600 × 500 works well in the side column)", short: "Picture", type: "image", folder: "sponsors", maxSize: 1000 },
+      { name: "heading", label: "Heading (optional — for a text advert, or under the picture)", type: "text" },
+      { name: "body", label: "Text (optional)", type: "textarea", rows: 2 },
+      { name: "link_url", label: "Link (where a press on it goes)", type: "text", placeholder: "https://… or /sponsor/…" },
+      { name: "button_text", label: "Button text (optional)", type: "text", placeholder: "Book tickets" },
+      { name: "target", label: "Where it shows", short: "Shows on", type: "select", options: ["all", "page", "venue", "team", "competition", "league"], default: "all",
+        labels: { all: "Every page", page: "A kind of page", venue: "One venue's page", team: "One team's page", competition: "One competition", league: "One league's table" } },
+      { name: "target_ref", label: "Which one — start typing and choose (a venue, team, competition, league or kind of page, to match “Where it shows”)", short: "Which", type: "text", wide: true,
+        needs: ["venues", "teams", "competitions", "leagues"],
+        choices: (refs) => [...AD_PAGES.map(([v, l]) => [v, `Kind of page: ${l}`]), ...(refs.venues ?? []).map((v) => [v.slug, `Venue: ${v.name}`]), ...(refs.teams ?? []).map((t) => [t.slug, `Team: ${t.name}`]),
+          ...(refs.competitions ?? []).map((c) => [c.slug, `Competition: ${c.name}`]), ...(refs.leagues ?? []).map((l) => [l.slug, `League: ${l.name}`])] },
+      { name: "sponsor_id", label: "Sponsor it belongs to (optional)", type: "ref", ref: "sponsors" },
+      { name: "starts_on", label: "Show from (optional)", type: "date" },
+      { name: "ends_on", label: "Stop showing after (optional)", short: "Until", type: "date" },
+      { name: "sort", label: "Order (1 = first)", type: "number", default: 1 },
+      { name: "is_active", label: "Switched on", short: "On", type: "checkbox", default: true },
+    ],
+    validate: (row) => (!row.image_url && !row.heading ? "An advert needs a picture or a heading." : row.target !== "all" && !String(row.target_ref ?? "").trim() ? "Choose which page it shows on." : null),
+  },
+  sponsor_packages: {
+    label: "Sponsorship packages", table: "sponsor_packages", order: "sort", columns: ["name", "price", "period", "includes_advert", "is_active"],
+    intro: "The packages businesses can buy — Gold, Silver, Bronze… They are shown on the Sponsorship page (/sponsorship) in this order. Put a sponsor on a package under Website → Sponsors.",
+    fields: [
+      { name: "name", label: "Package name", type: "text", required: true, placeholder: "Gold" },
+      { name: "price", label: "Price", type: "text", placeholder: "£250" },
+      { name: "period", label: "For how long", type: "text", placeholder: "a season" },
+      { name: "colour", label: "Colour", type: "color", default: "#d4a017" },
+      { name: "summary", label: "One line about it", type: "text", wide: true },
+      { name: "benefits", label: "What they get — one per line", type: "textarea", rows: 6, placeholder: "Banner at the bottom of every page" },
+      { name: "includes_advert", label: "Includes a side advert on the website", type: "checkbox", default: true },
+      { name: "sort", label: "Order (1 = first)", type: "number", default: 1 },
+      { name: "is_active", label: "Show on the Sponsorship page", short: "Showing", type: "checkbox", default: true },
+    ],
+  },
+  downloads: {
+    label: "Downloads", table: "downloads", order: "sort", filters: ["category"], columns: ["title", "category", "members_only", "is_active"],
+    intro: "Files for clubs and players on the League downloads page (/downloads): posters for the club wall, the rules, competition entry forms… PDF, Word, Excel, PowerPoint or a picture, up to 5 MB. “Logged-in only” files are for people with a league login (the standard).",
+    fields: [
+      { name: "title", label: "Title", type: "text", required: true, wide: true },
+      { name: "category", label: "Category", type: "text", list: true, default: "General", placeholder: "Posters, Rules, Entry forms…" },
+      { name: "file_url", label: "The file", type: "file", folder: "downloads", anyDoc: true, required: true },
+      { name: "description", label: "A line about it (optional)", type: "textarea", rows: 2 },
+      { name: "members_only", label: "Logged-in only", short: "Logged in", type: "checkbox", default: true },
+      { name: "sort", label: "Order (1 = first)", type: "number", default: 1 },
+      { name: "is_active", label: "Show it", short: "Showing", type: "checkbox", default: true },
+    ],
+  },
+  hall_of_fame: {
+    label: "Hall of Fame", table: "hall_of_fame", order: "created_at", desc: true, filters: ["status", "category"], columns: ["title", "category", "subject", "year", "status", "featured"],
+    intro: "Achievements past and present, and memories sent in on the “Share a memory” form (/hall-of-fame/submit). Sent-in memories arrive as “Pending” (highlighted): read them, tidy them if needed, and set them to “Approved” to put them on the Hall of Fame page.",
+    fields: [
+      { name: "status", label: "Status", type: "select", options: ["pending", "approved", "rejected"], labels: { pending: "Pending (not on the website)", approved: "Approved (on the website)", rejected: "Not used" }, default: "approved" },
+      { name: "category", label: "Category", type: "text", list: true, default: "Hall of Fame", placeholder: "Hall of Fame, Champions, History, Memories…" },
+      { name: "title", label: "Title", type: "text", required: true, wide: true },
+      { name: "subject", label: "Who it is about (a person or a team)", type: "text" },
+      { name: "player_id", label: "Player (optional — links to their page)", type: "ref", ref: "players" },
+      { name: "team_id", label: "Team (optional)", type: "ref", ref: "teams" },
+      { name: "year", label: "Year or season", type: "text", placeholder: "1987 or 1986–87" },
+      { name: "achievements", label: "Achievements — one per line", type: "textarea", rows: 4 },
+      { name: "body", label: "The story", type: "textarea", rows: 10, formatted: true },
+      { name: "images", label: "Pictures", type: "gallery" },
+      { name: "quote", label: "A quote (optional)", type: "textarea", rows: 2 },
+      { name: "quote_by", label: "Who said it", type: "text" },
+      { name: "featured", label: "Feature it at the top of the Hall of Fame page", short: "Featured", type: "checkbox" },
+      { name: "submitted_by", label: "Sent in by", type: "text" },
+      { name: "contact", label: "Their contact details (private — never shown on the website)", type: "text" },
+      { name: "sort", label: "Order (1 = first)", type: "number", default: 1 },
+    ],
+    // The sender's contact details live in their own private table (hall_of_fame_contacts).
+    load: async (rows) => { const c = await allRows("hall_of_fame_contacts").catch(() => []); return rows.map((r) => ({ ...r, contact: c.find((x) => x.entry_id === r.id)?.contact ?? "" })); },
+    save: async (row) => {
+      const { contact, ...entry } = row;
+      const saved = await save("hall_of_fame", entry);
+      await upsertRow("hall_of_fame_contacts", { entry_id: saved.id, contact: contact || null }, "entry_id").catch(() => {});
+      return saved;
+    },
+    rowActions: [{ label: "View", href: (row) => `/hall-of-fame/${row.no ?? row.id}` }],
+    rowClass: (row) => (row.status === "pending" ? "hl" : ""),
+  },
+  page_settings_23: {
+    label: "Sponsorship, downloads & Hall of Fame pages", table: "settings", order: "id", single: true,
+    fields: [
+      { type: "heading", label: "Sponsorship page (/sponsorship)" },
+      { name: "sponsorship_intro", label: "Text at the top", type: "textarea", rows: 4 },
+      { name: "sponsorship_contact", label: "How to get in touch (name, email, phone)", type: "textarea", rows: 2 },
+      { type: "heading", label: "League downloads (/downloads)" },
+      { name: "downloads_intro", label: "Text at the top", type: "textarea", rows: 3 },
+      { type: "heading", label: "Hall of Fame (/hall-of-fame)" },
+      { name: "hof_intro", label: "Text at the top", type: "textarea", rows: 3 },
     ],
   },
 };

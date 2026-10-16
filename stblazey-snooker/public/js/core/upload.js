@@ -51,7 +51,16 @@ export async function uploadImage(file, { folder = "misc", maxSize = 1600, libra
  * A document (PDF) — meeting minutes, an agenda. Kept as it is, 5 MB at most.
  * Returns its public link. In demo mode it is kept inside the browser, so only small files fit.
  */
-export async function uploadFile(file, { folder = "files" } = {}) {
+/** Documents the League downloads page can hold (Rich, round 23): PDFs, Word, Excel, PowerPoint and pictures. */
+export const DOC_TYPES = {
+  "application/pdf": "pdf", "application/msword": "doc", "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+  "application/vnd.ms-excel": "xls", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+  "application/vnd.ms-powerpoint": "ppt", "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
+  "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp",
+};
+export const DOC_ACCEPT = Object.keys(DOC_TYPES).join(",");
+export async function uploadFile(file, { folder = "files", any = false } = {}) {
+  if (any) return uploadDocument(file, folder);
   if (!file || file.type !== "application/pdf") throw new Error("Please choose a PDF file.");
   if (file.size > MAX_BYTES) throw new Error("That PDF is over 5 MB — please save a smaller copy (most scanners have a “low quality” setting).");
   if (DEMO_MODE) {
@@ -61,6 +70,22 @@ export async function uploadFile(file, { folder = "files" } = {}) {
   const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.pdf`;
   const { error } = await db.storage.from("images").upload(path, file, { contentType: "application/pdf", cacheControl: "31536000" });
   if (error) throw new Error(/row-level|unauthori/i.test(error.message) ? "You don't have permission to upload documents." : /mime|not supported/i.test(error.message) ? "The file store isn't set up for PDFs yet — run supabase/schema.sql again in Supabase." : error.message);
+  return db.storage.from("images").getPublicUrl(path).data.publicUrl;
+}
+
+/** Any of DOC_TYPES, kept exactly as it is (a poster, a Word entry form, a spreadsheet…). */
+async function uploadDocument(file, folder) {
+  const ext = file && DOC_TYPES[file.type];
+  if (!ext) throw new Error("Please choose a PDF, Word, Excel, PowerPoint or picture file.");
+  if (file.size > MAX_BYTES) throw new Error("That file is over 5 MB — please save a smaller copy.");
+  if (DEMO_MODE) {
+    if (file.size > 400 * 1024) throw new Error("The demo keeps files in this browser, so it can only take a file under 400 KB. The live site takes up to 5 MB.");
+    return toDataUrl(file);
+  }
+  const safe = String(file.name || "file").replace(/\.[^.]+$/, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50) || "file";
+  const path = `${folder}/${Date.now()}-${safe}.${ext}`;
+  const { error } = await db.storage.from("images").upload(path, file, { contentType: file.type, cacheControl: "31536000" });
+  if (error) throw new Error(/row-level|unauthori/i.test(error.message) ? "You don't have permission to upload documents." : /mime|not supported/i.test(error.message) ? "The file store isn't set up for this kind of file yet — run supabase/schema.sql again in Supabase." : error.message);
   return db.storage.from("images").getPublicUrl(path).data.publicUrl;
 }
 
