@@ -5,11 +5,15 @@ import { onTable } from "../core/live-score.js";
 import { uploadImage } from "../core/upload.js";
 import { matchScore, frameWinner, breakPoints, isShieldMatch, RULES } from "../core/rules.js";
 import { canEditFixture, canAddMatchPhotos, MATCH_PHOTO_LIMIT } from "../core/auth.js";
-import { breadcrumb, panel, dataTable, resultsList, statusBadge, urls, teamLink, playerLink, badge, gallery, outcomeTag } from "../core/components.js";
+import { breadcrumb, panel, dataTable, resultsList, statusBadge, urls, teamLink, playerLink, badge, gallery, outcomeTag, breakTag, breakList } from "../core/components.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
+import { mountComments } from "../core/comments.js";
 
 export default async function match(view, { params, user }) {
+  // Match night chat (Rich, round 22): one box kept for the whole visit, put back in its place after every redraw.
+  const chat = document.createElement("div");
+  chat.className = "cm-wrap";
   const draw = async () => {
     const bundle = await loadFixture(params.id);
     if (!bundle) return notFound(view);
@@ -128,7 +132,7 @@ export default async function match(view, { params, user }) {
             { label: "Points", cell: (r) => r.points, cls: "num" },
             { label: "Wins", cell: (r) => html`<span class="tally ${r.wins ? "win" : ""}">${r.wins}</span>`, cls: "num" },
             { label: "Loss", cell: (r) => html`<span class="tally ${r.loss ? "loss" : ""}">${r.loss}</span>`, cls: "num" },
-            { label: "Best break", cell: (r) => r.brks || "–", cls: "num" },
+            { label: "Best break", cell: (r) => breakTag(r.brks), cls: "num" },
             { label: "Win pts", cell: (r) => r.winPts, cls: "num hide-sm" },
             { label: "Break pts", cell: (r) => r.breakPts, cls: "num hide-sm" },
             { label: "Ranking pts", cell: (r) => r.rankPts, cls: "num strong" },
@@ -138,12 +142,14 @@ export default async function match(view, { params, user }) {
             { label: home?.name, cell: (f) => html`<span class="${frameWinner(f) === "home" ? "strong" : ""}">${nameLink(f.home_player_id, f.home_ext)}</span>`, cls: "right" },
             { label: "Score", cell: (f) => `${f.home_points ?? "–"} - ${f.away_points ?? "–"}`, cls: "num" },
             { label: away?.name, cell: (f) => html`<span class="${frameWinner(f) === "away" ? "strong" : ""}">${nameLink(f.away_player_id, f.away_ext)}</span>` },
-            { label: "Breaks", cell: (f) => breaks.filter((b) => b.frame_no === f.frame_no).map((b) => `${playerName(b.player_id)} ${b.value}${breakPoints(b.value) ? ` (+${breakPoints(b.value)} ranking pts)` : ""}`).join(", ") || "–", cls: "hide-sm" },
+            { label: "Breaks", cell: (f) => breakList(breaks.filter((b) => b.frame_no === f.frame_no).map((b) => ({ name: playerName(b.player_id), value: b.value, extra: breakPoints(b.value) ? `+${breakPoints(b.value)} ranking pts` : "" }))), cls: "hide-sm" },
           ], frames))}
           <div class="compare">${bar("Points", "points")}${bar("Wins", "wins")}${bar("Loss", "loss")}${bar("Brks", "brks")}</div>
         ` : html`<div class="notice">No frames entered yet${fx.status === "scheduled" ? " — check back on match night." : "."}</div>`}
+        <div data-chat-slot></div>
         ${panel("Past Meetings", resultsList(ctx, past, { scoreFn: (f) => { const s = matchScore(h2hFrames.get(f.id)); return `${s.home} - ${s.away}`; } }))}
       </div>`);
+    $("[data-chat-slot]", view)?.replaceWith(chat);
     // The photo controls live inside the panel, which is rebuilt on every draw — so nothing is left listening.
     const box = $("#match-photos", view);
     if (box && mayAddPhotos) {
@@ -172,6 +178,8 @@ export default async function match(view, { params, user }) {
   };
 
   const fx = await draw();
+  const stopChat = fx ? await mountComments(chat, { fixture_id: fx.id }, user) : () => {};
   // Keep the page updating while a match is being played.
-  if (fx && ["scheduled", "in_progress", "submitted"].includes(fx.status)) return subscribe(["frames", "breaks", "fixtures"], draw);
+  const stop = fx && ["scheduled", "in_progress", "submitted"].includes(fx.status) ? subscribe(["frames", "breaks", "fixtures"], draw) : () => {};
+  return () => { stop(); stopChat(); };
 }

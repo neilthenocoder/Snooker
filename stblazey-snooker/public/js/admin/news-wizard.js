@@ -14,7 +14,7 @@ import { slugify } from "../core/schedule.js";
 import { uploadImage } from "../core/upload.js";
 import { pickImage } from "./picker.js";
 import { getUser, canManage, isMaster } from "../core/auth.js";
-import { panel } from "../core/components.js";
+import { panel, HEADLINE_MAX } from "../core/components.js";
 
 const DRAFT = "sbdsl-news-draft";
 const STEPS = [
@@ -81,8 +81,8 @@ export async function newsWizardPage(el) {
   const body = (step) => {
     switch (step) {
       case "title": return html`<h2>What is the headline?</h2>
-        ${tip("Short and clear, like “Bethel A go top after a 5–3 win”. It is the big line at the top of the article.")}
-        <input name="title" maxlength="120" value="${s.title}" placeholder="Type the headline here" autocomplete="off" autocapitalize="sentences">`;
+        ${tip(`Short and clear, like “Bethel A go top after a 5–3 win”. It is the big line at the top of the article. Up to ${HEADLINE_MAX} characters, so it fits the home page banner in three lines.`)}
+        <input name="title" maxlength="${HEADLINE_MAX}" value="${s.title}" placeholder="Type the headline here" autocomplete="off" autocapitalize="sentences">`;
       case "category": return html`<h2>Which kind of news is it?</h2>
         ${tip("Press one. It decides which tab of the News page it goes under.")}
         <div class="nw-choices">${categories.map((c) => html`<button type="button" class="${s.category === c.name ? "on" : ""}" data-category="${c.name}">${c.name}</button>`)}</div>`;

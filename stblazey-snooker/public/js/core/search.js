@@ -1,7 +1,8 @@
 // Site search: the magnifying glass in the menu opens an overlay that
 // searches players, teams, competitions, venues, news and info pages.
 import { html, mount, $, fmtDate } from "./dom.js";
-import { table, articles, loadCompetitions } from "./api.js";
+import { table, articles, loadCompetitions, marketAds } from "./api.js";
+import { hiddenFromSearch, isHidden } from "./seo.js";
 import { urls } from "./components.js";
 import { navigate } from "./router.js";
 
@@ -10,11 +11,12 @@ let index = null;
 
 /** Everything searchable, loaded the first time the overlay opens. */
 async function buildIndex() {
-  const [players, teams, venues, pages, news, comps] = await Promise.all([
+  const [players, teams, venues, pages, news, comps, ads, hidden] = await Promise.all([
     table("players", "full_name"), table("teams", "name"), table("venues", "name"),
-    table("pages", "sort"), articles(), loadCompetitions(),
+    table("pages", "sort"), articles(), loadCompetitions(), marketAds().catch(() => []), hiddenFromSearch(),
   ]);
   const team = new Map(teams.map((t) => [t.id, t]));
+  // Pages ticked "Leave out of the site search" under Admin → Website → SEO are left out (Rich, round 22).
   return [
     ...players.map((p) => ({ group: "Players", title: p.full_name, sub: team.get(p.team_id)?.name ?? "", href: urls.player(p), img: p.avatar_url || "/assets/avatar.svg" })),
     ...teams.map((t) => ({ group: "Teams", title: t.name, sub: "Fixtures & results", href: urls.team(t), img: t.logo_url })),
@@ -22,7 +24,8 @@ async function buildIndex() {
     ...venues.map((v) => ({ group: "Venues", title: v.name, sub: v.address ?? "", href: urls.venue(v), img: v.image_url })),
     ...news.map((a) => ({ group: "News", title: a.title, sub: `${a.category} · ${fmtDate(a.published_at)}`, more: a.excerpt ?? "", href: urls.article(a), img: a.circle_image_url || a.image_url })),
     ...pages.map((p) => ({ group: "Pages", title: p.title, sub: p.summary ?? "", href: urls.page(p) })),
-  ];
+    ...ads.filter((a) => a.status === "approved").map((a) => ({ group: "Marketplace", title: a.title, sub: a.price != null ? `£${Number(a.price).toFixed(2).replace(/\.00$/, "")}` : "Marketplace", more: a.description ?? "", href: `/marketplace/${a.no ?? a.id}`, img: a.image_url })),
+  ].filter((it) => !isHidden(hidden, it.href));
 }
 
 /** Best matches first: names that start with the search, then names containing it, then descriptions. */

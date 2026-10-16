@@ -478,3 +478,59 @@ export async function sendEntriesEmail(ids) {
   try { return await callFunction("result-email", { action: "entries", ids }); }
   catch (err) { console.warn("Entries email not sent:", err.message); return { error: err.message }; }
 }
+
+// ── Round 22 ─────────────────────────────────────────────────────
+// Newsletter: signing up and leaving are open to everyone (through two database functions); the list itself is private.
+export const newsletterSubscribe = (email, name = "") => run(db.rpc("newsletter_subscribe", { p_email: email, p_name: name || null }));
+export const newsletterUnsubscribe = (token) => run(db.rpc("newsletter_unsubscribe", { p_token: token }));
+export const subscribers = () => selectAll(() => db.from("newsletter_subscribers").select("*").order("created_at", { ascending: false }));
+export const campaigns = () => run(db.from("newsletter_campaigns").select("*").order("created_at", { ascending: false }));
+/** Send a campaign (or a test of it) — the Netlify function newsletter.mjs, through Resend. */
+export function newsletterSend(body) {
+  if (DEMO_MODE) throw new Error("Emails are only sent on the live site — the demo has no email service.");
+  return callFunction("newsletter", body);
+}
+
+// Marketplace.
+export const marketAds = () => selectAll(() => db.from("market_ads").select("*").order("created_at", { ascending: false }));
+export const marketCategories = () => table("market_categories", "sort");
+
+// Comments on a match night. `where` = { fixture_id } or { comp_match_id }.
+export async function matchComments(where) {
+  const [col, id] = Object.entries(where)[0];
+  return run(db.from("match_comments").select("*").eq(col, id).order("created_at"));
+}
+export async function addComment(where, body) {
+  const [saved] = await run(db.from("match_comments").insert({ ...where, body }).select());
+  return saved;
+}
+
+// SEO for each page (by its address).
+export const seoPages = () => table("seo_pages", "path");
+export async function saveSeoPage(row) {
+  await run(db.from("seo_pages").upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: "path" }).select());
+  invalidate();
+}
+export async function deleteSeoPage(path) { await run(db.from("seo_pages").delete().eq("path", path)); invalidate(); }
+
+// Security: what the login form needs to know (never the whole private settings row).
+export async function loginGate(path = "/login") {
+  try { return (await run(db.rpc("login_gate", { p_path: path }))) ?? {}; } catch { return { login: path === "/login", custom: false, mfa_roles: [], access: "all" }; }
+}
+export const loginWait = (email) => run(db.rpc("login_wait", { p_email: email })).catch(() => 0);
+export const loginRecord = (email, ok) => run(db.rpc("login_record", { p_email: email, p_ok: ok })).catch(() => null);
+export const securitySettings = () => run(db.from("security_settings").select("*").eq("id", 1).maybeSingle());
+export const loginAttempts = (limit = 100) => run(db.from("login_attempts").select("*").order("at", { ascending: false }).limit(limit)).catch(() => []);
+
+// Version history (Netlify's list of updates, through netlify/functions/site-versions.mjs) and our notes on each.
+export const siteVersionNotes = () => run(db.from("site_versions").select("*")).catch(() => []);
+export async function saveVersionNote(row) { await run(db.from("site_versions").upsert(row, { onConflict: "deploy_id" }).select()); }
+export function siteVersions(body = { action: "list" }) {
+  if (DEMO_MODE) throw new Error("The version history comes from Netlify, so it only works on the live site.");
+  return callFunction("site-versions", body);
+}
+/** Check a list of web addresses from Netlify's side (a browser is not allowed to look at other websites). */
+export function checkLinks(urls) {
+  if (DEMO_MODE) return Promise.resolve({ results: urls.map((url) => ({ url, status: 0, note: "Not checked in the demo" })) });
+  return callFunction("link-check", { urls });
+}

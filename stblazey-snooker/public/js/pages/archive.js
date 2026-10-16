@@ -6,7 +6,7 @@ import { html, mount, fmtDate } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { table, loadCompetitions } from "../core/api.js";
 import { buildBracket } from "../core/bracket.js";
-import { breadcrumb, panel, dataTable, teamLink, playerLink, urls, shortName, emblem, trophy } from "../core/components.js";
+import { breadcrumb, panel, dataTable, teamLink, playerLink, urls, shortName, emblem, trophy, breakTag } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 
 export default async function archive(view) {
@@ -50,7 +50,7 @@ export default async function archive(view) {
       { label: "Champions", cell: (l) => html`<span class="inline-row">${teamLink(l.first.team, true)}${l.live ? html` <small class="muted">leading</small>` : ""}</span>` },
       { label: "Runners-up", cell: (l) => (l.second ? teamLink(l.second.team) : "–"), cls: "hide-sm" },
       { label: "Top player", cell: (l) => (l.top ? html`<span class="inline-row">${playerLink(l.top.player)} <small class="muted">${l.top.pts} pts</small></span>` : "–"), cls: "hide-sm" },
-      { label: "Highest break", cell: (l) => (l.best ? html`<span class="inline-row"><b>${l.best.value}</b> ${playerLink(l.best.player)}</span>` : "–") },
+      { label: "Highest break", cell: (l) => (l.best ? html`<span class="inline-row">${breakTag(l.best.value)} ${playerLink(l.best.player)}</span>` : "–") },
     ], lines, { empty: "No results on the website yet." }))}
 
     <div class="grid-2" style="gap:30px">
@@ -59,7 +59,7 @@ export default async function archive(view) {
         { label: "Player", cell: (b) => playerLink(b.player) },
         { label: "Season", cell: (b) => b.season.name, cls: "hide-sm" },
         { label: "Date", cell: (b) => html`<a href="${urls.match(b.fixture)}">${fmtDate(b.fixture.starts_at)}</a>` },
-        { label: "Break", cell: (b) => (b === allBreaks[0] ? html`<span class="lt-pts">${b.value}</span>` : b.value), cls: "num strong" },
+        { label: "Break", cell: (b) => (b === allBreaks[0] ? html`<span class="lt-pts">${b.value}</span>` : breakTag(b.value)), cls: "num strong" },
       ], allBreaks, { highlight: (b) => b === allBreaks[0], empty: "No breaks recorded yet.", phoneLimit: 10, more: "breaks" }))}
       ${panel("Most league titles", dataTable([
         { label: "Team", cell: (t) => teamLink(t.team) },

@@ -5,7 +5,7 @@ import { playerRankings, frameWinner, breakPoints, EXT_PER_SEASON } from "../cor
 import { answered } from "../core/cueview.js";
 import { buildBracket, competitionStandings } from "../core/bracket.js";
 import { listItems } from "../core/list-field.js";
-import { breadcrumb, panel, dataTable, avatar, teamLink, urls, gallery, articleCard, cueviewSection, handicapText, handicapMove } from "../core/components.js";
+import { breadcrumb, panel, dataTable, avatar, teamLink, urls, gallery, articleCard, cueviewSection, handicapText, handicapMove, breakTag } from "../core/components.js";
 import { followButton } from "../core/my-snooker.js";
 import { setTitle, navigate, adminEdit, sideContext } from "../core/router.js";
 import { PLAYER_TAG } from "../core/terms.js";
@@ -147,7 +147,7 @@ export default async function player(view, { params, user }) {
       { label: "Lost", cell: (r) => r.lost, cls: "num" },
       { label: "Win %", cell: (r) => pct(r.won, r.played), cls: "num" },
       { label: "Points scored", cell: (r) => r.scored, cls: "num hide-sm" },
-      { label: "Best break", cell: (r) => r.best || "–", cls: "num" },
+      { label: "Best break", cell: (r) => breakTag(r.best), cls: "num" },
       { label: "Ranking pts", cell: (r) => r.pts, cls: "num strong" },
     ], seasonRows.length ? [...seasonRows, { total: true, season: { name: "Total" }, league: { name: "–" }, team: "–", ...total }] : [],
     { rowClass: (r) => (r.total ? "total-row" : ""), empty: "No frames played yet." }))}
@@ -155,7 +155,7 @@ export default async function player(view, { params, user }) {
     <div class="grid-2" style="gap:30px;align-items:start">
       ${panel("Breaks", dataTable([
         { label: "Date", cell: (b) => { const fx = fixtureById.get(b.fixture_id) ?? ctx.fixture.get(b.fixture_id); return fx ? html`<a href="${urls.match(fx)}">${fmtDate(fx.starts_at)}</a>` : "–"; } },
-        { label: "Break", cell: (b) => b.value, cls: "num strong" },
+        { label: "Break", cell: (b) => breakTag(b.value), cls: "num strong" },
         { label: "Points", cell: (b) => breakPoints(b.value) || "–", cls: "num" },
       ], [...playerPast.breaks].sort((a, b) => b.value - a.value), { empty: "No breaks recorded yet." }))}
       ${panel("Competitions", dataTable([

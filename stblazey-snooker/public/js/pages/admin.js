@@ -26,6 +26,18 @@ import { emailsPage } from "../admin/emails.js";
 import { newsWizardPage } from "../admin/news-wizard.js";
 import { newsApprovePage, waitingNews } from "../admin/news-approve.js";
 import { cueviewsPage } from "../admin/cueviews.js";
+// Round 22
+import { campaignsPage } from "../admin/newsletter.js";
+import { subscribersPage } from "../admin/subscribers.js";
+import { marketPage, waitingAds } from "../admin/market.js";
+import { commentsPage } from "../admin/comments.js";
+import { menuPage } from "../admin/menu.js";
+import { seoPage } from "../admin/seo.js";
+import { linksPage } from "../admin/links.js";
+import { performancePage } from "../admin/performance.js";
+import { securityPage } from "../admin/security.js";
+import { versionsPage } from "../admin/versions.js";
+import { SITE_VERSION } from "../core/release.js";
 
 
 /** Watches the height of the dashboard menu (see where the menu is drawn). */
@@ -38,15 +50,17 @@ const NAV = [
   ["League", [["leagues", "Leagues"], ["teams", "Teams"], ["players", "Players"], ["cueviews", "CueViews to approve"], ["handicaps", "Handicaps"], ["venues", "Venues"], ["seasons", "Seasons"]]],
   ["Competitions", [["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws & results"], ["scoreboard", "Live scoreboard"], ["awards", "Presentation awards"]]],
   ["People", [["accounts", "Logins"]]],
-  ["Website", [["articles", "News"], ["approvals", "News to approve"], ["write", "Write news step by step"], ["categories", "News categories"], ["announcements", "Announcements"], ["notices", "Notifications"], ["key_dates", "Key dates"], ["meetings", "Meetings"], ["media", "Image library"], ["pages", "Info pages & rules"], ["merchandise", "Merchandise"], ["sponsors", "Sponsors"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["emails", "Emails"], ["stats", "Statistics"]]],
+  ["Website", [["articles", "News"], ["approvals", "News to approve"], ["write", "Write news step by step"], ["categories", "News categories"], ["announcements", "Announcements"], ["notices", "Notifications"], ["popups", "Pop-up adverts"], ["key_dates", "Key dates"], ["meetings", "Meetings"], ["media", "Image library"], ["pages", "Info pages & rules"], ["merchandise", "Merchandise"], ["market", "Marketplace adverts"], ["market_categories", "Marketplace categories"], ["comments", "Comments"], ["sponsors", "Sponsors"], ["menu", "Menu"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["seo", "SEO"], ["emails", "Emails"], ["links", "Link checker"], ["performance", "Performance"], ["stats", "Statistics"]]],
+  ["Newsletter", [["campaigns", "Campaigns"], ["subscribers", "Subscribers"], ["newsletter_setup", "Sign-up pop-up"]]],
   // Only the Master Admin sees these.
-  ["Master Admin", [["roles", "Roles & permissions"], ["activity", "Activity log"], ["backup", "Backup"]]],
+  ["Master Admin", [["roles", "Roles & permissions"], ["security", "Security"], ["versions", "Version history"], ["activity", "Activity log"], ["backup", "Backup"]]],
 ];
 const SPECIAL = { overview, results, generator, draws, media: mediaPage, stats: statsPage, import: importPage, handicaps: handicapsPage, entries: entriesPage,
-  roles: rolesPage, activity: activityPage, backup: backupPage, awards: awardsPage, scoreboard: scoreboardPage, emails: emailsPage, cueviews: cueviewsPage, write: newsWizardPage, approvals: newsApprovePage };
+  roles: rolesPage, activity: activityPage, backup: backupPage, awards: awardsPage, scoreboard: scoreboardPage, emails: emailsPage, cueviews: cueviewsPage, write: newsWizardPage, approvals: newsApprovePage,
+  campaigns: campaignsPage, subscribers: subscribersPage, market: marketPage, comments: commentsPage, menu: menuPage, seo: seoPage, links: linksPage, performance: performancePage, security: securityPage, versions: versionsPage };
 // Menu items that show a red number when something is waiting.
-const COUNTS = { players: "Players waiting to be accepted", entries: "Entries waiting for payment", cueviews: "CueViews waiting to be checked", approvals: "News waiting for your approval" };
-const COUNT_WORD = { players: "new", entries: "waiting", cueviews: "waiting", approvals: "waiting" };
+const COUNTS = { players: "Players waiting to be accepted", entries: "Entries waiting for payment", cueviews: "CueViews waiting to be checked", approvals: "News waiting for your approval", market: "Adverts waiting for approval" };
+const COUNT_WORD = { players: "new", entries: "waiting", cueviews: "waiting", approvals: "waiting", market: "waiting" };
 // A small picture for each group of the menu.
 const ico = (d) => html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
 const GROUP_ICON = {
@@ -56,6 +70,7 @@ const GROUP_ICON = {
   Competitions: ico("M7 3h10v2h4v3a4 4 0 0 1-4.2 4A5 5 0 0 1 13 15.9V19h3v2H8v-2h3v-3.1A5 5 0 0 1 7.2 12 4 4 0 0 1 3 8V5h4Zm0 4H5v1a2 2 0 0 0 2 2Zm10 3a2 2 0 0 0 2-2V7h-2Z"),
   People: ico("M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"),
   Website: ico("M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6v2h3v2H7v-2h3v-2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm0 2v10h16V6Z"),
+  Newsletter: ico("M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm1 2.4V17h16V7.4l-8 5.2Zm1.4-.4L12 10.4 18.6 7Z"),
   "Master Admin": ico("M12 2 4 5v6c0 5 3.4 9.3 8 11 4.6-1.7 8-6 8-11V5Zm-1.2 13.4-3.3-3.3 1.4-1.4 1.9 1.9 4.3-4.3 1.4 1.4Z"),
   "My team": ico("m12 2.6 2.9 6 6.5.9-4.7 4.6 1.1 6.5-5.8-3.1-5.8 3.1 1.1-6.5L2.6 9.5l6.5-.9Z"),
   Demo: ico("M12 5V2L7.5 6.5 12 11V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7Z"),
@@ -100,6 +115,7 @@ export default async function admin(view, { params, user, query }) {
           </section>`; })}
         <p class="admin-none" hidden>Nothing in the menu matches.</p>
         <button type="button" class="admin-logout" data-logout>${logoutIcon}<span>Log out</span></button>
+        <p class="admin-version">Website version ${SITE_VERSION}</p>
       </nav>
       <div id="admin-body"></div>
     </div>
@@ -174,6 +190,7 @@ export default async function admin(view, { params, user, query }) {
       entries: canOpenSection(user, "entries") ? (await signups().catch(() => [])).filter((r) => r.status === "pending").length : 0,
       cueviews: canOpenSection(user, "cueviews") ? (await cueviewSubmissions().catch(() => [])).filter((r) => r.status === "pending").length : 0,
       approvals: canOpenSection(user, "approvals") ? (await waitingNews().catch(() => [])).length : 0,
+      market: canOpenSection(user, "market") ? (await waitingAds().catch(() => [])).length : 0,
     };
     for (const [key, n] of Object.entries(waiting)) {
       const badge = $(`[data-count="${key}"]`, view);

@@ -3,12 +3,15 @@ import { html, mount, fmtDate, fmtTime } from "../core/dom.js";
 import { loadCompMatch, loadCompetitions, subscribe, table } from "../core/api.js";
 import { buildBracket, roundName, winnerSide } from "../core/bracket.js";
 import { canEditCompMatch } from "../core/auth.js";
-import { breadcrumb, panel, dataTable, cupMatchInfo, urls, badge, handicapText } from "../core/components.js";
+import { breadcrumb, panel, dataTable, cupMatchInfo, urls, badge, handicapText, breakList } from "../core/components.js";
 import { handicapStarts, handicapMode } from "../core/rules.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
+import { mountComments } from "../core/comments.js";
 
 export default async function cupMatch(view, { params, user }) {
+  const chat = document.createElement("div");      // match night chat (Rich, round 22): kept across redraws
+  chat.className = "cm-wrap";
   const draw = async () => {
     const [bundle, compData, players, teams, venues] = await Promise.all([
       loadCompMatch(params.id), loadCompetitions(), table("players", "full_name"), table("teams", "name"), table("venues", "name"),
@@ -67,11 +70,15 @@ export default async function cupMatch(view, { params, user }) {
         { label: nameB, cell: (f) => html`<span class="${f.b_points > f.a_points ? "strong" : ""}">${sidePlayers(f, "b")}</span>` },
         ...(c?.handicap ? [{ label: "Start", cell: (f) => startText(f), cls: "hide-sm" },
           { label: "Running total", cell: (f) => { const t = running.get(f.frame_no); return t ? `${t.a} - ${t.b}` : "–"; }, cls: "num" }] : []),
-        { label: "Breaks", cell: (f) => breaks.filter((b) => b.frame_no === f.frame_no).map((b) => `${pname(b.player_id)} ${b.value}`).join(", ") || "–", cls: "hide-sm" },
+        { label: "Breaks", cell: (f) => breakList(breaks.filter((b) => b.frame_no === f.frame_no).map((b) => ({ name: pname(b.player_id), value: b.value }))), cls: "hide-sm" },
       ], scored, { empty: match.status === "completed" ? "Only the final score was entered for this match." : "No frames yet — check back on match night." }))}
+      <div data-chat-slot></div>
     </div>`);
+    view.querySelector("[data-chat-slot]")?.replaceWith(chat);
     return match;
   };
   const m = await draw();
-  if (m && m.status !== "completed") return subscribe(["competition_matches", "competition_frames", "competition_breaks"], draw);
+  const stopChat = m ? await mountComments(chat, { comp_match_id: m.id }, user) : () => {};
+  const stop = m && m.status !== "completed" ? subscribe(["competition_matches", "competition_frames", "competition_breaks"], draw) : () => {};
+  return () => { stop(); stopChat(); };
 }

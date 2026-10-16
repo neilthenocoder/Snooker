@@ -46,9 +46,26 @@ function inFrame(match, fn) {
   return next;
 }
 
+/**
+ * The balls that can still be potted, as values. Nothing that is no longer on the table can be pressed:
+ * once the reds are gone only the colours in order (yellow first) are left, and once the black has gone the
+ * frame is over — unless the scores are level, when the black is re-spotted.
+ */
+export function pottable(frame) {
+  if (!frame) return [];
+  if (frame.reds > 0) return frame.onColour ? [1, 2, 3, 4, 5, 6, 7] : [1];    // more than one red can go in one shot
+  if (frame.onColour) return [2, 3, 4, 5, 6, 7];                              // the colour after the last red
+  if (frame.colours.length) return [frame.colours[0]];
+  return frame.a === frame.b && !frame.respotDone ? [7] : [];                  // level after the black: re-spotted black
+}
+/** True when every ball has gone: nothing left to pot, the frame only needs ending. */
+export const tableCleared = (frame) => !!frame && pottable(frame).length === 0;
+
 /** A ball is potted by the player at the table. */
 export const pot = (match, value) => inFrame(match, (f) => {
+  if (!pottable(f).includes(value)) return;                                  // not on the table: the press is ignored
   const s = f.striker;
+  if (!f.colours.length && value === 7) f.respotDone = true;                  // the re-spotted black has gone
   f[s] += value; f.brk += value; f.pots.push(value);
   f[`high_${s}`] = Math.max(f[`high_${s}`], f.brk);
   if (value === 1) { f.reds = Math.max(0, f.reds - 1); f.onColour = true; }
@@ -63,6 +80,7 @@ export const pot = (match, value) => inFrame(match, (f) => {
  * Nothing leaves the table.
  */
 export const freeBall = (match) => inFrame(match, (f) => {
+  if (tableCleared(f)) return;
   const s = f.striker, value = f.reds > 0 ? 1 : (f.colours[0] ?? 0);
   if (!value) return;
   f[s] += value; f.brk += value; f.pots.push(value);
@@ -100,6 +118,7 @@ export const adjustReds = (match, delta) => inFrame(match, (f) => { f.reds = Mat
 export function remaining(frame) {
   if (!frame) return 0;
   if (frame.reds > 0 || frame.onColour) return frame.reds * 8 + 27 + (frame.onColour ? 7 : 0);
+  if (!frame.colours.length && frame.a === frame.b && !frame.respotDone) return 7;   // the re-spotted black
   return frame.colours.reduce((n, c) => n + c, 0);
 }
 

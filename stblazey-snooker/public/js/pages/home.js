@@ -171,7 +171,7 @@ function heroSlide(a, on) {
       <p class="hero-meta">${a.category} · ${fmtDate(a.published_at)}</p>
       <a class="hero-more" href="${urls.article(a)}">Continue reading <span aria-hidden="true">→</span></a>
     </div>
-    ${articleThumb(a) ? html`<a class="hero-circle-link" href="${urls.article(a)}" aria-label="${a.title}"><img class="hero-circle" src="${articleThumb(a)}" alt=""></a>` : ""}
+    ${a.image_url || a.circle_image_url ? html`<a class="hero-pic-link" href="${urls.article(a)}" aria-label="${a.title}"><img class="hero-pic" src="${a.image_url || a.circle_image_url}" alt=""></a>` : ""}
   </div>`;
 }
 

@@ -34,6 +34,12 @@ export default async (req) => {
   // Nobody can hand out more than they have themselves: a role is "within reach" when everything it can do, the caller can do too.
   // (Live scoring is left out of the comparison: it is set for a whole role by the Master Admin — captains can have it —
   //  and is not a part of the dashboard, so it must not stop someone with "Logins" from making a captain's login.)
+  // Two-step login (Admin → Master Admin → Security): a role that needs it must have used it in this session.
+  const { data: sec } = await sb.from("security_settings").select("*").eq("id", 1).maybeSingle();
+  if ((sec?.mfa_roles ?? []).includes(me?.role)) {
+    const claims = JSON.parse(Buffer.from(String(token.split(".")[1] ?? ""), "base64url").toString() || "{}");
+    if (claims.aal !== "aal2") return json(403, { error: "Please finish the two-step login first." });
+  }
   const withinReach = (r) => master || (r !== "admin" && areasOf(r).filter((a) => a !== "livescoring" && a !== "news").every((a) => mine.includes(a)));
 
   // 2. Validate input.
@@ -52,10 +58,16 @@ export default async (req) => {
     if ((TEAM_ROLES.includes(role) || team_role) && !team_id) return json(400, { error: "Captains and vice captains must be linked to a team." });
     if (role === "admin" && !master) return json(403, { error: "Only the Master Admin can create another Master Admin." });
     if (!withinReach(role)) return json(403, { error: "You can't give a login a role that is allowed more than your own. Ask the Master Admin." });
+    // Security → "Disable common usernames": no login email that starts admin@, test@, root@… (the first ones people guess).
+    if (action === "create" && sec?.block_common_names !== false) {
+      const local = String(email ?? "").split("@")[0].trim().toLowerCase();
+      const common = String(sec?.common_names ?? "admin\nadministrator\nroot\ntest\nuser\nguest").split(/[\s,]+/).map((x) => x.trim().toLowerCase()).filter(Boolean);
+      if (common.includes(local)) return json(400, { error: `“${local}@…” is one of the common login names people guess first, so it can't be used. Use the person's own email address.` });
+    }
     // A Player login needs no link to a player or team: they pick the team to follow themselves (My Snooker).
     if (password && String(password).length < 8) return json(400, { error: "Passwords must be at least 8 characters." });
   }
-  if (["update", "delete"].includes(action) && !id) return json(400, { error: "Missing account id." });
+  if (["update", "delete", "reset_mfa"].includes(action) && !id) return json(400, { error: "Missing account id." });
   if (action === "delete" && id === user.id) return json(400, { error: "You can't delete your own login." });
   // Only the Master Admin can change or remove a Master Admin's login — or any login that is allowed more than the caller.
   let target = null;
@@ -93,6 +105,20 @@ export default async (req) => {
       if (error) throw error;
       await log("removed", target?.full_name || target?.email || "A login");
       return json(200, { ok: true });
+    }
+    // Security → someone has lost the phone with their two-step codes: the Master Admin takes it off their login,
+    // and they set it up again the next time they log in.
+    if (action === "reset_mfa") {
+      if (!master) return json(403, { error: "Only the Master Admin can reset two-step login." });
+      const { data: who } = await sb.from("profiles").select("full_name, email").eq("id", id).maybeSingle();
+      const { data, error } = await sb.auth.admin.mfa.listFactors({ userId: id });
+      if (error) throw error;
+      for (const f of data?.factors ?? []) {
+        const { error: dErr } = await sb.auth.admin.mfa.deleteFactor({ id: f.id, userId: id });
+        if (dErr) throw dErr;
+      }
+      await log("changed", who?.full_name || who?.email || "A login", { two_step_login: ["on", "reset"] });
+      return json(200, { ok: true, removed: (data?.factors ?? []).length });
     }
     return json(400, { error: "Unknown action." });
   } catch (err) {

@@ -3,7 +3,7 @@ import { seasonContext, sideBoxData } from "../core/context.js";
 import { articles, table } from "../core/api.js";
 import { getUser, isMaster, canManage } from "../core/auth.js";
 import { addDays } from "../core/schedule.js";
-import { breadcrumb, panel, dataTable, quoteBox, playerLink, teamLink, leagueTablePanel, urls, cueviewSection, gallery, newsStrip, videoEmbed, shareBar, readTime, categoriesOf } from "../core/components.js";
+import { breadcrumb, panel, dataTable, quoteBox, playerLink, teamLink, leagueTablePanel, urls, cueviewSection, gallery, newsStrip, videoEmbed, shareBar, readTime, categoriesOf, breakTag } from "../core/components.js";
 import { SITE } from "../config.js";
 import { articleCueview } from "../core/cueview.js";
 import { setTitle, adminEdit } from "../core/router.js";
@@ -72,7 +72,7 @@ export default async function article(view, { params }) {
             { label: "Player", cell: (b) => playerLink(b.player) },
             { label: "Team", cell: (b) => teamLink(ctx.team.get(b.player?.team_id)), cls: "hide-sm" },
             { label: "Date", cell: (b) => html`<a href="${urls.match(b.fixture)}">${fmtDate(b.fixture.starts_at)}</a>` },
-            { label: "Break", cell: (b) => b.value, cls: "num strong" },
+            { label: "Break", cell: (b) => breakTag(b.value), cls: "num strong" },
           ], weekBreaks.slice(0, 10), { empty: "No breaks recorded that week." })) : ""}
           ${a.show_results ? panel(`Team results${many ? ` — ${lg.name}` : ""} — week ending ${fmtDate(weekEnd)}`, dataTable([
             { label: "Home", cell: (f) => teamLink(ctx.team.get(f.home_team_id)) },

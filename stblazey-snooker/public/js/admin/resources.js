@@ -28,6 +28,7 @@ import { refreshShell } from "../core/router.js";
 import { FONTS, LAYOUT_GROUPS, LAYOUT_LABELS, TEXT_SIZES, parseFontEmbed } from "../core/branding.js";
 import { MEETING_KINDS, PLAYER_STATUS, footerSuggestions } from "../core/terms.js";
 import { CONTACT_RULE } from "../core/comp-deadlines.js";
+import { HEADLINE_MAX } from "../core/components.js";
 
 /** Fill in an award's shown name from the player or team picked for it (unless a different name was typed). */
 function awardName(row, refs, prefix) {
@@ -241,7 +242,7 @@ export const RESOURCES = {
     columns: ["image_url", "published_at", "title", "category", "hub_featured", "featured", "is_published"],
     intro: "“Featured news” puts an article in the big boxes at the top of the News page (the newest four that are ticked; if none is ticked, the newest four articles). “Show in the home page banner” articles rotate in the home page's big banner. Add more categories under Website → News categories.",
     fields: [
-      { name: "title", label: "Headline", type: "text", required: true, wide: true },
+      { name: "title", label: `Headline (up to ${HEADLINE_MAX} characters, so it fits the home page banner in three lines)`, short: "Headline", type: "text", required: true, wide: true, maxLength: HEADLINE_MAX },
       { name: "slug", label: "Web address (auto)", type: "slug", from: "title" },
       { name: "category", label: "Main category", short: "Category", type: "ref", ref: "categories", store: "name", required: true },
       { name: "published_at", label: "Date", type: "date", required: true },
@@ -555,6 +556,60 @@ export const RESOURCES = {
       { name: "x_url", label: "X (Twitter)", type: "text", placeholder: "https://x.com/…" },
       { name: "instagram_url", label: "Instagram", type: "text", placeholder: "https://www.instagram.com/…" },
       { name: "youtube_url", label: "YouTube", type: "text", placeholder: "https://www.youtube.com/…" },
+    ],
+  },
+  // ── Round 22 ───────────────────────────────────────────────────
+  popups: {
+    label: "Pop-up adverts", table: "popups", order: "sort", columns: ["image_url", "name", "kind", "frequency", "ends_on", "is_active"],
+    intro: "Promotions and offers that pop up over the home page. Choose “Text, picture and a button” to write a heading and a few words with a picture and a link, or “One whole picture” to use a ready-made advert image (it becomes the link). Only one pop-up shows at a time — the first one in the order that is switched on and in its dates. Each visitor sees it once, once a day, or every time they open the home page, as you choose; changing a pop-up shows it again to everyone. Visitors close it with the × or by pressing outside it.",
+    fields: [
+      { name: "name", label: "Name (only seen here)", short: "Name", type: "text", required: true, placeholder: "Christmas handicap entries" },
+      { name: "kind", label: "What it shows", short: "Kind", type: "select", options: ["content", "image"], labels: { content: "Text, picture and a button", image: "One whole picture (a ready-made advert)" }, default: "content" },
+      { name: "heading", label: "Heading (text adverts)", type: "text", placeholder: "Entries close Friday!", wide: true },
+      { name: "body", label: "Text (text adverts — a sentence or two)", type: "textarea", rows: 3 },
+      { name: "image_url", label: "Picture (a whole-picture advert: 1080 × 1080 or 1200 × 800 works well)", short: "Picture", type: "image", folder: "branding", maxSize: 1400 },
+      { name: "link_url", label: "Link (where a press on the button or the picture goes — optional)", type: "text", placeholder: "/enter or https://…" },
+      { name: "button_text", label: "Button text (text adverts)", type: "text", placeholder: "Find out more" },
+      { name: "frequency", label: "How often each visitor sees it", short: "Shown", type: "select", options: ["once", "daily", "every"], labels: { once: "Once (again only if it is changed)", daily: "Once a day", every: "Every time they open the home page" }, default: "once" },
+      { name: "delay_seconds", label: "Seconds after the home page opens", type: "number", default: 2, min: 0, max: 120 },
+      { name: "starts_on", label: "Show from (optional)", type: "date" },
+      { name: "ends_on", label: "Stop showing after (optional)", short: "Until", type: "date" },
+      { name: "sort", label: "Order (1 = first — only the first that is on shows)", type: "number", default: 1 },
+      { name: "is_active", label: "Switched on", short: "On", type: "checkbox", default: true },
+    ],
+    validate: (row) => (row.kind === "image" && !row.image_url ? "A whole-picture advert needs a picture." : row.kind === "content" && !row.heading && !row.body ? "Write a heading or some text for the advert." : row.starts_on && row.ends_on && row.ends_on < row.starts_on ? "“Stop showing after” is before “Show from”." : null),
+    beforeSave: (row) => ({ ...row, updated_at: new Date().toISOString() }),
+  },
+  market_categories: {
+    label: "Marketplace categories", table: "market_categories", order: "sort", columns: ["name", "sort"],
+    intro: "The categories people choose from when they put up an advert, shown as buttons along the top of the marketplace.",
+    fields: [
+      { name: "name", label: "Category", type: "text", required: true },
+      { name: "sort", label: "Order (1 = first)", short: "Order", type: "number", default: 1, min: 1 },
+    ],
+  },
+  subscribers: {
+    label: "Subscribers", table: "newsletter_subscribers", order: "created_at", desc: true, filters: ["status"], columns: ["email", "name", "status", "source", "created_at"], pageSize: 50,
+    intro: "Everyone who has signed up to the newsletter (the pop-up, the footer link or /newsletter), and anyone you add by hand. Campaigns go to everyone who is “Subscribed”. People leave with the link at the bottom of every newsletter — they then show as “Unsubscribed” and get nothing more. Please only add people who have asked to get the newsletter.",
+    fields: [
+      { name: "email", label: "Email address", type: "email", required: true },
+      { name: "name", label: "Name (optional)", type: "text" },
+      { name: "status", label: "Status", type: "select", options: ["subscribed", "unsubscribed"], default: "subscribed" },
+      { name: "source", label: "Where they signed up", short: "From", type: "select", options: ["website", "added by hand", "imported"], default: "added by hand" },
+      { name: "created_at", label: "Signed up (filled in for you)", short: "Signed up", type: "datetime", createOnly: true },
+    ],
+    validate: (row) => (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(row.email ?? "").trim()) ? "That doesn't look like an email address." : null),
+    beforeSave: (row) => { const r = { ...row, email: String(row.email).trim().toLowerCase() }; delete r.created_at; if (r.status === "unsubscribed" && !r.unsubscribed_at) r.unsubscribed_at = new Date().toISOString(); if (r.status === "subscribed") r.unsubscribed_at = null; return r; },
+  },
+  newsletter_setup: {
+    label: "Newsletter sign-up", table: "settings", order: "id", single: true, afterSave: () => refreshShell(),
+    fields: [
+      { type: "heading", label: "The sign-up pop-up", help: "A box that asks visitors for their email address a few seconds after they open the website. Each visitor sees it once; if they press × it asks again a month later, and never again once they have signed up. Not on the home page while a pop-up advert is showing." },
+      { name: "newsletter_popup_on", label: "Show the sign-up pop-up", type: "checkbox" },
+      { name: "newsletter_delay", label: "Seconds before it appears", type: "number", default: 10, min: 3, max: 120 },
+      { name: "newsletter_title", label: "Heading", type: "text", placeholder: "Get the league news by email", wide: true },
+      { name: "newsletter_text", label: "Text", type: "textarea", rows: 3, placeholder: "Results, competition draws, presentation night and league news — straight to your inbox. Unsubscribe any time with the link at the bottom of every email." },
+      { name: "newsletter_footer_link", label: "Show “✉ Sign up to the newsletter” at the bottom of every page", type: "checkbox", default: true },
     ],
   },
 };

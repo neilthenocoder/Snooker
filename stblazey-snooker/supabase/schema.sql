@@ -1898,6 +1898,8 @@ create policy "images admin insert" on storage.objects for insert to authenticat
           and (role in ('captain', 'vice_captain') or team_role in ('captain', 'vice_captain'))))
     or (name like 'players/%' and exists (select 1 from public.profiles where id = auth.uid() and player_id is not null))
     or (name like 'news/%' and public.can_manage('news'))
+    -- Round 22: anyone logged in may add the picture of their own marketplace advert (market/ only).
+    or (name like 'market/%' and auth.uid() is not null)
   ));
 -- Listing files (needed to delete one): the Master Admin all of them, an officer their own. Viewing a picture by its
 -- link needs nothing — the bucket is public.
@@ -1909,13 +1911,369 @@ create policy "images admin update" on storage.objects for update to authenticat
 create policy "images admin delete" on storage.objects for delete to authenticated
   using (bucket_id = 'images' and (public.is_master() or ((public.is_staff() or public.can_manage('news')) and (owner = auth.uid() or owner_id = auth.uid()::text))));
 
+-- ── Round 22 (Rich's feedback, 15 Oct) ──────────────────────────
+-- 1. Newsletter: people sign up on the website (a pop-up, and a link in the footer); the league writes campaigns in
+--    Admin → Newsletter and sends them through Resend (netlify/functions/newsletter.mjs). Every email has its own
+--    unsubscribe link (/unsubscribe?t=…). Addresses are private: only "Newsletter" officers can read them.
+create table if not exists newsletter_subscribers (
+  id uuid primary key default gen_random_uuid(),
+  email text not null check (length(email) between 3 and 254),
+  name text check (length(name) <= 120),
+  status text not null default 'subscribed' check (status in ('subscribed', 'unsubscribed')),
+  token uuid not null default gen_random_uuid(),
+  source text not null default 'website' check (length(source) <= 40),
+  created_at timestamptz not null default now(),
+  unsubscribed_at timestamptz
+);
+create unique index if not exists newsletter_subscribers_email_key on newsletter_subscribers (lower(email));
+create unique index if not exists newsletter_subscribers_token_key on newsletter_subscribers (token);
+create table if not exists newsletter_campaigns (
+  id uuid primary key default gen_random_uuid(),
+  subject text not null check (length(subject) between 1 and 200),
+  preheader text check (length(preheader) <= 200),
+  blocks jsonb not null default '[]'::jsonb check (jsonb_typeof(blocks) = 'array' and octet_length(blocks::text) <= 400000),
+  status text not null default 'draft' check (status in ('draft', 'sending', 'sent')),
+  sent_count int not null default 0,
+  total_count int not null default 0,
+  sent_at timestamptz,
+  created_by uuid default auth.uid(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table settings add column if not exists newsletter_popup_on boolean not null default false;
+alter table settings add column if not exists newsletter_title text;
+alter table settings add column if not exists newsletter_text text;
+alter table settings add column if not exists newsletter_delay int not null default 10;
+alter table settings add column if not exists newsletter_footer_link boolean not null default true;
+
+-- Sign up / unsubscribe: open to everyone, but only through these two functions (the table itself stays private).
+create or replace function public.newsletter_subscribe(p_email text, p_name text default null) returns text
+language plpgsql security definer set search_path = public as $$
+declare e text := lower(trim(coalesce(p_email, '')));
+begin
+  if e !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' or length(e) > 254 then raise exception 'Please type a whole email address, like name@example.com'; end if;
+  insert into newsletter_subscribers (email, name, source) values (e, nullif(left(trim(coalesce(p_name, '')), 120), ''), 'website')
+  on conflict ((lower(email))) do update set status = 'subscribed', unsubscribed_at = null,
+    name = coalesce(nullif(left(trim(coalesce(p_name, '')), 120), ''), newsletter_subscribers.name);
+  return 'ok';
+end $$;
+create or replace function public.newsletter_unsubscribe(p_token uuid) returns text
+language plpgsql security definer set search_path = public as $$
+declare who text;
+begin
+  update newsletter_subscribers set status = 'unsubscribed', unsubscribed_at = coalesce(unsubscribed_at, now())
+   where token = p_token returning email into who;
+  return case when who is null then 'unknown' else regexp_replace(who, '^(.).*(@.*)$', '\1…\2') end;
+end $$;
+grant execute on function public.newsletter_subscribe(text, text) to anon, authenticated;
+grant execute on function public.newsletter_unsubscribe(uuid) to anon, authenticated;
+
+-- 2. Pop-up adverts on the home page (Admin → Website → Pop-up adverts): text, a picture and a link, or one whole picture.
+create table if not exists popups (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (length(name) between 1 and 120),
+  kind text not null default 'content' check (kind in ('content', 'image')),
+  heading text check (length(heading) <= 120),
+  body text check (length(body) <= 1000),
+  image_url text,
+  link_url text check (length(link_url) <= 500),
+  button_text text check (length(button_text) <= 40),
+  is_active boolean not null default true,
+  starts_on date,
+  ends_on date,
+  delay_seconds int not null default 2 check (delay_seconds between 0 and 120),
+  frequency text not null default 'once' check (frequency in ('once', 'daily', 'every')),
+  sort int not null default 1,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- 3. Snooker marketplace: anyone logged in can put up an advert; nothing shows until the league approves it.
+create table if not exists market_categories (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique check (length(name) between 1 and 60),
+  sort int not null default 1
+);
+insert into market_categories (name, sort) values ('Cues', 1), ('Cases & accessories', 2), ('Tables', 3), ('Clothing', 4), ('Other', 5)
+on conflict (name) do nothing;
+create table if not exists market_ads (
+  id uuid primary key default gen_random_uuid(),
+  no bigint generated by default as identity,
+  title text not null check (length(title) between 3 and 100),
+  description text not null check (length(description) between 1 and 2000),
+  image_url text,
+  price numeric(10, 2) check (price is null or price between 0 and 100000),
+  contact text not null check (length(contact) between 3 and 200),
+  category_id uuid references market_categories on delete set null,
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected', 'sold')),
+  reject_reason text check (length(reject_reason) <= 300),
+  owner_id uuid default auth.uid(),
+  owner_name text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  approved_at timestamptz,
+  approved_by text
+);
+create index if not exists market_ads_status_idx on market_ads (status);
+alter table settings add column if not exists market_on boolean not null default true;
+alter table settings add column if not exists market_intro text;
+-- The seller can never approve their own advert: whatever they send, it waits for the league again
+-- (except marking an approved advert "sold", or taking it back to "approved" from sold).
+create or replace function public.guard_market_ad() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  new.updated_at := now();
+  if auth.uid() is null or public.can_manage('website') then
+    if new.status = 'approved' and (tg_op = 'INSERT' or old.status <> 'approved') then
+      new.approved_at := now();
+      new.approved_by := coalesce((select full_name from profiles where id = auth.uid()), 'The league');
+    end if;
+    if tg_op = 'INSERT' and new.owner_name is null then new.owner_name := (select coalesce(full_name, email) from profiles where id = auth.uid()); end if;
+    return new;
+  end if;
+  if tg_op = 'INSERT' then
+    new.owner_id := auth.uid(); new.status := 'pending'; new.approved_at := null; new.approved_by := null; new.reject_reason := null;
+    new.owner_name := (select coalesce(full_name, email) from profiles where id = auth.uid());
+    return new;
+  end if;
+  new.owner_id := old.owner_id; new.owner_name := old.owner_name; new.approved_at := old.approved_at; new.approved_by := old.approved_by;
+  if new.status in ('sold', 'approved') and old.status in ('approved', 'sold')
+     and (new.title, new.description, coalesce(new.image_url, ''), coalesce(new.price, -1), new.contact, coalesce(new.category_id::text, ''))
+       is not distinct from (old.title, old.description, coalesce(old.image_url, ''), coalesce(old.price, -1), old.contact, coalesce(old.category_id::text, '')) then
+    return new;                                    -- only "sold" / "for sale again"
+  end if;
+  new.status := 'pending'; new.reject_reason := null;   -- anything else changed: the league looks at it again
+  return new;
+end $$;
+drop trigger if exists guard_market_ad on market_ads;
+create trigger guard_market_ad before insert or update on market_ads for each row execute function public.guard_market_ad();
+
+-- 4. Comments on a match night: anyone logged in can join in; the league can hide or remove a comment.
+create table if not exists match_comments (
+  id uuid primary key default gen_random_uuid(),
+  fixture_id uuid references fixtures on delete cascade,
+  comp_match_id uuid references competition_matches on delete cascade,
+  author_id uuid default auth.uid(),
+  author_name text,
+  body text not null check (length(trim(body)) between 1 and 500),
+  hidden boolean not null default false,
+  created_at timestamptz not null default now(),
+  check (fixture_id is not null or comp_match_id is not null)
+);
+create index if not exists match_comments_fixture_idx on match_comments (fixture_id, created_at);
+create index if not exists match_comments_comp_idx on match_comments (comp_match_id, created_at);
+alter table settings add column if not exists comments_on boolean not null default true;
+create or replace function public.guard_comment() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if tg_op = 'INSERT' then
+    if auth.uid() is null then raise exception 'Please log in to comment'; end if;
+    if not coalesce((select comments_on from settings where id = 1), true) then raise exception 'Comments are switched off'; end if;
+    if exists (select 1 from match_comments where author_id = auth.uid() and created_at > now() - interval '10 seconds') then
+      raise exception 'Please wait a few seconds before commenting again';
+    end if;
+    new.author_id := auth.uid(); new.hidden := false; new.created_at := now();
+    new.author_name := (select coalesce(nullif(p.full_name, ''), split_part(p.email, '@', 1)) from profiles p where p.id = auth.uid());
+    return new;
+  end if;
+  -- Only the league can hide a comment; nothing else about it changes.
+  if not public.can_manage('website') then raise exception 'Only the league can change a comment'; end if;
+  new.body := old.body; new.author_id := old.author_id; new.author_name := old.author_name; new.created_at := old.created_at;
+  return new;
+end $$;
+drop trigger if exists guard_comment on match_comments;
+create trigger guard_comment before insert or update on match_comments for each row execute function public.guard_comment();
+
+-- 5. SEO (Admin → Website → SEO): the site's title, language, description and preview are in settings; each page can
+--    have its own (seo_pages, by its address). Read by the website and by netlify/edge-functions (social.js, seo-files.js).
+alter table settings add column if not exists site_language text not null default 'en-GB';
+create table if not exists seo_pages (
+  path text primary key check (path ~ '^/[^\s]*$' and length(path) <= 200),
+  title text check (length(title) <= 120),
+  description text check (length(description) <= 300),
+  image_url text,
+  noindex boolean not null default false,
+  hide_in_search boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+
+-- 6. The menu bar (Admin → Website → Menu): the buttons, their order and colours, and the extra links in the phone menu.
+--    Empty = the standard menu.
+alter table settings add column if not exists menu_items jsonb;
+alter table settings add column if not exists menu_more jsonb;
+
+-- 7. Version history (Admin → Master Admin → Version history): the version number and changes of each update the
+--    Master Admin has seen live. The list itself comes from Netlify (netlify/functions/site-versions.mjs).
+create table if not exists site_versions (
+  deploy_id text primary key check (length(deploy_id) <= 64),
+  version text check (length(version) <= 40),
+  changes text check (length(changes) <= 4000),
+  published_by text check (length(published_by) <= 120),
+  created_at timestamptz not null default now()
+);
+
+-- 8. Security (Admin → Master Admin → Security). Private: the Master Admin only. The website asks login_gate() what it
+--    needs to know (is this the login page? does this role need two-step login?) — never the whole row.
+create table if not exists security_settings (
+  id int primary key default 1 check (id = 1),
+  login_slug text check (login_slug is null or login_slug ~ '^[a-z0-9][a-z0-9-]{2,40}$'),
+  hide_login_button boolean not null default false,
+  login_access text not null default 'all' check (login_access in ('all', 'officers', 'master')),
+  mfa_roles text[] not null default '{}',
+  block_common_names boolean not null default true,
+  common_names text not null default E'admin\nadministrator\nroot\ntest\nuser\nguest\ninfo\nwebmaster\nsupport\ndemo',
+  max_attempts int not null default 5 check (max_attempts between 0 and 50),
+  lockout_minutes int not null default 15 check (lockout_minutes between 1 and 1440),
+  updated_at timestamptz not null default now()
+);
+insert into security_settings (id) values (1) on conflict (id) do nothing;
+create table if not exists login_attempts (
+  id bigint generated always as identity primary key,
+  email text not null,
+  ip text,
+  ok boolean not null,
+  at timestamptz not null default now()
+);
+create index if not exists login_attempts_email_idx on login_attempts (email, ip, at desc);
+
+-- Who is asking (behind Supabase's proxy): the address the request came from.
+create or replace function public.request_ip() returns text language sql stable as $$
+  select coalesce(nullif(current_setting('request.headers', true)::json->>'cf-connecting-ip', ''),
+                  nullif(trim(split_part(current_setting('request.headers', true)::json->>'x-forwarded-for', ',', 1)), ''), 'unknown');
+$$;
+-- Is this login allowed to act right now? Two-step login: a role ticked under "Two-step login" must have used it in this
+-- session (Supabase calls that "aal2"). Login access: while only officers (or only the Master Admin) may log in, nobody else's
+-- login can change anything either.
+create or replace function public.session_ok() returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce((
+    select (not (p.role = any(s.mfa_roles)) or coalesce(auth.jwt()->>'aal', 'aal1') = 'aal2')
+       and (s.login_access = 'all' or p.role = 'admin'
+            or (s.login_access = 'officers' and p.role not in ('captain', 'vice_captain', 'player')))
+    from profiles p cross join security_settings s where p.id = auth.uid() and s.id = 1), true);
+$$;
+create or replace function public.is_master() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from profiles where id = auth.uid() and role = 'admin') and public.session_ok();
+$$;
+create or replace function public.can_manage(area text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from profiles p where p.id = auth.uid() and (
+    p.role = 'admin'
+    or exists (select 1 from role_permissions rp where rp.role = p.role and can_manage.area = any(rp.areas))
+  )) and public.session_ok();
+$$;
+create or replace function public.is_staff() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from profiles p where p.id = auth.uid() and (
+    p.role = 'admin'
+    or exists (select 1 from role_permissions rp where rp.role = p.role and cardinality(array_remove(array_remove(rp.areas, 'livescoring'), 'news')) > 0)
+  )) and public.session_ok();
+$$;
+create or replace function public.is_captain_of(team uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select team is not null and exists (select 1 from profiles where id = auth.uid() and team_id = team
+    and (role in ('captain', 'vice_captain') or team_role in ('captain', 'vice_captain'))) and public.session_ok();
+$$;
+create or replace function public.login_gate(p_path text default '/login') returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare s security_settings; slug text;
+begin
+  select * into s from security_settings where id = 1;
+  slug := coalesce(s.login_slug, '');
+  return jsonb_build_object(
+    'login', case when slug = '' then rtrim(coalesce(p_path, ''), '/') = '/login' else lower(trim(both '/' from coalesce(p_path, ''))) = slug end,
+    'custom', slug <> '',
+    'hide_button', slug <> '' and coalesce(s.hide_login_button, false),
+    'access', coalesce(s.login_access, 'all'),
+    'mfa_roles', to_jsonb(coalesce(s.mfa_roles, '{}'::text[])));
+end $$;
+-- Limit login attempts: after too many wrong passwords for one email address from one place, the login form waits.
+-- (Supabase also limits sign-ins on its side: Authentication → Rate Limits.)
+create or replace function public.login_wait(p_email text) returns int
+language plpgsql security definer set search_path = public as $$
+declare s security_settings; e text := lower(trim(coalesce(p_email, ''))); v_ip text := public.request_ip(); fails int; last_fail timestamptz; last_ok timestamptz;
+begin
+  select * into s from security_settings where id = 1;
+  if coalesce(s.max_attempts, 0) <= 0 then return 0; end if;
+  select max(at) into last_ok from login_attempts where email = e and login_attempts.ip = v_ip and ok;
+  select count(*), max(at) into fails, last_fail from login_attempts
+   where email = e and login_attempts.ip = v_ip and not ok and at > now() - make_interval(mins => s.lockout_minutes) and at > coalesce(last_ok, '-infinity');
+  if fails >= s.max_attempts then return greatest(1, ceil(extract(epoch from (last_fail + make_interval(mins => s.lockout_minutes) - now())))::int); end if;
+  return 0;
+end $$;
+create or replace function public.login_record(p_email text, p_ok boolean) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into login_attempts (email, ip, ok) values (left(lower(trim(coalesce(p_email, ''))), 254), public.request_ip(), coalesce(p_ok, false));
+  if random() < 0.05 then delete from login_attempts where at < now() - interval '30 days'; end if;
+end $$;
+grant execute on function public.login_gate(text) to anon, authenticated;
+grant execute on function public.login_wait(text) to anon, authenticated;
+grant execute on function public.login_record(text, boolean) to anon, authenticated;
+
+-- Row-level security for everything above.
+do $$
+declare t text;
+begin
+  foreach t in array array['newsletter_subscribers','newsletter_campaigns','popups','market_categories','market_ads','match_comments','seo_pages','site_versions','security_settings','login_attempts'] loop
+    execute format('alter table %I enable row level security', t);
+    execute format('drop policy if exists "public read" on %I', t);
+    execute format('drop policy if exists "admin write" on %I', t);
+    execute format('drop policy if exists "owner write" on %I', t);
+    execute format('drop policy if exists "owner add" on %I', t);
+    execute format('drop policy if exists "owner delete" on %I', t);
+  end loop;
+end $$;
+create policy "admin write" on newsletter_subscribers for all using (public.can_manage('newsletter')) with check (public.can_manage('newsletter'));
+create policy "admin write" on newsletter_campaigns for all using (public.can_manage('newsletter')) with check (public.can_manage('newsletter'));
+create policy "public read" on popups for select using (is_active or public.can_manage('website'));
+create policy "admin write" on popups for all using (public.can_manage('website')) with check (public.can_manage('website'));
+create policy "public read" on market_categories for select using (true);
+create policy "admin write" on market_categories for all using (public.can_manage('website')) with check (public.can_manage('website'));
+create policy "public read" on market_ads for select using (status in ('approved', 'sold') or owner_id = auth.uid() or public.can_manage('website'));
+create policy "owner add" on market_ads for insert with check (auth.uid() is not null and public.session_ok());
+create policy "owner write" on market_ads for update using ((owner_id = auth.uid() and public.session_ok()) or public.can_manage('website'))
+  with check ((owner_id = auth.uid() and public.session_ok()) or public.can_manage('website'));
+create policy "owner delete" on market_ads for delete using ((owner_id = auth.uid() and public.session_ok()) or public.can_manage('website'));
+create policy "public read" on match_comments for select using (not hidden or public.can_manage('website'));
+create policy "owner add" on match_comments for insert with check (auth.uid() is not null and public.session_ok());
+create policy "admin write" on match_comments for update using (public.can_manage('website')) with check (public.can_manage('website'));
+create policy "owner delete" on match_comments for delete using (author_id = auth.uid() or public.can_manage('website'));
+create policy "public read" on seo_pages for select using (true);
+create policy "admin write" on seo_pages for all using (public.can_manage('settings')) with check (public.can_manage('settings'));
+create policy "admin write" on site_versions for all using (public.is_master()) with check (public.is_master());
+create policy "admin write" on security_settings for all using (public.is_master()) with check (public.is_master());
+create policy "public read" on login_attempts for select using (public.is_master());
+
+-- The Newsletter permission (Admin → Roles & permissions): the first time, every role that looks after the website gets it.
+do $$
+begin
+  if not exists (select 1 from schema_steps where step = 'v16 newsletter') then
+    update role_permissions set areas = array_append(areas, 'newsletter') where 'website' = any(areas) and not ('newsletter' = any(areas));
+    insert into schema_steps (step) values ('v16 newsletter');
+  end if;
+end $$;
+
+-- Live updates for the new comments and adverts.
+do $$
+declare t text;
+begin
+  foreach t in array array['match_comments','market_ads','popups'] loop
+    begin
+      execute format('alter publication supabase_realtime add table %I', t);
+    exception when duplicate_object then null;
+    end;
+  end loop;
+end $$;
+
 -- ── the version of this file ─────────────────────────────────────
 -- KEEP THIS AT THE VERY END. The website asks the database for this number (public/js/core/version.js holds
 -- the one it expects). Because it is the last thing in the file, the database only reports the new number
 -- when everything above it has run. If the website files are uploaded without this file being run, the admin
 -- dashboard says "The database needs updating" at the top of every page.
 -- When something is added to this file that the website needs: raise this number and the one in version.js.
-create or replace function public.schema_version() returns int language sql immutable as $$ select 15 $$;
+create or replace function public.schema_version() returns int language sql immutable as $$ select 16 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

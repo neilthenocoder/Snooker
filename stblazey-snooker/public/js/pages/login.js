@@ -1,11 +1,14 @@
 import { html, mount, $, readForm } from "../core/dom.js";
-import { signIn, homeFor } from "../core/auth.js";
+import { signInChecked, homeFor } from "../core/auth.js";
+import { twoStepPanel } from "../core/two-step.js";
 import { DEMO_MODE } from "../config.js";
 import { breadcrumb } from "../core/components.js";
 import { setTitle, navigate, refreshShell } from "../core/router.js";
 
 export default async function login(view, { user }) {
   setTitle("Login");
+  // Logged in with the password but the two-step code is still needed (Admin → Master Admin → Security).
+  if (user?.mfaNeeded) return twoStep(view);
   if (user) return navigate(homeFor(user), { replace: true });
   mount(view, html`<div class="wrap" style="max-width:520px">
     ${breadcrumb([["Home", "/"], ["Login"]])}
@@ -37,12 +40,24 @@ export default async function login(view, { user }) {
     btn.disabled = true;
     try {
       const { email, password } = readForm(e.target);
-      const u = await signIn(email, password);
+      const u = await signInChecked(email, password);
+      if (u?.mfaNeeded) return twoStep(view);
       await refreshShell();
       navigate(homeFor(u));
     } catch (err) {
       mount($("#login-error"), html`<div class="notice error">${err.message}</div>`);
       btn.disabled = false;
     }
+  });
+}
+
+/** The second step of logging in: the code from the phone app. */
+export function twoStep(view) {
+  mount(view, html`<div class="wrap" style="max-width:520px">
+    ${breadcrumb([["Home", "/"], ["Login"]])}
+    <h1>Log in</h1><div class="box" data-two-step></div></div>`);
+  return twoStepPanel($("[data-two-step]", view), {
+    onDone: async (u) => { await refreshShell(); navigate(homeFor(u)); },
+    onCancel: async () => { await refreshShell(); navigate("/"); },
   });
 }

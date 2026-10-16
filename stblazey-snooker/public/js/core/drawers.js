@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────
 import { html, mount, $, readForm, toast, fmtDate, safeHref } from "./dom.js";
 import { DEMO_MODE } from "../config.js";
-import { signIn, homeFor, isStaff, isMember, isPlainPlayer, roleText, mySnookerOn, canWriteNews } from "./auth.js";
+import { signInChecked, homeFor, isStaff, isMember, isPlainPlayer, roleText, mySnookerOn, canWriteNews } from "./auth.js";
 import { notificationsOn, setNotifications, NOTIFY_KINDS, notifyPrefs, setNotifyPref, latestNotices, markNoticesSeen, seenNotices, NOTICE_KIND } from "./notify.js";
 import { navigate, refreshShell } from "./router.js";
 
@@ -79,10 +79,11 @@ export function openAccount(user, { message = "" } = {}) {
       btn.disabled = true;
       try {
         const { email, password } = readForm(e.target);
-        const u = await signIn(email, password);
+        const u = await signInChecked(email, password);
         await refreshShell();
         closeDrawer();
-        navigate(homeFor(u));
+        // The two-step code, when this login's role needs it, is asked for on the login page.
+        navigate(u?.mfaNeeded ? "/login" : homeFor(u));
       } catch (err) {
         mount($("[data-login-error]", el), html`<div class="notice error">${err.message}</div>`);
         btn.disabled = false;

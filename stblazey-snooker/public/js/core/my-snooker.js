@@ -13,7 +13,7 @@ import { deadlineWarnings, deadlineList } from "./comp-deadlines.js";
 import { myPrefs, mySnookerOn, refreshUser } from "./auth.js";
 import { buildBracket, isEntry, roundName } from "./bracket.js";
 import { answered } from "./cueview.js";
-import { panel, dataTable, leagueTablePanel, playerLink, handicapTag, urls, badge, avatar, resultText, articleThumb, picture, outcomeTag, topPoints } from "./components.js";
+import { panel, dataTable, leagueTablePanel, playerLink, handicapTag, urls, badge, avatar, resultText, articleThumb, picture, outcomeTag, topPoints, breakTag } from "./components.js";
 import { refreshShell } from "./router.js";
 
 /** Every section someone can have on their page: [key, name, what it shows]. This is also the order they appear in. */
@@ -117,8 +117,11 @@ function view(user, { ctx, news, comps, site = {} }, prefs, teams, teamId, home)
   const form = played.slice(0, 5).map((f) => ({ f, ...result(f) }));
 
   // Cup matches for the teams and players they follow.
-  const allTeamIds = new Set(teams.map((t) => t.id)), followIds = new Set(followed.map((p) => p.id));
-  const mine = (e) => e && (allTeamIds.has(e.team_id) || followIds.has(e.player_id) || allTeamIds.has(ctx.player.get(e.player_id)?.team_id));
+  // (Rich, round 22) The list follows the team chosen at the top — St Blazey A shows St Blazey A's matches and
+  // its players' singles; switching to Lerryn shows Lerryn's — plus the players followed one by one.
+  const followIds = new Set(followed.map((p) => p.id));
+  const teamIds = new Set(team ? [team.id] : teams.map((t) => t.id));
+  const mine = (e) => e && ((e.team_id && teamIds.has(e.team_id)) || followIds.has(e.player_id) || (e.player_id && teamIds.has(ctx.player.get(e.player_id)?.team_id)));
   const cup = !wants("comps") ? [] : comps.competitions.filter((c) => !c.season_id || c.season_id === ctx.season?.id).flatMap((c) => {
     const b = buildBracket(comps.entries.filter((e) => e.competition_id === c.id), comps.matches.filter((m) => m.competition_id === c.id));
     return b.rounds.flat().filter((m) => !m.isBye && (mine(b.entryById.get(m.a)) || mine(b.entryById.get(m.b)))).map((m) => ({ c, b, m }));
@@ -165,7 +168,7 @@ function view(user, { ctx, news, comps, site = {} }, prefs, teams, teamId, home)
         { label: "Venue", cell: (f) => { const v = !f.bye && ctx.venue.get(f.venue_id); return v ? html`<a href="${urls.venue(v)}">${v.name}</a>` : "–"; }, cls: "hide-sm" },
       ], upcoming.slice(0, limit), { rowClass: (f) => (f.bye ? "is-bye" : ""), empty: "No more fixtures this season." }),
       { foot: more && upcoming.length > limit ? more : { href: `/calendar?team=${team.id}`, label: "See these on the calendar" } })),
-    comps: () => (cup.length ? panel("Competitions", dataTable([
+    comps: () => (cup.length ? panel(team ? `${team.name}: competitions` : "Competitions", dataTable([
         { label: "Date", cell: ({ m }) => (m.row.starts_at ? fmtDate(m.row.starts_at) : "TBC") },
         { label: "Competition", cell: ({ c, b, m }) => html`<a href="${urls.competition(c)}">${c.name}</a> <small class="muted">${roundName(m.round, b.totalRounds)}</small>` },
         { label: "Match", cell: ({ b, m }) => html`<a href="/cup-match/${m.row.no ?? m.row.id}">${cupName(b, m.a)} v ${cupName(b, m.b)}</a>` },
@@ -184,11 +187,11 @@ function view(user, { ctx, news, comps, site = {} }, prefs, teams, teamId, home)
     players: () => (followed.length ? panel("Players I follow", html`<div class="ms-players">${followed.map((p) => { const l = lineOf(p); return html`<a class="ms-player" href="${urls.player(p)}">
         ${avatar(p, "ms-player-photo")}<span><strong>${p.full_name}</strong><small>${ctx.team.get(p.team_id)?.name ?? "No team this season"}</small></span>
         <dl><div><dt>Hcp</dt><dd>${handicapTag(p.handicap)}</dd></div><div><dt>Played</dt><dd>${l?.played ?? 0}</dd></div><div><dt>Won</dt><dd>${l?.won ?? 0}</dd></div>
-          <div><dt>Pts</dt><dd>${l?.pts ?? 0}</dd></div><div><dt>Best</dt><dd>${bestOf(p) ?? "–"}</dd></div></dl></a>`; })}</div>`) : ""),
+          <div><dt>Pts</dt><dd>${l?.pts ?? 0}</dd></div><div><dt>Best</dt><dd>${breakTag(bestOf(p))}</dd></div></dl></a>`; })}</div>`) : ""),
     breaks: () => (!team ? "" : panel(`${team.name} breaks`, dataTable([
         { label: "Player", cell: (b) => playerLink(b.player) },
         { label: "Date", cell: (b) => html`<a href="${urls.match(b.fixture)}">${fmtDate(b.fixture.starts_at)}</a>` },
-        { label: "Break", cell: (b) => b.value, cls: "num strong" },
+        { label: "Break", cell: (b) => breakTag(b.value), cls: "num strong" },
       ], teamBreaks.slice(0, limit), { empty: "No breaks of 30 or more yet this season." }))),
     table: () => (league ? leagueTablePanel(ctx, league, { highlightTeamId: team.id, ...(home ? { limit: 6 } : {}) }) : ""),
     rankings: () => { if (!league) return ""; const all = ctx.rankings(league.id), top = all[0], rows = all.slice(0, home ? 5 : 10);
@@ -209,7 +212,10 @@ function view(user, { ctx, news, comps, site = {} }, prefs, teams, teamId, home)
   const col = (keys) => drawn.filter(([k]) => keys.includes(k)).map(([k, body]) => html`<section class="ms-sec ms-sec-${k}">${body}</section>`);
   const side = drawn.filter(([k]) => !MAIN.includes(k));
   // Their own cup matches with a deadline coming up (or gone by) come first, whatever sections they ticked.
-  const deadlines = deadlineList(deadlineWarnings(user, ctx, comps, site), { title: "Your competition deadlines" });
+  // These are the logged-in person's OWN matches (their player, or their team if they are its captain) — not the
+  // team chosen in My Snooker — so the heading says whose they are (Rich, round 22: it looked like the wrong team).
+  const ownTeam = ctx.team.get(user?.profile?.team_id) ?? ctx.team.get(ctx.player.get(user?.profile?.player_id)?.team_id);
+  const deadlines = deadlineList(deadlineWarnings(user, ctx, comps, site), { title: `Your own competition deadlines${ownTeam ? ` — ${ownTeam.name}, your team` : ""}` });
   return html`
     ${deadlines}
     ${teams.length > 1 ? html`<nav class="ms-teams" aria-label="The teams you follow">${teams.map((t) => html`<button type="button" class="${t.id === teamId ? "on" : ""}" data-ms-team="${t.id}">${badge(t)}<span>${t.name}</span></button>`)}</nav>` : ""}

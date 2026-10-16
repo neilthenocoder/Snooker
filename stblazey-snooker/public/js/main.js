@@ -21,56 +21,14 @@ import { onTable } from "./core/live-score.js";
 import { notificationsOn, startNotifications, unreadNotices, setNoticeWatcher } from "./core/notify.js";
 import { urls } from "./core/components.js";
 import { setNavigator, setShellRefresher, takeEditTarget, takeSideContext } from "./core/router.js";
+import { menuItems, menuMore, menuLook, isOutside } from "./core/menu.js";
+import { applySeo } from "./core/seo.js";
+import { loginGate } from "./core/api.js";
+import { showPopups, openNewsletter } from "./core/popups.js";
+import { ROUTES } from "./core/routes.js";
 
-const ROUTES = [
-  ["/", "home"],
-  ["/fixtures", "fixtures"],
-  ["/team/:slug", "team"],
-  ["/match/:id", "match"],
-  ["/venues", "venues"],
-  ["/venue/:slug", "venue"],
-  ["/league", "league"],
-  ["/news", "news"],
-  ["/news/:slug", "article"],
-  ["/competitions", "competitions"],
-  ["/standings/:slug", "standings"],
-  ["/shield/:slug", "shield"],
-  ["/archive", "archive"],
-  ["/seasons", "seasons"],
-  ["/seasons/:season", "seasons"],
-  ["/seasons/:season/:section", "seasons"],
-  ["/seasons/:season/:section/:league", "seasons"],
-  ["/enter", "enter"],
-  ["/draw/:slug", "draw"],
-  ["/handicaps", "handicaps"],
-  ["/player/:id", "player"],
-  ["/competition/:slug", "competition"],
-  ["/live", "live"],
-  ["/results", "results"],
-  ["/presentation", "presentation"],
-  ["/season-review", "presentation"],
-  ["/in-memoriam", "memoriam"],
-  ["/meetings", "meetings"],
-  ["/rules", "rules"],
-  ["/sponsor/:slug", "sponsor"],
-  ["/scoreboard", "scoreboard"],
-  ["/scoreboard/:id", "scoreboard"],
-  ["/calendar", "calendar"],
-  ["/cup-match/:id", "cup-match"],
-  ["/cup-scorecard/:id", "cup-scorecard"],
-  ["/page/:slug", "page"],
-  ["/login", "login"],
-  ["/my", "my"],
-  ["/my/:tab", "my"],
-  ["/myteam", "myteam"],
-  ["/merchandise", "merchandise"],
-  ["/cueview", "cueview"],
-  ["/captain", "my"],
-  ["/players", "players"],
-  ["/scorecard/:id", "scorecard"],
-  ["/admin", "admin"],
-  ["/admin/:section", "admin"],
-];
+// Every address of the website and the page that draws it: core/routes.js (the link checker uses the list too).
+
 
 // Which part of the site each page belongs to. Its headers take that menu button's colour
 // (Admin → Branding → "Colour-code each section").
@@ -79,7 +37,7 @@ const SECTION = {
   fixtures: "fixtures", team: "fixtures", match: "fixtures", calendar: "fixtures", live: "fixtures", results: "fixtures",
   league: "league", standings: "league", shield: "league", archive: "league", seasons: "league", players: "league", player: "league",
   venues: "league", venue: "league", page: "league", presentation: "league", memoriam: "league", meetings: "league", rules: "league", sponsor: "league",
-  merchandise: "league", cueview: "league",
+  merchandise: "league", cueview: "league", marketplace: "league", "market-ad": "league", "market-edit": "league",
   news: "news", article: "news",
   login: "login", my: "login", myteam: "login", scorecard: "login", "cup-scorecard": "login",
 };
@@ -149,12 +107,18 @@ function drawBell() {
 const personIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2a8 8 0 0 1 6.3 12.9c-1.3-1.8-3.6-2.9-6.3-2.9s-5 1.1-6.3 2.9A8 8 0 0 1 12 4Zm0 2.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm0 9.5c2 0 3.7.8 4.8 2.2a8 8 0 0 1-9.6 0c1.1-1.4 2.8-2.2 4.8-2.2Z"/></svg>`;
 const starIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.5 2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5-4.9-4.5 6.6-.8Z"/></svg>`;
 const menuIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3Zm0 5h18v2H3Zm0 5h18v2H3Z"/></svg>`;
-// The pages in the menu bar, in order: [class (its colour), address, name].
-const MENU = [["nav-home", "/", "Home"], ["nav-comps", "/competitions", "Competitions"], ["nav-fixtures", "/fixtures", "Fixtures"], ["nav-league", "/league", "League"], ["nav-news", "/news", "News"]];
+// The pages in the menu bar, in order, and the extra links in the phone menu: Admin → Website → Menu (core/menu.js).
+const navLink = (item, inner) => { const { cls, style } = menuLook(item);
+  return html`<a class="${cls}" style="${style}" href="${item.href}" ${isOutside(item.href) ? html`target="_blank" rel="noopener"` : ""}>${inner}</a>`; };
+const menuLink = (item, inner) => (item.color === "live"
+  ? html`<a class="nav-live-btn menu-live state-idle" href="${item.href}">${inner}</a>` : navLink(item, inner));
 
 async function drawHeader() {
-  const [user, site] = await Promise.all([getUser(), settings()]);
+  const [user, site, gate] = await Promise.all([getUser(), settings(), loginGate()]);
   applyBranding(site);
+  const MENU = menuItems(site);
+  // Security → custom login address: the person button can be hidden from visitors (people then log in at that address).
+  const noLogin = !user && !!gate.hide_button;
   const name = user?.profile?.full_name || user?.email || "";
   // On the right, always in this order: the person (log in / my account), the bell (notifications), search.
   // Phones add the menu button, which opens the full-screen menu.
@@ -163,12 +127,11 @@ async function drawHeader() {
     <header class="site-header"><div class="site-bar"><div class="wrap">
       <a class="logo" href="/" aria-label="${SITE.name} home"><img src="${site.logo_url || "/assets/logo.svg"}" alt="${SITE.name}"></a>
       <nav class="main-nav" aria-label="Main menu">
-        ${MENU.map(([cls, href, label]) => html`<a class="${cls}" href="${href}">${label}</a>`)}
-        <a class="nav-live nav-live-btn state-idle" href="/live">Live</a>
+        ${MENU.map((item) => navLink(item, item.color === "live" ? html`<span>${item.label}</span>` : item.label))}
       </nav>
       <div class="nav-icons">
-        <button type="button" class="nav-icon nav-account ${user ? "in" : ""}" data-account-open aria-label="${user ? `My account: ${name}` : "Log in"}" title="${user ? `My account: ${name}` : "Log in"}">
-          ${personIcon}</button>
+        ${noLogin ? "" : html`<button type="button" class="nav-icon nav-account ${user ? "in" : ""}" data-account-open aria-label="${user ? `My account: ${name}` : "Log in"}" title="${user ? `My account: ${name}` : "Log in"}">
+          ${personIcon}</button>`}
         ${user && mySnookerOn(user) ? html`<a class="nav-icon nav-mysnooker" href="/myteam" aria-label="My Snooker" title="My Snooker — your own page">${starIcon}</a>` : ""}
         <button type="button" class="nav-icon nav-bell" data-bell aria-label="Notifications" title="Notifications">${bell}</button>
         <button type="button" class="nav-icon nav-search" data-search-open aria-label="Search" title="Search">${searchIcon}</button>
@@ -179,15 +142,14 @@ async function drawHeader() {
       <div class="menu-top"><a class="logo" href="/" aria-label="${SITE.name} home"><img src="${site.logo_url || "/assets/logo.svg"}" alt=""></a>
         <button type="button" class="menu-x" data-menu-close aria-label="Close the menu">×</button></div>
       <nav class="menu-links" aria-label="Main menu">
-        ${MENU.map(([cls, href, label]) => html`<a class="${cls}" href="${href}"><span>${label}</span></a>`)}
-        <a class="nav-live-btn menu-live state-idle" href="/live"><span>Live</span></a>
+        ${MENU.map((item) => menuLink(item, html`<span>${item.label}</span>`))}
       </nav>
       <div class="menu-more">
-        <a href="/calendar">Calendar</a><a href="/results">Results</a><a href="/handicaps">Handicaps</a><a href="/players">Our Players</a><a href="/seasons">Seasons</a><a href="/scoreboard">Live scoreboard</a>
+        ${menuMore(site).map((l) => html`<a href="${l.href}" ${isOutside(l.href) ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}
       </div>
       <div class="menu-foot">
         ${user && mySnookerOn(user) ? html`<a class="btn green" href="/myteam">★ My Snooker</a>` : ""}
-        <button type="button" class="btn ${user ? "secondary" : ""}" data-account-open>${user ? html`My account · ${name.split(" ")[0]}` : "Log in"}</button>
+        ${noLogin ? "" : html`<button type="button" class="btn ${user ? "secondary" : ""}" data-account-open>${user ? html`My account · ${name.split(" ")[0]}` : "Log in"}</button>`}
         <button type="button" class="btn ghost" data-search-open>Search</button>
         <button type="button" class="btn ghost" data-bell>Notifications</button>
       </div>
@@ -273,6 +235,7 @@ async function drawFooter() {
     ${socials.length ? html`<div class="socials">${socials.map(([key, name, icon]) => html`<a href="${safeHref(site[key])}" target="_blank" rel="noopener" aria-label="${name}" title="${name}">
       <svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></a>`)}</div>` : ""}
     ${links.length ? html`<nav class="foot-links" aria-label="Footer">${links.map((l) => html`<a href="${l.href}" ${l.outside ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}</nav>` : ""}
+    ${site.newsletter_footer_link !== false ? html`<p class="foot-news"><a href="/newsletter" data-newsletter-open>✉ Sign up to the newsletter</a></p>` : ""}
     <p class="foot-copy">© ${new Date().getFullYear()} ${owner}${creditText ? html` · ${credit ? html`<a href="${credit.href}" ${credit.outside ? html`target="_blank" rel="noopener"` : ""}>${creditText}</a>` : creditText}` : ""}</p>
   </div></footer>`);
 }
@@ -325,7 +288,7 @@ function holdingPage(view, site) {
   mount(view, html`<div class="holding"><img src="${site.logo_url || "/assets/logo.svg"}" alt="">
     <h1>${SITE.name}</h1>
     <p>${site.maintenance_text || "We're making a few improvements to the website. Please check back shortly."}</p>
-    <a class="btn ghost" href="/login">Officer and captain login</a></div>`);
+    <button type="button" class="btn ghost" data-account-open>Officer and captain login</button></div>`);
 }
 
 // ── routing ────────────────────────────────────────────────────
@@ -351,7 +314,13 @@ async function renderRoute() {
   const view = $("#view");
   view.className = "";
   setMenu(false); closeDrawer();
-  const { page, params } = match(location.pathname);
+  let { page, params } = match(location.pathname);
+  // Security → custom login address (Rich, round 22): /login only works while no address of its own is set; the chosen one does.
+  if (page === "login" || page === "not-found") {
+    const gate = await loginGate(location.pathname);
+    if (page === "login" && !gate.login) page = "not-found";
+    else if (page === "not-found" && gate.login) page = "login";
+  }
   // The dashboard and My area keep the full trail (Home - Admin - Players); public pages get a back arrow.
   crumbs.trail = ["admin", "my", "scorecard", "cup-scorecard"].includes(page);
   document.body.dataset.page = page;
@@ -361,7 +330,9 @@ async function renderRoute() {
   loaderOn();   // the black loading screen appears only if this takes more than a moment
   trackPageView(location.pathname);
   try {
-    const [mod, user, site] = await Promise.all([import(`./pages/${page}.js`), getUser(), settings()]);
+    let [mod, user, site] = await Promise.all([import(`./pages/${page}.js`), getUser(), settings()]);
+    // Two-step login still to do (Security → Two-step login): every page asks for the code first.
+    if (user?.mfaNeeded) { const { twoStep } = await import("./pages/login.js"); return twoStep(view); }
     // My Snooker sticks (Rich, round 16): for someone who has it switched on and set up, Home is their My Snooker page,
     // every time — unless they chose "Home shows the normal home page" in their settings. The "Normal home page"
     // button on My Snooker opens /?home=1, which shows the ordinary home page once (with a bar back to their page).
@@ -372,6 +343,9 @@ async function renderRoute() {
     takeEditTarget(); takeSideContext();
     cleanup = await mod.default(view, { params, user, query: new URLSearchParams(location.search) });
     await applyLayout(view, page);
+    applySeo(site, location.pathname).catch(() => {});
+    // Pop-up adverts (home page) and the newsletter sign-up (Admin → Website → Pop-up adverts / Newsletter).
+    if (!["admin", "login", "my", "scorecard", "cup-scorecard", "unsubscribe", "not-found"].includes(page)) showPopups(page, site, user);
     drawEditButton(user, page);
     if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView();
     else window.scrollTo(0, 0);
@@ -462,10 +436,18 @@ document.addEventListener("click", async (e) => {
   const shot = e.target.closest("[data-lightbox]");
   if (shot) return openLightbox(shot.dataset.lightbox);
   if (e.target.closest("[data-search-open]")) { setMenu(false); return openSearch(); }
+  if (e.target.closest("[data-newsletter-open]")) { e.preventDefault(); setMenu(false); return openNewsletter(await settings()); }
   if (e.target.closest("[data-bell]")) { setMenu(false); return openNotifications({ onChange: drawBell }); }
   if (!a || a.target || a.hasAttribute("download") || e.metaKey || e.ctrlKey || e.shiftKey) return;
   const url = new URL(a.href, location.href);
   if (url.origin !== location.origin || /\.\w+$/.test(url.pathname)) return;
+  // A link to /login while the league uses its own login address (Security): the log in panel opens instead.
+  if (url.pathname === "/login" && !e.defaultPrevented) {
+    e.preventDefault();
+    const gate = await loginGate("/login");
+    if (!gate.login && !gate.hide_button) { setMenu(false); return openAccount(await getUser()); }
+    return navigate(url.pathname + url.search + url.hash);
+  }
   if (url.pathname === location.pathname && url.hash) return;
   e.preventDefault();
   navigate(url.pathname + url.search + url.hash);

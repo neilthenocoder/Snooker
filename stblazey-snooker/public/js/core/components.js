@@ -140,6 +140,10 @@ export function dataTable(columns, rows, { highlight = () => false, rowClass = (
   </table></div>`;
   return folds ? html`<div class="table-fold" data-table-fold>${table}<button type="button" class="table-fold-btn" data-fold-toggle data-more="Show all ${rows.length} ${more}" data-less="Show the first ${phoneLimit} only">Show all ${rows.length} ${more}</button></div>` : table;
 }
+/** A break, highlighted (Rich, round 22): every break shown on the site — league or competition — is in a gold pill. */
+export const breakTag = (v) => (v ? html`<span class="tally brk">${v}</span>` : "–");
+/** "Chris Rowe 34, Pete Tregear 41" with each break highlighted. `list` = [{ name, value, extra }] */
+export const breakList = (list) => (list.length ? html`<span class="brk-list">${list.map((b) => html`<span class="brk-item">${b.name} ${breakTag(b.value)}${b.extra ? html` <small class="muted">${b.extra}</small>` : ""}</span>`)}</span>` : "–");
 /** The points of the player at the top of a ranking table: a green pill, like the top points in a league table. */
 export const topPoints = (r, top) => (r === top && Number(r.pts) > 0 ? html`<span class="lt-pts">${r.pts}</span>` : r.pts);
 
@@ -147,6 +151,8 @@ export const tile = (title, text, href, cls = "") =>
   html`<a class="tile ${cls}" href="${href}"><h4>${title}</h4><span class="tile-go">Click here to view</span>${text ? html`<p>${text}</p>` : ""}</a>`;
 
 /** The small round picture for an article (its circle image, or its main image). */
+/** The longest headline (Rich, round 22): the home page banner keeps a headline to three lines. */
+export const HEADLINE_MAX = 70;
 export const articleThumb = (a) => a.circle_image_url || a.image_url;
 
 export function articleCard(a) {
@@ -272,7 +278,7 @@ export function breaksPanel(ctx, league, { limit = Infinity } = {}) {
       { label: "Team", cell: (b) => teamLink(ctx.team.get(b.player?.team_id)), cls: "hide-sm" },
       { label: "Date", cell: (b) => html`<a href="${urls.match(b.fixture)}">${fmtDate(b.fixture.starts_at)}</a>` },
     ]),
-    { label: "Break", cell: (b) => (!Number.isFinite(limit) && b === rows[0] ? html`<span class="lt-pts">${b.value}</span>` : b.value), cls: "num strong" },
+    { label: "Break", cell: (b) => (!Number.isFinite(limit) && b === rows[0] ? html`<span class="lt-pts">${b.value}</span>` : breakTag(b.value)), cls: "num strong" },
   ], rows, { highlight: (b) => !Number.isFinite(limit) && b === rows[0], empty: "No breaks recorded yet.", phoneLimit: Number.isFinite(limit) ? 0 : 10, more: "breaks" });
   return panel(`${shortName(league)} Breaks`, noHead(table, limit), {
     foot: Number.isFinite(limit) && all.length ? { href: `${urls.standings(league)}#breaks`, label: "View all breaks" } : null,
@@ -306,7 +312,7 @@ export function breaksBox(title, list, { limit = 7, more = null } = {}) {
     ${rest.length ? html`<div class="no-head bk-rest">${dataTable([
       { label: "", cell: (b, i) => i + 4, cls: "num" },
       { label: "Player", cell: (b) => playerLink(b.player) },
-      { label: "Break", cell: (b) => b.value, cls: "num strong" },
+      { label: "Break", cell: (b) => breakTag(b.value), cls: "num strong" },
     ], rest)}</div>` : ""}`;
   return panel(html`${title}${top[0] && isRecent(top[0].when) ? html`<span class="new-badge">NEW</span>` : ""}`, body, { foot: more, cls: "bk-box" });
 }

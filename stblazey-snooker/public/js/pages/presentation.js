@@ -7,7 +7,7 @@ import { seasonContext } from "../core/context.js";
 import { table, loadCompetitions } from "../core/api.js";
 import { awardSide, awardTrophy, competitionFinal } from "../core/awards.js";
 import { isCounted, matchScore, shieldHolder, shieldTable } from "../core/rules.js";
-import { breadcrumb, trophy, urls, teamLink, playerLink, panel, dataTable, shortName, badge, seasonPicker } from "../core/components.js";
+import { breadcrumb, trophy, urls, teamLink, playerLink, panel, dataTable, shortName, badge, seasonPicker, breakTag } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 
 export default async function presentation(view, { query }) {
@@ -114,7 +114,7 @@ function reviewBody(ctx, awards, comps, data, look) {
           ], ranked, { empty: "No frames played yet." }), { foot: { href: `${urls.standings(league)}${q}#players`, label: "Full rankings" } })}
           ${panel(`${shortName(league)}: highest breaks`, dataTable([
             { label: "Player", cell: (b) => playerLink(b.player) }, { label: "Date", cell: (b) => fmtDate(b.fixture?.starts_at), cls: "hide-sm" },
-            { label: "Break", cell: (b) => b.value, cls: "num strong" },
+            { label: "Break", cell: (b) => breakTag(b.value), cls: "num strong" },
           ], ctx.breaksIn(league.id).slice(0, 5), { empty: "No breaks recorded yet." }), { foot: { href: `${urls.standings(league)}${q}#breaks`, label: "All breaks" } })}
         </div>
         ${shield ? html`<p class="inline-row">${league.shield_name || "Shield"}: most wins ${teamLink(ctx.team.get(shield.teamId), true)} (${shield.wins}) <a href="${urls.shield(league)}${q}" style="text-decoration:underline">Shield history</a></p>` : ""}

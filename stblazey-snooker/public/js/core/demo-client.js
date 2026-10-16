@@ -8,7 +8,7 @@
 import { buildSeed } from "../demo/seed-data.js";
 import { SCHEMA_VERSION } from "./version.js";
 
-const KEY = "sbdsl-demo-db-v12";
+const KEY = "sbdsl-demo-db-v13";
 const SESSION_KEY = "sbdsl-demo-session";
 const store = typeof localStorage !== "undefined" ? localStorage : (() => {
   const m = new Map();
@@ -83,7 +83,7 @@ class Query {
         data.sort((a, b) => (a[col] > b[col] ? 1 : a[col] < b[col] ? -1 : 0) * (asc ? 1 : -1));
       data = data.slice(this.from, this.to + 1);
     } else if (this.action === "insert") {
-      data = [].concat(this.payload).map((r) => ({ id: newId(), ...r }));
+      data = [].concat(this.payload).map((r) => guardInsert(this.table, { id: newId(), ...(ROUND22_TABLES.has(this.table) ? { created_at: new Date().toISOString() } : {}), ...r }));
       for (const r of data) { rows.push(r); shortAddress(this.table, r); }
       audit("added", this.table, data);
     } else if (this.action === "update") {
@@ -92,7 +92,7 @@ class Query {
       // Mirrors the players_log_handicap trigger in supabase/schema.sql.
       if (this.table === "players" && "handicap" in this.payload)
         for (const r of data) if (r.handicap !== this.payload.handicap) logHandicap(r, this.payload.handicap, "");
-      data.forEach((r) => { Object.assign(r, this.payload); shortAddress(this.table, r); });
+      data.forEach((r) => { Object.assign(r, guardUpdate(this.table, r, this.payload)); shortAddress(this.table, r); });
     } else if (this.action === "upsert") {
       data = [].concat(this.payload).map((r) => {
         const hit = rows.find((x) => this.conflict.every((c) => x[c] === r[c]));
@@ -122,6 +122,44 @@ for (const op of Object.keys(OPS)) Query.prototype[op] = function (col, val) { t
 
 const me = () => state.tables.profiles.find((p) => p.id === currentSession()?.user.id);
 
+// Round 22: mirrors guard_market_ad() and guard_comment() in supabase/schema.sql.
+const ROUND22_TABLES = new Set(["market_ads", "match_comments", "newsletter_campaigns", "newsletter_subscribers", "popups", "seo_pages", "site_versions", "login_attempts"]);
+const officer = () => {
+  const p = me();
+  if (!p) return false;
+  if (p.role === "admin") return true;
+  const perm = (state.tables.role_permissions ?? []).find((r) => r.role === p.role);
+  const areas = perm?.areas ?? (["league_admin", "committee_member", "president", "vice_chairman", "chairman"].includes(p.role) ? ["website"] : []);
+  return areas.includes("website");
+};
+function guardInsert(table, row) {
+  const who = me();
+  if (table === "market_ads") {
+    Object.assign(row, { owner_id: row.owner_id ?? who?.id ?? null, owner_name: row.owner_name ?? (who?.full_name || who?.email || null), updated_at: new Date().toISOString() });
+    if (!officer()) Object.assign(row, { status: "pending", approved_at: null, approved_by: null, reject_reason: null });
+    else if (row.status === "approved") Object.assign(row, { approved_at: new Date().toISOString(), approved_by: who?.full_name ?? "The league" });
+    row.status ??= "pending";
+  }
+  if (table === "match_comments") {
+    if (!who) throw new Error("Please log in to comment");
+    if ((state.tables.settings?.[0]?.comments_on) === false) throw new Error("Comments are switched off");
+    const recent = (state.tables.match_comments ?? []).some((c) => c.author_id === who.id && Date.now() - Date.parse(c.created_at) < 10e3);
+    if (recent) throw new Error("Please wait a few seconds before commenting again");
+    Object.assign(row, { author_id: who.id, author_name: who.full_name || who.email.split("@")[0], hidden: false });
+  }
+  return row;
+}
+function guardUpdate(table, old, patch) {
+  if (table === "market_ads") {
+    const next = { ...old, ...patch, updated_at: new Date().toISOString() };
+    if (officer()) { if (next.status === "approved" && old.status !== "approved") Object.assign(next, { approved_at: next.updated_at, approved_by: me()?.full_name ?? "The league" }); return next; }
+    const same = ["title", "description", "image_url", "price", "contact", "category_id"].every((k) => (next[k] ?? null) === (old[k] ?? null));
+    if (!(same && ["sold", "approved"].includes(next.status) && ["approved", "sold"].includes(old.status))) Object.assign(next, { status: "pending", reject_reason: null });
+    return { ...next, owner_id: old.owner_id, owner_name: old.owner_name, approved_at: old.approved_at, approved_by: old.approved_by };
+  }
+  return patch;
+}
+
 // Mirrors the short-address triggers in supabase/schema.sql: a fixture's code (2627-14), a player's or
 // sponsor's slug (sam-bolitho, made unique with -2, -3…), and the running numbers of cup and scoreboard matches.
 const slugOf = (text) => String(text ?? "").toLowerCase().replace(/['’`]/g, "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -140,7 +178,7 @@ function shortAddress(table, row) {
     for (let n = 2; rows.some((r) => r !== row && r.slug === slug); n++) slug = `${base}-${n}`;
     row.slug = slug;
   }
-  if (["competition_matches", "live_matches"].includes(table) && row.no == null) row.no = Math.max(0, ...rows.map((r) => Number(r.no) || 0)) + 1;
+  if (["competition_matches", "live_matches", "market_ads"].includes(table) && row.no == null) row.no = Math.max(0, ...rows.map((r) => Number(r.no) || 0)) + 1;
 }
 
 // Mirrors the activity-log triggers in supabase/schema.sql (audit_row / audit_added).
@@ -216,13 +254,45 @@ const auth = {
     u.password = password; persist(); return { data: {}, error: null };
   },
   onAuthStateChange(cb) { authListeners.add(cb); return { data: { subscription: { unsubscribe: () => authListeners.delete(cb) } } }; },
+  // Two-step login, pretended: the "phone app" code is always 123456 (the live site uses Supabase's real one).
+  mfa: {
+    async listFactors() {
+      const u = state.users.find((x) => x.id === currentSession()?.user.id), list = u?.factors ?? [];
+      return { data: { all: list, totp: list.filter((f) => f.status === "verified") }, error: null };
+    },
+    async enroll({ friendlyName }) {
+      const u = state.users.find((x) => x.id === currentSession()?.user.id);
+      if (!u) return { data: null, error: { message: "Not signed in" } };
+      const f = { id: newId(), friendly_name: friendlyName, factor_type: "totp", status: "unverified" };
+      (u.factors ??= []).push(f); persist();
+      const qr = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21"><rect width="21" height="21" fill="#fff"/><path d="M1 1h7v7H1zM13 1h7v7h-7zM1 13h7v7H1zM10 10h2v2h-2zM14 14h2v2h-2zM17 11h2v2h-2zM11 16h2v3h-2z" fill="#000"/><text x="10.5" y="11" font-size="2" text-anchor="middle">DEMO</text></svg>');
+      return { data: { id: f.id, type: "totp", totp: { qr_code: qr, secret: "DEMO DEMO DEMO DEMO", uri: "" } }, error: null };
+    },
+    async unenroll({ factorId }) { const u = state.users.find((x) => x.id === currentSession()?.user.id); if (u) u.factors = (u.factors ?? []).filter((f) => f.id !== factorId); persist(); return { data: {}, error: null }; },
+    async challengeAndVerify({ factorId, code }) {
+      if (code !== "123456") return { data: null, error: { message: "Invalid TOTP code entered" } };
+      const u = state.users.find((x) => x.id === currentSession()?.user.id), f = u?.factors?.find((x) => x.id === factorId);
+      if (f) f.status = "verified";
+      const s = currentSession(); setSession({ ...s, aal: "aal2" }); persist();
+      return { data: {}, error: null };
+    },
+    async getAuthenticatorAssuranceLevel() { const s = currentSession(); return { data: { currentLevel: s?.aal ?? "aal1", nextLevel: "aal2" }, error: null }; },
+  },
 };
 
 // Mirrors the Netlify function netlify/functions/admin-users.mjs
 const teamFor = (body) => body.team_id || state.tables.players.find((p) => p.id === body.player_id)?.team_id || null;
 export function demoAdminUsers(body) {
+  const sec = state.tables.security_settings?.[0];
+  if (body.action === "reset_mfa") {
+    const u = state.users.find((x) => x.id === body.id); const n = (u?.factors ?? []).length;
+    if (u) u.factors = []; persist(); return { ok: true, removed: n };
+  }
   if (body.action === "create") {
     if (state.users.some((u) => u.email === body.email)) throw new Error("A user with this email already exists");
+    const local = String(body.email ?? "").split("@")[0].toLowerCase();
+    if (sec?.block_common_names !== false && String(sec?.common_names ?? "admin\nadministrator\nroot\ntest").split(/[\s,]+/).includes(local))
+      throw new Error(`“${local}@…” is one of the common login names people guess first, so it can't be used. Use the person's own email address.`);
     const id = newId();
     state.users.push({ id, email: body.email, password: body.password });
     state.tables.profiles.push({ id, email: body.email, full_name: body.full_name, role: body.role, team_role: body.team_role || null, team_id: teamFor(body), player_id: body.player_id || null });
@@ -469,6 +539,38 @@ export const demoClient = {
       }
       persist(); emit("competition_matches", changed);
       return { data: l.status === "finished" ? "finished" : "updated", error: null };
+    }
+    // ── Round 22 ──
+    if (name === "newsletter_subscribe") {
+      const e = String(args.p_email ?? "").trim().toLowerCase(), list = (state.tables.newsletter_subscribers ??= []);
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return { data: null, error: { message: "Please type a whole email address, like name@example.com" } };
+      const hit = list.find((x) => x.email === e);
+      if (hit) Object.assign(hit, { status: "subscribed", unsubscribed_at: null, name: args.p_name || hit.name });
+      else list.push({ id: newId(), email: e, name: args.p_name || null, status: "subscribed", token: newId(), source: "website", created_at: new Date().toISOString(), unsubscribed_at: null });
+      persist(); return { data: "ok", error: null };
+    }
+    if (name === "newsletter_unsubscribe") {
+      const hit = (state.tables.newsletter_subscribers ?? []).find((x) => x.token === args.p_token);
+      if (!hit) return { data: "unknown", error: null };
+      Object.assign(hit, { status: "unsubscribed", unsubscribed_at: hit.unsubscribed_at ?? new Date().toISOString() }); persist();
+      return { data: hit.email.replace(/^(.).*(@.*)$/, "$1…$2"), error: null };
+    }
+    if (name === "login_gate") {
+      const s = state.tables.security_settings?.[0] ?? {}, slug = s.login_slug || "", path = String(args.p_path ?? "");
+      return { data: { login: slug ? path.replace(/^\/+|\/+$/g, "").toLowerCase() === slug : path.replace(/\/+$/, "") === "/login", custom: !!slug,
+        hide_button: !!slug && !!s.hide_login_button, access: s.login_access || "all", mfa_roles: s.mfa_roles ?? [] }, error: null };
+    }
+    if (name === "login_wait") {
+      const s = state.tables.security_settings?.[0] ?? { max_attempts: 5, lockout_minutes: 15 }, e = String(args.p_email ?? "").trim().toLowerCase();
+      if (!(s.max_attempts > 0)) return { data: 0, error: null };
+      const mine = (state.tables.login_attempts ?? []).filter((a) => a.email === e), lastOk = Math.max(0, ...mine.filter((a) => a.ok).map((a) => Date.parse(a.at)));
+      const fails = mine.filter((a) => !a.ok && Date.parse(a.at) > lastOk && Date.now() - Date.parse(a.at) < s.lockout_minutes * 60e3);
+      const last = Math.max(0, ...fails.map((a) => Date.parse(a.at)));
+      return { data: fails.length >= s.max_attempts ? Math.max(1, Math.ceil((last + s.lockout_minutes * 60e3 - Date.now()) / 1000)) : 0, error: null };
+    }
+    if (name === "login_record") {
+      (state.tables.login_attempts ??= []).push({ id: Date.now(), email: String(args.p_email ?? "").trim().toLowerCase(), ip: "this browser", ok: !!args.p_ok, at: new Date().toISOString() });
+      persist(); return { data: null, error: null };
     }
     return { data: null, error: { message: `Unknown function ${name}` } };
   },

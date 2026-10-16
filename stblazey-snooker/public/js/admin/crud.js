@@ -139,7 +139,7 @@ function input(field, row, refs, rows) {
     case "ref": return html`<select ${a(attrs)}><option value="">– none –</option>${refs[field.ref].map((r) => html`<option value="${refValue(field, r)}" ${refValue(field, r) === value ? "selected" : ""}>${labelOf(r)}</option>`)}</select>`;
     default: {
       const list = field.list ? html`<datalist id="dl-${name}">${[...new Set(rows.map((r) => valueOf(field, r)).filter(Boolean))].map((o) => html`<option value="${o}">`)}</datalist>` : "";
-      return html`<input type="text" ${a(attrs)} ${field.list ? a(`list="dl-${name}"`) : ""} value="${value}" placeholder="${field.placeholder ?? ""}">${list}`;
+      return html`<input type="text" ${a(attrs)} ${field.list ? a(`list="dl-${name}"`) : ""} ${field.maxLength ? a(`maxlength="${Number(field.maxLength)}"`) : ""} value="${value}" placeholder="${field.placeholder ?? ""}">${list}`;
     }
   }
 }

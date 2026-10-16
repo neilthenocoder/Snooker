@@ -626,6 +626,12 @@ The league table is decided on frames won: one point for every frame.
       handicap_changes: [], categories, settings, media, page_views, announcements, role_permissions, audit_log: [],
       key_dates, awards, meetings, live_matches, private_settings: [{ id: 1, results_email_on: false, results_email_to: "" }],
       byes: [], cueview_submissions: [], notices, lineups: [],
+      // Round 22: newsletter, pop-up adverts, marketplace, comments, SEO, security.
+      newsletter_subscribers: [], newsletter_campaigns: [], popups: [], match_comments: [], seo_pages: [], site_versions: [], login_attempts: [],
+      market_categories: ["Cues", "Cases & accessories", "Tables", "Clothing", "Other"].map((name, i) => ({ id: uuid(), name, sort: i + 1 })),
+      market_ads: [],
+      security_settings: [{ id: 1, login_slug: null, hide_login_button: false, login_access: "all", mfa_roles: [], block_common_names: true,
+        common_names: "admin\nadministrator\nroot\ntest\nuser\nguest\ninfo\nwebmaster\nsupport\ndemo", max_attempts: 5, lockout_minutes: 15 }],
       merchandise: [
         { id: uuid(), name: "League polo shirt", price: "£18", description: "Black polo with the league badge on the chest. A sample item: change or remove it under Admin → Website → Merchandise.", options: "S, M, L, XL, XXL", image_url: "", url: "", sort: 1, is_active: true },
         { id: uuid(), name: "Cue towel", price: "£6", description: "Microfibre towel with the league badge. A sample item.", options: "", image_url: "", url: "", sort: 2, is_active: true },

@@ -454,6 +454,33 @@ Most people use the site on a phone, so a few things are done specially for smal
 - **Tables look like the league table.** The row at the top is faded green with its points (or break) in a green pill; pink is kept for what needs a warning (relegation places, losses). Long lists of players — rankings, breaks — show the top ten with a **Show all** button under them, on phones and big screens alike. The rankings and breaks of a league each take the full width, one under the other.
 - **The home page is shorter**: Shield holders are one slim row per shield, Player and Team of the week are slim cards, and CueViews are small cards (photo, name and a Q&A mark with the number of answers) — the answers are one tap away.
 
+## 3p. Round 22: newsletter, pop-ups, marketplace, chat, SEO, menu, security, versions
+
+**After uploading this zip, run the whole of `supabase/schema.sql` once** (Supabase → SQL Editor → paste → Run). It is safe to run again. The dashboard says “The database needs updating” until you do.
+
+| What | Where |
+|---|---|
+| Breaks highlighted (gold pill) everywhere — league and competition | automatic |
+| Live scoring: balls that are off the table can't be pressed; a note says to end the frame | the scoring pads |
+| My Snooker: the Competitions box follows the team chosen at the top; the deadlines box says it is *your own* team's | /myteam |
+| Home banner: landscape 16:9 picture (30%) beside the headline (70%); headlines max 70 characters, three lines | News → Headline |
+| Newsletter: sign-up pop-up and footer link, Subscribers (CSV download), Campaigns with a block builder (header, H1–H5, text, links/buttons, images, columns, social icons, footer) — table-based email | Admin → Newsletter |
+| Pop-up adverts on the home page (text + picture + button, or one whole picture) | Admin → Website → Pop-up adverts |
+| Snooker marketplace: anyone logged in posts an advert; it waits for approval; categories and search | /marketplace · Admin → Website → Marketplace adverts / categories |
+| Match night chat under every league and cup match | Admin → Website → Comments |
+| SEO: site title, language, description, preview; page settings (title, description, page image, search engines, site search); /sitemap.xml and /robots.txt | Admin → Website → SEO |
+| Menu creator: buttons, order (drag or ↑ ↓), colours, show/hide, phone links | Admin → Website → Menu |
+| Link checker and Performance | Admin → Website |
+| Security: custom login address, login access, two-step login by role, common names blocked, login attempt limit, recent logins | Admin → Master Admin → Security |
+| Version history from Netlify (Live, status, published at, changes, View, Make live); version number in `public/js/core/release.js` | Admin → Master Admin → Version history |
+
+**New Netlify environment variables** (Site configuration → Environment variables, then redeploy):
+- `NETLIFY_AUTH_TOKEN` — for Version history (Netlify → User settings → Applications → Personal access tokens). Tick “Contains secret values”. If the page says it can't find the site, also add `NETLIFY_SITE_ID` (Site configuration → General → Site ID).
+- `NEWSLETTER_EMAIL_FROM` (optional) — e.g. `St Blazey Snooker League <news@your-domain.co.uk>`; otherwise `RESULTS_EMAIL_FROM` is used. Resend's free plan sends 100 emails a day / 3,000 a month.
+
+**Two-step login:** tick roles under Security → Two-step login (set it up for yourself first). Lost phone: Security → Reset their two-step login. If the Master Admin loses theirs: Supabase → Authentication → Users → the user → remove the MFA factor.
+**Custom login address:** after choosing one, `/login` shows “page not found”; tell officers and captains the new address.
+
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
 | Rule | Current setting |

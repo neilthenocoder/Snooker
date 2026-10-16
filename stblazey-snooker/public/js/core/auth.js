@@ -1,6 +1,7 @@
 // Who is logged in, and what are they allowed to do (UI only —
 // the database enforces the same rules with row-level security).
 import { db, run } from "./db.js";
+import { loginGate, loginWait, loginRecord } from "./api.js";
 
 let cached;
 
@@ -17,9 +18,40 @@ export async function getUser() {
   if (!session) return (cached = null);
   const profile = await run(db.from("profiles").select("*").eq("id", session.user.id).maybeSingle()).catch(() => null);
   // What this role may use in the dashboard — set by the Master Admin under Admin → Roles & permissions.
-  const perms = profile?.role && profile.role !== "admin"
-    ? await run(db.from("role_permissions").select("*").eq("role", profile.role).maybeSingle()).catch(() => null) : null;
-  return (cached = { ...session.user, profile, areas: perms?.areas ?? DEFAULT_AREAS[profile?.role] ?? [] });
+  const [perms, gate, aal] = await Promise.all([
+    profile?.role && profile.role !== "admin" ? run(db.from("role_permissions").select("*").eq("role", profile.role).maybeSingle()).catch(() => null) : null,
+    loginGate(), currentAal()]);
+  // Two-step login (Admin → Master Admin → Security): a role that needs it has to have used it in this session,
+  // or the database refuses everything it tries to change. The website then asks for the code first (see mfaNeeded in main.js).
+  const mfaNeeded = !!profile?.role && (gate.mfa_roles ?? []).includes(profile.role) && aal !== "aal2";
+  return (cached = { ...session.user, profile, areas: perms?.areas ?? DEFAULT_AREAS[profile?.role] ?? [], mfaNeeded, aal });
+}
+
+/** "aal1" (password only) or "aal2" (password and a code from the phone app) — what this session has used. */
+export async function currentAal() {
+  try { const { data } = await db.auth.mfa.getAuthenticatorAssuranceLevel(); return data?.currentLevel ?? "aal1"; } catch { return "aal1"; }
+}
+
+/** Who may log in at the moment (Admin → Master Admin → Security → Login access). */
+export const accessAllows = (access, role) => access === "master" ? role === "admin"
+  : access === "officers" ? !["captain", "vice_captain", "player"].includes(role) : true;
+const ACCESS_TEXT = { officers: "Logins are only open to league officers at the moment.", master: "Logins are closed at the moment while the website is being looked after." };
+
+/**
+ * Log in from either login form, with the league's own rules (Admin → Master Admin → Security):
+ * too many wrong passwords from one place → wait; logins only open to some roles → refused.
+ * Returns the user; user.mfaNeeded means the two-step code must be asked for next (core/two-step.js).
+ */
+export async function signInChecked(email, password) {
+  const wait = Number(await loginWait(email)) || 0;
+  if (wait > 0) throw new Error(`Too many wrong passwords. Please wait ${wait > 90 ? `${Math.ceil(wait / 60)} minutes` : `${wait} seconds`} and try again.`);
+  let u;
+  try { u = await signIn(email, password); }
+  catch (err) { await loginRecord(email, false); throw err; }
+  await loginRecord(email, true);
+  const gate = await loginGate();
+  if (!accessAllows(gate.access ?? "all", u?.profile?.role)) { await signOut(); throw new Error(ACCESS_TEXT[gate.access] ?? "Your login can't be used at the moment."); }
+  return u;
 }
 
 export async function signIn(email, password) {
@@ -65,6 +97,7 @@ export const AREAS = [
   ["website", "News & website", "News, categories, announcements, key dates, meetings, info pages and rules, sponsors, presentation awards, image library"],
   ["settings", "Settings & branding", "Site settings, home page, branding, result emails, statistics"],
   ["people", "Logins", "Create, change and remove logins (never a Master Admin's)"],
+  ["newsletter", "Newsletter", "Newsletter campaigns (write and send them) and the list of people who have signed up"],
 ];
 const ALL_AREAS = AREAS.map(([key]) => key);
 /** The roles whose permissions can be set (everyone except the Master Admin, captains and players). */
@@ -83,7 +116,7 @@ export const DEFAULT_AREAS = {
   league_admin: ALL_AREAS,
   competition_secretary: ["handicaps", "competitions", "livescoring", "news"],
   league_secretary: ["league", "handicaps", "news"],
-  committee_member: ["website", "settings", "news"], president: ["website", "settings", "news"], vice_chairman: ["website", "settings", "news"], chairman: ["website", "settings", "news"],
+  committee_member: ["website", "settings", "news", "newsletter"], president: ["website", "settings", "news", "newsletter"], vice_chairman: ["website", "settings", "news", "newsletter"], chairman: ["website", "settings", "news", "newsletter"],
   captain: [], vice_captain: [],
 };
 /**
@@ -103,6 +136,11 @@ export const SECTION_AREA = {
   articles: "website", write: { any: ["website", "news"] }, categories: "website", announcements: "website", notices: "website", media: { any: ["website", "news"] }, pages: "website", sponsors: "website", merchandise: "website",
   cueviews: "league",
   branding: "settings", settings: "settings", stats: "settings",
+  // Round 22
+  campaigns: "newsletter", subscribers: "newsletter", newsletter_setup: "newsletter",
+  popups: "website", market: "website", market_categories: "website", comments: "website", links: "website",
+  seo: "settings", menu: "settings", performance: "settings",
+  security: "master", versions: "master",
 };
 
 const roleOf = (user) => user?.profile?.role;

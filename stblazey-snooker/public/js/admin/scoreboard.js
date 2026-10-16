@@ -205,14 +205,15 @@ export async function scoreboardPage(el, { user } = {}) {
 
         ${live ? html`
           <div class="pad-pots" aria-label="Balls potted in this break">${f.pots.length ? f.pots.slice(-30).map((v) => ballDot(v)) : html`<span class="muted">No balls potted in this visit yet</span>`}</div>
+          ${score.tableCleared(f) ? html`<div class="notice ok pad-cleared"><b>All the balls are off the table.</b> End the frame below${leader ? "" : " (or give it to the player who won)"}.</div>` : ""}
           <div class="pad-balls">${score.BALLS.map((b) => html`<button type="button" class="ball-btn b-${b.key} ${on === b.value || (on === "red" && b.value === 1) || (on === "colour" && b.value > 1) ? "is-on" : ""}"
-            data-pot="${b.value}" ${b.value === 1 && f.reds === 0 ? "disabled" : ""} aria-label="${b.name} potted, ${b.value} point${b.value > 1 ? "s" : ""}"><span>${b.value}</span><small>${b.name}</small></button>`)}</div>
+            data-pot="${b.value}" ${score.pottable(f).includes(b.value) ? "" : "disabled"} aria-label="${b.name} potted, ${b.value} point${b.value > 1 ? "s" : ""}"><span>${b.value}</span><small>${b.name}</small></button>`)}</div>
           <div class="pad-row">
             <button type="button" class="btn secondary pad-big" data-end-break>End of break <small>miss or safety — ${name[f.striker === "a" ? "b" : "a"]} to play</small></button>
             <button type="button" class="btn ghost pad-big" data-undo ${undo.length ? "" : "disabled"}>Undo <small>the last press</small></button>
           </div>
           <div class="pad-row pad-fouls"><span>Foul by ${name[f.striker]}:</span>${[4, 5, 6, 7].map((n) => html`<button type="button" class="btn small" data-foul="${n}">${n} away</button>`)}
-            <button type="button" class="btn small blue" data-free title="After a foul leaves a snooker: the free ball counts as the ball on">Free ball potted</button></div>
+            <button type="button" class="btn small blue" data-free ${score.tableCleared(f) ? "disabled" : ""} title="After a foul leaves a snooker: the free ball counts as the ball on">Free ball potted</button></div>
           <p class="pad-info"><b>${f.reds}</b> red${f.reds === 1 ? "" : "s"} left · <b>${sit.remaining}</b> on the table · ${sit.ahead ? `${name[sit.ahead]} leads by ${sit.lead}` : "level"}${sit.snookers ? html` · <em>${name[sit.ahead === "a" ? "b" : "a"]} needs snookers</em>` : ""}${f.last ? html` · <span class="muted">${f.last}</span>` : ""}</p>
           ${sayBox(linesOf(m), { publicHref: urls.scoreboard(m) })}
           <details class="pad-fix" ${fixOpen ? "open" : ""}><summary>Put something right</summary>
@@ -292,7 +293,7 @@ export async function scoreboardPage(el, { user } = {}) {
     // Keyboard, for a laptop by the table.
     const onKey = (e) => {
       if (m.status !== "live" || e.target.closest("input, textarea, select, dialog") || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (/^[1-7]$/.test(e.key)) { if (!(e.key === "1" && m.state.frame.reds === 0)) press.pot(Number(e.key)); }
+      if (/^[1-7]$/.test(e.key)) { if (score.pottable(m.state.frame).includes(Number(e.key))) press.pot(Number(e.key)); }
       else if (e.key === " ") { e.preventDefault(); press.endBreak(); }
       else if (e.key === "Backspace") { e.preventDefault(); press.undo(); }
     };
