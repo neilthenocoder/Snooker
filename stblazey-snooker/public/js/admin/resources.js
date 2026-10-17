@@ -722,7 +722,8 @@ export const RESOURCES = {
     rowClass: (row) => (row.status === "pending" ? "hl" : ""),
   },
   page_settings_23: {
-    label: "Sponsorship, downloads & Hall of Fame pages", table: "settings", order: "id", single: true,
+    label: "Page introductions", table: "settings", order: "id", single: true,
+    intro: "The few lines of text at the top of these pages — what visitors read first. Leave a box empty to use the standard wording.",
     fields: [
       { type: "heading", label: "Sponsorship page (/sponsorship)" },
       { name: "sponsorship_intro", label: "Text at the top", type: "textarea", rows: 4 },

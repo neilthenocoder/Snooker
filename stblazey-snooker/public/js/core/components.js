@@ -137,7 +137,7 @@ export function dataTable(columns, rows, { highlight = () => false, rowClass = (
   const folds = phoneLimit > 0 && rows.length >= phoneLimit + minHidden;      // (by default not worth it for one or two more)
   const table = html`<div class="table-scroll"><table class="data">
     <thead><tr>${columns.map((c) => html`<th class="${c.cls || ""}">${c.label}</th>`)}</tr></thead>
-    <tbody>${rows.map((r, i) => html`<tr class="${highlight(r) ? "hl" : ""} ${rowClass(r)} ${folds && i >= phoneLimit ? "ph-more" : ""}">${columns.map((c) => html`<td class="${c.cls || ""}" data-label="${c.label}">${c.cell(r, i)}</td>`)}</tr>`)}</tbody>
+    <tbody>${rows.map((r, i) => html`<tr class="${highlight(r) ? "hl" : ""} ${rowClass(r)} ${folds && i >= phoneLimit ? "ph-more" : ""}">${columns.map((c) => html`<td class="${c.cls || ""}" data-label="${String(c.label ?? "").replace(/<[^>]*>/g, "").trim()}">${c.cell(r, i)}</td>`)}</tr>`)}</tbody>
   </table></div>`;
   return folds ? html`<div class="table-fold" data-table-fold>${table}<button type="button" class="table-fold-btn" data-fold-toggle data-more="Show all ${rows.length} ${more}" data-less="Show the first ${phoneLimit} only">Show all ${rows.length} ${more}</button></div>` : table;
 }
@@ -386,22 +386,31 @@ function sideBox(ctx, news, count, box) {
   const rows = [...league, ...cups].sort((a, b) => String(b.when ?? "").localeCompare(String(a.when ?? ""))).slice(0, Math.max(1, site.side_box_count || 5));
   // Rich, round 23: more visual — emblems and a score pill — and point at (or tap) a result to see more:
   // every frame, the best break, the venue and a link to the full scorecard.
+  // Rich, round 24: a press on a result (the ⌄ or anywhere on the row) opens a short summary under it — who won the most
+  // frames, the best break, the venue — with a button to the full match statistics. It opens and closes smoothly.
   const more = (r) => {
     if (!r.fx) return "";
     const frames = ctx.framesOf(r.fx.id), brk = ctx.breaksOf(r.fx.id).sort((a, b) => b.value - a.value)[0];
-    const pname = (id) => ctx.player.get(id)?.full_name?.split(" ").slice(-1)[0] ?? "–";
-    return html`<div class="res-more">
-      ${frames.length ? html`<ol class="res-frames">${frames.map((fr) => { const w = frameWinner(fr); return html`<li class="${w === "home" ? "h" : w === "away" ? "a" : ""}"><span>${pname(fr.home_player_id)}</span><b>${fr.home_points ?? "–"}–${fr.away_points ?? "–"}</b><span>${pname(fr.away_player_id)}</span></li>`; })}</ol>` : ""}
-      <p class="res-facts">${brk ? html`Best break: ${breakTag(brk.value, isProvisional(r.fx))} ${ctx.player.get(brk.player_id)?.full_name ?? ""}` : "No breaks of 30+"}${ctx.venue.get(r.fx.venue_id) ? html` · ${ctx.venue.get(r.fx.venue_id).name}` : ""}${isProvisional(r.fx) ? html` · <em>waiting for approval</em>` : ""}</p>
-      <a class="res-go" href="${r.href}">Full scorecard →</a></div>`;
+    const wins = new Map();
+    for (const fr of frames) { const w = frameWinner(fr); if (w) { const id = fr[`${w}_player_id`]; wins.set(id, (wins.get(id) ?? 0) + 1); } }
+    const star = [...wins].sort((a, b) => b[1] - a[1])[0];
+    const venue = ctx.venue.get(r.fx.venue_id);
+    return html`<div class="res-more" id="res-${r.fx.id}"><div class="res-more-in">
+      <p class="res-facts">${r.won ? html`<b>${r.won === "h" ? r.home : r.away}</b> won ${Math.max(r.hs, r.as)}–${Math.min(r.hs, r.as)}` : html`<b>Drawn</b> ${r.hs}–${r.as}`}${isProvisional(r.fx) ? html` <em>(waiting for approval)</em>` : ""}</p>
+      <ul class="res-bits">
+        ${brk ? html`<li>Best break ${breakTag(brk.value, isProvisional(r.fx))} ${ctx.player.get(brk.player_id)?.full_name ?? ""}</li>` : html`<li>No breaks of 30 or more</li>`}
+        ${star && star[1] > 1 ? html`<li>${ctx.player.get(star[0])?.full_name ?? ""} won ${star[1]} frames</li>` : ""}
+        ${venue ? html`<li>${venue.name} · ${fmtDate(r.fx.starts_at)}</li>` : ""}
+      </ul>
+      <a class="btn small res-go" href="${r.href}">View full match statistics →</a></div></div>`;
   };
   return html`${panel(site.side_box_title || "Latest Results", rows.length
-      ? html`<div class="res-list res-rich">${rows.map((r) => (r.fx ? html`<div class="res-card" tabindex="0">
-          <a class="res-mini" href="${r.href}"><small>${r.when ? fmtDate(r.when) : ""}${r.title ? ` · ${r.title}` : ""}</small>
+      ? html`<div class="res-list res-rich">${rows.map((r) => (r.fx ? html`<div class="res-card">
+          <button type="button" class="res-mini res-head" data-res-more aria-expanded="false" aria-controls="res-${r.fx.id}"><small>${r.when ? fmtDate(r.when) : ""}${r.title ? ` · ${r.title}` : ""}</small>
             <span class="res-team ${r.won === "h" ? "won" : r.won ? "lost" : ""}">${badge(r.homeTeam ?? { name: r.home })}<em>${r.home}</em></span>
             <b class="res-pill"><i class="${r.won === "h" ? "w" : ""}">${r.hs}</i><i class="${r.won === "a" ? "w" : ""}">${r.as}</i></b>
-            <span class="res-team ${r.won === "a" ? "won" : r.won ? "lost" : ""}"><em>${r.away}</em>${badge(r.awayTeam ?? { name: r.away })}</span></a>
-          <button type="button" class="res-toggle" data-res-more aria-label="More about this result" aria-expanded="false">⌄</button>${more(r)}</div>`
+            <span class="res-team ${r.won === "a" ? "won" : r.won ? "lost" : ""}"><em>${r.away}</em>${badge(r.awayTeam ?? { name: r.away })}</span>
+            <span class="res-toggle" aria-hidden="true">⌄</span></button>${more(r)}</div>`
         : html`<a class="res-mini" href="${r.href}">
           <small>${r.when ? fmtDate(r.when) : ""}${r.title ? ` · ${r.title}` : ""}</small>
           <span class="${r.won === "h" ? "won" : r.won ? "lost" : ""}">${r.home}</span><b>${r.score}</b><span class="${r.won === "a" ? "won" : r.won ? "lost" : ""}">${r.away}</span></a>`))}</div>`

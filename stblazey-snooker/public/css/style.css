@@ -3591,18 +3591,23 @@ button { font-family: inherit; }
 .res-pill { display: inline-flex; border-radius: 6px; overflow: hidden; font: 700 15px var(--font-head); }
 .res-pill i { font-style: normal; min-width: 26px; padding: 4px 6px; text-align: center; background: #222; color: #fff; }
 .res-pill i.w { background: var(--green); }
-.res-toggle { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); width: 24px; height: 24px; border: 0; border-radius: 50%; background: #eee; cursor: pointer; font-size: 14px; line-height: 1; }
-.res-card.open .res-toggle { transform: translateY(-50%) rotate(180deg); }
-.res-more { display: none; padding: 4px 12px 12px; background: #f7f7f2; font-size: 13px; }
-.res-card.open .res-more { display: block; animation: a2hsIn .2s ease-out; }
-@media (hover: hover) { .res-card:hover .res-more, .res-card:focus-within .res-more { display: block; } .res-card:hover { background: #fafaf5; } }
+.res-rich .res-head { width: 100%; background: none; border: 0; font: inherit; color: inherit; cursor: pointer; text-align: inherit; }
+.res-toggle { position: absolute; top: 50%; right: 8px; transform: translateY(-50%); display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #eee; font-size: 14px; line-height: 1; transition: transform .25s; }
+.res-card.open .res-toggle { transform: translateY(-50%) rotate(180deg); background: var(--ink); color: #fff; }
+.res-more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .28s ease; background: #f7f7f2; }
+.res-more-in { overflow: hidden; min-height: 0; padding: 0 14px; font-size: 13px; }
+.res-card.open .res-more { grid-template-rows: 1fr; }
+.res-card.open .res-more-in { padding: 10px 14px 14px; }
+@media (hover: hover) { .res-card:hover { background: #fafaf5; } }
+.res-bits { list-style: none; margin: 4px 0 10px; padding: 0; display: grid; gap: 4px; color: #444; }
 .res-frames { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 2px; }
 .res-frames li { display: grid; grid-template-columns: 1fr auto 1fr; gap: 6px; padding: 2px 4px; }
 .res-frames li span:first-child { text-align: right; }
 .res-frames li.h span:first-child, .res-frames li.a span:last-child { font-weight: 700; color: var(--green); }
 .res-frames b { font-variant-numeric: tabular-nums; }
 .res-facts { margin: 6px 0; color: #444; }
-.res-go { font-weight: 700; color: var(--red); }
+.res-more .btn.res-go { font-weight: 700; color: #fff; background: var(--red); margin-top: 6px; }
+.res-more .btn.res-go:hover { color: #fff; filter: brightness(1.1); }
 /* Sponsorship packages. */
 .sp-intro, .dl-intro { max-width: 780px; color: #333; }
 .sp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin: 18px 0; }
@@ -3653,3 +3658,34 @@ button { font-family: inherit; }
 .hof-card.big .hof-body strong { font-size: 24px; }
 @media (max-width: 640px) { .hof-card.big { flex-direction: column; } .hof-card.big .hof-pic { aspect-ratio: 16 / 9; } }
 .a2hs-point { margin: 8px 0 12px; }
+
+/* ══ Round 24 (Rich's feedback, 17 Oct) ═══════════════════════════════════════════════════ */
+/* Phone admin lists: a cell with several things in it stays one block (the link checker's addresses were one letter per line). */
+.lk-cell { min-width: 0; text-align: left; overflow-wrap: anywhere; }
+@media (max-width: 720px) { #admin-body table.data td > * { min-width: 0; } #admin-body table.data td > .lk-cell { flex: 1; } }
+.hs-explain { padding: 4px 4px 14px; border-bottom: 1px solid #eee; margin-bottom: 14px; font-size: 14.5px; }
+.hs-explain ul { margin: 6px 0 10px; padding-left: 20px; display: grid; gap: 5px; }
+/* Match night chat: a button near the top, the chat slides up from the bottom (Rich, round 24). */
+.cm-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.cm-open { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border: 0; border-radius: 22px; background: var(--green); color: #fff; font: 700 14px var(--font-head); cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, .15); }
+.cm-open svg { width: 20px; height: 20px; fill: currentColor; }
+.cm-open b { display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: #fff; color: var(--green); font-size: 12px; }
+.cm-sheet { position: fixed; inset: 0; z-index: 170; pointer-events: none; }
+.cm-shade { position: absolute; inset: 0; background: rgba(0, 0, 0, .45); opacity: 0; transition: opacity .25s; }
+.cm-panel-s { position: absolute; left: 50%; bottom: 0; width: min(560px, 100%); height: min(78vh, 680px); transform: translate(-50%, 102%); transition: transform .3s cubic-bezier(.2, .8, .2, 1);
+  display: flex; flex-direction: column; background: #fff; border-radius: 16px 16px 0 0; box-shadow: 0 -10px 40px rgba(0, 0, 0, .3); padding-bottom: env(safe-area-inset-bottom); }
+.cm-sheet.open { pointer-events: auto; }
+.cm-sheet.open .cm-shade { opacity: 1; }
+.cm-sheet.open .cm-panel-s { transform: translate(-50%, 0); }
+html.cm-locked { overflow: hidden; }
+.cm-top { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 16px 10px; border-bottom: 1px solid #eee; }
+.cm-top div { display: grid; } .cm-top b { font: 700 17px var(--font-head); } .cm-top small { color: var(--muted); }
+.cm-grab { position: absolute; top: 6px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: #ccc; }
+.cm-x { width: 36px; height: 36px; border: 0; border-radius: 50%; background: #eee; font-size: 22px; cursor: pointer; }
+.cm-tools { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 16px; border-bottom: 1px solid #f2f2f2; }
+.cm-sheet .cm-list { flex: 1; overflow: auto; max-height: none; padding: 12px 16px; margin: 0; list-style: none; display: grid; gap: 12px; align-content: start; }
+.cm-foot { border-top: 1px solid #eee; padding: 10px 12px; }
+.cm-sheet .cm-form { display: flex; gap: 8px; align-items: flex-end; }
+.cm-sheet .cm-form textarea { flex: 1; min-height: 42px; max-height: 120px; padding: 10px 12px; border: 1px solid #ccc; border-radius: 20px; font: inherit; resize: none; }
+.cm-closed { margin: 0; padding: 8px; text-align: center; color: var(--muted); font-weight: 600; }
+.a2hs-never { grid-column: 1 / -1; justify-self: start; margin: -2px 0 0 48px; padding: 0; border: 0; background: none; color: #bbb; font-size: 12.5px; text-decoration: underline; cursor: pointer; }

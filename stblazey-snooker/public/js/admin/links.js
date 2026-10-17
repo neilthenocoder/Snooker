@@ -85,8 +85,8 @@ export async function linksPage(el) {
         <span class="lk-pill bad">${results.filter((r) => r.state === "bad").length} broken</span><span class="lk-pill warn">${results.filter((r) => r.state === "warn").length} to look at</span></div>
       ${panel(onlyBad ? "Problems" : "Every link", dataTable([
         { label: "", cell: (r) => html`<span class="lk-dot ${r.state}" title="${r.state}"></span>` },
-        { label: "Link", cell: (r) => html`<a class="lk-url" href="${r.url}" target="_blank" rel="noopener">${r.url}</a>${r.kind === "picture" ? html` <small class="muted">picture</small>` : ""}<br><small class="${r.state === "ok" ? "muted" : "lk-why"}">${r.note}</small>` },
-        { label: "Where", cell: (r) => html`${r.where.slice(0, 3).map((w) => html`<span class="lk-where">${TABLE_NAME[w.table] ?? w.table}: ${w.label}${w.edit ? html` <a class="btn small ghost" href="${w.edit}">Fix</a>` : ""}</span>`)}${r.where.length > 3 ? html`<small class="muted">and ${r.where.length - 3} more</small>` : ""}` },
+        { label: "Link", cell: (r) => html`<div class="lk-cell"><a class="lk-url" href="${r.url}" target="_blank" rel="noopener">${r.url}</a>${r.kind === "picture" ? html` <small class="muted">picture</small>` : ""}<br><small class="${r.state === "ok" ? "muted" : "lk-why"}">${r.note}</small></div>` },
+        { label: "Where", cell: (r) => html`<div class="lk-cell">${r.where.slice(0, 3).map((w) => html`<span class="lk-where">${TABLE_NAME[w.table] ?? w.table}: ${w.label}${w.edit ? html` <a class="btn small ghost" href="${w.edit}">Fix</a>` : ""}</span>`)}${r.where.length > 3 ? html`<small class="muted">and ${r.where.length - 3} more</small>` : ""}</div>` },
       ], list, { empty: "Nothing to fix — every link works." }))}` : "");
   };
   el.onchange = (e) => { if (e.target.matches("[data-lk-problems]")) draw(); };

@@ -4,16 +4,12 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.23.0";
+export const SITE_VERSION = "1.24.0";
 export const CHANGES = [
-  "Tables, rankings and breaks move live on match night (marked * until approved); live confetti with small print",
-  "Add to home screen: one press on Chrome/Edge/Android, a picture guide on iPhone, in the menu and offered automatically",
-  "SEO on the Info page editor",
-  "Home page banner layouts: picture beside, big picture, or headline only",
-  "Side adverts (everywhere or one venue / team / page), venue pages with their own side column",
-  "Sponsorship packages page, League downloads, Hall of Fame with Share a memory",
-  "In memoriam: each player's story and pictures",
-  "Suggested handicaps for the yearly review",
-  "Rules help search on the scorecards",
-  "Latest results: emblems, score pills and more on hover",
+  "Fixed: “<input type=” showing on phone lists (Suggested handicaps) and the link checker on phones",
+  "Suggested handicaps: the rules explained on the page in plain English",
+  "Latest results: tap a result to open a short summary, with a button to the full match statistics",
+  "Match chat: a button near the top opens the chat from the bottom of the screen; invite your team; the league can close the chat for one match",
+  "Admin menu: the Website list split into News, Pages & content, Sponsors & adverts, Community, Look & settings and Tools",
+  "Add to home screen: never offered again once added, and a “Don't show this again” button",
 ].join("\n");

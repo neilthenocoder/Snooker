@@ -8,12 +8,12 @@ import { canEditFixture, canAddMatchPhotos, MATCH_PHOTO_LIMIT } from "../core/au
 import { breadcrumb, panel, dataTable, resultsList, statusBadge, urls, teamLink, playerLink, badge, gallery, outcomeTag, breakTag, breakList } from "../core/components.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
-import { mountComments } from "../core/comments.js";
+import { matchChat } from "../core/comments.js";
 
 export default async function match(view, { params, user }) {
-  // Match night chat (Rich, round 22): one box kept for the whole visit, put back in its place after every redraw.
-  const chat = document.createElement("div");
-  chat.className = "cm-wrap";
+  // Match night chat (Rich, round 24): a button near the top opens it from the bottom of the screen.
+  // The button is kept for the whole visit and put back in its place after every redraw.
+  let chat = null;
   const draw = async () => {
     const bundle = await loadFixture(params.id);
     if (!bundle) return notFound(view);
@@ -86,7 +86,7 @@ export default async function match(view, { params, user }) {
     const board = fx.status === "in_progress" ? (await fixtureBoards(fx.id)).find((m) => onTable(m)) : null;
 
     mount(view, html`
-      <div class="wrap">${breadcrumb([["Home", "/"], [title]])}</div>
+      <div class="wrap cm-row">${breadcrumb([["Home", "/"], [title]])}<span data-chat-slot></span></div>
       <div class="wrap"><div class="match-hero">
         <div class="mh-band">${league?.name ?? ""} · ${fmtDate(fx.starts_at)} ${fmtTime(fx.starts_at)}</div>
         <div class="mh-body">
@@ -146,10 +146,9 @@ export default async function match(view, { params, user }) {
           ], frames))}
           <div class="compare">${bar("Points", "points")}${bar("Wins", "wins")}${bar("Loss", "loss")}${bar("Brks", "brks")}</div>
         ` : html`<div class="notice">No frames entered yet${fx.status === "scheduled" ? " — check back on match night." : "."}</div>`}
-        <div data-chat-slot></div>
         ${panel("Past Meetings", resultsList(ctx, past, { scoreFn: (f) => { const s = matchScore(h2hFrames.get(f.id)); return `${s.home} - ${s.away}`; } }))}
       </div>`);
-    $("[data-chat-slot]", view)?.replaceWith(chat);
+    if (chat) $("[data-chat-slot]", view)?.replaceWith(chat.button);
     // The photo controls live inside the panel, which is rebuilt on every draw — so nothing is left listening.
     const box = $("#match-photos", view);
     if (box && mayAddPhotos) {
@@ -178,7 +177,8 @@ export default async function match(view, { params, user }) {
   };
 
   const fx = await draw();
-  const stopChat = fx ? await mountComments(chat, { fixture_id: fx.id }, user) : () => {};
+  if (fx) { chat = await matchChat({ fixture_id: fx.id }, fx, user, { title: document.title.split(" | ")[0] }); $("[data-chat-slot]", view)?.replaceWith(chat.button); }
+  const stopChat = () => chat?.stop();
   // Keep the page updating while a match is being played.
   const stop = fx && ["scheduled", "in_progress", "submitted"].includes(fx.status) ? subscribe(["frames", "breaks", "fixtures"], draw) : () => {};
   return () => { stop(); stopChat(); };

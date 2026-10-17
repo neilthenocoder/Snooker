@@ -2397,13 +2397,48 @@ create policy "public read" on hall_of_fame for select using (status = 'approved
 create policy "admin write" on hall_of_fame for all using (public.can_manage('website')) with check (public.can_manage('website'));
 create policy "admin write" on hall_of_fame_contacts for all using (public.can_manage('website')) with check (public.can_manage('website'));
 
+-- ── Round 24 (Rich's feedback, 17 Oct) ──────────────────────────
+-- The match night chat can be closed for one match by the league ("Close the chat for this match"),
+-- as well as for the whole site (settings.comments_on).
+alter table fixtures add column if not exists chat_off boolean not null default false;
+alter table competition_matches add column if not exists chat_off boolean not null default false;
+create or replace function public.set_chat_off(p_fixture uuid, p_comp_match uuid, p_off boolean) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.can_manage('website') then raise exception 'Only the league can open or close a match chat'; end if;
+  if p_fixture is not null then update fixtures set chat_off = coalesce(p_off, false) where id = p_fixture; end if;
+  if p_comp_match is not null then update competition_matches set chat_off = coalesce(p_off, false) where id = p_comp_match; end if;
+end $$;
+grant execute on function public.set_chat_off(uuid, uuid, boolean) to authenticated;
+create or replace function public.guard_comment() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if tg_op = 'INSERT' then
+    if auth.uid() is null then raise exception 'Please log in to comment'; end if;
+    if not coalesce((select comments_on from settings where id = 1), true) then raise exception 'Comments are switched off'; end if;
+    if (new.fixture_id is not null and coalesce((select chat_off from fixtures where id = new.fixture_id), false))
+       or (new.comp_match_id is not null and coalesce((select chat_off from competition_matches where id = new.comp_match_id), false)) then
+      raise exception 'The league has closed the chat for this match';
+    end if;
+    if exists (select 1 from match_comments where author_id = auth.uid() and created_at > now() - interval '10 seconds') then
+      raise exception 'Please wait a few seconds before commenting again';
+    end if;
+    new.author_id := auth.uid(); new.hidden := false; new.created_at := now();
+    new.author_name := (select coalesce(nullif(p.full_name, ''), split_part(p.email, '@', 1)) from profiles p where p.id = auth.uid());
+    return new;
+  end if;
+  if not public.can_manage('website') then raise exception 'Only the league can change a comment'; end if;
+  new.body := old.body; new.author_id := old.author_id; new.author_name := old.author_name; new.created_at := old.created_at;
+  return new;
+end $$;
+
 -- ── the version of this file ─────────────────────────────────────
 -- KEEP THIS AT THE VERY END. The website asks the database for this number (public/js/core/version.js holds
 -- the one it expects). Because it is the last thing in the file, the database only reports the new number
 -- when everything above it has run. If the website files are uploaded without this file being run, the admin
 -- dashboard says "The database needs updating" at the top of every page.
 -- When something is added to this file that the website needs: raise this number and the one in version.js.
-create or replace function public.schema_version() returns int language sql immutable as $$ select 17 $$;
+create or replace function public.schema_version() returns int language sql immutable as $$ select 18 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

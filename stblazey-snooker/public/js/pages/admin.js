@@ -51,7 +51,13 @@ const NAV = [
   ["League", [["leagues", "Leagues"], ["teams", "Teams"], ["players", "Players"], ["cueviews", "CueViews to approve"], ["handicaps", "Handicaps"], ["handicap_suggest", "Suggested handicaps"], ["venues", "Venues"], ["seasons", "Seasons"]]],
   ["Competitions", [["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws & results"], ["scoreboard", "Live scoreboard"], ["awards", "Presentation awards"]]],
   ["People", [["accounts", "Logins"]]],
-  ["Website", [["articles", "News"], ["approvals", "News to approve"], ["write", "Write news step by step"], ["categories", "News categories"], ["announcements", "Announcements"], ["notices", "Notifications"], ["popups", "Pop-up adverts"], ["key_dates", "Key dates"], ["meetings", "Meetings"], ["media", "Image library"], ["pages", "Info pages & rules"], ["merchandise", "Merchandise"], ["market", "Marketplace adverts"], ["market_categories", "Marketplace categories"], ["comments", "Comments"], ["sponsors", "Sponsors"], ["sponsor_packages", "Sponsorship packages"], ["ads", "Side adverts"], ["downloads", "Downloads"], ["hall_of_fame", "Hall of Fame"], ["page_settings_23", "Sponsorship, downloads & Hall of Fame pages"], ["menu", "Menu"], ["branding", "Branding"], ["settings", "Site settings & home page"], ["seo", "SEO"], ["emails", "Emails"], ["links", "Link checker"], ["performance", "Performance"], ["stats", "Statistics"]]],
+  // Rich, round 24: the long "Website" list split into groups.
+  ["News", [["articles", "News"], ["approvals", "News to approve"], ["write", "Write news step by step"], ["categories", "News categories"], ["notices", "Notifications"], ["announcements", "Announcements"]]],
+  ["Pages & content", [["pages", "Info pages & rules"], ["key_dates", "Key dates"], ["meetings", "Meetings"], ["hall_of_fame", "Hall of Fame"], ["downloads", "Downloads"], ["merchandise", "Merchandise"], ["media", "Image library"]]],
+  ["Sponsors & adverts", [["sponsors", "Sponsors"], ["sponsor_packages", "Sponsorship packages"], ["ads", "Side adverts"], ["popups", "Pop-up adverts"]]],
+  ["Community", [["market", "Marketplace adverts"], ["market_categories", "Marketplace categories"], ["comments", "Match chat"]]],
+  ["Look & settings", [["settings", "Site settings & home page"], ["branding", "Branding"], ["menu", "Menu"], ["page_settings_23", "Page introductions"], ["seo", "SEO"], ["emails", "Emails"]]],
+  ["Tools", [["stats", "Statistics"], ["links", "Link checker"], ["performance", "Performance"]]],
   ["Newsletter", [["campaigns", "Campaigns"], ["subscribers", "Subscribers"], ["newsletter_setup", "Sign-up pop-up"]]],
   // Only the Master Admin sees these.
   ["Master Admin", [["roles", "Roles & permissions"], ["security", "Security"], ["versions", "Version history"], ["activity", "Activity log"], ["backup", "Backup"]]],
@@ -71,6 +77,12 @@ const GROUP_ICON = {
   Competitions: ico("M7 3h10v2h4v3a4 4 0 0 1-4.2 4A5 5 0 0 1 13 15.9V19h3v2H8v-2h3v-3.1A5 5 0 0 1 7.2 12 4 4 0 0 1 3 8V5h4Zm0 4H5v1a2 2 0 0 0 2 2Zm10 3a2 2 0 0 0 2-2V7h-2Z"),
   People: ico("M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"),
   Website: ico("M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6v2h3v2H7v-2h3v-2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm0 2v10h16V6Z"),
+  News: ico("M4 4h13v14a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2Zm2 2v4h9V6Zm0 6v2h9v-2Zm0 4v2h6v-2Zm13-8h2v10a2 2 0 0 1-4 0V8Z"),
+  "Pages & content": ico("M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm8 1.5V8h4.5ZM7 11v2h10v-2Zm0 4v2h10v-2Z"),
+  "Sponsors & adverts": ico("M3 10v4a1 1 0 0 0 1 1h2l5 4V5L6 9H4a1 1 0 0 0-1 1Zm13-3.5v11a6 6 0 0 0 0-11Zm0-4v2.1a8 8 0 0 1 0 14.8v2.1a10 10 0 0 0 0-19Z"),
+  Community: ico("M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"),
+  "Look & settings": ico("m19.4 13 .1-1-.1-1 2-1.6-2-3.4-2.4 1a7 7 0 0 0-1.7-1L15 3.5h-4L10.7 6a7 7 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11l-.1 1 .1 1-2 1.6 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.3 2.5h4l.3-2.5a7 7 0 0 0 1.7-1l2.4 1 2-3.4ZM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"),
+  Tools: ico("M21 18.6 13.4 11a5 5 0 0 0-6.5-6.5L10.2 8 8 10.2 4.5 6.9A5 5 0 0 0 11 13.4l7.6 7.6Z"),
   Newsletter: ico("M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm1 2.4V17h16V7.4l-8 5.2Zm1.4-.4L12 10.4 18.6 7Z"),
   "Master Admin": ico("M12 2 4 5v6c0 5 3.4 9.3 8 11 4.6-1.7 8-6 8-11V5Zm-1.2 13.4-3.3-3.3 1.4-1.4 1.9 1.9 4.3-4.3 1.4 1.4Z"),
   "My team": ico("m12 2.6 2.9 6 6.5.9-4.7 4.6 1.1 6.5-5.8-3.1-5.8 3.1 1.1-6.5L2.6 9.5l6.5-.9Z"),
@@ -84,7 +96,8 @@ const folded = () => { try { return new Set(JSON.parse(localStorage.getItem(FOLD
 export default async function admin(view, { params, user, query }) {
   if (!user) return mustLogin(view);
   if (!isStaff(user)) return navigate("/my", { replace: true });
-  const nav = NAV.map(([group, items]) => [group, items.filter(([key]) => canOpenSection(user, key))]).filter(([, items]) => items.length);
+  // "Write news step by step" is only listed for people who can't open News itself (it is the big button at the top of News).
+  const nav = NAV.map(([group, items]) => [group, items.filter(([key]) => canOpenSection(user, key) && !(key === "write" && canOpenSection(user, "articles")))]).filter(([, items]) => items.length);
   // Where the dashboard opens: the first section of this login's own area (Handicaps is shared, so it isn't the landing page).
   const mine = nav.flatMap(([, items]) => items);
   const first = (mine.find(([key]) => key !== "handicaps") ?? mine[0])[0];

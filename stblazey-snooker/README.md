@@ -501,6 +501,18 @@ Most people use the site on a phone, so a few things are done specially for smal
 | “? Rules help” on the scorecards and the live scoreboard: searches the league's rules and a short guide to the rules of snooker | scorecards |
 | Latest results: team emblems, score pills; hover (or tap ⌄) for every frame, the best break and the venue | side column |
 
+## 3r. Round 24 (fixes)
+
+**Run `supabase/schema.sql` again** (database version 18) — adds the on/off switch for match chat.
+
+- Suggested handicaps: fixed "<input type=" text on phones; plain-English "how it works" panel; separate "Tick / untick them all" box.
+- Latest results: tapping a result now opens a small summary (winner, best break, top player, venue) with a "View full match statistics" button.
+- Match chat: green "Match chat" button at the top of every match page opens the chat as a bottom sheet. "Invite your team" shares a link straight to the chat. Website managers can close/open the chat per match.
+- Admin menu: the long Website list is split into News, Pages & content, Sponsors & adverts, Community, Look & settings and Tools. "Write news step by step" is now a button on the News screen, not a menu item.
+- "Sponsorship, downloads & Hall of Fame pages" settings renamed "Page introductions".
+- Link checker readable on phones.
+- Add to home screen: hidden once installed (where the phone tells us), plus a "Don't show this again" button.
+
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
 | Rule | Current setting |

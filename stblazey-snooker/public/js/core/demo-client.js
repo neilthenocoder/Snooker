@@ -143,6 +143,8 @@ function guardInsert(table, row) {
   if (table === "match_comments") {
     if (!who) throw new Error("Please log in to comment");
     if ((state.tables.settings?.[0]?.comments_on) === false) throw new Error("Comments are switched off");
+    const off = (row.fixture_id && state.tables.fixtures.find((f) => f.id === row.fixture_id)?.chat_off) || (row.comp_match_id && state.tables.competition_matches.find((m) => m.id === row.comp_match_id)?.chat_off);
+    if (off) throw new Error("The league has closed the chat for this match");
     const recent = (state.tables.match_comments ?? []).some((c) => c.author_id === who.id && Date.now() - Date.parse(c.created_at) < 10e3);
     if (recent) throw new Error("Please wait a few seconds before commenting again");
     Object.assign(row, { author_id: who.id, author_name: who.full_name || who.email.split("@")[0], hidden: false });
@@ -567,6 +569,10 @@ export const demoClient = {
       const fails = mine.filter((a) => !a.ok && Date.parse(a.at) > lastOk && Date.now() - Date.parse(a.at) < s.lockout_minutes * 60e3);
       const last = Math.max(0, ...fails.map((a) => Date.parse(a.at)));
       return { data: fails.length >= s.max_attempts ? Math.max(1, Math.ceil((last + s.lockout_minutes * 60e3 - Date.now()) / 1000)) : 0, error: null };
+    }
+    if (name === "set_chat_off") {
+      const row = args.p_fixture ? state.tables.fixtures.find((f) => f.id === args.p_fixture) : state.tables.competition_matches.find((m) => m.id === args.p_comp_match);
+      if (row) row.chat_off = !!args.p_off; persist(); return { data: null, error: null };
     }
     if (name === "submit_memory") {
       const p = args.p ?? {};

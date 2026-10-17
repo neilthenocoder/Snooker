@@ -7,11 +7,10 @@ import { breadcrumb, panel, dataTable, cupMatchInfo, urls, badge, handicapText, 
 import { handicapStarts, handicapMode } from "../core/rules.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
-import { mountComments } from "../core/comments.js";
+import { matchChat } from "../core/comments.js";
 
 export default async function cupMatch(view, { params, user }) {
-  const chat = document.createElement("div");      // match night chat (Rich, round 22): kept across redraws
-  chat.className = "cm-wrap";
+  let chat = null;      // match night chat (Rich, round 24): a button near the top, kept across redraws
   const draw = async () => {
     const [bundle, compData, players, teams, venues] = await Promise.all([
       loadCompMatch(params.id), loadCompetitions(), table("players", "full_name"), table("teams", "name"), table("venues", "name"),
@@ -49,7 +48,7 @@ export default async function cupMatch(view, { params, user }) {
     const won = (s) => match.status === "completed" && winnerSide(match) === s;
 
     mount(view, html`<div class="wrap stack">
-      <div>${breadcrumb([["Home", "/"], ["Competitions", "/competitions"], [c?.name ?? "Competition", c ? urls.competition(c) : null], [`${nameA} vs ${nameB}`]])}</div>
+      <div class="cm-row">${breadcrumb([["Home", "/"], ["Competitions", "/competitions"], [c?.name ?? "Competition", c ? urls.competition(c) : null], [`${nameA} vs ${nameB}`]])}<span data-chat-slot></span></div>
       <div class="match-hero">
         <div class="mh-band">${c?.name} · ${roundName(match.round, info.bracket.totalRounds)}${match.starts_at ? ` · ${fmtDate(match.starts_at)} ${fmtTime(match.starts_at)}` : ""}</div>
         <div class="mh-body">
@@ -72,13 +71,13 @@ export default async function cupMatch(view, { params, user }) {
           { label: "Running total", cell: (f) => { const t = running.get(f.frame_no); return t ? `${t.a} - ${t.b}` : "–"; }, cls: "num" }] : []),
         { label: "Breaks", cell: (f) => breakList(breaks.filter((b) => b.frame_no === f.frame_no).map((b) => ({ name: pname(b.player_id), value: b.value }))), cls: "hide-sm" },
       ], scored, { empty: match.status === "completed" ? "Only the final score was entered for this match." : "No frames yet — check back on match night." }))}
-      <div data-chat-slot></div>
     </div>`);
-    view.querySelector("[data-chat-slot]")?.replaceWith(chat);
+    if (chat) view.querySelector("[data-chat-slot]")?.replaceWith(chat.button);
     return match;
   };
   const m = await draw();
-  const stopChat = m ? await mountComments(chat, { comp_match_id: m.id }, user) : () => {};
+  if (m) { chat = await matchChat({ comp_match_id: m.id }, m, user, { title: document.title.split(" | ")[0] }); view.querySelector("[data-chat-slot]")?.replaceWith(chat.button); }
+  const stopChat = () => chat?.stop();
   const stop = m && m.status !== "completed" ? subscribe(["competition_matches", "competition_frames", "competition_breaks"], draw) : () => {};
   return () => { stop(); stopChat(); };
 }

@@ -15,7 +15,7 @@ let promptEvent = null;
 const listeners = new Set();
 if (typeof window !== "undefined") {
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); promptEvent = e; listeners.forEach((fn) => fn()); });
-  window.addEventListener("appinstalled", () => { promptEvent = null; document.querySelector(".a2hs-bar")?.remove(); toast("Added to your home screen"); });
+  window.addEventListener("appinstalled", () => { promptEvent = null; markInstalled(); document.querySelector(".a2hs-bar")?.remove(); toast("Added to your home screen"); });
 }
 export const isStandalone = () => (typeof matchMedia === "function" && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
 export const isApple = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -23,9 +23,16 @@ const isPhone = () => /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgen
 /** Can it be shown at all? (Not inside the app itself, once added.) */
 export const canInstall = () => !isStandalone();
 
-const LATER_KEY = "sbds-a2hs-later", VIEWS_KEY = "sbds-a2hs-views";
+const LATER_KEY = "sbds-a2hs-later", VIEWS_KEY = "sbds-a2hs-views", NEVER_KEY = "sbds-a2hs-never";
 const get = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const set = (k, v) => { try { localStorage.setItem(k, v); } catch { /* not remembered */ } };
+/**
+ * Round 24: someone who has already added the website is never offered it again. Opening the home-screen app
+ * remembers it (on Android the app and Chrome share this memory, so Chrome stops asking too); on iPhone the
+ * app and Safari don't share it, so the bar also has "Don't show again".
+ */
+function markInstalled() { set(NEVER_KEY, "installed"); }
+if (typeof window !== "undefined" && isStandalone()) markInstalled();
 
 /** The one button everywhere calls this. */
 export async function installApp() {
@@ -84,7 +91,7 @@ function guide() {
 
 /** The small bar at the bottom of the screen on phones, offering it by itself. Called on every page. */
 export function offerInstall() {
-  if (!canInstall() || !isPhone() || document.querySelector(".a2hs-bar")) return;
+  if (!canInstall() || !isPhone() || get(NEVER_KEY) || document.querySelector(".a2hs-bar")) return;
   const later = Number(get(LATER_KEY) || 0);
   if (Date.now() < later) return;
   const views = Number(get(VIEWS_KEY) || 0) + 1;
@@ -95,10 +102,12 @@ export function offerInstall() {
     const bar = document.createElement("div");
     bar.className = "a2hs-bar";
     mount(bar, html`<span class="a2hs-bar-ico">${I.plus}</span><span><b>Get the app</b><small>Add the league to your home screen</small></span>
-      <button type="button" class="btn small green" data-a2hs-add>${promptEvent ? "Add" : "Show me"}</button><button type="button" class="a2hs-later" aria-label="Not now">×</button>`);
+      <button type="button" class="btn small green" data-a2hs-add>${promptEvent ? "Add" : "Show me"}</button><button type="button" class="a2hs-later" aria-label="Not now" title="Not now">×</button>
+      <button type="button" class="a2hs-never" data-a2hs-never>Already added? Don't show this again</button>`);
     bar.addEventListener("click", (e) => {
       if (e.target.closest("[data-a2hs-add]")) { bar.remove(); installApp(); }
       if (e.target.closest(".a2hs-later")) { bar.remove(); set(LATER_KEY, String(Date.now() + 30 * 864e5)); }
+      if (e.target.closest("[data-a2hs-never]")) { bar.remove(); set(NEVER_KEY, "never"); toast("OK — we won't ask again on this phone"); }
     });
     document.body.append(bar);
   };

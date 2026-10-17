@@ -541,3 +541,5 @@ export async function upsertRow(tableName, row, onConflict) { await run(db.from(
 /** A memory sent in on the Hall of Fame form (anyone; it waits for the league). */
 export const submitMemory = (entry) => run(db.rpc("submit_memory", { p: entry }));
 export const hallOfFame = () => selectAll(() => db.from("hall_of_fame").select("*").order("sort").order("created_at", { ascending: false }));
+/** Open or close the match night chat for one match (the league only — Rich, round 24). */
+export const setChatOff = (where, off) => run(db.rpc("set_chat_off", { p_fixture: where.fixture_id ?? null, p_comp_match: where.comp_match_id ?? null, p_off: off }));

@@ -46,13 +46,23 @@ export async function handicapSuggestPage(el) {
     mount(el, html`
       <div class="notice">Suggestions for the yearly handicap review, worked out from a season's league frames. <b>Nothing changes until you press Apply</b> — take the list to the committee meeting, change the figures as you agree, and apply them. Every change is recorded under League → Handicaps.
         Tip: press “Start a new yearly review” there first, so the website shows the arrows for this year's moves.</div>
-      ${panel("How it works out the suggestions", html`<div class="form hs-opts">
+      ${panel("How it works out the suggestions", html`<div class="hs-explain">
+        <p><b>In plain English:</b> for each player it looks at the league frames they played in the season and the share they won.</p>
+        <ul>
+          <li>Fewer than <b>${opts.min}</b> frames → <b>no suggestion</b> (too few to judge fairly).</li>
+          <li>Won <b>${opts.down2}%</b> or more → handicap <b>down two steps</b> (−${2 * opts.step}). Won <b>${opts.down1}%</b> or more → <b>down one step</b> (−${opts.step}).</li>
+          <li>Won <b>${opts.up2}%</b> or less → handicap <b>up two steps</b> (+${2 * opts.step}). Won <b>${opts.up1}%</b> or less → <b>up one step</b> (+${opts.step}).</li>
+          <li>In between (${opts.up1 + 1}–${opts.down1 - 1}%) → <b>stays the same</b>.</li>
+          <li>Someone who <b>receives a start</b> (a + handicap) and made a break of <b>${opts.bigBreak}+</b> comes down one more step — they are better than their handicap says.</li>
+        </ul>
+        <p class="muted">“Down” means a smaller start (or a bigger penalty): the player has been winning, so the next season is fairer for their opponents. Change any number below and the list updates straight away.${opts.min < 6 ? html` <b class="lk-why">With fewer than 6 frames, one good or bad night decides it — 8 or more is fairer.</b>` : ""}</p></div>
+        <div class="form hs-opts">
         <label>Season<select data-season>${seasons.map((s) => html`<option value="${s.id}" ${s.id === seasonId ? "selected" : ""}>${s.name}</option>`)}</select></label>
         <div class="hs-grid">${num("step", "One step (handicap points)")}${num("min", "Frames needed to judge")}${num("down1", "Down one step: won at least %")}${num("down2", "Down two steps: won at least %")}
           ${num("up1", "Up one step: won at most %")}${num("up2", "Up two steps: won at most %")}${num("bigBreak", "Big break (nudges a start down)")}</div>
         <label class="check"><input type="checkbox" data-only ${only ? "checked" : ""}> Show only players with a suggested change</label></div>`, { color: "yellow" })}
-      ${panel(`Suggested changes (${list.filter((r) => r.change).length} of ${list.length} players)`, html`${dataTable([
-        { label: html`<input type="checkbox" data-all aria-label="Tick all">`, cell: (r) => (r.change ? html`<input type="checkbox" data-pick="${r.player.id}" checked aria-label="Apply for ${r.name}">` : "") },
+      ${panel(`Suggested changes (${list.filter((r) => r.change).length} of ${list.length} players)`, html`<div class="btn-row" style="margin-bottom:10px"><label class="check" style="margin:0"><input type="checkbox" data-all checked> Tick / untick them all</label></div>${dataTable([
+        { label: "Apply", cell: (r) => (r.change ? html`<input type="checkbox" data-pick="${r.player.id}" checked aria-label="Apply for ${r.name}">` : "") },
         { label: "Player", cell: (r) => html`<a href="/player/${r.player.slug || r.player.id}" target="_blank" rel="noopener">${r.name}</a><br><small class="muted">${r.league.name}</small>` },
         { label: "Why", cell: (r) => r.why },
         { label: "Now", cell: (r) => handicapText(r.now), cls: "num" },
