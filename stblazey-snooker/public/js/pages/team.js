@@ -4,6 +4,7 @@ import { breadcrumb, panel, fixturesTable, urls, seasonPicker, seasonShort, pers
 import { followButton } from "../core/my-snooker.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
+import { loadForm, formPanel, formBadge } from "../core/form.js";
 
 export default async function team(view, { params, query, user }) {
   const ctx = await seasonContext(query.get("season"));
@@ -16,6 +17,9 @@ export default async function team(view, { params, query, user }) {
   const league = ctx.league.get(team.league_id);
   const venue = ctx.venue.get(team.venue_id);
   const players = ctx.playersOf(team.id);
+  // Form (Rich, round 25): the team's, and each player's next to their name.
+  const form = await loadForm(ctx).catch(() => null);
+  const teamForm = form?.team(team.id);
 
   mount(view, html`<div class="wrap">
     ${breadcrumb([["Home", "/"], ["Our League", "/league"], ["Seasons", "/seasons"], [`${ctx.season?.name} Season`, urls.season(ctx.season)], [`Fixtures & Results ${seasonShort(ctx.season)}`, `/fixtures?season=${ctx.season?.id}`], [title]])}
@@ -27,8 +31,10 @@ export default async function team(view, { params, query, user }) {
       </div>
       ${seasonPicker(ctx)}
     </div>
+    ${teamForm?.n ? formPanel(teamForm, { name: team.name, kind: "team" }) : ""}
     ${panel(`${team.name} fixtures & results`, fixturesTable(ctx, ctx.fixturesFor(team.id), { byes: ctx.byesFor(team.id), forTeam: team.id }))}
     <h3>Team</h3>
-    ${players.length ? html`<div class="people squad">${players.map((p) => personCard(p, p.position === "Player" ? "" : p.position))}</div>` : html`<div class="empty box">No players listed yet.</div>`}
+    ${players.length ? html`<div class="people squad">${players.map((p) => { const f = form?.player(p.id);
+      return personCard(p, html`${p.position === "Player" ? "" : p.position}${f?.n ? html` <span class="pc-form">Form ${formBadge(f)}</span>` : ""}`); })}</div>` : html`<div class="empty box">No players listed yet.</div>`}
   </div>`);
 }

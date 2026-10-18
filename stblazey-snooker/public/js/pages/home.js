@@ -14,6 +14,7 @@ import { leagueTablePanel, sidebar, panel, picture, urls, badge, avatar, article
 import { SITE } from "../config.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import { competitionSummaries } from "./competitions.js";
+import { loadForm, formBadge, formChips } from "../core/form.js";
 
 const ROTATE_MS = 7000;      // banner: time each article is shown
 const CAROUSEL_MS = 4500;    // live strip: time before it moves on one card
@@ -33,6 +34,8 @@ export default async function home(view, { user } = {}) {
   adminEdit("settings", null, { label: "Edit home page" });
   const [ctx, news, allComps, site, box, notices, dates] = await Promise.all([seasonContext(), articles(), competitionSummaries(), settings(), sideBoxData(),
     table("announcements", "sort").catch(() => []), table("key_dates", "starts_on").catch(() => [])]);
+  // Form (Rich, round 25) beside the player and team of the week.
+  if (site.player_of_week_show || site.team_of_week_show) ctx.form = await loadForm(ctx).catch(() => null);
   const today = todayUK();
   const entering = openForEntry(allComps.map((x) => x.c));
   const slides = news.filter((a) => a.featured).slice(0, Math.max(1, site.hero_count || 4));
@@ -340,6 +343,8 @@ function shieldsBox(ctx) {
   })}</div>`);
 }
 
+const spotForm = (f) => (f?.n ? html`<span class="spot-form">${formChips(f, { links: false })}</span>` : "");
+const spotScore = (f) => (f?.n ? html`<span class="spot-score"><small>Form</small>${formBadge(f, { big: true, trend: true })}</span>` : "");
 function spotlights(ctx, site) {
   const p = site.player_of_week_show && ctx.player.get(site.player_of_week_id);
   const t = site.team_of_week_show && ctx.team.get(site.team_of_week_id);
@@ -347,9 +352,9 @@ function spotlights(ctx, site) {
   // A slim card each (picture on the left, the words beside it), so the two take little room on a phone.
   return html`<div class="spotlights">
     ${p ? html`<a class="spotlight" href="${urls.player(p)}">${avatar(p, "spot-photo")}
-      <div><span class="spot-label">Player of the week</span><strong>${p.full_name}</strong><small>${ctx.team.get(p.team_id)?.name ?? ""}</small>${site.player_of_week_text ? html`<p>${site.player_of_week_text}</p>` : ""}</div></a>` : ""}
+      <div><span class="spot-label">Player of the week</span><strong>${p.full_name}</strong><small>${ctx.team.get(p.team_id)?.name ?? ""}</small>${site.player_of_week_text ? html`<p>${site.player_of_week_text}</p>` : ""}${spotForm(ctx.form?.player(p.id))}</div>${spotScore(ctx.form?.player(p.id))}</a>` : ""}
     ${t ? html`<a class="spotlight" href="${urls.team(t)}"><span class="spot-badge">${badge(t)}</span>
-      <div><span class="spot-label">Team of the week</span><strong>${t.name}</strong><small>${ctx.league.get(t.league_id)?.name ?? ""}</small>${site.team_of_week_text ? html`<p>${site.team_of_week_text}</p>` : ""}</div></a>` : ""}
+      <div><span class="spot-label">Team of the week</span><strong>${t.name}</strong><small>${ctx.league.get(t.league_id)?.name ?? ""}</small>${site.team_of_week_text ? html`<p>${site.team_of_week_text}</p>` : ""}${spotForm(ctx.form?.team(t.id))}</div>${spotScore(ctx.form?.team(t.id))}</a>` : ""}
   </div>`;
 }
 

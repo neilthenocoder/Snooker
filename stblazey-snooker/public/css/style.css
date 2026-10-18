@@ -3689,3 +3689,94 @@ html.cm-locked { overflow: hidden; }
 .cm-sheet .cm-form textarea { flex: 1; min-height: 42px; max-height: 120px; padding: 10px 12px; border: 1px solid #ccc; border-radius: 20px; font: inherit; resize: none; }
 .cm-closed { margin: 0; padding: 8px; text-align: center; color: var(--muted); font-weight: 600; }
 .a2hs-never { grid-column: 1 / -1; justify-self: start; margin: -2px 0 0 48px; padding: 0; border: 0; background: none; color: #bbb; font-size: 12.5px; text-decoration: underline; cursor: pointer; }
+
+/* ── Round 25: form guide (marks out of 10) ───────────────────── */
+.form-badge { display: inline-flex; align-items: center; gap: 3px; min-width: 40px; justify-content: center; padding: 3px 8px; border-radius: 999px;
+  font: 700 14px/1.2 var(--font-head); font-variant-numeric: tabular-nums; color: #fff; background: #888; white-space: nowrap; }
+.form-badge.good { background: var(--green); }
+.form-badge.ok { background: #e69500; }
+.form-badge.low { background: var(--red); }
+.form-badge.none { background: #ddd; color: #555; }
+.form-badge.big { font-size: 24px; padding: 6px 14px; min-width: 70px; }
+.form-trend { font-style: normal; font-size: .62em; opacity: .95; }
+.form-chips { display: inline-flex; gap: 3px; vertical-align: middle; }
+.fc { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 4px; font: 700 12px/1 var(--font-head); color: #fff; background: #888; text-decoration: none; flex: none; }
+a.fc:hover { color: #fff; filter: brightness(1.15); transform: translateY(-1px); }
+.fc.w { background: var(--green); }
+.fc.l { background: var(--red); }
+.fc.d { background: #8a8a8a; }
+.form-link { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.form-link small { color: #666; }
+
+.form-box { background: #fff; border: 1px solid #e6e6e6; border-left: 5px solid var(--green); padding: 18px; display: grid; gap: 14px; margin: 0 0 22px; }
+.form-top { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+.form-score { display: grid; justify-items: center; gap: 4px; }
+.form-score > span:last-child { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: .04em; }
+.form-sum { flex: 1; min-width: 220px; display: grid; gap: 6px; }
+.form-sum h3 { margin: 0; }
+.form-sum p { margin: 0; color: #333; }
+.form-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.form-list a { display: grid; grid-template-columns: 92px 1fr 150px; gap: 12px; align-items: center; padding: 8px 6px; color: inherit; text-decoration: none; border-top: 1px solid #f0f0f0; }
+.form-list a:hover { background: #fafafa; }
+.fl-when { font-size: 13px; color: #666; }
+.fl-what { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.fl-what small { flex-basis: 100%; color: #777; font-size: 12px; }
+.fl-mark { display: grid; grid-template-columns: 1fr 34px; align-items: center; gap: 8px; position: relative; }
+.fl-mark::before { content: ""; grid-column: 1; grid-row: 1; height: 8px; border-radius: 4px; background: #eee; }
+.fl-mark i { grid-column: 1; grid-row: 1; height: 8px; border-radius: 4px; background: #888; }
+.fl-mark i.good { background: var(--green); } .fl-mark i.ok { background: #e69500; } .fl-mark i.low { background: var(--red); }
+.fl-mark b { font-variant-numeric: tabular-nums; text-align: right; }
+.form-how summary { cursor: pointer; font-weight: 700; color: var(--red); }
+.form-how p { margin: 6px 0 0; color: #444; font-size: 14px; }
+@media (max-width: 640px) {
+  .form-list a { grid-template-columns: 1fr 96px; }
+  .fl-when { grid-column: 1 / -1; margin-bottom: -6px; }
+}
+
+/* Person cards (team page) and the player/team of the week */
+.pc-form { display: inline-flex; align-items: center; gap: 4px; }
+.pc-form .form-badge { font-size: 12px; min-width: 32px; padding: 2px 6px; }
+.spot-form { margin-top: 6px; }
+.spot-score { flex: none; display: grid; justify-items: center; gap: 2px; }
+.spot-score small { color: #bbb; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; }
+.spotlight > .form-badge { flex: none; }
+
+/* League tables */
+.lt-form { text-decoration: none; }
+.lt-form .fc { width: 18px; height: 18px; font-size: 10px; }
+
+/* The form guide page */
+.fg-intro { max-width: 760px; color: #333; margin: 6px 0 0; }
+.fg-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.fg-bar .toolbar { margin: 0; }
+.fg-bar select, .fg-bar input[type=search] { padding: 9px 12px; border: 1px solid #ccc; border-radius: 6px; font: inherit; background: #fff; }
+.fg-bar input[type=search] { flex: 1; min-width: 160px; }
+.fg-tabs { display: inline-flex; border: 1px solid #ccc; border-radius: 999px; overflow: hidden; }
+.fg-tabs button { border: 0; background: #fff; padding: 9px 18px; font: 700 14px var(--font-head); text-transform: uppercase; cursor: pointer; }
+.fg-tabs button[aria-selected="true"] { background: #111; color: #fff; }
+.fg-sort { border: 0; background: none; font: inherit; color: inherit; text-transform: inherit; cursor: pointer; padding: 0; display: inline-flex; gap: 4px; align-items: center; }
+.fg-sort i { font-style: normal; font-size: 11px; opacity: .55; }
+.fg-sort.on i { opacity: 1; }
+.fg-who { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; min-width: 0; }
+.fg-who span { display: grid; min-width: 0; }
+.fg-who small { color: #777; }
+.fg-photo { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex: none; background: var(--red); }
+.fg-table td { vertical-align: middle; }
+@media (max-width: 640px) {
+  #view table.fg-table thead { display: none; }
+  #view table.fg-table, #view table.fg-table tbody { display: block; }
+  #view table.fg-table tr { display: grid; grid-template-columns: 26px 1fr auto; grid-template-areas: "n who score" "n chips chips"; gap: 6px 10px; align-items: center; padding: 10px 6px; border-bottom: 1px solid #eee; }
+  #view table.fg-table td { display: block; padding: 0; border: 0; }
+  #view table.fg-table td::before { content: none !important; }
+  #view table.fg-table td:nth-child(1) { grid-area: n; color: #888; }
+  #view table.fg-table td:nth-child(2) { grid-area: who; }
+  #view table.fg-table td:nth-child(3) { grid-area: score; text-align: right; }
+  #view table.fg-table td:nth-child(4) { grid-area: chips; }
+  #view table.fg-table td.hide-sm { display: none; }
+}
+.fg-more { margin-top: 12px; }
+@media (max-width: 640px) {
+  #view table.fg-table tr, #view table.fg-table tr:nth-child(even) { background: #fff; }
+  #view table.fg-table tr.hl { background: #eaf6ea; }
+  #view table.fg-table td, #view table.fg-table tr.hl td { background: transparent !important; }
+}

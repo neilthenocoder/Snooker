@@ -513,6 +513,18 @@ Most people use the site on a phone, so a few things are done specially for smal
 - Link checker readable on phones.
 - Add to home screen: hidden once installed (where the phone tells us), plus a "Don't show this again" button.
 
+## 3s. Round 25 (form guide)
+
+No database changes — nothing to run in Supabase this time.
+
+- **Form out of 10.0** for every player and team, from their last 6 matches this season (league matches and knockout competitions), worked out in `public/js/core/form.js` — change the numbers at the top of that file to change the formula.
+  - Players: up to 7 for the share of frames won + up to 3 for their best break that night (30+ = 1, 50+ = 2, 70+ = 3).
+  - Teams: up to 7 for the share of frames won + 3 for a win, 1.5 for a draw.
+  - Form = the average of those marks. ▲/▼ shows whether it went up or down with the latest match.
+- **Form guide page** at `/form` (Players / Teams, league filter, search, sort by any column, most in-form player and team).
+- Form also shows on player pages (with each match and its mark), team pages and squad cards, league tables (W/L/D), rankings, and the player and team of the week on the home page.
+- The phone menu's standard links now include "Form guide". If the menu has been customised in Admin → Look & settings → Menu, add `/form` there.
+
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
 | Rule | Current setting |

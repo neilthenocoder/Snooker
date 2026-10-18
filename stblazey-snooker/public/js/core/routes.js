@@ -60,4 +60,6 @@ export const ROUTES = [
   ["/downloads", "downloads"],
   ["/hall-of-fame", "hall-of-fame"],
   ["/hall-of-fame/:id", "hall-of-fame"],
+  // Round 25
+  ["/form", "form"],
 ];

@@ -10,6 +10,7 @@ import { followButton } from "../core/my-snooker.js";
 import { setTitle, navigate, adminEdit, sideContext } from "../core/router.js";
 import { PLAYER_TAG } from "../core/terms.js";
 import { lifeYears } from "./memoriam.js";
+import { loadForm, formPanel, formBadge } from "../core/form.js";
 import notFound from "./not-found.js";
 
 export default async function player(view, { params, user }) {
@@ -22,6 +23,8 @@ export default async function player(view, { params, user }) {
     seasonContext(), table("seasons", "name"), table("leagues", "sort"),
     playerHistory(p.id), loadCompetitions(), articles(),
   ]);
+  // Form (Rich, round 25): a mark out of 10 from the last 6 matches this season.
+  const form = await loadForm(ctx).then((f) => f.player(p.id)).catch(() => null);
   setTitle(p.full_name);
   adminEdit("players", p.id);
   sideContext({ player: p });
@@ -82,6 +85,7 @@ export default async function player(view, { params, user }) {
   const facts = [
     ["Position", p.position],
     ["Handicap", html`${handicapText(p.handicap)}${handicapMove(p)}`],
+    ...(gone || !form?.n ? [] : [["Form", html`<a href="#form" class="form-link">${formBadge(form, { trend: true })} <small>out of 10</small></a>`]]),
     [gone || p.status === "not_playing" ? "Team" : "Current team", team ? teamLink(team) : "–"],
     ...(pastTeams.length ? [["Past teams", pastTeams.join(", ")]] : []),
     ["League", league ? html`<a href="${urls.standings(league)}">${league.name}</a>` : "–"],
@@ -114,6 +118,8 @@ export default async function player(view, { params, user }) {
       ${avatar(p, "player-photo")}
       <dl class="facts">${facts.map(([k, v]) => html`<div><dt>${k}</dt><dd>${v}</dd></div>`)}</dl>
     </div>
+
+    ${!gone && form?.n ? formPanel(form, { name: p.full_name.split(" ")[0] }) : ""}
 
     ${bio || career.length || pastTeams.length ? html`<div class="profile-grid">
       ${bio ? html`<section class="profile-box wide"><h3>Bio</h3><div class="prose">${paragraphs(bio)}</div></section>` : ""}

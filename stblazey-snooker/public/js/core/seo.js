@@ -13,7 +13,7 @@ import { seoPages } from "./api.js";
 /** The standard pages that can have their own settings (address → name in the dashboard). */
 export const SEO_PAGES = [
   ["/", "Home page"], ["/news", "News"], ["/fixtures", "Fixtures"], ["/results", "Results"], ["/league", "League"], ["/competitions", "Competitions"],
-  ["/live", "Live"], ["/calendar", "Calendar"], ["/players", "Our players"], ["/seasons", "Seasons"], ["/archive", "Archive"], ["/handicaps", "Handicaps"],
+  ["/live", "Live"], ["/calendar", "Calendar"], ["/players", "Our players"], ["/seasons", "Seasons"], ["/archive", "Archive"], ["/handicaps", "Handicaps"], ["/form", "Form guide"],
   ["/venues", "Venues"], ["/rules", "Rules"], ["/meetings", "Meetings"], ["/presentation", "Presentation night"], ["/in-memoriam", "In memoriam"],
   ["/merchandise", "Merchandise"], ["/marketplace", "Marketplace"], ["/enter", "Competition entry form"], ["/cueview", "CueView form"], ["/scoreboard", "Live scoreboard"],
   ["/hall-of-fame", "Hall of Fame"], ["/downloads", "League downloads"], ["/sponsorship", "Sponsorship"],

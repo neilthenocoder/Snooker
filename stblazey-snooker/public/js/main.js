@@ -38,7 +38,7 @@ import { canInstall, installApp, offerInstall } from "./core/install.js";
 const SECTION = {
   competitions: "competitions", competition: "competitions", "cup-match": "competitions", handicaps: "competitions", enter: "competitions", draw: "competitions", scoreboard: "competitions",
   fixtures: "fixtures", team: "fixtures", match: "fixtures", calendar: "fixtures", live: "fixtures", results: "fixtures",
-  league: "league", standings: "league", shield: "league", archive: "league", seasons: "league", players: "league", player: "league",
+  league: "league", standings: "league", shield: "league", archive: "league", seasons: "league", players: "league", player: "league", form: "league",
   venues: "league", venue: "league", page: "league", presentation: "league", memoriam: "league", meetings: "league", rules: "league", sponsor: "league",
   merchandise: "league", cueview: "league", marketplace: "league", "market-ad": "league", "market-edit": "league", sponsorship: "league", downloads: "league", "hall-of-fame": "league",
   news: "news", article: "news",

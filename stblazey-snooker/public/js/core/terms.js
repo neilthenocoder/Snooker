@@ -17,7 +17,7 @@ export const PLAYER_TAG = { no_team: "No team at the moment", not_playing: "No l
 /** Pages of the website offered when choosing the links at the very bottom of the site (Site settings → Footer). */
 export const FOOTER_PAGES = [
   ["Rules", "/rules"], ["Calendar", "/calendar"], ["Fixtures & Results", "/fixtures"], ["Latest Results", "/results"], ["Competitions", "/competitions"],
-  ["Enter a Competition", "/enter"], ["News", "/news"], ["Our League", "/league"], ["Our Players", "/players"], ["Handicaps", "/handicaps"],
+  ["Enter a Competition", "/enter"], ["News", "/news"], ["Our League", "/league"], ["Our Players", "/players"], ["Handicaps", "/handicaps"], ["Form Guide", "/form"],
   ["Venues", "/venues"], ["Seasons", "/seasons"], ["Season Archive", "/archive"], ["Meetings", "/meetings"], ["Merchandise", "/merchandise"],
   ["Presentation Night", "/presentation"], ["CueView Form", "/cueview"], ["Sadly No Longer With Us", "/in-memoriam"], ["Log in", "/login"],
 ];

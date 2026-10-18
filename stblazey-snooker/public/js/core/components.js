@@ -2,6 +2,7 @@
 // is drawn by one of these functions — change it here, it changes everywhere.
 import { html, fmtDate, fmtTime } from "./dom.js";
 import { isProvisional, PROVISIONAL_NOTE, frameWinner } from "./rules.js";
+import { formBadge as formBadgeFn, formChips as formChipsFn } from "./form.js";
 
 // ── URLs (one place to change the site's link structure) ──────
 // Matches, cup matches and players have short addresses (/match/2627-14, /cup-match/27, /player/sam-bolitho);
@@ -247,6 +248,8 @@ export function leagueTablePanel(ctx, league, { limit = Infinity, highlightTeamI
     { label: "F", cell: (r) => r.f, cls: "num" },
     { label: "A", cell: (r) => r.a, cls: "num" },
     { label: "P", cell: m.pts, cls: "num strong" },
+    // Form (Rich, round 25): on the full table, when the page has loaded it (see core/form.js).
+    ...(ctx.form && !Number.isFinite(limit) ? [{ label: "Form", cell: (r) => html`<a class="lt-form" href="/form?view=teams&league=${league.slug}">${formChipsFn(ctx.form.team(r.team.id))}</a>`, cls: "hide-sm lt-form-cell" }] : []),
   ], rows, { highlight: m.highlight, rowClass: m.rowClass, empty: "No teams in this league yet." });
   return panel(html`${trophy(league, "tiny", { always: false })}${league.name} Table`, html`${table}${m.key}${provisionalNote(ctx, league)}`, {
     foot: Number.isFinite(limit) ? { href: urls.standings(league), label: "View full table" } : null, cls: "lt-panel",
@@ -263,6 +266,7 @@ export function rankingsPanel(ctx, league, { limit = Infinity } = {}) {
       { label: "Won", cell: (r) => r.won, cls: "num" },
       { label: "Lost", cell: (r) => r.lost, cls: "num" },
       { label: "Break pts", cell: (r) => r.breakPts, cls: "num" },
+      ...(ctx.form ? [{ label: "Form", cell: (r) => formBadgeFn(ctx.form.player(r.player.id), { trend: true }), cls: "num" }] : []),
     ]),
     { label: "Pts", cell: (r) => topPoints(r, rows[0]), cls: "num strong" },
   ], rows, { highlight: (r) => r === rows[0], empty: "No frames played yet.", phoneLimit: Number.isFinite(limit) ? 0 : 10, more: "players" });

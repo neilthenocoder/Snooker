@@ -4,11 +4,13 @@ import { breadcrumb, leagueTablePanel, rankingsPanel, breaksPanel, seasonPicker,
 import { RULES_TEXT } from "../core/rules.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
+import { loadForm } from "../core/form.js";
 
 export default async function standings(view, { params, query }) {
   const ctx = await seasonContext(query.get("season"));
   const league = ctx.leagues.find((l) => l.slug === params.slug);
   if (!league) return notFound(view);
+  ctx.form = await loadForm(ctx).catch(() => null);   // the Form columns (Rich, round 25)
   setTitle(`${league.name} ${ctx.season?.name}`);
   adminEdit("leagues", league.id);
   sideContext({ league });
@@ -20,6 +22,6 @@ export default async function standings(view, { params, query }) {
     <div id="players">${rankingsPanel(ctx, league)}</div>
     <div id="breaks">${breaksPanel(ctx, league)}</div>
     ${league.shield_team_id ? html`<a class="btn-bar" href="${urls.shield(league)}${query.get("season") ? `?season=${query.get("season")}` : ""}">🛡 ${league.shield_name || "Shield"}: who holds it and where it has been</a>` : ""}
-    <p class="muted">${RULES_TEXT}</p>
+    <p class="muted">${RULES_TEXT} <a href="/form?league=${league.slug}">Form guide →</a></p>
   </div>`);
 }

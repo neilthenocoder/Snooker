@@ -4,12 +4,9 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.24.0";
+export const SITE_VERSION = "1.25.0";
 export const CHANGES = [
-  "Fixed: “<input type=” showing on phone lists (Suggested handicaps) and the link checker on phones",
-  "Suggested handicaps: the rules explained on the page in plain English",
-  "Latest results: tap a result to open a short summary, with a button to the full match statistics",
-  "Match chat: a button near the top opens the chat from the bottom of the screen; invite your team; the league can close the chat for one match",
-  "Admin menu: the Website list split into News, Pages & content, Sponsors & adverts, Community, Look & settings and Tools",
-  "Add to home screen: never offered again once added, and a “Don't show this again” button",
+  "Form guide: every player and team gets a form mark out of 10.0 from their last 6 matches this season (league and competitions)",
+  "New Form guide page (/form): players and teams, sort by any column, pick a league, most in-form player and team",
+  "Form on player pages, team pages (and each squad member), the league tables and rankings, and the player and team of the week",
 ].join("\n");

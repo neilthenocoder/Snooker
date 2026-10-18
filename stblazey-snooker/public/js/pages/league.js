@@ -10,6 +10,7 @@ const BUILT_IN = [
   ["Season archive", "Roll of honour: past seasons' tables, breaks and highest breaks", "/archive"],
   ["Competitions", "Cup competitions, singles, doubles and more", "/competitions"],
   ["Our Players", "Every team's players, past and present", "/players"],
+  ["Form guide", "Who's in form: every player and team marked out of 10 from their last 6 matches", "/form"],
   ["Send in your CueView", "Players: answer the CueView questions for your own player page", "/cueview"],
   ["Handicaps", "Every player's current handicap", "/handicaps"],
   ["Venues", "Clubs, venues, and locations, all you need to know", "/venues"],

@@ -9,7 +9,7 @@
 const WAIT_MS = 2500;
 const TTL_MS = 10 * 60_000;           // the sitemap is made again at most every ten minutes
 const STATIC = ["/", "/news", "/fixtures", "/results", "/league", "/competitions", "/live", "/calendar", "/players", "/seasons", "/archive", "/handicaps",
-  "/venues", "/rules", "/meetings", "/presentation", "/in-memoriam", "/merchandise", "/marketplace", "/enter", "/cueview", "/newsletter", "/hall-of-fame", "/sponsorship"];
+  "/venues", "/rules", "/meetings", "/presentation", "/in-memoriam", "/merchandise", "/marketplace", "/enter", "/cueview", "/newsletter", "/hall-of-fame", "/sponsorship", "/form"];
 const env = (k) => { try { return globalThis.Netlify?.env?.get?.(k) ?? Deno.env.get(k) ?? ""; } catch { return ""; } };
 const xml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[c]));
 let cache = null, cacheAt = 0, conf = null;
