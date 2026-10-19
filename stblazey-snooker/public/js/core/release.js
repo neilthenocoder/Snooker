@@ -4,9 +4,10 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.25.0";
+export const SITE_VERSION = "1.26.0";
 export const CHANGES = [
-  "Form guide: every player and team gets a form mark out of 10.0 from their last 6 matches this season (league and competitions)",
-  "New Form guide page (/form): players and teams, sort by any column, pick a league, most in-form player and team",
-  "Form on player pages, team pages (and each squad member), the league tables and rankings, and the player and team of the week",
+  "Player of the month and Team of the month on the home page (Site settings), each with their form",
+  "Form guide added to the menu (also to a menu already changed in Admin → Menu)",
+  "My Snooker: a Form section — your own form, your team's, your teammates' and the players you follow — and a Form column in Team & handicaps",
+  "My account menu: “My form” and “Form guide”; My area → Profile shows your form",
 ].join("\n");

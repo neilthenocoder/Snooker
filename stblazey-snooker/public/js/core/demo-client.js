@@ -8,7 +8,7 @@
 import { buildSeed } from "../demo/seed-data.js";
 import { SCHEMA_VERSION } from "./version.js";
 
-const KEY = "sbdsl-demo-db-v14";
+const KEY = "sbdsl-demo-db-v15";
 const SESSION_KEY = "sbdsl-demo-session";
 const store = typeof localStorage !== "undefined" ? localStorage : (() => {
   const m = new Map();

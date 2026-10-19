@@ -58,9 +58,9 @@ function summarise(list) {
  * Everyone's form for a season context (see context.js). Loads the competitions too.
  * Returns { player(id), team(id) } — each gives the summary above (form is null with no matches yet).
  */
-export async function loadForm(ctx) {
+export async function loadForm(ctx, compsLoaded = null) {
   const seasonId = ctx.season?.id;
-  const comps = await loadCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] }));
+  const comps = compsLoaded ?? await loadCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] }));
   const compIds = new Set(comps.competitions.filter((c) => !seasonId || c.season_id === seasonId).map((c) => c.id));
   const played = comps.matches.filter((m) => compIds.has(m.competition_id) && winnerSide(m) && m.entry_a && m.entry_b);
   const cBreaks = played.length ? await competitionBreaks(played.map((m) => m.id)).catch(() => []) : [];

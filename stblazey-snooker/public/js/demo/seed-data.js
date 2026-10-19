@@ -330,6 +330,8 @@ export function buildSeed() {
     id: 1, logo_url: "", favicon_url: "", hero_image_url: "", hero_count: 4,
     player_of_week_id: players[7].id, player_of_week_text: "Two frames won and a 44 break on Tuesday night.", player_of_week_show: true,
     team_of_week_id: teams[15].id, team_of_week_text: "A five-frame whitewash in their first home match.", team_of_week_show: true,
+    player_of_month_id: players[3].id, player_of_month_text: "A great month for Bethel A: always first on the team sheet.", player_of_month_show: true,
+    team_of_month_id: teams[2].id, team_of_month_text: "Top of the table after a perfect start.", team_of_month_show: true,
     cueviews_show: true, shields_show: true,
     feature_show: true, feature_label: "NEW", feature_text: "Try our step-by-step scorecard — log in to find out more", feature_url: "/login", feature_bg: "#0b84e0",
     latest_news_mode: "not_banner", latest_news_category: "", latest_news_ids: [], latest_news_count: 1,

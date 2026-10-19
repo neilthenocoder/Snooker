@@ -15,6 +15,7 @@ import { buildBracket, isEntry, roundName } from "./bracket.js";
 import { answered } from "./cueview.js";
 import { panel, dataTable, leagueTablePanel, playerLink, handicapTag, urls, badge, avatar, resultText, articleThumb, picture, outcomeTag, topPoints, breakTag } from "./components.js";
 import { refreshShell } from "./router.js";
+import { loadForm, formBadge, formChips } from "./form.js";
 
 /** Every section someone can have on their page: [key, name, what it shows]. This is also the order they appear in. */
 export const SECTIONS = [
@@ -25,6 +26,7 @@ export const SECTIONS = [
   ["comps", "Competitions", "Cup matches for the teams and players you follow"],
   ["team_news", "Team news", "Articles about your teams and players"],
   ["news", "Latest news", "The newest articles — all of them, or only the categories you choose"],
+  ["form", "Form", "Your own form, and the form of your team's players and the players you follow (marks out of 10)"],
   ["handicaps", "Team & handicaps", "The team's players, their handicaps and ranking points"],
   ["players", "Players I follow", "Handicap, frames, ranking points and best break of each player you follow"],
   ["breaks", "Breaks", "Your team's breaks of 30 or more"],
@@ -63,7 +65,8 @@ const bySeniority = (list) => [...list].sort((a, b) => (RANK[a.position] ?? 2) -
 /** Everything the view needs, loaded once. */
 export async function mySnookerData() {
   const [ctx, news, comps, site] = await Promise.all([seasonContext(), articles().catch(() => []), loadCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] })), settings().catch(() => ({}))]);
-  return { ctx, news, comps, site };
+  const form = await loadForm(ctx, comps).catch(() => null);
+  return { ctx, news, comps, site, form };
 }
 
 /**
@@ -89,8 +92,9 @@ export async function mountMySnooker(el, user, { home = false, data = null } = {
   return () => el.removeEventListener("click", onClick);
 }
 
-function view(user, { ctx, news, comps, site = {} }, prefs, teams, teamId, home) {
-  const wants = (key) => !prefs.sections || prefs.sections.includes(key);
+function view(user, { ctx, news, comps, site = {}, form: formData = null }, prefs, teams, teamId, home) {
+  // "Form" came after people had chosen their sections (round 25), so it is on unless they untick it ("form_off").
+  const wants = (key) => !prefs.sections || prefs.sections.includes(key) || (key === "form" && !prefs.sections.includes("form_off"));
   const team = ctx.team.get(teamId);
   const league = team && ctx.league.get(team.league_id);
   const limit = home ? 5 : Infinity;                       // the home page shows the top of each list
@@ -183,11 +187,33 @@ function view(user, { ctx, news, comps, site = {} }, prefs, teams, teamId, home)
         { label: "Played", cell: (p) => lineOf(p)?.played ?? 0, cls: "num" },
         { label: "Won", cell: (p) => lineOf(p)?.won ?? 0, cls: "num" },
         { label: "Pts", cell: (p) => lineOf(p)?.pts ?? 0, cls: "num strong" },
+        ...(formData ? [{ label: "Form", cell: (p) => formBadge(formData.player(p.id)), cls: "num" }] : []),
       ], bySeniority(squad), { rowClass: (p) => (followIds.has(p.id) ? "lt-mine" : ""), empty: "No players listed yet.", phoneLimit: 5, minHidden: 1, more: "players" }), { foot: { href: "/handicaps", label: "Every team's handicaps" } })),
     players: () => (followed.length ? panel("Players I follow", html`<div class="ms-players">${followed.map((p) => { const l = lineOf(p); return html`<a class="ms-player" href="${urls.player(p)}">
         ${avatar(p, "ms-player-photo")}<span><strong>${p.full_name}</strong><small>${ctx.team.get(p.team_id)?.name ?? "No team this season"}</small></span>
         <dl><div><dt>Hcp</dt><dd>${handicapTag(p.handicap)}</dd></div><div><dt>Played</dt><dd>${l?.played ?? 0}</dd></div><div><dt>Won</dt><dd>${l?.won ?? 0}</dd></div>
-          <div><dt>Pts</dt><dd>${l?.pts ?? 0}</dd></div><div><dt>Best</dt><dd>${breakTag(bestOf(p))}</dd></div></dl></a>`; })}</div>`) : ""),
+          <div><dt>Pts</dt><dd>${l?.pts ?? 0}</dd></div><div><dt>Best</dt><dd>${breakTag(bestOf(p))}</dd></div>${formData ? html`<div><dt>Form</dt><dd>${formBadge(formData.player(p.id))}</dd></div>` : ""}</dl></a>`; })}</div>`) : ""),
+    form: () => {
+      if (!formData) return "";
+      // Your own form first (when the login is linked to a player), then your team's players and the players you follow.
+      const me = ctx.player.get(user?.profile?.player_id);
+      const mine = me && formData.player(me.id);
+      const others = [...new Map([...followed, ...squad].filter((p) => p.id !== me?.id).map((p) => [p.id, p])).values()]
+        .map((p) => ({ p, f: formData.player(p.id) })).filter((x) => x.f.n)
+        .sort((a, b) => b.f.form - a.f.form || a.p.full_name.localeCompare(b.p.full_name));
+      const tf = team && formData.team(team.id);
+      if (!mine?.n && !others.length && !tf?.n) return "";
+      return panel("Form", html`
+        ${me ? html`<a class="ms-myform" href="${urls.player(me)}#form">
+          <span><small>My form</small><strong>${mine?.n ? html`${formChips(mine, { links: false })}` : "No matches yet this season"}</strong></span>
+          ${formBadge(mine, { big: true, trend: true })}</a>` : ""}
+        ${tf?.n ? html`<a class="ms-myform team" href="${urls.team(team)}#form">
+          <span><small>${team.name}</small><strong>${formChips(tf, { links: false })}</strong></span>${formBadge(tf, { big: true, trend: true })}</a>` : ""}
+        ${others.length ? html`<ul class="ms-formlist">${others.slice(0, home ? 5 : 12).map(({ p, f }) => html`<li><a href="${urls.player(p)}#form">
+          ${avatar(p, "ms-fl-photo")}<span><strong>${p.full_name}</strong><small>${ctx.team.get(p.team_id)?.name ?? ""}</small></span>
+          ${formChips(f, { links: false })}${formBadge(f, { trend: true })}</a></li>`)}</ul>` : ""}`,
+        { foot: { href: team ? `/form?league=${ctx.league.get(team.league_id)?.slug ?? ""}` : "/form", label: "Everyone's form — the form guide" } });
+    },
     breaks: () => (!team ? "" : panel(`${team.name} breaks`, dataTable([
         { label: "Player", cell: (b) => playerLink(b.player) },
         { label: "Date", cell: (b) => html`<a href="${urls.match(b.fixture)}">${fmtDate(b.fixture.starts_at)}</a>` },

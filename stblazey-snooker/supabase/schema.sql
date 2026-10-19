@@ -2432,13 +2432,38 @@ begin
   return new;
 end $$;
 
+-- ── Round 25: form guide extras ──────────────────────────────────
+-- Player and team of the month (Admin → Look & settings → Site settings), beside the player and team of the week.
+alter table settings add column if not exists player_of_month_id uuid references players on delete set null;
+alter table settings add column if not exists player_of_month_text text;
+alter table settings add column if not exists player_of_month_show boolean not null default false;
+alter table settings add column if not exists team_of_month_id uuid references teams on delete set null;
+alter table settings add column if not exists team_of_month_text text;
+alter table settings add column if not exists team_of_month_show boolean not null default false;
+-- The Form guide in a menu that has been changed in Admin → Menu (a menu never changed gets it anyway).
+-- Added once, after "Our Players" when it is there; taking it out again in Admin → Menu keeps it out.
+alter table settings add column if not exists form_menu_added boolean not null default false;
+update settings s set
+  menu_more = case
+    when s.menu_more is null or jsonb_typeof(s.menu_more) <> 'array' then s.menu_more
+    when exists (select 1 from jsonb_array_elements(s.menu_more) e where e->>'href' = '/form') then s.menu_more
+    when exists (select 1 from jsonb_array_elements(s.menu_more) e where e->>'href' = '/players') then
+      (select jsonb_agg(x order by n) from (
+         select e as x, n * 2 as n from jsonb_array_elements(s.menu_more) with ordinality t(e, n)
+         union all
+         select '{"label":"Form guide","href":"/form"}'::jsonb, (select n * 2 + 1 from jsonb_array_elements(s.menu_more) with ordinality t(e, n) where e->>'href' = '/players' limit 1)
+       ) z)
+    else s.menu_more || '[{"label":"Form guide","href":"/form"}]'::jsonb end,
+  form_menu_added = true
+where s.id = 1 and not s.form_menu_added;
+
 -- ── the version of this file ─────────────────────────────────────
 -- KEEP THIS AT THE VERY END. The website asks the database for this number (public/js/core/version.js holds
 -- the one it expects). Because it is the last thing in the file, the database only reports the new number
 -- when everything above it has run. If the website files are uploaded without this file being run, the admin
 -- dashboard says "The database needs updating" at the top of every page.
 -- When something is added to this file that the website needs: raise this number and the one in version.js.
-create or replace function public.schema_version() returns int language sql immutable as $$ select 18 $$;
+create or replace function public.schema_version() returns int language sql immutable as $$ select 19 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

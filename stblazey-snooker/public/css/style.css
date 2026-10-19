@@ -3780,3 +3780,21 @@ a.fc:hover { color: #fff; filter: brightness(1.15); transform: translateY(-1px);
   #view table.fg-table tr.hl { background: #eaf6ea; }
   #view table.fg-table td, #view table.fg-table tr.hl td { background: transparent !important; }
 }
+/* Round 25b: player and team of the month */
+.spot-month .spot-label { background: var(--blue); color: #fff; }
+/* My Snooker: Form */
+.ms-myform { display: flex; align-items: center; gap: 12px; justify-content: space-between; padding: 12px 14px; margin-bottom: 8px; background: #111; color: #fff; text-decoration: none; border-radius: 6px; }
+.ms-myform:hover { color: #fff; filter: brightness(1.15); }
+.ms-myform.team { background: #2a2a2a; }
+.ms-myform > span:not(.form-badge) { display: grid; gap: 4px; min-width: 0; }
+.ms-myform small { color: #bbb; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; font-weight: 700; }
+.ms-myform strong { font-weight: 600; font-size: 14px; }
+.ms-formlist { list-style: none; margin: 4px 0 0; padding: 0; display: grid; }
+.ms-formlist a { display: grid; grid-template-columns: 34px 1fr auto auto; gap: 10px; align-items: center; padding: 8px 4px; border-top: 1px solid #eee; color: inherit; text-decoration: none; }
+.ms-formlist a:hover { background: #fafafa; }
+.ms-formlist a > span:not(.form-badge):not(.form-chips) { display: grid; min-width: 0; }
+.ms-formlist strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ms-formlist small { color: #777; font-size: 12px; }
+.ms-fl-photo { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: var(--red); }
+.ms-formlist .fc { width: 18px; height: 18px; font-size: 10px; }
+@media (max-width: 420px) { .ms-formlist .form-chips { display: none; } .ms-formlist a { grid-template-columns: 34px 1fr auto; } }

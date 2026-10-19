@@ -35,7 +35,7 @@ export default async function home(view, { user } = {}) {
   const [ctx, news, allComps, site, box, notices, dates] = await Promise.all([seasonContext(), articles(), competitionSummaries(), settings(), sideBoxData(),
     table("announcements", "sort").catch(() => []), table("key_dates", "starts_on").catch(() => [])]);
   // Form (Rich, round 25) beside the player and team of the week.
-  if (site.player_of_week_show || site.team_of_week_show) ctx.form = await loadForm(ctx).catch(() => null);
+  if (site.player_of_week_show || site.team_of_week_show || site.player_of_month_show || site.team_of_month_show) ctx.form = await loadForm(ctx).catch(() => null);
   const today = todayUK();
   const entering = openForEntry(allComps.map((x) => x.c));
   const slides = news.filter((a) => a.featured).slice(0, Math.max(1, site.hero_count || 4));
@@ -346,16 +346,24 @@ function shieldsBox(ctx) {
 const spotForm = (f) => (f?.n ? html`<span class="spot-form">${formChips(f, { links: false })}</span>` : "");
 const spotScore = (f) => (f?.n ? html`<span class="spot-score"><small>Form</small>${formBadge(f, { big: true, trend: true })}</span>` : "");
 function spotlights(ctx, site) {
-  const p = site.player_of_week_show && ctx.player.get(site.player_of_week_id);
-  const t = site.team_of_week_show && ctx.team.get(site.team_of_week_id);
-  if (!p && !t) return "";
-  // A slim card each (picture on the left, the words beside it), so the two take little room on a phone.
-  return html`<div class="spotlights">
-    ${p ? html`<a class="spotlight" href="${urls.player(p)}">${avatar(p, "spot-photo")}
-      <div><span class="spot-label">Player of the week</span><strong>${p.full_name}</strong><small>${ctx.team.get(p.team_id)?.name ?? ""}</small>${site.player_of_week_text ? html`<p>${site.player_of_week_text}</p>` : ""}${spotForm(ctx.form?.player(p.id))}</div>${spotScore(ctx.form?.player(p.id))}</a>` : ""}
-    ${t ? html`<a class="spotlight" href="${urls.team(t)}"><span class="spot-badge">${badge(t)}</span>
-      <div><span class="spot-label">Team of the week</span><strong>${t.name}</strong><small>${ctx.league.get(t.league_id)?.name ?? ""}</small>${site.team_of_week_text ? html`<p>${site.team_of_week_text}</p>` : ""}${spotForm(ctx.form?.team(t.id))}</div>${spotScore(ctx.form?.team(t.id))}</a>` : ""}
-  </div>`;
+  // Player and team of the week, and (round 25) of the month — each a slim card with their form.
+  const cards = [
+    ["player", "week"], ["team", "week"], ["player", "month"], ["team", "month"],
+  ].map(([kind, span]) => {
+    if (!site[`${kind}_of_${span}_show`]) return null;
+    const who = ctx[kind].get(site[`${kind}_of_${span}_id`]);
+    if (!who) return null;
+    const text = site[`${kind}_of_${span}_text`], label = `${kind === "player" ? "Player" : "Team"} of the ${span}`;
+    const f = ctx.form?.[kind](who.id);
+    return kind === "player"
+      ? html`<a class="spotlight spot-${span}" href="${urls.player(who)}">${avatar(who, "spot-photo")}
+          <div><span class="spot-label">${label}</span><strong>${who.full_name}</strong><small>${ctx.team.get(who.team_id)?.name ?? ""}</small>${text ? html`<p>${text}</p>` : ""}${spotForm(f)}</div>${spotScore(f)}</a>`
+      : html`<a class="spotlight spot-${span}" href="${urls.team(who)}"><span class="spot-badge">${badge(who)}</span>
+          <div><span class="spot-label">${label}</span><strong>${who.name}</strong><small>${ctx.league.get(who.league_id)?.name ?? ""}</small>${text ? html`<p>${text}</p>` : ""}${spotForm(f)}</div>${spotScore(f)}</a>`;
+  }).filter(Boolean);
+  if (!cards.length) return "";
+  // A slim card each (picture on the left, the words beside it), so they take little room on a phone.
+  return html`<div class="spotlights ${cards.length === 4 ? "four" : ""}">${cards}</div>`;
 }
 
 /**

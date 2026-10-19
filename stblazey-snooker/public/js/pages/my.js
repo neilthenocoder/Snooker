@@ -4,6 +4,7 @@
 //   Officers with no team:       My Snooker · User details (their tools are in the admin dashboard)
 // A player's login has no tools: the one thing they control here is My Snooker (their own page, /myteam).
 import { html, mount, $, readForm, toast, fmtDate, fmtTime, confirmBox } from "../core/dom.js";
+import { loadForm, formPanel } from "../core/form.js";
 import { seasonContext } from "../core/context.js";
 import { settings, loadCompetitions, updateMyPlayer, addPlayerToTeam, seasonFrames, setFixtureStatus, setMyPrefs, table, teamLineups, setLineup, claimPlayer } from "../core/api.js";
 import { upcomingFor, pickedCount, dayText, untilText, fixtureLine } from "../core/squad.js";
@@ -95,7 +96,7 @@ async function snookerTab(el, { ctx, user, team, me }) {
   const categories = (await table("categories", "sort").catch(() => [])).map((c) => c.name);
   const followed = new Set(prefs.teams);
   let players = prefs.players.filter((id) => ctx.player.get(id));
-  const wants = (key) => !prefs.sections || prefs.sections.includes(key);
+  const wants = (key) => !prefs.sections || prefs.sections.includes(key) || (key === "form" && !prefs.sections.includes("form_off"));
   const pickable = ctx.players.filter((p) => !["deceased"].includes(p.status)).sort((a, b) => a.full_name.localeCompare(b.full_name));
   const teamName = (p) => ctx.team.get(p.team_id)?.name ?? "no team";
   const chips = () => mount($("[data-chips]", el), players.length ? html`${players.map((id) => { const p = ctx.player.get(id); return html`<span class="chip">${p.full_name} <small class="muted">${teamName(p)}</small>
@@ -196,7 +197,7 @@ async function snookerTab(el, { ctx, user, team, me }) {
     // Keep the order the teams were followed in (so the first stays first), then any newly ticked ones.
     const teams = [...prefs.teams.filter((id) => ticked("team").includes(id)), ...ticked("team").filter((id) => !prefs.teams.includes(id))];
     const turnOn = form.elements.on.checked;
-    save(turnOn, { place: form.elements.place?.value === "home" ? "home" : "page", teams, players, cats: ticked("cat"), sections: sections.length === SECTIONS.length ? null : sections },
+    save(turnOn, { place: form.elements.place?.value === "home" ? "home" : "page", teams, players, cats: ticked("cat"), sections: sections.length === SECTIONS.length ? null : [...sections, ...(sections.includes("form") ? [] : ["form_off"])] },
       turnOn ? "My Snooker saved" : "My Snooker switched off");
   });
 }
@@ -366,7 +367,7 @@ function fixturesTab(el, { ctx, user, team }) {
 }
 
 // ── Profile (your own player page) ─────────────────────────────
-function profileTab(el, { me }) {
+function profileTab(el, { me, ctx }) {
   if (!me) return mount(el, html`<div class="notice">Your login isn't linked to a player profile yet. Ask the league secretary to link it
     (Admin → Logins → Player profile), and you'll be able to edit your photo, bio, career history and CueView here.</div>`);
   let photo = me.avatar_url || "";
@@ -374,7 +375,10 @@ function profileTab(el, { me }) {
   const drawPics = () => mount($("[data-pics]", el), html`${pictures.map((u, i) => html`<figure class="gal-thumb"><img src="${u}" alt="">
     <button type="button" data-remove-pic="${i}" aria-label="Remove">×</button></figure>`)}`);
 
-  mount(el, html`<form class="form" data-profile>
+  // My form (Rich, round 25): the same Form box as on the public player page, above the profile form.
+  if (ctx) loadForm(ctx).then((all) => { const f = all.player(me.id), slot = $("[data-my-form]", el);
+    if (slot) mount(slot, f?.n ? formPanel(f, { name: me.full_name.split(" ")[0] }) : html`<div class="notice">Your form appears here once you have played a match this season.</div>`); }).catch(() => {});
+  mount(el, html`<div data-my-form></div><form class="form" data-profile>
     <div class="btn-row" style="justify-content:space-between;margin-bottom:10px">
       <span class="muted">This is what everyone sees on your player page. Your name, team and handicap are set by the league secretary.</span>
       <a class="btn small ghost" href="${urls.player(me)}">View my public page</a></div>

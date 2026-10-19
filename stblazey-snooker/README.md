@@ -525,6 +525,15 @@ No database changes — nothing to run in Supabase this time.
 - Form also shows on player pages (with each match and its mark), team pages and squad cards, league tables (W/L/D), rankings, and the player and team of the week on the home page.
 - The phone menu's standard links now include "Form guide". If the menu has been customised in Admin → Look & settings → Menu, add `/form` there.
 
+## 3t. Round 26 (form guide extras)
+
+**Run `supabase/schema.sql` again** (database version 19).
+
+- **Player of the month / Team of the month:** Admin → Look & settings → Site settings, under Player and Team of the week. Shown on the home page beside them, with their form.
+- **Form guide in the menu:** running schema.sql adds "Form guide" (after "Our Players") to a phone menu that was changed in Admin → Menu — once only, so if it is taken out again it stays out.
+- **My Snooker:** a new "Form" section (on for everyone; it can be unticked in My Snooker settings): my own form, my team's, and the form of my teammates and the players I follow, with a link to the form guide. Team & handicaps and Players I follow show each player's form too.
+- **My account menu:** "My form" (for logins linked to a player) and "Form guide". **My area → Profile** shows the player's Form box.
+
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
 | Rule | Current setting |
