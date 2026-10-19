@@ -12,6 +12,7 @@
 //    Teams   — up to 7 for the share of frames won
 //              + 3 for a win, 1.5 for a draw, 0 for a defeat.
 //  Form = the average mark of the last FORM.last matches (6), one decimal place.
+//  One season at a time: it starts again from nothing when a new season begins.
 //  Change a number below and the whole site follows.
 // ─────────────────────────────────────────────────────────────
 import { html, fmtDate } from "./dom.js";
@@ -28,6 +29,7 @@ export const FORM = {
 };
 
 export const FORM_TEXT = `Form is a mark out of 10, averaged over the last ${FORM.last} matches this season (league and competitions). ` +
+  `It starts again at the beginning of every season — nobody has a form figure until they have played that season. ` +
   `Players: up to ${FORM.framesShare} for the share of frames won, plus up to 3 for their best break that night (30+ = 1, 50+ = 2, 70+ = 3). ` +
   `Teams: up to ${FORM.framesShare} for the share of frames won, plus ${FORM.teamResult.w} for a win or ${FORM.teamResult.d} for a draw.`;
 
@@ -61,8 +63,14 @@ function summarise(list) {
 export async function loadForm(ctx, compsLoaded = null) {
   const seasonId = ctx.season?.id;
   const comps = compsLoaded ?? await loadCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] }));
-  const compIds = new Set(comps.competitions.filter((c) => !seasonId || c.season_id === seasonId).map((c) => c.id));
-  const played = comps.matches.filter((m) => compIds.has(m.competition_id) && winnerSide(m) && m.entry_a && m.entry_b);
+  // One season at a time (Rich, round 26): form starts again from nothing when a new season begins.
+  // Competitions of this season count; one with no season set counts only in the current season, and only its
+  // matches from this season's first league match on (so last season's cup results never carry over).
+  const seasonStart = ctx.fixtures.reduce((first, f) => (f.starts_at && (!first || f.starts_at < first) ? f.starts_at : first), "");
+  const inSeason = (c, m) => !!seasonId && (c.season_id === seasonId
+    || (!c.season_id && ctx.season?.is_current && !!seasonStart && String(m.starts_at ?? "") >= seasonStart));
+  const compById = new Map(comps.competitions.map((c) => [c.id, c]));
+  const played = comps.matches.filter((m) => compById.has(m.competition_id) && inSeason(compById.get(m.competition_id), m) && winnerSide(m) && m.entry_a && m.entry_b);
   const cBreaks = played.length ? await competitionBreaks(played.map((m) => m.id)).catch(() => []) : [];
   const now = new Date().toISOString();
 

@@ -533,6 +533,7 @@ No database changes — nothing to run in Supabase this time.
 - **Form guide in the menu:** running schema.sql adds "Form guide" (after "Our Players") to a phone menu that was changed in Admin → Menu — once only, so if it is taken out again it stays out.
 - **My Snooker:** a new "Form" section (on for everyone; it can be unticked in My Snooker settings): my own form, my team's, and the form of my teammates and the players I follow, with a link to the form guide. Team & handicaps and Players I follow show each player's form too.
 - **My account menu:** "My form" (for logins linked to a player) and "Form guide". **My area → Profile** shows the player's Form box.
+- **Form is one season at a time** (1.26.1): it starts again from nothing when a new season is made current. Competitions with no season set only count from the current season's first league match.
 
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
