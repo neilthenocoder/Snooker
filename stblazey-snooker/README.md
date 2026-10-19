@@ -58,7 +58,7 @@ Demo data lives only in your browser. **Admin → Reset sample data** starts it 
 
 1. Create a free project at <https://supabase.com>.
 2. Open **SQL Editor → New query**, paste in all of **`supabase/schema.sql`** and press **Run**. This creates the tables, the security rules and the `images` storage bucket for uploads.
-3. *(Optional)* Run **`supabase/seed.sql`** the same way to load the sample league for testing. When you're done testing, run **`supabase/remove-sample-data.sql`** to delete it (do this before entering your real teams).
+3. Run **`supabase/real-league.sql`** the same way: it loads the real league (leagues, teams, venues, players, the 2026-27 fixtures and the results on record) and clears out any test data. See section 3c.
 4. Go to **Authentication → Sign In / Providers** and turn **off "Allow new users to sign up"**. Only the admin should create accounts.
 
 ### b) Create your own admin login
@@ -233,7 +233,7 @@ Dates are day-first (`24/09/2019`). Column order doesn't matter and extra column
 
 In a scorecard file, a player written as `Ben Rothwell (Ext)` is Ben Rothwell playing as the extra player, and `Extra Player` is a frame with no named player — that is how the old website wrote them.
 
-**The real 2026-27 season** is in `real-data/2026-27/`, collected from the old website: 19 teams, 153 players in teams (plus 155 the old site lists without a team), the players' CueView answers, all 162 fixtures, the 18 bye weeks and the 26 matches played so far frame by frame. **`supabase/real-season-2026-27.sql` puts all of it in, in one go** — it takes the sample players, fixtures and results out, keeps the teams, venues and leagues (with their emblems), and loads the real season. Run `supabase/schema.sql` first, then that file, once. The folder's own `README.md` has the detail and `NOTES-from-the-old-site.md` lists everything odd that was found. (The same files can still be brought in by hand through Admin → Import from CSV.)
+**The real league** (round 27) is in `real-data/2026-27/`: the 2 leagues, 19 teams and venues, the league's players list (153 players in their teams — the list Rich sent, checked against the old website), all 162 fixtures, the 18 bye weeks and the 26 matches on record frame by frame, plus the CueViews of the 12 listed players who had one on the old website. **`supabase/real-league.sql` puts it in, in one go** (run `supabase/schema.sql` first). It clears out everything that was there for testing — every other player (and the photos, bios and CueViews of the listed ones), every fixture and scorecard, every news article, other seasons, leagues, teams, venues and competitions — and keeps logins, emblems, pages, sponsors, settings and branding. Whatever isn't on record yet is left empty and the website shows **“Not updated yet”**: the 4 handicaps not on record, the other CueViews, bios and stats, and every match whose night has gone by without a result (they wait for the league to add them). Rebuild the file after changing the CSVs with `npm run real-league`.
 
 ## 3d. Finals night: the live scoreboard
 
@@ -535,6 +535,15 @@ No database changes — nothing to run in Supabase this time.
 - **My account menu:** "My form" (for logins linked to a player) and "Form guide". **My area → Profile** shows the player's Form box.
 - **Form is one season at a time** (1.26.1): it starts again from nothing when a new season is made current. Competitions with no season set only count from the current season's first league match.
 
+## 3u. Round 27 (real data)
+
+**Run `supabase/schema.sql` again (database version 20), then `supabase/real-league.sql` once** (see section 3c).
+
+- `real-league.sql` clears the test data (players, fixtures, scorecards, news, other seasons, leagues, teams, venues and competitions) and loads the real league: 2 leagues, 19 teams, 153 players, 162 fixtures, 18 bye weeks and the 26 results on record. Logins stay, still linked to their player.
+- **“Not updated yet”** shows wherever the league hasn't added something yet: a handicap, a bio, a CueView, a player's stats, and a match whose night has gone by with no result (more than five hours after the start, still "scheduled", nothing on the card). Rules in `isNotUpdated()` in `core/rules.js`.
+- A handicap can be left empty (Admin → Players or Admin → Handicaps). Scorecards and handicap competitions count an empty handicap as 0.
+- Removed: `seed.sql`, `remove-sample-data.sql`, `add-richard-pearson.sql`, the old `real-season-2026-27.sql` and `scripts/build-seed.mjs`.
+
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
 | Rule | Current setting |
@@ -621,10 +630,7 @@ public/                     ← everything Netlify serves
     demo/seed-data.js       ← sample league (imaginary players)
 supabase/
   schema.sql                ← tables + security rules + image storage (safe to re-run)
-  seed.sql                  ← optional sample data (generated: npm run seed)
-  real-season-2026-27.sql   ← the real 2026-27 season: sample league out, real one in (generated: npm run real-season)
-  remove-sample-data.sql    ← deletes the sample data again
-  add-richard-pearson.sql   ← adds Rich as a player (run once)
+  real-league.sql           ← the real league: test data out, real league in (generated: npm run real-league)
 netlify/functions/
   admin-users.mjs           ← creates/updates/deletes logins (server-side)
   result-email.mjs          ← emails the results secretary when a card is submitted (through Resend)
@@ -634,8 +640,7 @@ netlify/edge-functions/
   social.js                 ← fills in each page's sharing preview and the app icons on Netlify's side (section 3n)
 real-data/2026-27/          ← the real season collected from the old website (see its README)
 scripts/
-  build-seed.mjs            ← writes supabase/seed.sql from the sample data
-  build-real-season.mjs     ← writes supabase/real-season-2026-27.sql from real-data/2026-27/
+  build-real-league.mjs     ← writes supabase/real-league.sql from real-data/2026-27/
 netlify.toml                ← Netlify settings (publish folder, URL routing)
 ```
 
@@ -758,7 +763,7 @@ When you get new code files:
 3. If `supabase/schema.sql` changed, run it again: Supabase → **SQL Editor** → New query → paste the **whole** file → **Run**. It only adds what's missing and never deletes your data. It should answer “Success. No rows returned”. If Supabase asks you to confirm because the query “contains destructive operations”, that is expected (it replaces the security rules with the same rules) — confirm. If it answers with an error instead, nothing at all was changed: copy the error and get it looked at before going further.
    **The website tells you when this step has been missed.** The SQL file ends by writing a version number into the database, and the website knows the number it needs (`public/js/core/version.js`). If the files are uploaded but the SQL has not been run, a red box — **“The database needs updating”** — sits at the top of every page of the admin dashboard until it has, and anything that needed the missing piece says so in plain words instead of showing a database error. (Anyone adding to `schema.sql` later: raise the number at the bottom of that file and the one in `version.js` together.)
    Each new function also needs its environment variables in Netlify (result emails: `RESEND_API_KEY` — section 3f).
-4. **Don't run `seed.sql`, `remove-sample-data.sql` or `real-season-2026-27.sql` again.** An update never needs them. `real-season-2026-27.sql` puts the season back as it was on 8 October 2026, so a second run would wipe every result entered on the website since. `remove-sample-data.sql` deletes the sample players, teams, venues and articles — together with any photos, emblems or details you attached to them — and `seed.sql` puts back blank ones. Only use them if you deliberately want to reset the sample league.
+4. **Don't run `real-league.sql` again** once the league is entering results on the website. An update never needs it: it puts the league back to its starting point, wiping every result, player detail and news article added since.
 5. Netlify redeploys the logins function on its own when you push — nothing to do there. If you upload by drag and drop instead, upload the **whole project folder** (not only `public`), or the functions are not updated.
 
 ## 8. Security

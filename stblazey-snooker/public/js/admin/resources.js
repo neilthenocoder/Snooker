@@ -153,7 +153,7 @@ export const RESOURCES = {
       { name: "full_name", label: "Full name", type: "text", required: true },
       { name: "team_id", label: "Team", type: "ref", ref: "teams" },
       { name: "position", label: "Position", type: "select", options: ["Player", "Team Captain", "Vice Captain"], default: "Player" },
-      { name: "handicap", label: "Handicap", type: "number", default: 0 },
+      { name: "handicap", label: "Handicap (leave empty if not known yet: it shows as “Not updated yet”)", type: "number", default: 0, placeholder: "Not updated yet" },
       { name: "status", label: "Status", type: "select", options: Object.keys(PLAYER_STATUS), labels: PLAYER_STATUS, default: "playing",
         help: "“Not playing” and “No longer with us” take the player out of squad lists, scorecards and entry forms. Their results, breaks and profile page stay." },
       { name: "birth_date", label: "Birthday (optional)", type: "date" },

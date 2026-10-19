@@ -1,7 +1,7 @@
 // Reusable building blocks. Every table, panel and card on the site
 // is drawn by one of these functions — change it here, it changes everywhere.
 import { html, fmtDate, fmtTime } from "./dom.js";
-import { isProvisional, PROVISIONAL_NOTE, frameWinner } from "./rules.js";
+import { isProvisional, PROVISIONAL_NOTE, frameWinner, NOT_UPDATED } from "./rules.js";
 import { formBadge as formBadgeFn, formChips as formChipsFn } from "./form.js";
 
 // ── URLs (one place to change the site's link structure) ──────
@@ -75,14 +75,17 @@ export const teamLink = (team, strong = false) =>
 export const statusBadge = (status) => html`<span class="status ${status}">${String(status).replace("_", " ")}</span>`;
 
 /** Signed handicap: +16, -14, 0. */
-export const handicapText = (h) => (Number(h) > 0 ? `+${h}` : String(h ?? 0));
+/** "Not updated yet" when the league hasn't set one (real data, round 27). */
+export const handicapText = (h) => (h === null || h === undefined || h === "" ? NOT_UPDATED : Number(h) > 0 ? `+${h}` : String(h));
+export const notUpdatedTag = (text = NOT_UPDATED) => html`<span class="not-upd">${text}</span>`;
 
 /** Up or down arrow against last year's handicap (set at the yearly review), or nothing if it hasn't moved. */
 /** A handicap as a coloured tag: scratch and minus handicaps green, plus handicaps red. */
-export const handicapTag = (h) => html`<span class="hc-val ${Number(h) > 0 ? "plus" : Number(h) < 0 ? "minus" : "zero"}">${handicapText(h)}</span>`;
+export const handicapTag = (h) => (h === null || h === undefined || h === "" ? notUpdatedTag()
+  : html`<span class="hc-val ${Number(h) > 0 ? "plus" : Number(h) < 0 ? "minus" : "zero"}">${handicapText(h)}</span>`);
 
 export function handicapMove(player) {
-  if (player?.last_handicap == null || player.last_handicap === player.handicap) return "";
+  if (player?.last_handicap == null || player?.handicap == null || player.last_handicap === player.handicap) return "";
   const diff = player.handicap - player.last_handicap, up = diff > 0;
   return html`<span class="hc-move ${up ? "up" : "down"}" title="${up ? "Up" : "Down"} ${Math.abs(diff)} from last year (was ${handicapText(player.last_handicap)})">${up ? "▲" : "▼"} ${Math.abs(diff)}</span>`;
 }
@@ -425,6 +428,7 @@ function sideBox(ctx, news, count, box) {
 // ── fixtures ──────────────────────────────────────────────────
 export function resultText(ctx, fx) {
   if (fx.status === "postponed") return "P - P";
+  if (ctx.notUpdated?.(fx)) return NOT_UPDATED;
   if (!ctx.hasResult(fx)) return fmtTime(fx.starts_at);
   const s = ctx.scoreOf(fx);
   return `${s.home} - ${s.away}`;
@@ -448,7 +452,7 @@ export function fixturesTable(ctx, fixtures, { actions, byes = [], forTeam = nul
     { label: "Date", cell: (f) => fmtDate(f.starts_at), cls: "fx-date" },
     { label: "Fixtures", cell: (f) => (f.bye ? html`<span class="bye-row">${ctx.team.get(f.team_id)?.name} <b>Bye week</b></span>`
       : html`<a href="${urls.match(f)}">${ctx.team.get(f.home_team_id)?.name} vs ${ctx.team.get(f.away_team_id)?.name}</a>`), cls: "fx-name" },
-    { label: "Results", cell: (f) => (f.bye ? html`<span class="fx-none">–</span>` : html`<span class="res-score ${done(f) ? "done" : ""}">${resultText(ctx, f)}</span>${f.status === "in_progress" ? html` <span class="live-dot">Live</span>` : ""}`), cls: "num fx-res" },
+    { label: "Results", cell: (f) => (f.bye ? html`<span class="fx-none">–</span>` : ctx.notUpdated?.(f) ? notUpdatedTag() : html`<span class="res-score ${done(f) ? "done" : ""}">${resultText(ctx, f)}</span>${f.status === "in_progress" ? html` <span class="live-dot">Live</span>` : ""}`), cls: "num fx-res" },
     ...(forTeam ? [{ label: "Won / Lost", cell: (f) => outcomeTag(outcome(f)) || html`<span class="fx-none">–</span>`, cls: "num fx-out" }] : []),
     { label: "League", cell: (f) => ctx.league.get(f.league_id)?.name, cls: "hide-sm" },
     { label: "Season", cell: () => ctx.season?.name, cls: "hide-sm" },

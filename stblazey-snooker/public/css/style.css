@@ -3798,3 +3798,12 @@ a.fc:hover { color: #fff; filter: brightness(1.15); transform: translateY(-1px);
 .ms-fl-photo { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: var(--red); }
 .ms-formlist .fc { width: 18px; height: 18px; font-size: 10px; }
 @media (max-width: 420px) { .ms-formlist .form-chips { display: none; } .ms-formlist a { grid-template-columns: 34px 1fr auto; } }
+
+/* Round 27: real data — "Not updated yet" where the league hasn't added something */
+.not-upd { color: #8a8a8a; font-style: italic; font-weight: 600; white-space: nowrap; }
+p.not-upd { margin: 0; }
+.cv-empty { display: flex; align-items: center; gap: 12px; background: #111; color: #fff; padding: 14px 18px; }
+.cv-empty span { font: 700 13px var(--font-head); text-transform: uppercase; letter-spacing: .08em; color: var(--yellow, #fbb61a); }
+.cv-empty .not-upd { color: #bbb; }
+.stats-empty { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #e6e6e6; padding: 16px 18px; }
+.stats-empty b { font: 700 15px var(--font-head); text-transform: uppercase; }

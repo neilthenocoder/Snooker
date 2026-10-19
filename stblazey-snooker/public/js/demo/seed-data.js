@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────
 //  SAMPLE DATA — placeholder league used in demo mode and by
-//  scripts/build-seed.mjs to produce supabase/seed.sql.
+//  nothing else (the real league is loaded with supabase/real-league.sql).
 //  Player names are imaginary. Replace with real data via the admin.
 // ─────────────────────────────────────────────────────────────
 

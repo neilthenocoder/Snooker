@@ -168,7 +168,7 @@ function view(user, { ctx, news, comps, site = {}, form: formData = null }, pref
         { label: "Date", cell: (f) => fmtDate(f.starts_at) },
         { label: "Match", cell: (f) => (f.bye ? html`<span class="bye-row"><b>Bye week</b> no match</span>`
           : html`<a href="${urls.match(f)}"><span class="ms-ha ${f.home_team_id === team.id ? "h" : "a"}">${f.home_team_id === team.id ? "Home" : "Away"}</span> v ${opp(f)?.name ?? "–"}</a>`) },
-        { label: "Time", cell: (f) => (f.bye ? "–" : f.status === "postponed" ? "Postponed" : f.status === "in_progress" ? html`<span class="live-dot">Live</span>` : fmtTime(f.starts_at)), cls: "num" },
+        { label: "Time", cell: (f) => (f.bye ? "–" : f.status === "postponed" ? "Postponed" : f.status === "in_progress" ? html`<span class="live-dot">Live</span>` : ctx.notUpdated(f) ? html`<span class="not-upd">Not updated yet</span>` : fmtTime(f.starts_at)), cls: "num" },
         { label: "Venue", cell: (f) => { const v = !f.bye && ctx.venue.get(f.venue_id); return v ? html`<a href="${urls.venue(v)}">${v.name}</a>` : "–"; }, cls: "hide-sm" },
       ], upcoming.slice(0, limit), { rowClass: (f) => (f.bye ? "is-bye" : ""), empty: "No more fixtures this season." }),
       { foot: more && upcoming.length > limit ? more : { href: `/calendar?team=${team.id}`, label: "See these on the calendar" } })),

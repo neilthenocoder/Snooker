@@ -2457,13 +2457,20 @@ update settings s set
   form_menu_added = true
 where s.id = 1 and not s.form_menu_added;
 
+-- ── Round 27: real data — a handicap can be "not updated yet" ───
+-- A player whose handicap the league hasn't set yet has none (the website shows "Not updated yet")
+-- rather than a made-up 0. Scorecards and handicap competitions still count a missing handicap as 0.
+alter table players alter column handicap drop not null;
+alter table players alter column handicap drop default;
+alter table handicap_changes alter column new_handicap drop not null;
+
 -- ── the version of this file ─────────────────────────────────────
 -- KEEP THIS AT THE VERY END. The website asks the database for this number (public/js/core/version.js holds
 -- the one it expects). Because it is the last thing in the file, the database only reports the new number
 -- when everything above it has run. If the website files are uploaded without this file being run, the admin
 -- dashboard says "The database needs updating" at the top of every page.
 -- When something is added to this file that the website needs: raise this number and the one in version.js.
-create or replace function public.schema_version() returns int language sql immutable as $$ select 19 $$;
+create or replace function public.schema_version() returns int language sql immutable as $$ select 20 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

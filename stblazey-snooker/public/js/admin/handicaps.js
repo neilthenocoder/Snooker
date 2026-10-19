@@ -40,7 +40,7 @@ export async function handicapsPage(el) {
         { label: "Team", cell: (p) => teamName(p.team_id), cls: "hide-sm" },
         { label: "Last year", cell: (p) => (p.last_handicap == null ? "–" : handicapText(p.last_handicap)), cls: "num" },
         { label: "Now", cell: (p) => html`<b>${handicapText(p.handicap)}</b>${handicapMove(p)}`, cls: "num" },
-        { label: "New handicap", cell: (p) => html`<span class="hc-edit"><input type="number" min="-200" max="200" step="1" value="${p.handicap}" data-hc-input="${p.id}" aria-label="New handicap for ${p.full_name}">
+        { label: "New handicap", cell: (p) => html`<span class="hc-edit"><input type="number" min="-200" max="200" step="1" value="${p.handicap ?? ""}" placeholder="Not set" data-hc-input="${p.id}" aria-label="New handicap for ${p.full_name}">
           <button type="button" class="btn small green" data-hc-save="${p.id}">Save</button></span>`, cls: "right" },
       ], list.slice(from, to), { empty: "No players match." })}${pager}`)}
 

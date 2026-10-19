@@ -92,7 +92,7 @@ export default async function match(view, { params, user }) {
         <div class="mh-body">
           <a class="mh-side ${won("home") ? "won" : lost("home") ? "lost" : ""}" href="${home ? urls.team(home) : "#"}">${badge(home)}<span>${home?.name}</span></a>
           <div class="mh-score"><b class="${won("home") ? "won" : lost("home") ? "lost" : ""}">${played ? score.home : "–"}</b><i>:</i><b class="${won("away") ? "won" : lost("away") ? "lost" : ""}">${played ? score.away : "–"}</b>
-            ${fx.status === "in_progress" ? html`<span class="live-dot">Live</span>` : played ? html`<small>${fx.status === "approved" ? "Final" : fx.status.replace("_", " ")}</small>` : html`<small>${fmtTime(fx.starts_at)}</small>`}</div>
+            ${fx.status === "in_progress" ? html`<span class="live-dot">Live</span>` : played ? html`<small>${fx.status === "approved" ? "Final" : fx.status.replace("_", " ")}</small>` : ctx.notUpdated?.(fx) ? html`<small class="not-upd">Not updated yet</small>` : html`<small>${fmtTime(fx.starts_at)}</small>`}</div>
           <a class="mh-side ${won("away") ? "won" : lost("away") ? "lost" : ""}" href="${away ? urls.team(away) : "#"}">${badge(away)}<span>${away?.name}</span></a>
         </div>
         ${shield.isShield ? html`<div class="mh-foot">🛡 <a href="${urls.shield(league)}">${league.shield_name || "Shield"}</a> match — ${ctx.team.get(shield.holderId)?.name} defending</div>` : ""}

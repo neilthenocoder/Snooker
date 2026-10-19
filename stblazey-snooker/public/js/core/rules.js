@@ -22,6 +22,14 @@ export const RULES = {
 export const isProvisional = (fixture) => ["in_progress", "submitted"].includes(fixture?.status);
 export const PROVISIONAL_NOTE = "Includes scores from matches still being played or waiting for approval — not official until the result is approved.";
 
+/**
+ * "Not updated yet" (real data, round 27): a match whose night has gone by with no result on the website yet —
+ * still "scheduled", nothing on the card, and more than five hours after the start. The league adds it later.
+ */
+export const NOT_UPDATED = "Not updated yet";
+export const isNotUpdated = (fixture, hasFrames) => fixture?.status === "scheduled" && !hasFrames
+  && Date.parse(fixture.starts_at) < Date.now() - 5 * 36e5;
+
 /** Every status a fixture can have, in match-night order. */
 export const STATUSES = ["scheduled", "in_progress", "submitted", "approved", "postponed"];
 

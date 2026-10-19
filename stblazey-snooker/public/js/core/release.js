@@ -4,11 +4,10 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.26.1";
+export const SITE_VERSION = "1.27.0";
 export const CHANGES = [
-  "Form is one season at a time: it starts again from nothing when a new season begins",
-  "Player of the month and Team of the month on the home page (Site settings), each with their form",
-  "Form guide added to the menu (also to a menu already changed in Admin → Menu)",
-  "My Snooker: a Form section — your own form, your team's, your teammates' and the players you follow — and a Form column in Team & handicaps",
-  "My account menu: “My form” and “Form guide”; My area → Profile shows your form",
+  "Real league data: supabase/real-league.sql clears the test players, fixtures and news and loads the real league and its players",
+  "“Not updated yet” where the league hasn't added something: handicaps, bios, CueViews, player stats, and matches played without a result on the website",
+  "A handicap can now be left empty until the league sets it",
+  "Form is one season at a time",
 ].join("\n");

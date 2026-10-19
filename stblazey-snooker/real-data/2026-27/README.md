@@ -20,31 +20,30 @@ information (birthdays, most venue addresses, phone numbers) it is left empty.
 
 ## Putting it on the website: one SQL file
 
-`supabase/real-season-2026-27.sql` is built from these files (`npm run real-season`). In Supabase → SQL Editor:
+`supabase/real-league.sql` is built from these files (`npm run real-league`). In Supabase → SQL Editor:
 
-1. Run all of `supabase/schema.sql` (it adds the bye-weeks table; safe to re-run).
-2. Run all of `supabase/real-season-2026-27.sql`. It ends with a line like
+1. Run all of `supabase/schema.sql` (database version 20; safe to re-run).
+2. Run all of `supabase/real-league.sql`. It ends with a line like
    *Done: 153 players in teams, 162 fixtures, 130 frames, 10 breaks, 18 bye weeks.*
 
 What it does:
 
-- **Takes out** every fixture, scorecard and break (all sample or test), every sample player, every season
-  except 2026-2027, the sample competition draws, and test matches on the live scoreboard.
-- **Keeps** the 19 teams, the venues and the two leagues — so the emblems stay — and brings their details up to date
-  (two venues get their real names: Gorran Haven Snooker Club, Lerryn Community Centre; made-up addresses and
-  descriptions are cleared). Players you added yourself, logins, news, pages, sponsors, the image library,
-  settings and branding are not touched.
-- **Adds** the players, fixtures, bye weeks, scorecards and breaks, and the season's 11 competitions (without draws).
+- **Takes out** everything that was there for testing: every player not on the league's list (and the photos, bios,
+  CueViews and other details of those who are), every fixture, scorecard and break, every news article, every season
+  except 2026-2027, any league, team, venue or competition that isn't the real league's, competition draws and
+  entries, test matches on the live scoreboard, the handicap log, award winners and the player/team of the week and month.
+- **Keeps** logins (still linked to their player), the leagues', teams' and venues' emblems and pictures, pages,
+  sponsors, the image library, settings and branding.
+- **Adds** the players (the list from the league, round 27 — `players.csv`), fixtures, bye weeks, the scorecards and
+  breaks on record, and the season's 11 competitions (without draws).
+- **Not updated yet:** what isn't on record stays empty, and the website says "Not updated yet" — four handicaps,
+  most CueViews and bios, and the matches played since 6 October (and Bethel D v Mevagissey C on 6 October).
+  The league adds them in the dashboard.
+
+`players-without-a-team.csv` is no longer used: only the players on the league's list are loaded.
 
 It is one transaction: if any check fails, nothing is changed. **Run it once.** Run again later, it would put the
-season back to 8 October 2026 and lose every result entered on the website since.
-
-Afterwards, on the website:
-
-- Check a league table against the old site (they match for all 19 teams on 8 October).
-- Admin → Leagues: set who held each shield at the start of the season (the sample holders were cleared).
-- Admin → Players: add the four photos listed in the notes, and set a handicap for the players who have none.
-- Logins that were linked to a sample player have lost that link (their team is kept): Admin → Logins → pick the real player.
+league back to this starting point and lose every result entered on the website since.
 
 ## The same files, by hand
 

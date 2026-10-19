@@ -1,7 +1,7 @@
 // Turns raw season data into lookups and calculated tables (via rules.js).
 import { loadSeason, currentSeason, settings, loadCompetitions } from "./api.js";
 import { buildBracket, winnerSide } from "./bracket.js";
-import { leagueTable, playerRankings, matchScore, isCounted, isProvisional } from "./rules.js";
+import { leagueTable, playerRankings, matchScore, isCounted, isProvisional, isNotUpdated } from "./rules.js";
 import { ukDay } from "./dom.js";
 
 /** The Monday (YYYY-MM-DD, UK) of the week an ISO date and time falls in. */
@@ -34,6 +34,8 @@ export async function seasonContext(seasonId) {
     breaksOf: (fixtureId) => raw.breaks.filter((b) => b.fixture_id === fixtureId),
     scoreOf: (fx) => ({ ...matchScore(framesByFixture.get(fx.id)), counted: isCounted(fx) }),
     hasResult: (fx) => ["in_progress", "submitted", "approved"].includes(fx.status) && (framesByFixture.get(fx.id)?.length ?? 0) > 0,
+    // Played, but its result isn't on the website yet ("Not updated yet").
+    notUpdated: (fx) => isNotUpdated(fx, (framesByFixture.get(fx.id)?.length ?? 0) > 0),
 
     // A league's teams for THIS season: the ones with fixtures in it, plus (in the
     // current season) every active team placed in the league. Past seasons keep

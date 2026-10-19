@@ -5,7 +5,7 @@ import { playerRankings, frameWinner, breakPoints, EXT_PER_SEASON } from "../cor
 import { answered } from "../core/cueview.js";
 import { buildBracket, competitionStandings } from "../core/bracket.js";
 import { listItems } from "../core/list-field.js";
-import { breadcrumb, panel, dataTable, avatar, teamLink, urls, gallery, articleCard, cueviewSection, handicapText, handicapMove, breakTag } from "../core/components.js";
+import { breadcrumb, panel, dataTable, avatar, teamLink, urls, gallery, articleCard, cueviewSection, handicapText, handicapMove, breakTag, notUpdatedTag } from "../core/components.js";
 import { followButton } from "../core/my-snooker.js";
 import { setTitle, navigate, adminEdit, sideContext } from "../core/router.js";
 import { PLAYER_TAG } from "../core/terms.js";
@@ -90,7 +90,7 @@ export default async function player(view, { params, user }) {
     ...(pastTeams.length ? [["Past teams", pastTeams.join(", ")]] : []),
     ["League", league ? html`<a href="${urls.standings(league)}">${league.name}</a>` : "–"],
     ...(myComps.length ? [["Competitions", myComps.map((x) => x.c.name).join(", ")]] : []),
-    ["Seasons", [...new Set(seasonRows.map((r) => r.season?.name).filter(Boolean))].sort().join(", ") || "–"],
+    ["Seasons", [...new Set(seasonRows.map((r) => r.season?.name).filter(Boolean))].sort().join(", ") || notUpdatedTag()],
     ...(p.cueview?.hand ? [["Left or right handed", p.cueview.hand]] : []),
     ...(gone || p.status === "not_playing" ? [] : [["Extra (Ext) games this season", `${extThisSeason} of ${EXT_PER_SEASON}`]]),
     ...(gone ? (lifeYears(p) ? [["Years", lifeYears(p)]] : []) : p.birth_date ? [["Birthday", fmtDate(p.birth_date)], ["Age", age]] : []),
@@ -121,8 +121,8 @@ export default async function player(view, { params, user }) {
 
     ${!gone && form?.n ? formPanel(form, { name: p.full_name.split(" ")[0] }) : ""}
 
-    ${bio || career.length || pastTeams.length ? html`<div class="profile-grid">
-      ${bio ? html`<section class="profile-box wide"><h3>Bio</h3><div class="prose">${paragraphs(bio)}</div></section>` : ""}
+    ${html`<div class="profile-grid">
+      <section class="profile-box wide"><h3>Bio</h3>${bio ? html`<div class="prose">${paragraphs(bio)}</div>` : html`<p class="not-upd">Not updated yet</p>`}</section>
       ${career.length ? html`<section class="profile-box"><h3>Career history</h3><ul class="timeline">${career.map((line) => {
         const m = line.match(/^(\d{4}(?:\s*[–-]\s*\d{2,4})?)\s*[—–:-]\s*(.+)$/);
         return m ? html`<li><b>${m[1]}</b><span>${m[2]}</span></li>` : html`<li><span>${line}</span></li>`;
@@ -131,15 +131,17 @@ export default async function player(view, { params, user }) {
         const known = ctx.teams.find((x) => x.name === t);
         return html`<li>${known ? teamLink(known) : t}</li>`;
       })}</ul></section>` : ""}
-    </div>` : ""}
+    </div>`}
 
     ${p.gallery?.length ? html`<section><h3 style="margin-top:0">Pictures</h3>${gallery(p.gallery)}</section>` : ""}
 
     ${cueviewSection(p.full_name, cueview.filter((q) => q.key !== "hand"))}
+    ${cueview.filter((q) => q.key !== "hand").length ? "" : html`<section class="cv-empty" id="cueview"><span>CueView</span><b class="not-upd">Not updated yet</b></section>`}
     ${cueview.filter((q) => q.key !== "hand").length ? "" : html`<a class="cv-invite" href="/cueview?player=${p.slug || p.id}"><b>Is this you?</b>
       <span>${p.full_name.split(" ")[0]} has no CueView yet. Answer a few questions about your snooker and it goes on this page.</span><i>Send in your CueView →</i></a>`}
 
-    <div class="stats">
+    ${total.played ? "" : html`<div class="stats-empty"><b>Stats</b><span class="not-upd">Not updated yet</span></div>`}
+    <div class="stats" style="${total.played ? "" : "display:none"}">
       ${[["Frames played", total.played], ["Frames won", total.won], ["Win rate", pct(total.won, total.played)],
          ["Ranking points", total.pts], ["Highest break", total.best || "–"]].map(([l, n]) => html`<div class="stat"><b>${n}</b>${l}</div>`)}
     </div>
@@ -156,14 +158,14 @@ export default async function player(view, { params, user }) {
       { label: "Best break", cell: (r) => breakTag(r.best), cls: "num" },
       { label: "Ranking pts", cell: (r) => r.pts, cls: "num strong" },
     ], seasonRows.length ? [...seasonRows, { total: true, season: { name: "Total" }, league: { name: "–" }, team: "–", ...total }] : [],
-    { rowClass: (r) => (r.total ? "total-row" : ""), empty: "No frames played yet." }))}
+    { rowClass: (r) => (r.total ? "total-row" : ""), empty: "Not updated yet." }))}
 
     <div class="grid-2" style="gap:30px;align-items:start">
       ${panel("Breaks", dataTable([
         { label: "Date", cell: (b) => { const fx = fixtureById.get(b.fixture_id) ?? ctx.fixture.get(b.fixture_id); return fx ? html`<a href="${urls.match(fx)}">${fmtDate(fx.starts_at)}</a>` : "–"; } },
         { label: "Break", cell: (b) => breakTag(b.value), cls: "num strong" },
         { label: "Points", cell: (b) => breakPoints(b.value) || "–", cls: "num" },
-      ], [...playerPast.breaks].sort((a, b) => b.value - a.value), { empty: "No breaks recorded yet." }))}
+      ], [...playerPast.breaks].sort((a, b) => b.value - a.value), { empty: "Not updated yet." }))}
       ${panel("Competitions", dataTable([
         { label: "Competition", cell: (x) => html`<a href="${urls.competition(x.c)}">${x.c.name}</a>` },
         { label: "Result", cell: (x) => x.standing?.status ?? "–" },
@@ -178,7 +180,7 @@ export default async function player(view, { params, user }) {
       { label: "", cell: (x) => (x.fr[`${x.side}_ext`] ? html`<span class="ext-tag" title="Played as the extra player">Ext</span>` : ""), cls: "num" },
       { label: "Score", cell: (x) => `${x.fr[`${x.side}_points`] ?? "–"} - ${x.fr[`${x.side === "home" ? "away" : "home"}_points`] ?? "–"}`, cls: "num" },
       { label: "Result", cell: (x) => { const w = frameWinner(x.fr); return w ? html`<span class="status ${w === x.side ? "approved" : "in_progress"}">${w === x.side ? "Won" : "Lost"}</span>` : "–"; } },
-    ], frameRows, { empty: "No frames played yet." }))}
+    ], frameRows, { empty: "Not updated yet." }))}
 
     <section id="news"><h3 style="margin-top:0">Player news</h3>
       ${playerNews.length ? html`<div class="cards">${playerNews.map(articleCard)}</div>` : html`<div class="empty box">No news about ${p.full_name} yet.</div>`}</section>

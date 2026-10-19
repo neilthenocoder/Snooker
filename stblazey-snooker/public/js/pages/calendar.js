@@ -24,7 +24,7 @@ export default async function calendar(view, { query }) {
   const events = [
     ...ctx.fixtures.map((f) => ({
       id: f.id, when: f.starts_at, href: urls.match(f), kind: "league", status: f.status,
-      score: ctx.hasResult(f) ? `${ctx.scoreOf(f).home} - ${ctx.scoreOf(f).away}` : "", venueHref: ctx.venue.get(f.venue_id) ? urls.venue(ctx.venue.get(f.venue_id)) : "",
+      score: ctx.hasResult(f) ? `${ctx.scoreOf(f).home} - ${ctx.scoreOf(f).away}` : "", notUpdated: ctx.notUpdated(f), venueHref: ctx.venue.get(f.venue_id) ? urls.venue(ctx.venue.get(f.venue_id)) : "",
       title: `${ctx.team.get(f.home_team_id)?.name} v ${ctx.team.get(f.away_team_id)?.name}`,
       sub: ctx.league.get(f.league_id)?.name ?? "", teams: [f.home_team_id, f.away_team_id], venue: ctx.venue.get(f.venue_id)?.name,
     })),
@@ -75,7 +75,7 @@ export default async function calendar(view, { query }) {
         <small class="cal-tag">${tag}${live ? html` <span class="live-dot">Live</span>` : ""}</small>
         <h3><a href="${e.href}">${e.title}</a></h3>
         <p class="cal-when">${calIcon}<span>${e.allDay ? (e.until ? `${part(e.day, { weekday: "short", day: "numeric", month: "short" })} – ${part(e.until, { weekday: "short", day: "numeric", month: "short", year: "numeric" })}` : e.kind === "bye" ? "No match this week" : "All day")
-          : html`<b>${fmtTime(e.when)}</b>`}${e.score ? html` <span class="res-score done">${e.score}</span>` : ""}</span></p>
+          : html`<b>${fmtTime(e.when)}</b>`}${e.score ? html` <span class="res-score done">${e.score}</span>` : e.notUpdated ? html` <span class="not-upd">Not updated yet</span>` : ""}</span></p>
         ${e.venue ? html`<p class="cal-where">${pinIcon}<span>${e.venue}</span></p>` : e.kind === "key" && e.sub ? html`<p class="cal-where"><span>${e.sub}</span></p>` : ""}
       </div>
       <div class="cal-btns">
