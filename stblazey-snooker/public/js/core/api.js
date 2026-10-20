@@ -356,7 +356,9 @@ export async function upcomingMatches(limit = 12) {
     selectAll(() => db.from("fixtures").select("*").eq("status", "in_progress")),
     selectAll(() => db.from("competition_matches").select("*").gte("starts_at", since).order("starts_at").limit(limit)),
     selectAll(() => db.from("competition_matches").select("*").eq("status", "in_progress")).catch(() => []),
-  ]).then(([f, l, c, cl]) => [f, l, [...new Map([...cl, ...c].map((m) => [m.id, m])).values()]]);
+    // Round 35: cup results that went in during the last two days, dated or not (result_at: schema.sql version 24).
+    selectAll(() => db.from("competition_matches").select("*").gte("result_at", new Date(Date.now() - 48 * 3600e3).toISOString()).order("result_at", { ascending: false }).limit(limit)).catch(() => []),
+  ]).then(([f, l, c, cl, cr]) => [f, l, [...new Map([...cr, ...cl, ...c].map((m) => [m.id, m])).values()]]);
   const ids = [...new Set([...live, ...fixtures].map((f) => f.id))];
   const all = [...new Map([...live, ...fixtures].map((f) => [f.id, f])).values()];
   const frames = await selectIn("frames", "fixture_id", ids);

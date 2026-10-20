@@ -85,7 +85,7 @@ export async function cupResults() {
     const b = buildBracket(data.entries.filter((e) => e.competition_id === c.id), data.matches.filter((m) => m.competition_id === c.id));
     const name = (id) => b.entryById.get(id)?.name ?? "?";
     return b.rounds.flat().filter((m) => m.played && !m.isBye).map((m) => ({
-      when: m.row.starts_at, title: c.name, season_id: c.season_id, home: name(m.a), away: name(m.b), score: `${m.row.score_a} – ${m.row.score_b}`,
+      when: m.row.starts_at ?? m.row.result_at, title: c.name, season_id: c.season_id, home: name(m.a), away: name(m.b), score: `${m.row.score_a} – ${m.row.score_b}`,
       href: `/cup-match/${m.row.no ?? m.row.id}`, won: winnerSide(m.row) === "a" ? "h" : "a",
     }));
   }).sort((x, y) => String(y.when ?? "").localeCompare(String(x.when ?? "")));

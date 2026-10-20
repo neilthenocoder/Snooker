@@ -284,7 +284,8 @@ async function liveStrip() {
       // Team cups show the team emblem; singles show the player's photo.
       const who = (id) => { const e = compData.entries.find((x) => x.id === id); return { name: e.name, team: team.get(e.team_id), player: players.find((p) => p.id === e.player_id) }; };
       return {
-        when: m.starts_at ?? new Date().toISOString(), status: m.status, live: m.status === "in_progress", done: m.status === "completed", title: c.name, cup: true,
+        // A result typed in with no date goes by the time it went in (result_at); a match being scored, by now.
+        when: m.starts_at ?? m.result_at ?? new Date().toISOString(), status: m.status, live: m.status === "in_progress", done: m.status === "completed", title: c.name, cup: true,
         a: who(bm.a), b: who(bm.b),
         score: { home: m.score_a ?? 0, away: m.score_b ?? 0 }, hasFrames: m.score_a != null, href: `/cup-match/${m.no ?? m.id}`, venue: venues.find((v) => v.id === m.venue_id),
       };

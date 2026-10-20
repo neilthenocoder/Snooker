@@ -2475,13 +2475,29 @@ alter table competitions add column if not exists card_style text;
 alter table competitions drop constraint if exists competitions_card_style_check;
 alter table competitions add constraint competitions_card_style_check check (card_style is null or card_style in ('', 'trophy', 'picture'));
 
+-- ── Round 35: when a cup result went in ──────────────────────────
+-- A result typed into Draws & results (or a match started on the cup scorecard) gets the time it happened, so the
+-- home page's Live & upcoming strip and the Latest Results box can show it even when the match had no date (Rich:
+-- "still no live results in the strip").
+alter table competition_matches add column if not exists result_at timestamptz;
+create or replace function public.stamp_comp_result() returns trigger language plpgsql as $$
+begin
+  if (new.score_a is distinct from old.score_a or new.score_b is distinct from old.score_b
+      or (new.status is distinct from old.status and new.status in ('in_progress', 'completed'))) then
+    new.result_at := case when new.score_a is null and new.score_b is null and new.status = 'scheduled' then null else now() end;
+  end if;
+  return new;
+end $$;
+drop trigger if exists competition_matches_stamp_result on competition_matches;
+create trigger competition_matches_stamp_result before update on competition_matches for each row execute function public.stamp_comp_result();
+
 -- ── the version of this file ─────────────────────────────────────
 -- KEEP THIS AT THE VERY END. The website asks the database for this number (public/js/core/version.js holds
 -- the one it expects). Because it is the last thing in the file, the database only reports the new number
 -- when everything above it has run. If the website files are uploaded without this file being run, the admin
 -- dashboard says "The database needs updating" at the top of every page.
 -- When something is added to this file that the website needs: raise this number and the one in version.js.
-create or replace function public.schema_version() returns int language sql immutable as $$ select 23 $$;
+create or replace function public.schema_version() returns int language sql immutable as $$ select 24 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

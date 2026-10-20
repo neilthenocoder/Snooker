@@ -594,6 +594,12 @@ Admin → Competitions → Edit → **"The competition's box on the Competitions
 - *The picture*: the Picture fills the whole box, no trophy. With no picture uploaded it falls back to the trophy.
 Saved in `competitions.card_style`; `compBoxStyle()` in `core/components.js`.
 
+## 3za. Round 35: cup results on the home page
+
+**Run `supabase/schema.sql` again** (database version 24).
+
+A cup result typed into Admin → Draws & results was saved as finished but with no date, and the home page only finds cup matches by their date, so it never showed. The database now stamps the moment a cup result goes in (or a cup match starts being scored) in `competition_matches.result_at` (trigger `stamp_comp_result`). The Live & upcoming strip shows cup results from the last two days, and the side column's Latest Results box (when it is set to show competition results — Site settings → Side column: top box) sorts them by that time when the match had no date.
+
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
 | Rule | Current setting |
