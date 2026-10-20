@@ -175,6 +175,10 @@ do $$ begin
   if to_regclass('public.byes') is null or (select public.schema_version()) < 20 then
     raise exception 'Run supabase/schema.sql first (database version 20), then run this file again.';
   end if;
+  -- Once the past seasons are in (supabase/legacy/), this file would wipe them: it refuses.
+  if exists (select 1 from fixtures f join seasons s on s.id = f.season_id where s.name <> ${q(SEASON)}) then
+    raise exception 'The past seasons are loaded: running this file again would delete them. Nothing has been changed.';
+  end if;
 end $$;
 
 -- ── 1. the test data comes out ───────────────────────────────

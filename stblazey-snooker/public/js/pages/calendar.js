@@ -102,10 +102,22 @@ export default async function calendar(view, { query }) {
   };
   const strip = () => mount($("[data-months]", view), html`${months.map((m) => html`<button type="button" class="${m === month ? "on" : ""}" data-month="${m}">
     <b>${MONTHS[Number(m.slice(5)) - 1].slice(0, 3)}</b><span>${m.slice(0, 4)}</span></button>`)}`);
+  // Slide the strip so the chosen month sits in the middle. Only the strip moves: scrollIntoView() here would also
+  // move the page — and in Chrome it cancels a smooth scroll of the page that is already on its way (Rich, round 28:
+  // pressing a month, or an arrow, stopped half way and the strip jumped back).
+  const centreStrip = (smooth = true) => {
+    const box = $("[data-months]", view), on = $("[data-months] .on", view);
+    if (box && on) box.scrollTo({ left: on.offsetLeft - box.offsetLeft - (box.clientWidth - on.offsetWidth) / 2, behavior: smooth ? "smooth" : "auto" });
+  };
+  let lockUntil = 0, pressed = null;   // while the page is scrolling to a month that was pressed, the scroll-follower keeps still
   const go = (m, smooth = true) => {
-    month = m; strip();
-    document.getElementById(`month-${m}`)?.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
-    $("[data-months] .on", view)?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+    month = m; pressed = m; strip(); centreStrip(smooth);
+    const sec = document.getElementById(`month-${m}`);
+    if (sec) {
+      const top = sec.getBoundingClientRect().top + window.scrollY - ($(".cal-top", view)?.getBoundingClientRect().bottom ?? 0) - 8;
+      lockUntil = Date.now() + (smooth ? 1200 : 150);
+      window.scrollTo({ top: Math.max(0, top), behavior: smooth ? "smooth" : "auto" });
+    }
     history.replaceState(null, "", `/calendar?${new URLSearchParams({ ...(teamId ? { team: teamId } : {}), month })}`);
   };
 
@@ -145,7 +157,11 @@ export default async function calendar(view, { query }) {
     requestAnimationFrame(() => { ticking = false;
       const line = ($(".cal-top", view)?.getBoundingClientRect().bottom ?? 0) + 60;   // just under the strip of months
       const on = [...view.querySelectorAll("[data-month-section]")].filter((sec) => sec.getBoundingClientRect().top <= line).at(-1)?.dataset.monthSection;
-      if (on && on !== month) { month = on; strip(); $("[data-months] .on", view)?.scrollIntoView({ block: "nearest", inline: "center" }); }
+      if (Date.now() < lockUntil) return;
+      // At the very bottom of the page the last months can't reach the top of the screen: keep the one that was pressed.
+      if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4 && pressed) return;
+      pressed = null;
+      if (on && on !== month) { month = on; strip(); centreStrip(false); }
     });
   };
   window.addEventListener("scroll", onScroll, { passive: true });

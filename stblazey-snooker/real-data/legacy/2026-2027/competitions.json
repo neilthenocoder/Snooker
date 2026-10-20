@@ -1,0 +1,4814 @@
+[
+ {
+  "title": "Bill Toms 2026-2027",
+  "old_id": 31705,
+  "mode": "player",
+  "rounds": 6,
+  "labels": [
+   "Round 1",
+   "Round 2",
+   "Round 3",
+   "Round 4",
+   "Round 5",
+   "Round 6"
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Joshua Bristow",
+     "kind": "player",
+     "old_id": 3460
+    },
+    "b": {
+     "name": "Justin Oxenham",
+     "kind": "player",
+     "old_id": 9714
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34154
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "b": {
+     "name": "Chris Perring",
+     "kind": "player",
+     "old_id": 3544
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34155
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "Jason Pascoe",
+     "kind": "player",
+     "old_id": 3392
+    },
+    "b": {
+     "name": "Dave Rundle",
+     "kind": "player",
+     "old_id": 3495
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34156
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": {
+     "name": "Les Shakespeare",
+     "kind": "player",
+     "old_id": 14663
+    },
+    "b": {
+     "name": "Nathan Shaw",
+     "kind": "player",
+     "old_id": 3514
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34157
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": {
+     "name": "Charlie Prynn",
+     "kind": "player",
+     "old_id": 3521
+    },
+    "b": {
+     "name": "Matt Moore",
+     "kind": "player",
+     "old_id": 3427
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34158
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": {
+     "name": "Dave Tregale",
+     "kind": "player",
+     "old_id": 3517
+    },
+    "b": {
+     "name": "Matt Green",
+     "kind": "player",
+     "old_id": 3477
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34159
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "Jake Moore",
+     "kind": "player",
+     "old_id": 3491
+    },
+    "b": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34160
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": {
+     "name": "Geoff Merriman",
+     "kind": "player",
+     "old_id": 3450
+    },
+    "b": {
+     "name": "Mark Poulson",
+     "kind": "player",
+     "old_id": 28460
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34161
+   },
+   {
+    "round": 1,
+    "slot": 8,
+    "a": {
+     "name": "Andrew Best",
+     "kind": "player",
+     "old_id": 3487
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34162
+   },
+   {
+    "round": 1,
+    "slot": 9,
+    "a": {
+     "name": "Keiran Pearce",
+     "kind": "player",
+     "old_id": 11816
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34163
+   },
+   {
+    "round": 1,
+    "slot": 10,
+    "a": {
+     "name": "Paul Sturtridge",
+     "kind": "player",
+     "old_id": 3490
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34164
+   },
+   {
+    "round": 1,
+    "slot": 11,
+    "a": {
+     "name": "Andy Peers",
+     "kind": "player",
+     "old_id": 3476
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34165
+   },
+   {
+    "round": 1,
+    "slot": 12,
+    "a": {
+     "name": "Craig Nicholls",
+     "kind": "player",
+     "old_id": 3424
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34166
+   },
+   {
+    "round": 1,
+    "slot": 13,
+    "a": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34167
+   },
+   {
+    "round": 1,
+    "slot": 14,
+    "a": {
+     "name": "Kevin Harris",
+     "kind": "player",
+     "old_id": 20168
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34168
+   },
+   {
+    "round": 1,
+    "slot": 15,
+    "a": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34169
+   },
+   {
+    "round": 1,
+    "slot": 16,
+    "a": {
+     "name": "Ryan Bilson",
+     "kind": "player",
+     "old_id": 3552
+    },
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34170
+   },
+   {
+    "round": 1,
+    "slot": 17,
+    "a": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34172
+   },
+   {
+    "round": 1,
+    "slot": 18,
+    "a": {
+     "name": "Gavin Dyche",
+     "kind": "player",
+     "old_id": 3394
+    },
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34174
+   },
+   {
+    "round": 1,
+    "slot": 19,
+    "a": {
+     "name": "Paul Roberts",
+     "kind": "player",
+     "old_id": 31098
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34176
+   },
+   {
+    "round": 1,
+    "slot": 20,
+    "a": {
+     "name": "Gary Spencer",
+     "kind": "player",
+     "old_id": 3488
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34177
+   },
+   {
+    "round": 1,
+    "slot": 21,
+    "a": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "b": {
+     "name": "Harrison Burdon",
+     "kind": "player",
+     "old_id": 19756
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34178
+   },
+   {
+    "round": 1,
+    "slot": 22,
+    "a": {
+     "name": "Kyle Bennetts",
+     "kind": "player",
+     "old_id": 14572
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34179
+   },
+   {
+    "round": 1,
+    "slot": 23,
+    "a": {
+     "name": "Bob Stephens",
+     "kind": "player",
+     "old_id": 3479
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34180
+   },
+   {
+    "round": 1,
+    "slot": 24,
+    "a": {
+     "name": "Darren Biggen",
+     "kind": "player",
+     "old_id": 3426
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34181
+   },
+   {
+    "round": 1,
+    "slot": 25,
+    "a": {
+     "name": "Andrew Gooch",
+     "kind": "player",
+     "old_id": 9770
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34182
+   },
+   {
+    "round": 1,
+    "slot": 26,
+    "a": {
+     "name": "Garry Stephens",
+     "kind": "player",
+     "old_id": 3475
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34183
+   },
+   {
+    "round": 1,
+    "slot": 27,
+    "a": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34184
+   },
+   {
+    "round": 1,
+    "slot": 28,
+    "a": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34185
+   },
+   {
+    "round": 1,
+    "slot": 29,
+    "a": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34186
+   },
+   {
+    "round": 1,
+    "slot": 30,
+    "a": {
+     "name": "Ian Millward",
+     "kind": "player",
+     "old_id": 28930
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34187
+   },
+   {
+    "round": 1,
+    "slot": 31,
+    "a": {
+     "name": "Steve Courts",
+     "kind": "player",
+     "old_id": 3543
+    },
+    "b": {
+     "name": "Bill Toms Bye",
+     "kind": "player",
+     "old_id": 34142
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34188
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 4,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 5,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 6,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 7,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 8,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 9,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 10,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 11,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 12,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 13,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 14,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 15,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 4,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 5,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 6,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 7,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 5,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 5,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 6,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   }
+  ]
+ },
+ {
+  "title": "Doubles 2026-2027",
+  "old_id": 31706,
+  "mode": "player",
+  "rounds": 4,
+  "labels": [
+   "Round 1",
+   "Round 2",
+   "Round 3",
+   ""
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Mark Ashton + Andrew Gooch (D)",
+     "kind": "player",
+     "old_id": 34237
+    },
+    "b": {
+     "name": "Ian Millward + Paul Roberts (D)",
+     "kind": "player",
+     "old_id": 34238
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": {
+     "name": "Craig Nicholls + Darren Biggen (D)",
+     "kind": "player",
+     "old_id": 34239
+    },
+    "b": {
+     "name": "Liam Jones + Paul Baron (D)",
+     "kind": "player",
+     "old_id": 34240
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "Gary Spencer + Andrew Best (D)",
+     "kind": "player",
+     "old_id": 34241
+    },
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": {
+     "name": "Steve Courts + Darran Lock (D)",
+     "kind": "player",
+     "old_id": 34242
+    },
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": {
+     "name": "Ryan Bilson + Ben Prynn (D)",
+     "kind": "player",
+     "old_id": 34243
+    },
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": {
+     "name": "Justin Oxenham + Simon Taylor (D)",
+     "kind": "player",
+     "old_id": 34244
+    },
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "Mark Poulson + Kevin Harris (D)",
+     "kind": "player",
+     "old_id": 34245
+    },
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": {
+     "name": "Clive Stuthridge + Josh Bristow (D)",
+     "kind": "player",
+     "old_id": 34246
+    },
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   }
+  ]
+ },
+ {
+  "title": "Handicap Doubles 2026-2027",
+  "old_id": 31708,
+  "mode": "player",
+  "rounds": 5,
+  "labels": [
+   "Round 1",
+   "Round 2",
+   "Round 3",
+   "Round 4",
+   ""
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Liam Jones + Paul Baron (HD)",
+     "kind": "player",
+     "old_id": 34247
+    },
+    "b": {
+     "name": "Ellie Potter + Mark Richards (HD)",
+     "kind": "player",
+     "old_id": 34248
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34265
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": {
+     "name": "Dave Rundle + Colin Rundle (HD)",
+     "kind": "player",
+     "old_id": 34249
+    },
+    "b": {
+     "name": "Matt Moore + Mark Haworth (HD)",
+     "kind": "player",
+     "old_id": 34250
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34266
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "Geoff Hawken + Bob Stephens (HD)",
+     "kind": "player",
+     "old_id": 34251
+    },
+    "b": {
+     "name": "Dave Kendall + Nathan Shaw (HD)",
+     "kind": "player",
+     "old_id": 34252
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34267
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": null,
+    "b": {
+     "name": "Mark Poulson + Kevin Harris (HD)",
+     "kind": "player",
+     "old_id": 34273
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34268
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": {
+     "name": "Kevin Spencer + Gary Spencer (HD)",
+     "kind": "player",
+     "old_id": 34254
+    },
+    "b": {
+     "name": "Darren Elliott + Dave Tregale (HD)",
+     "kind": "player",
+     "old_id": 34255
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34269
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": {
+     "name": "Mark Ashton + Andrew Gooch (HD)",
+     "kind": "player",
+     "old_id": 34256
+    },
+    "b": {
+     "name": "Simon Johnson + Steve Vicary (HD)",
+     "kind": "player",
+     "old_id": 34257
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34270
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "Clive Stuthridge + Josh Bristow (HD)",
+     "kind": "player",
+     "old_id": 34258
+    },
+    "b": {
+     "name": "Jowan Truman + Nate Taylor (HD)",
+     "kind": "player",
+     "old_id": 34259
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34271
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": {
+     "name": "Craig Nicholls + Darren Biggen (HD)",
+     "kind": "player",
+     "old_id": 34260
+    },
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34272
+   },
+   {
+    "round": 1,
+    "slot": 8,
+    "a": {
+     "name": "Ian Millward + Paul Roberts (HD)",
+     "kind": "player",
+     "old_id": 34261
+    },
+    "b": {
+     "name": "Keith Moore + Jake Moore (HD)",
+     "kind": "player",
+     "old_id": 34262
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 9,
+    "a": {
+     "name": "Steve Williams + Lee McKinstry (HD)",
+     "kind": "player",
+     "old_id": 34263
+    },
+    "b": {
+     "name": "John Hancock + Terry Middleton (HD)",
+     "kind": "player",
+     "old_id": 34264
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 10,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 11,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 12,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 13,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 14,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 15,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 4,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 5,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 6,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 7,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 5,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   }
+  ]
+ },
+ {
+  "title": "Rees League Singles 2026-2027",
+  "old_id": 31709,
+  "mode": "player",
+  "rounds": 4,
+  "labels": [
+   "Round 1",
+   "Round 2",
+   "Round 3",
+   "Round 4"
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Mark Haworth",
+     "kind": "player",
+     "old_id": 11810
+    },
+    "b": {
+     "name": "Roy Bayliss",
+     "kind": "player",
+     "old_id": 3398
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34129
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": {
+     "name": "Bob Stephens",
+     "kind": "player",
+     "old_id": 3479
+    },
+    "b": {
+     "name": "Kyle Bennetts",
+     "kind": "player",
+     "old_id": 14572
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34130
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "Geoff Hawken",
+     "kind": "player",
+     "old_id": 3474
+    },
+    "b": {
+     "name": "Simon Johnson",
+     "kind": "player",
+     "old_id": 31732
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34131
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": {
+     "name": "Andy Sayer",
+     "kind": "player",
+     "old_id": 32292
+    },
+    "b": {
+     "name": "Matt Moore",
+     "kind": "player",
+     "old_id": 3427
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34132
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": {
+     "name": "Darren Biggen",
+     "kind": "player",
+     "old_id": 3426
+    },
+    "b": {
+     "name": "Dave Tregale",
+     "kind": "player",
+     "old_id": 3517
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34133
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": {
+     "name": "Mark Richards",
+     "kind": "player",
+     "old_id": 10561
+    },
+    "b": {
+     "name": "Steve Vicary",
+     "kind": "player",
+     "old_id": 28924
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34134
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "Jason Pascoe",
+     "kind": "player",
+     "old_id": 3392
+    },
+    "b": {
+     "name": "Rees Singles Bye",
+     "kind": "player",
+     "old_id": 34147
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34135
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": {
+     "name": "Craig Nicholls",
+     "kind": "player",
+     "old_id": 3424
+    },
+    "b": {
+     "name": "Rees Singles Bye",
+     "kind": "player",
+     "old_id": 34147
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34136
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   }
+  ]
+ },
+ {
+  "title": "Seniors 2026-2027",
+  "old_id": 31710,
+  "mode": "player",
+  "rounds": 5,
+  "labels": [
+   "Round 1",
+   "Round 2",
+   "Round 3",
+   "Round 4",
+   "Round 5"
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Ian Millward",
+     "kind": "player",
+     "old_id": 28930
+    },
+    "b": {
+     "name": "Steve Courts",
+     "kind": "player",
+     "old_id": 3543
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34189
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": {
+     "name": "Geoff Hawken",
+     "kind": "player",
+     "old_id": 3474
+    },
+    "b": {
+     "name": "Chris Perring",
+     "kind": "player",
+     "old_id": 3544
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34190
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "Terry Middleton",
+     "kind": "player",
+     "old_id": 3416
+    },
+    "b": {
+     "name": "Steve Vicary",
+     "kind": "player",
+     "old_id": 28924
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34191
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": {
+     "name": "Dave Tregale",
+     "kind": "player",
+     "old_id": 3517
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34192
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": {
+     "name": "Phil Ormond",
+     "kind": "player",
+     "old_id": 3540
+    },
+    "b": {
+     "name": "Roy Bayliss",
+     "kind": "player",
+     "old_id": 3398
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34193
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": {
+     "name": "Les Shakespeare",
+     "kind": "player",
+     "old_id": 3422
+    },
+    "b": {
+     "name": "John Hancock",
+     "kind": "player",
+     "old_id": 3419
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34194
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "Andy Peers",
+     "kind": "player",
+     "old_id": 3476
+    },
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34195
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": {
+     "name": "Dave Rundle",
+     "kind": "player",
+     "old_id": 3495
+    },
+    "b": {
+     "name": "Seniors Bye",
+     "kind": "player",
+     "old_id": 34148
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34196
+   },
+   {
+    "round": 1,
+    "slot": 8,
+    "a": {
+     "name": "Bob Stephens",
+     "kind": "player",
+     "old_id": 3479
+    },
+    "b": {
+     "name": "Seniors Bye",
+     "kind": "player",
+     "old_id": 34148
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34197
+   },
+   {
+    "round": 1,
+    "slot": 9,
+    "a": {
+     "name": "Geoff Merriman",
+     "kind": "player",
+     "old_id": 3450
+    },
+    "b": {
+     "name": "Seniors Bye",
+     "kind": "player",
+     "old_id": 34148
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34198
+   },
+   {
+    "round": 1,
+    "slot": 10,
+    "a": {
+     "name": "Steve Williams",
+     "kind": "player",
+     "old_id": 3410
+    },
+    "b": {
+     "name": "Seniors Bye",
+     "kind": "player",
+     "old_id": 34148
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34199
+   },
+   {
+    "round": 1,
+    "slot": 11,
+    "a": {
+     "name": "John Daniell",
+     "kind": "player",
+     "old_id": 3535
+    },
+    "b": {
+     "name": "Seniors Bye",
+     "kind": "player",
+     "old_id": 34148
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34200
+   },
+   {
+    "round": 1,
+    "slot": 12,
+    "a": {
+     "name": "Dave Kendall",
+     "kind": "player",
+     "old_id": 3512
+    },
+    "b": {
+     "name": "Seniors Bye",
+     "kind": "player",
+     "old_id": 34148
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34201
+   },
+   {
+    "round": 1,
+    "slot": 13,
+    "a": {
+     "name": "Paul Roberts",
+     "kind": "player",
+     "old_id": 31098
+    },
+    "b": {
+     "name": "Seniors Bye",
+     "kind": "player",
+     "old_id": 34148
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34202
+   },
+   {
+    "round": 1,
+    "slot": 14,
+    "a": {
+     "name": "Len Flower",
+     "kind": "player",
+     "old_id": 3537
+    },
+    "b": {
+     "name": "Seniors Bye",
+     "kind": "player",
+     "old_id": 34148
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34203
+   },
+   {
+    "round": 1,
+    "slot": 15,
+    "a": {
+     "name": "Mark Richards",
+     "kind": "player",
+     "old_id": 10561
+    },
+    "b": {
+     "name": "Seniors Bye",
+     "kind": "player",
+     "old_id": 34148
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34204
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 4,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 5,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 6,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 7,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 5,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   }
+  ]
+ },
+ {
+  "title": "Singles 2026-2027",
+  "old_id": 31711,
+  "mode": "player",
+  "rounds": 5,
+  "labels": [
+   "Round 1",
+   "Round 2",
+   "Round 3",
+   "Round 4",
+   "Round 5"
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Matt Green",
+     "kind": "player",
+     "old_id": 3477
+    },
+    "b": {
+     "name": "Justin Oxenham",
+     "kind": "player",
+     "old_id": 9714
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34221
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": {
+     "name": "Andrew Gooch",
+     "kind": "player",
+     "old_id": 9770
+    },
+    "b": {
+     "name": "Ryan Bilson",
+     "kind": "player",
+     "old_id": 3552
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34222
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "Craig Nicholls",
+     "kind": "player",
+     "old_id": 3424
+    },
+    "b": {
+     "name": "Paul Sturtridge",
+     "kind": "player",
+     "old_id": 3490
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34223
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": {
+     "name": "Ian Millward",
+     "kind": "player",
+     "old_id": 28930
+    },
+    "b": {
+     "name": "Andrew Best",
+     "kind": "player",
+     "old_id": 3487
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34224
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": {
+     "name": "Gary Spencer",
+     "kind": "player",
+     "old_id": 3488
+    },
+    "b": {
+     "name": "Mark Poulson",
+     "kind": "player",
+     "old_id": 28460
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34225
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": {
+     "name": "Dave Rundle",
+     "kind": "player",
+     "old_id": 3495
+    },
+    "b": {
+     "name": "Keiran Pearce",
+     "kind": "player",
+     "old_id": 11816
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34226
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "Jason Pascoe",
+     "kind": "player",
+     "old_id": 3392
+    },
+    "b": {
+     "name": "Steve Courts",
+     "kind": "player",
+     "old_id": 3543
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34227
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "b": {
+     "name": "Harrison Burdon",
+     "kind": "player",
+     "old_id": 19756
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34228
+   },
+   {
+    "round": 1,
+    "slot": 8,
+    "a": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "b": {
+     "name": "Joshua Bristow",
+     "kind": "player",
+     "old_id": 3460
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34229
+   },
+   {
+    "round": 1,
+    "slot": 9,
+    "a": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34230
+   },
+   {
+    "round": 1,
+    "slot": 10,
+    "a": {
+     "name": "Andy Sayer",
+     "kind": "player",
+     "old_id": 32292
+    },
+    "b": {
+     "name": "Geoff Merriman",
+     "kind": "player",
+     "old_id": 3450
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34231
+   },
+   {
+    "round": 1,
+    "slot": 11,
+    "a": {
+     "name": "Kevin Harris",
+     "kind": "player",
+     "old_id": 20168
+    },
+    "b": {
+     "name": "Andy Peers",
+     "kind": "player",
+     "old_id": 3476
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34232
+   },
+   {
+    "round": 1,
+    "slot": 12,
+    "a": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "b": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34233
+   },
+   {
+    "round": 1,
+    "slot": 13,
+    "a": {
+     "name": "Gavin Dyche",
+     "kind": "player",
+     "old_id": 3394
+    },
+    "b": {
+     "name": "Singles Bye",
+     "kind": "player",
+     "old_id": 34149
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34234
+   },
+   {
+    "round": 1,
+    "slot": 14,
+    "a": {
+     "name": "Garry Stephens",
+     "kind": "player",
+     "old_id": 3475
+    },
+    "b": {
+     "name": "Singles Bye",
+     "kind": "player",
+     "old_id": 34149
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34235
+   },
+   {
+    "round": 1,
+    "slot": 15,
+    "a": {
+     "name": "Nathan Shaw",
+     "kind": "player",
+     "old_id": 3514
+    },
+    "b": {
+     "name": "Singles Bye",
+     "kind": "player",
+     "old_id": 34149
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-06 19:30",
+    "old_event": 34236
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 4,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 5,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 6,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 7,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 5,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   }
+  ]
+ },
+ {
+  "title": "Snooker Shoot Out 2026",
+  "old_id": 31712,
+  "mode": "player",
+  "rounds": 5,
+  "labels": [
+   "Round 1",
+   "Round 2",
+   "Round 3",
+   "Round 4",
+   "Round 5"
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Darren Roberts",
+     "kind": "player",
+     "old_id": 6048
+    },
+    "b": {
+     "name": "Harrison Burdon",
+     "kind": "player",
+     "old_id": 19756
+    },
+    "score_a": 51,
+    "score_b": 41,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34309
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": {
+     "name": "Andrew Gooch",
+     "kind": "player",
+     "old_id": 9770
+    },
+    "b": {
+     "name": "Justin Oxenham",
+     "kind": "player",
+     "old_id": 9714
+    },
+    "score_a": 54,
+    "score_b": 18,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34311
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "b": {
+     "name": "Geoff Merriman",
+     "kind": "player",
+     "old_id": 3450
+    },
+    "score_a": 66,
+    "score_b": 23,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34313
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": {
+     "name": "Charlie Prynn",
+     "kind": "player",
+     "old_id": 3521
+    },
+    "b": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "score_a": 26,
+    "score_b": 34,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34315
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": {
+     "name": "Andrew Gooch",
+     "kind": "player",
+     "old_id": 9770
+    },
+    "b": {
+     "name": "Justin Oxenham",
+     "kind": "player",
+     "old_id": 9714
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-10-06 10:27",
+    "old_event": 34317
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "b": {
+     "name": "Geoff Merriman",
+     "kind": "player",
+     "old_id": 3450
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-10-06 10:27",
+    "old_event": 34319
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "Charlie Prynn",
+     "kind": "player",
+     "old_id": 3521
+    },
+    "b": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-10-06 10:27",
+    "old_event": 34321
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "b": {
+     "name": "Darren Roberts",
+     "kind": "player",
+     "old_id": 6048
+    },
+    "score_a": 19,
+    "score_b": 28,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34323
+   },
+   {
+    "round": 1,
+    "slot": 8,
+    "a": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "b": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "score_a": 23,
+    "score_b": 53,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34325
+   },
+   {
+    "round": 1,
+    "slot": 9,
+    "a": {
+     "name": "Kevin Harris",
+     "kind": "player",
+     "old_id": 20168
+    },
+    "b": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "score_a": 14,
+    "score_b": 48,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34327
+   },
+   {
+    "round": 1,
+    "slot": 10,
+    "a": {
+     "name": "Ryan Orchard",
+     "kind": "player",
+     "old_id": 7768
+    },
+    "b": {
+     "name": "Andrew Gooch",
+     "kind": "player",
+     "old_id": 9770
+    },
+    "score_a": 38,
+    "score_b": 41,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34329
+   },
+   {
+    "round": 1,
+    "slot": 11,
+    "a": {
+     "name": "Martin Richards",
+     "kind": "player",
+     "old_id": 9947
+    },
+    "b": {
+     "name": "Joshua Bristow",
+     "kind": "player",
+     "old_id": 3460
+    },
+    "score_a": 26,
+    "score_b": 69,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34331
+   },
+   {
+    "round": 1,
+    "slot": 12,
+    "a": {
+     "name": "Matt Green",
+     "kind": "player",
+     "old_id": 3477
+    },
+    "b": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "score_a": 35,
+    "score_b": 63,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34333
+   },
+   {
+    "round": 1,
+    "slot": 13,
+    "a": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "b": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "score_a": 32,
+    "score_b": 27,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:03",
+    "old_event": 34335
+   },
+   {
+    "round": 1,
+    "slot": 14,
+    "a": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "b": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "score_a": 23,
+    "score_b": 37,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:03",
+    "old_event": 34337
+   },
+   {
+    "round": 1,
+    "slot": 15,
+    "a": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "b": {
+     "name": "Darren Roberts",
+     "kind": "player",
+     "old_id": 6048
+    },
+    "score_a": 19,
+    "score_b": 82,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34339
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "b": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "score_a": 23,
+    "score_b": 53,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34341
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": {
+     "name": "Kevin Harris",
+     "kind": "player",
+     "old_id": 20168
+    },
+    "b": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "score_a": 14,
+    "score_b": 48,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34343
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": {
+     "name": "Ryan Orchard",
+     "kind": "player",
+     "old_id": 7768
+    },
+    "b": {
+     "name": "Andrew Gooch",
+     "kind": "player",
+     "old_id": 9770
+    },
+    "score_a": 38,
+    "score_b": 41,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34345
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": {
+     "name": "Martin Richards",
+     "kind": "player",
+     "old_id": 9947
+    },
+    "b": {
+     "name": "Joshua Bristow",
+     "kind": "player",
+     "old_id": 3460
+    },
+    "score_a": 26,
+    "score_b": 69,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34347
+   },
+   {
+    "round": 2,
+    "slot": 4,
+    "a": {
+     "name": "Matt Green",
+     "kind": "player",
+     "old_id": 3477
+    },
+    "b": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "score_a": 35,
+    "score_b": 63,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34349
+   },
+   {
+    "round": 2,
+    "slot": 5,
+    "a": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "b": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "score_a": 32,
+    "score_b": 27,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34351
+   },
+   {
+    "round": 2,
+    "slot": 6,
+    "a": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "b": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "score_a": 23,
+    "score_b": 37,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34353
+   },
+   {
+    "round": 2,
+    "slot": 7,
+    "a": {
+     "name": "Darren Roberts",
+     "kind": "player",
+     "old_id": 6048
+    },
+    "b": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-10-06 10:29",
+    "old_event": 34355
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": {
+     "name": "Darren Roberts",
+     "kind": "player",
+     "old_id": 6048
+    },
+    "b": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "score_a": 24,
+    "score_b": 19,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34357
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "b": {
+     "name": "Andrew Gooch",
+     "kind": "player",
+     "old_id": 9770
+    },
+    "score_a": 43,
+    "score_b": 34,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34359
+   },
+   {
+    "round": 3,
+    "slot": 2,
+    "a": {
+     "name": "Joshua Bristow",
+     "kind": "player",
+     "old_id": 3460
+    },
+    "b": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "score_a": 57,
+    "score_b": 38,
+    "points_a": 57,
+    "points_b": 38,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34361
+   },
+   {
+    "round": 3,
+    "slot": 3,
+    "a": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "b": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "score_a": 44,
+    "score_b": 19,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34363
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": {
+     "name": "Darren Roberts",
+     "kind": "player",
+     "old_id": 6048
+    },
+    "b": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "score_a": 21,
+    "score_b": 33,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34365
+   },
+   {
+    "round": 4,
+    "slot": 1,
+    "a": {
+     "name": "Joshua Bristow",
+     "kind": "player",
+     "old_id": 3460
+    },
+    "b": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "score_a": 25,
+    "score_b": 75,
+    "points_a": 25,
+    "points_b": 75,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": 34367
+   },
+   {
+    "round": 5,
+    "slot": 0,
+    "a": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "b": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "score_a": 48,
+    "score_b": 32,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-09-16 19:30",
+    "old_event": null
+   }
+  ]
+ },
+ {
+  "title": "Team Handicap 2026-2027",
+  "old_id": 31713,
+  "mode": "team",
+  "rounds": 5,
+  "labels": [
+   "Round 1",
+   "Round 2",
+   "Round 3",
+   "Round 4",
+   "Round 5"
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Mevagissey C",
+     "kind": "team",
+     "old_id": 64
+    },
+    "b": {
+     "name": "Bugle",
+     "kind": "team",
+     "old_id": 28268
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-10-20 07:30",
+    "old_event": 32263
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": {
+     "name": "Mevagissey A",
+     "kind": "team",
+     "old_id": 58
+    },
+    "b": {
+     "name": "Tregonissey C",
+     "kind": "team",
+     "old_id": 221
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-10-20 07:30",
+    "old_event": 32264
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "Tregonissey B",
+     "kind": "team",
+     "old_id": 211
+    },
+    "b": {
+     "name": "Bethel A",
+     "kind": "team",
+     "old_id": 56
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-10-20 07:30",
+    "old_event": 32265
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": {
+     "name": "Bethel B",
+     "kind": "team",
+     "old_id": 214
+    },
+    "b": {
+     "name": "Luxulyan A",
+     "kind": "team",
+     "old_id": 28267
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-10-20 07:30",
+    "old_event": 32266
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": {
+     "name": "St Neot",
+     "kind": "team",
+     "old_id": 57
+    },
+    "b": {
+     "name": "Mevagissey B",
+     "kind": "team",
+     "old_id": 60
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-10-20 07:30",
+    "old_event": 32267
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": {
+     "name": "St Blazey A",
+     "kind": "team",
+     "old_id": 8349
+    },
+    "b": {
+     "name": "Luxulyan B",
+     "kind": "team",
+     "old_id": 31614
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-10-20 07:30",
+    "old_event": 32268
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "St Blazey B",
+     "kind": "team",
+     "old_id": 213
+    },
+    "b": {
+     "name": "Tregonissey A",
+     "kind": "team",
+     "old_id": 25
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-10-20 07:30",
+    "old_event": 32269
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": {
+     "name": "Lerryn",
+     "kind": "team",
+     "old_id": 219
+    },
+    "b": {
+     "name": "Gorran Haven",
+     "kind": "team",
+     "old_id": 216
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-10-20 07:30",
+    "old_event": 32270
+   },
+   {
+    "round": 1,
+    "slot": 8,
+    "a": {
+     "name": "Bethel C",
+     "kind": "team",
+     "old_id": 62
+    },
+    "b": {
+     "name": "Pelynt",
+     "kind": "team",
+     "old_id": 59
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-10-20 07:30",
+    "old_event": 32271
+   },
+   {
+    "round": 1,
+    "slot": 9,
+    "a": {
+     "name": "Bye",
+     "kind": "team",
+     "old_id": 24883
+    },
+    "b": {
+     "name": "Bethel D",
+     "kind": "team",
+     "old_id": 212
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-10-20 07:30",
+    "old_event": 32272
+   },
+   {
+    "round": 1,
+    "slot": 10,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 11,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 12,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 13,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 14,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 15,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 4,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 5,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 6,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 7,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 5,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   }
+  ]
+ },
+ {
+  "title": "Team Pairs 2026-2027",
+  "old_id": 31714,
+  "mode": "team",
+  "rounds": 4,
+  "labels": [
+   "Round 1",
+   "Round 2",
+   "Round 3",
+   ""
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Bethel B",
+     "kind": "team",
+     "old_id": 214
+    },
+    "b": {
+     "name": "Bethel D",
+     "kind": "team",
+     "old_id": 212
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-24 19:30",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": {
+     "name": "Bethel A",
+     "kind": "team",
+     "old_id": 56
+    },
+    "b": {
+     "name": "Luxulyan B",
+     "kind": "team",
+     "old_id": 31614
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-24 19:30",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "St Neot",
+     "kind": "team",
+     "old_id": 57
+    },
+    "b": {
+     "name": "St Blazey B",
+     "kind": "team",
+     "old_id": 213
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-24 19:30",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": {
+     "name": "Bugle",
+     "kind": "team",
+     "old_id": 28268
+    },
+    "b": {
+     "name": "Bethel C",
+     "kind": "team",
+     "old_id": 62
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-24 19:30",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": {
+     "name": "St Blazey A",
+     "kind": "team",
+     "old_id": 8349
+    },
+    "b": {
+     "name": "Tregonissey A",
+     "kind": "team",
+     "old_id": 25
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-24 19:30",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": {
+     "name": "Luxulyan A",
+     "kind": "team",
+     "old_id": 28267
+    },
+    "b": {
+     "name": "Bye",
+     "kind": "team",
+     "old_id": 24883
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-24 19:30",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "Mevagissey A",
+     "kind": "team",
+     "old_id": 58
+    },
+    "b": {
+     "name": "Bye",
+     "kind": "team",
+     "old_id": 24883
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-24 19:30",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": {
+     "name": "Pelynt",
+     "kind": "team",
+     "old_id": 59
+    },
+    "b": {
+     "name": "Bye",
+     "kind": "team",
+     "old_id": 24883
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-11-24 19:30",
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   }
+  ]
+ },
+ {
+  "title": "Willie Thomas 2026-2027",
+  "old_id": 31715,
+  "mode": "player",
+  "rounds": 5,
+  "labels": [
+   "Round 1",
+   "Round 2",
+   "Round 3",
+   "Round 4",
+   "Round 5"
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Geoff Hawken",
+     "kind": "player",
+     "old_id": 3474
+    },
+    "b": {
+     "name": "Mark Richards",
+     "kind": "player",
+     "old_id": 10561
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34205
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": {
+     "name": "Jason Pascoe",
+     "kind": "player",
+     "old_id": 3392
+    },
+    "b": {
+     "name": "Kelly McMullen",
+     "kind": "player",
+     "old_id": 14565
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34206
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "Jowan Truman",
+     "kind": "player",
+     "old_id": 25755
+    },
+    "b": {
+     "name": "Terry Middleton",
+     "kind": "player",
+     "old_id": 3416
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34207
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": {
+     "name": "Matt Moore",
+     "kind": "player",
+     "old_id": 3427
+    },
+    "b": {
+     "name": "Dave Tregale",
+     "kind": "player",
+     "old_id": 3517
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34208
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34209
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": {
+     "name": "Kevin Spencer",
+     "kind": "player",
+     "old_id": 3399
+    },
+    "b": {
+     "name": "Bob Stephens",
+     "kind": "player",
+     "old_id": 3479
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34210
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "John Hancock",
+     "kind": "player",
+     "old_id": 3419
+    },
+    "b": {
+     "name": "Les Shakespeare",
+     "kind": "player",
+     "old_id": 3422
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34211
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": {
+     "name": "Steve Vicary",
+     "kind": "player",
+     "old_id": 28924
+    },
+    "b": {
+     "name": "Ryan Taylor",
+     "kind": "player",
+     "old_id": 6473
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34212
+   },
+   {
+    "round": 1,
+    "slot": 8,
+    "a": {
+     "name": "Kyle Bennetts",
+     "kind": "player",
+     "old_id": 14572
+    },
+    "b": {
+     "name": "Craig Nicholls",
+     "kind": "player",
+     "old_id": 3424
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34213
+   },
+   {
+    "round": 1,
+    "slot": 9,
+    "a": {
+     "name": "Darren Biggen",
+     "kind": "player",
+     "old_id": 3426
+    },
+    "b": {
+     "name": "Roy Bayliss",
+     "kind": "player",
+     "old_id": 3398
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34214
+   },
+   {
+    "round": 1,
+    "slot": 10,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34215
+   },
+   {
+    "round": 1,
+    "slot": 11,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34216
+   },
+   {
+    "round": 1,
+    "slot": 12,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34217
+   },
+   {
+    "round": 1,
+    "slot": 13,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34218
+   },
+   {
+    "round": 1,
+    "slot": 14,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34219
+   },
+   {
+    "round": 1,
+    "slot": 15,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2026-12-30 19:30",
+    "old_event": 34220
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 4,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 5,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 6,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 7,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 5,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   }
+  ]
+ }
+]

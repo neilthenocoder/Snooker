@@ -544,6 +544,15 @@ No database changes — nothing to run in Supabase this time.
 - A handicap can be left empty (Admin → Players or Admin → Handicaps). Scorecards and handicap competitions count an empty handicap as 0.
 - Removed: `seed.sql`, `remove-sample-data.sql`, `add-richard-pearson.sql`, the old `real-season-2026-27.sql` and `scripts/build-seed.mjs`.
 
+## 3v. Round 28: the past seasons, calendar fix, white banner
+
+**Run the nine files in `supabase/legacy/` once, in order** (01 → 09; after `schema.sql` and `real-league.sql`), waiting for each to finish. One per season, so each pastes easily into the SQL Editor. Nothing in the database version changes. Once they are in, `real-league.sql` refuses to run (it would wipe them).
+
+- **Past seasons** from Rich's export of the old WordPress database: 2018-19, 2019-20 (stopped by covid in March), 2021-22, 2022-23, 2023-24, 2024-25 and 2025-26 — 2020-21 had no league. 1,118 league matches with their final scores, 5,619 frames, 438 breaks and the bye weeks; the teams of those years that no longer play (as past teams) and 129 former players ("Not playing"); 25 cup competitions from 2023-24 on, round by round, as the old site had them. It also fills in this season's results that the old site has and this one doesn't yet (the 13 October matches), leaving alone any match that already has a result. It only adds; a season file run twice says the season is already in and changes nothing.
+- How it was made: `scripts/extract-old-site.py` reads the WordPress database (loaded into MySQL/MariaDB) into `real-data/legacy/<season>/` (the same CSVs as `real-data/2026-27/`), and `scripts/build-legacy.py` writes the SQL files. `real-data/legacy/NOTES.md` lists every oddity found and what was done about it (duplicates, impossible scores, unplayed matches, empty or half-finished cup brackets).
+- **Calendar:** the month strip and the ‹ › arrows now always land on the month pressed. The page and the strip used to be scrolled at the same time, and Chrome cancelled the first scroll.
+- **Banner layout "White"** (Site settings → Home page banner): a white banner with the headline on the left and the article's picture on the right, like the World Snooker home page; on a phone the picture sits on top.
+
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
 | Rule | Current setting |

@@ -1,0 +1,5785 @@
+[
+ {
+  "title": "Bill Toms 2024-2025",
+  "old_id": 25312,
+  "mode": "player",
+  "rounds": 6,
+  "labels": [
+   "Last 64",
+   "Last 32",
+   "Last 16",
+   "Quarter Final",
+   "Semi Final",
+   "Final"
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Jake Moore",
+     "kind": "player",
+     "old_id": 3491
+    },
+    "b": {
+     "name": "Dave Rundle",
+     "kind": "player",
+     "old_id": 3495
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25603
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "b": {
+     "name": "Ian Powell",
+     "kind": "player",
+     "old_id": 3492
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25604
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "Joshua Bristow",
+     "kind": "player",
+     "old_id": 3460
+    },
+    "b": {
+     "name": "Liam Reynolds",
+     "kind": "player",
+     "old_id": 3429
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25605
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": {
+     "name": "Garry Stephens",
+     "kind": "player",
+     "old_id": 3475
+    },
+    "b": {
+     "name": "Geoff Hawken",
+     "kind": "player",
+     "old_id": 3474
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25606
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": {
+     "name": "Chris Perring",
+     "kind": "player",
+     "old_id": 3544
+    },
+    "b": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25607
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": {
+     "name": "Andrew Best",
+     "kind": "player",
+     "old_id": 3487
+    },
+    "b": {
+     "name": "Andy Peers",
+     "kind": "player",
+     "old_id": 3476
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25608
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "Mark Cockayne",
+     "kind": "player",
+     "old_id": 3430
+    },
+    "b": {
+     "name": "Martin Richards",
+     "kind": "player",
+     "old_id": 9947
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25609
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": {
+     "name": "Jason Pascoe",
+     "kind": "player",
+     "old_id": 3392
+    },
+    "b": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25610
+   },
+   {
+    "round": 1,
+    "slot": 8,
+    "a": {
+     "name": "Ryan Orchard",
+     "kind": "player",
+     "old_id": 7768
+    },
+    "b": {
+     "name": "Gavin Dyche",
+     "kind": "player",
+     "old_id": 3394
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25611
+   },
+   {
+    "round": 1,
+    "slot": 9,
+    "a": {
+     "name": "Keiran Pearce",
+     "kind": "player",
+     "old_id": 11816
+    },
+    "b": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25612
+   },
+   {
+    "round": 1,
+    "slot": 10,
+    "a": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "b": {
+     "name": "Mark Cockayne",
+     "kind": "player",
+     "old_id": 3430
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26424
+   },
+   {
+    "round": 1,
+    "slot": 11,
+    "a": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "b": {
+     "name": "Joshua Bristow",
+     "kind": "player",
+     "old_id": 3460
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26425
+   },
+   {
+    "round": 1,
+    "slot": 12,
+    "a": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "b": {
+     "name": "George Taylor",
+     "kind": "player",
+     "old_id": 24872
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26426
+   },
+   {
+    "round": 1,
+    "slot": 13,
+    "a": {
+     "name": "Colin Rundle",
+     "kind": "player",
+     "old_id": 3496
+    },
+    "b": {
+     "name": "Ryan Bilson",
+     "kind": "player",
+     "old_id": 3552
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26427
+   },
+   {
+    "round": 1,
+    "slot": 14,
+    "a": {
+     "name": "Gary Spencer",
+     "kind": "player",
+     "old_id": 3488
+    },
+    "b": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26428
+   },
+   {
+    "round": 1,
+    "slot": 15,
+    "a": {
+     "name": "Kevin Harris",
+     "kind": "player",
+     "old_id": 20168
+    },
+    "b": {
+     "name": "Jake Moore",
+     "kind": "player",
+     "old_id": 3491
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26429
+   },
+   {
+    "round": 1,
+    "slot": 16,
+    "a": {
+     "name": "Ryan Orchard",
+     "kind": "player",
+     "old_id": 7768
+    },
+    "b": {
+     "name": "Dave Tregale",
+     "kind": "player",
+     "old_id": 3517
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26430
+   },
+   {
+    "round": 1,
+    "slot": 17,
+    "a": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "b": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26431
+   },
+   {
+    "round": 1,
+    "slot": 18,
+    "a": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "b": {
+     "name": "Craig Nicholls",
+     "kind": "player",
+     "old_id": 3424
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26432
+   },
+   {
+    "round": 1,
+    "slot": 19,
+    "a": {
+     "name": "John Bates",
+     "kind": "player",
+     "old_id": 14573
+    },
+    "b": {
+     "name": "Bob Stephens",
+     "kind": "player",
+     "old_id": 3479
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26433
+   },
+   {
+    "round": 1,
+    "slot": 20,
+    "a": {
+     "name": "Geoff Merriman",
+     "kind": "player",
+     "old_id": 3450
+    },
+    "b": {
+     "name": "Nathan Shaw",
+     "kind": "player",
+     "old_id": 3514
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26434
+   },
+   {
+    "round": 1,
+    "slot": 21,
+    "a": {
+     "name": "Liam Jones",
+     "kind": "player",
+     "old_id": 3395
+    },
+    "b": {
+     "name": "Matt Green",
+     "kind": "player",
+     "old_id": 3477
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26435
+   },
+   {
+    "round": 1,
+    "slot": 22,
+    "a": {
+     "name": "Andy Peers",
+     "kind": "player",
+     "old_id": 3476
+    },
+    "b": {
+     "name": "Darren Biggen",
+     "kind": "player",
+     "old_id": 3426
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26436
+   },
+   {
+    "round": 1,
+    "slot": 23,
+    "a": {
+     "name": "Jason Cocks",
+     "kind": "player",
+     "old_id": 3554
+    },
+    "b": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26437
+   },
+   {
+    "round": 1,
+    "slot": 24,
+    "a": {
+     "name": "Dan Pascoe",
+     "kind": "player",
+     "old_id": 6800
+    },
+    "b": {
+     "name": "Justin Oxenham",
+     "kind": "player",
+     "old_id": 9714
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26438
+   },
+   {
+    "round": 1,
+    "slot": 25,
+    "a": {
+     "name": "Garry Stephens",
+     "kind": "player",
+     "old_id": 3475
+    },
+    "b": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26439
+   },
+   {
+    "round": 1,
+    "slot": 26,
+    "a": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "b": {
+     "name": "Mark Cockayne",
+     "kind": "player",
+     "old_id": 3430
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26440
+   },
+   {
+    "round": 1,
+    "slot": 27,
+    "a": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "b": {
+     "name": "Joshua Bristow",
+     "kind": "player",
+     "old_id": 3460
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-12 15:43",
+    "old_event": 26441
+   },
+   {
+    "round": 1,
+    "slot": 28,
+    "a": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "b": {
+     "name": "George Taylor",
+     "kind": "player",
+     "old_id": 24872
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-12 15:43",
+    "old_event": 26443
+   },
+   {
+    "round": 1,
+    "slot": 29,
+    "a": {
+     "name": "Colin Rundle",
+     "kind": "player",
+     "old_id": 3496
+    },
+    "b": {
+     "name": "Ryan Bilson",
+     "kind": "player",
+     "old_id": 3552
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-12 15:43",
+    "old_event": 26445
+   },
+   {
+    "round": 1,
+    "slot": 30,
+    "a": {
+     "name": "Gary Spencer",
+     "kind": "player",
+     "old_id": 3488
+    },
+    "b": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-12 15:43",
+    "old_event": 26447
+   },
+   {
+    "round": 1,
+    "slot": 31,
+    "a": {
+     "name": "Kevin Harris",
+     "kind": "player",
+     "old_id": 20168
+    },
+    "b": {
+     "name": "Jake Moore",
+     "kind": "player",
+     "old_id": 3491
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-12 15:43",
+    "old_event": 26449
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "b": {
+     "name": "Mark Cockayne",
+     "kind": "player",
+     "old_id": 3430
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26451
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": {
+     "name": "Joshua Bristow",
+     "kind": "player",
+     "old_id": 3460
+    },
+    "b": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26453
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": {
+     "name": "George Taylor",
+     "kind": "player",
+     "old_id": 24872
+    },
+    "b": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26455
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": {
+     "name": "Ryan Bilson",
+     "kind": "player",
+     "old_id": 3552
+    },
+    "b": {
+     "name": "Colin Rundle",
+     "kind": "player",
+     "old_id": 3496
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26457
+   },
+   {
+    "round": 2,
+    "slot": 4,
+    "a": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "b": {
+     "name": "Gary Spencer",
+     "kind": "player",
+     "old_id": 3488
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26459
+   },
+   {
+    "round": 2,
+    "slot": 5,
+    "a": {
+     "name": "Jake Moore",
+     "kind": "player",
+     "old_id": 3491
+    },
+    "b": {
+     "name": "Kevin Harris",
+     "kind": "player",
+     "old_id": 20168
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26461
+   },
+   {
+    "round": 2,
+    "slot": 6,
+    "a": {
+     "name": "Dave Tregale",
+     "kind": "player",
+     "old_id": 3517
+    },
+    "b": {
+     "name": "Ryan Orchard",
+     "kind": "player",
+     "old_id": 7768
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26463
+   },
+   {
+    "round": 2,
+    "slot": 7,
+    "a": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "b": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26465
+   },
+   {
+    "round": 2,
+    "slot": 8,
+    "a": {
+     "name": "Craig Nicholls",
+     "kind": "player",
+     "old_id": 3424
+    },
+    "b": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26467
+   },
+   {
+    "round": 2,
+    "slot": 9,
+    "a": {
+     "name": "Bob Stephens",
+     "kind": "player",
+     "old_id": 3479
+    },
+    "b": {
+     "name": "John Bates",
+     "kind": "player",
+     "old_id": 14573
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26469
+   },
+   {
+    "round": 2,
+    "slot": 10,
+    "a": {
+     "name": "Nathan Shaw",
+     "kind": "player",
+     "old_id": 3514
+    },
+    "b": {
+     "name": "Geoff Merriman",
+     "kind": "player",
+     "old_id": 3450
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26471
+   },
+   {
+    "round": 2,
+    "slot": 11,
+    "a": {
+     "name": "Matt Green",
+     "kind": "player",
+     "old_id": 3477
+    },
+    "b": {
+     "name": "Liam Jones",
+     "kind": "player",
+     "old_id": 3395
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26473
+   },
+   {
+    "round": 2,
+    "slot": 12,
+    "a": {
+     "name": "Darren Biggen",
+     "kind": "player",
+     "old_id": 3426
+    },
+    "b": {
+     "name": "Andy Peers",
+     "kind": "player",
+     "old_id": 3476
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26475
+   },
+   {
+    "round": 2,
+    "slot": 13,
+    "a": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "b": {
+     "name": "Jason Cocks",
+     "kind": "player",
+     "old_id": 3554
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-12 19:30",
+    "old_event": 26477
+   },
+   {
+    "round": 2,
+    "slot": 14,
+    "a": {
+     "name": "Justin Oxenham",
+     "kind": "player",
+     "old_id": 9714
+    },
+    "b": {
+     "name": "Dan Allen",
+     "kind": "player",
+     "old_id": 22972
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-12 15:44",
+    "old_event": 26479
+   },
+   {
+    "round": 2,
+    "slot": 15,
+    "a": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "b": {
+     "name": "Garry Stephens",
+     "kind": "player",
+     "old_id": 3475
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26481
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": {
+     "name": "Justin Oxenham",
+     "kind": "player",
+     "old_id": 9714
+    },
+    "b": {
+     "name": "Matt Green",
+     "kind": "player",
+     "old_id": 3477
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26910
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": {
+     "name": "Andy Peers",
+     "kind": "player",
+     "old_id": 3476
+    },
+    "b": {
+     "name": "Bob Stephens",
+     "kind": "player",
+     "old_id": 3479
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26911
+   },
+   {
+    "round": 3,
+    "slot": 2,
+    "a": {
+     "name": "Jason Cocks",
+     "kind": "player",
+     "old_id": 3554
+    },
+    "b": {
+     "name": "Nathan Shaw",
+     "kind": "player",
+     "old_id": 3514
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26912
+   },
+   {
+    "round": 3,
+    "slot": 3,
+    "a": {
+     "name": "Ryan Bilson",
+     "kind": "player",
+     "old_id": 3552
+    },
+    "b": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26913
+   },
+   {
+    "round": 3,
+    "slot": 4,
+    "a": {
+     "name": "Gary Spencer",
+     "kind": "player",
+     "old_id": 3488
+    },
+    "b": {
+     "name": "Joshua Bristow",
+     "kind": "player",
+     "old_id": 3460
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26914
+   },
+   {
+    "round": 3,
+    "slot": 5,
+    "a": {
+     "name": "Craig Nicholls",
+     "kind": "player",
+     "old_id": 3424
+    },
+    "b": {
+     "name": "Dave Tregale",
+     "kind": "player",
+     "old_id": 3517
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26915
+   },
+   {
+    "round": 3,
+    "slot": 6,
+    "a": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "b": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26916
+   },
+   {
+    "round": 3,
+    "slot": 7,
+    "a": {
+     "name": "Jake Moore",
+     "kind": "player",
+     "old_id": 3491
+    },
+    "b": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26917
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": {
+     "name": "Matt Green",
+     "kind": "player",
+     "old_id": 3477
+    },
+    "b": {
+     "name": "Craig Nicholls",
+     "kind": "player",
+     "old_id": 3424
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-03-10 19:30",
+    "old_event": 27478
+   },
+   {
+    "round": 4,
+    "slot": 1,
+    "a": {
+     "name": "Gary Spencer",
+     "kind": "player",
+     "old_id": 3488
+    },
+    "b": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-03-10 19:30",
+    "old_event": 27479
+   },
+   {
+    "round": 4,
+    "slot": 2,
+    "a": {
+     "name": "Nathan Shaw",
+     "kind": "player",
+     "old_id": 3514
+    },
+    "b": {
+     "name": "Ryan Bilson",
+     "kind": "player",
+     "old_id": 3552
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-03-10 19:30",
+    "old_event": 27480
+   },
+   {
+    "round": 4,
+    "slot": 3,
+    "a": {
+     "name": "Jake Moore",
+     "kind": "player",
+     "old_id": 3491
+    },
+    "b": {
+     "name": "Andy Peers",
+     "kind": "player",
+     "old_id": 3476
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-03-10 19:30",
+    "old_event": 27481
+   },
+   {
+    "round": 5,
+    "slot": 0,
+    "a": {
+     "name": "Ryan Bilson",
+     "kind": "player",
+     "old_id": 3552
+    },
+    "b": {
+     "name": "Matt Green",
+     "kind": "player",
+     "old_id": 3477
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-03-28 19:30",
+    "old_event": 28028
+   },
+   {
+    "round": 5,
+    "slot": 1,
+    "a": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "b": {
+     "name": "Jake Moore",
+     "kind": "player",
+     "old_id": 3491
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-08 19:30",
+    "old_event": 28030
+   },
+   {
+    "round": 6,
+    "slot": 0,
+    "a": {
+     "name": "Ryan Bilson",
+     "kind": "player",
+     "old_id": 3552
+    },
+    "b": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-04 07:56",
+    "old_event": 28102
+   }
+  ]
+ },
+ {
+  "title": "Gordon Boynton Trophy 2025",
+  "old_id": 25319,
+  "mode": "player",
+  "rounds": 5,
+  "labels": [
+   "Preliminary Round",
+   "Last 16",
+   "Quarter Final",
+   "Semi Final",
+   "Final"
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Adrian Dyche",
+     "kind": "player",
+     "old_id": 9730
+    },
+    "b": {
+     "name": "Gavin Dyche",
+     "kind": "player",
+     "old_id": 3394
+    },
+    "score_a": 39,
+    "score_b": 66,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 10:00",
+    "old_event": 28053
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "b": {
+     "name": "Ryan Bilson",
+     "kind": "player",
+     "old_id": 3552
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-03 18:56",
+    "old_event": 28055
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "b": {
+     "name": "Ryan Bilson",
+     "kind": "player",
+     "old_id": 3552
+    },
+    "score_a": 67,
+    "score_b": 51,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 10:00",
+    "old_event": 28057
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 10:30",
+    "old_event": 28059
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": 26,
+    "score_b": 63,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 10:30",
+    "old_event": 28060
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": {
+     "name": "Justin Oxenham",
+     "kind": "player",
+     "old_id": 9714
+    },
+    "b": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-03 18:59",
+    "old_event": 28062
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "Gary Spencer",
+     "kind": "player",
+     "old_id": 3488
+    },
+    "b": {
+     "name": "Geoff Hawken",
+     "kind": "player",
+     "old_id": 3474
+    },
+    "score_a": 81,
+    "score_b": 41,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 10:30",
+    "old_event": 28064
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": {
+     "name": "Geoff Hawken",
+     "kind": "player",
+     "old_id": 3474
+    },
+    "b": {
+     "name": "Gary Spencer",
+     "kind": "player",
+     "old_id": 3488
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-03 18:59",
+    "old_event": 28066
+   },
+   {
+    "round": 1,
+    "slot": 8,
+    "a": {
+     "name": "Matt Green",
+     "kind": "player",
+     "old_id": 3477
+    },
+    "b": {
+     "name": "Roger Smithson",
+     "kind": "player",
+     "old_id": 3480
+    },
+    "score_a": 34,
+    "score_b": 66,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 11:00",
+    "old_event": 28068
+   },
+   {
+    "round": 1,
+    "slot": 9,
+    "a": {
+     "name": "Jason Pascoe",
+     "kind": "player",
+     "old_id": 3392
+    },
+    "b": {
+     "name": "Kevin Harris",
+     "kind": "player",
+     "old_id": 20168
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-03 19:00",
+    "old_event": 28070
+   },
+   {
+    "round": 1,
+    "slot": 10,
+    "a": {
+     "name": "Jason Pascoe",
+     "kind": "player",
+     "old_id": 3392
+    },
+    "b": {
+     "name": "Kevin Harris",
+     "kind": "player",
+     "old_id": 20168
+    },
+    "score_a": 72,
+    "score_b": 44,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 11:00",
+    "old_event": 28072
+   },
+   {
+    "round": 1,
+    "slot": 11,
+    "a": {
+     "name": "Justin Oxenham",
+     "kind": "player",
+     "old_id": 9714
+    },
+    "b": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-03 19:02",
+    "old_event": 28074
+   },
+   {
+    "round": 1,
+    "slot": 12,
+    "a": {
+     "name": "Justin Oxenham",
+     "kind": "player",
+     "old_id": 9714
+    },
+    "b": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "score_a": 63,
+    "score_b": 36,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 11:30",
+    "old_event": 28076
+   },
+   {
+    "round": 1,
+    "slot": 13,
+    "a": {
+     "name": "Andrew Best",
+     "kind": "player",
+     "old_id": 3487
+    },
+    "b": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-03 19:03",
+    "old_event": 28078
+   },
+   {
+    "round": 1,
+    "slot": 14,
+    "a": {
+     "name": "Andrew Best",
+     "kind": "player",
+     "old_id": 3487
+    },
+    "b": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "score_a": 69,
+    "score_b": 33,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 11:30",
+    "old_event": 28080
+   },
+   {
+    "round": 1,
+    "slot": 15,
+    "a": null,
+    "b": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-03 19:04",
+    "old_event": 28082
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": {
+     "name": "Gavin Dyche",
+     "kind": "player",
+     "old_id": 3394
+    },
+    "b": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "score_a": 70,
+    "score_b": 71,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 12:00",
+    "old_event": 28085
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "b": {
+     "name": "George Taylor",
+     "kind": "player",
+     "old_id": 24872
+    },
+    "score_a": 76,
+    "score_b": 52,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 12:00",
+    "old_event": 28087
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "b": {
+     "name": "Joshua Bristow",
+     "kind": "player",
+     "old_id": 3460
+    },
+    "score_a": 49,
+    "score_b": 56,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 12:30",
+    "old_event": 28089
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": {
+     "name": "Gary Spencer",
+     "kind": "player",
+     "old_id": 3488
+    },
+    "b": {
+     "name": "Andrew Gooch",
+     "kind": "player",
+     "old_id": 9770
+    },
+    "score_a": 76,
+    "score_b": 24,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 12:30",
+    "old_event": 28091
+   },
+   {
+    "round": 2,
+    "slot": 4,
+    "a": {
+     "name": "Roger Smithson",
+     "kind": "player",
+     "old_id": 3480
+    },
+    "b": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "score_a": 27,
+    "score_b": 59,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 13:00",
+    "old_event": 28093
+   },
+   {
+    "round": 2,
+    "slot": 5,
+    "a": {
+     "name": "Jason Pascoe",
+     "kind": "player",
+     "old_id": 3392
+    },
+    "b": {
+     "name": "Garry Stephens",
+     "kind": "player",
+     "old_id": 3475
+    },
+    "score_a": 62,
+    "score_b": 37,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 13:00",
+    "old_event": 28095
+   },
+   {
+    "round": 2,
+    "slot": 6,
+    "a": {
+     "name": "Justin Oxenham",
+     "kind": "player",
+     "old_id": 9714
+    },
+    "b": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "score_a": 62,
+    "score_b": 24,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 13:30",
+    "old_event": 28097
+   },
+   {
+    "round": 2,
+    "slot": 7,
+    "a": {
+     "name": "Andrew Best",
+     "kind": "player",
+     "old_id": 3487
+    },
+    "b": {
+     "name": "Dave Tregale",
+     "kind": "player",
+     "old_id": 3517
+    },
+    "score_a": 88,
+    "score_b": 46,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 13:30",
+    "old_event": 28099
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": {
+     "name": "Gavin Dyche",
+     "kind": "player",
+     "old_id": 3394
+    },
+    "b": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "score_a": 62,
+    "score_b": 27,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 14:00",
+    "old_event": 28122
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": {
+     "name": "Joshua Bristow",
+     "kind": "player",
+     "old_id": 3460
+    },
+    "b": {
+     "name": "Gary Spencer",
+     "kind": "player",
+     "old_id": 3488
+    },
+    "score_a": 32,
+    "score_b": 69,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 14:00",
+    "old_event": 28124
+   },
+   {
+    "round": 3,
+    "slot": 2,
+    "a": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "b": {
+     "name": "Jason Pascoe",
+     "kind": "player",
+     "old_id": 3392
+    },
+    "score_a": 33,
+    "score_b": 58,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 14:30",
+    "old_event": 28126
+   },
+   {
+    "round": 3,
+    "slot": 3,
+    "a": {
+     "name": "Justin Oxenham",
+     "kind": "player",
+     "old_id": 9714
+    },
+    "b": {
+     "name": "Andrew Best",
+     "kind": "player",
+     "old_id": 3487
+    },
+    "score_a": 98,
+    "score_b": 47,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 14:30",
+    "old_event": 28128
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": {
+     "name": "Gavin Dyche",
+     "kind": "player",
+     "old_id": 3394
+    },
+    "b": {
+     "name": "Gary Spencer",
+     "kind": "player",
+     "old_id": 3488
+    },
+    "score_a": 65,
+    "score_b": 77,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 15:00",
+    "old_event": 28130
+   },
+   {
+    "round": 4,
+    "slot": 1,
+    "a": {
+     "name": "Jason Pascoe",
+     "kind": "player",
+     "old_id": 3392
+    },
+    "b": {
+     "name": "Justin Oxenham",
+     "kind": "player",
+     "old_id": 9714
+    },
+    "score_a": 34,
+    "score_b": 66,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 15:00",
+    "old_event": 28132
+   },
+   {
+    "round": 5,
+    "slot": 0,
+    "a": {
+     "name": "Gary Spencer",
+     "kind": "player",
+     "old_id": 3488
+    },
+    "b": {
+     "name": "Justin Oxenham",
+     "kind": "player",
+     "old_id": 9714
+    },
+    "score_a": 65,
+    "score_b": 69,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-05 15:30",
+    "old_event": 28134
+   }
+  ]
+ },
+ {
+  "title": "Seniors 2024-2025",
+  "old_id": 25325,
+  "mode": "player",
+  "rounds": 5,
+  "labels": [
+   "Last 32",
+   "Last 16",
+   "Quarter Final",
+   "Semi Final",
+   "Final"
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "b": {
+     "name": "Richard Opie",
+     "kind": "player",
+     "old_id": 6698
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25613
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": {
+     "name": "Andy Peers",
+     "kind": "player",
+     "old_id": 3476
+    },
+    "b": {
+     "name": "Geoff Hawken",
+     "kind": "player",
+     "old_id": 3474
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25614
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "b": {
+     "name": "John Hancock",
+     "kind": "player",
+     "old_id": 3419
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-13 19:30",
+    "old_event": 25615
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": {
+     "name": "Roy Bayliss",
+     "kind": "player",
+     "old_id": 3398
+    },
+    "b": {
+     "name": "Colin Rundle",
+     "kind": "player",
+     "old_id": 3496
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25616
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": {
+     "name": "Roy Bayliss",
+     "kind": "player",
+     "old_id": 3398
+    },
+    "b": {
+     "name": "Terry Middleton",
+     "kind": "player",
+     "old_id": 3416
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26392
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": {
+     "name": "Roy Bayliss",
+     "kind": "player",
+     "old_id": 3398
+    },
+    "b": {
+     "name": "Terry Middleton",
+     "kind": "player",
+     "old_id": 3416
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26393
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "Roy Bayliss",
+     "kind": "player",
+     "old_id": 3398
+    },
+    "b": {
+     "name": "Terry Middleton",
+     "kind": "player",
+     "old_id": 3416
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26394
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": {
+     "name": "Roy Bayliss",
+     "kind": "player",
+     "old_id": 3398
+    },
+    "b": {
+     "name": "Terry Middleton",
+     "kind": "player",
+     "old_id": 3416
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26395
+   },
+   {
+    "round": 1,
+    "slot": 8,
+    "a": {
+     "name": "Steve Williams",
+     "kind": "player",
+     "old_id": 3410
+    },
+    "b": {
+     "name": "Les Shakespeare",
+     "kind": "player",
+     "old_id": 14663
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26396
+   },
+   {
+    "round": 1,
+    "slot": 9,
+    "a": {
+     "name": "Chris Perring",
+     "kind": "player",
+     "old_id": 3544
+    },
+    "b": {
+     "name": "Mike Williams",
+     "kind": "player",
+     "old_id": 3498
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26397
+   },
+   {
+    "round": 1,
+    "slot": 10,
+    "a": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "b": {
+     "name": "Dave Rundle",
+     "kind": "player",
+     "old_id": 3495
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26398
+   },
+   {
+    "round": 1,
+    "slot": 11,
+    "a": {
+     "name": "John Bates",
+     "kind": "player",
+     "old_id": 14573
+    },
+    "b": {
+     "name": "John Daniell",
+     "kind": "player",
+     "old_id": 3535
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26399
+   },
+   {
+    "round": 1,
+    "slot": 12,
+    "a": {
+     "name": "Roger Smithson",
+     "kind": "player",
+     "old_id": 3480
+    },
+    "b": {
+     "name": "Dave Tregale",
+     "kind": "player",
+     "old_id": 3517
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26400
+   },
+   {
+    "round": 1,
+    "slot": 13,
+    "a": {
+     "name": "Len Flower",
+     "kind": "player",
+     "old_id": 3537
+    },
+    "b": {
+     "name": "Andy Peers",
+     "kind": "player",
+     "old_id": 3476
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26401
+   },
+   {
+    "round": 1,
+    "slot": 14,
+    "a": {
+     "name": "Bob Stephens",
+     "kind": "player",
+     "old_id": 3479
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26402
+   },
+   {
+    "round": 1,
+    "slot": 15,
+    "a": {
+     "name": "Roy Bayliss",
+     "kind": "player",
+     "old_id": 3398
+    },
+    "b": {
+     "name": "Terry Middleton",
+     "kind": "player",
+     "old_id": 3416
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26403
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": {
+     "name": "Roy Bayliss",
+     "kind": "player",
+     "old_id": 3398
+    },
+    "b": {
+     "name": "Terry Middleton",
+     "kind": "player",
+     "old_id": 3416
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26404
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": {
+     "name": "Steve Williams",
+     "kind": "player",
+     "old_id": 3410
+    },
+    "b": {
+     "name": "Les Shakespeare",
+     "kind": "player",
+     "old_id": 14663
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26406
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "b": {
+     "name": "Dave Rundle",
+     "kind": "player",
+     "old_id": 3495
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26408
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": {
+     "name": "John Bates",
+     "kind": "player",
+     "old_id": 14573
+    },
+    "b": {
+     "name": "John Daniell",
+     "kind": "player",
+     "old_id": 3535
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26410
+   },
+   {
+    "round": 2,
+    "slot": 4,
+    "a": {
+     "name": "Roger Smithson",
+     "kind": "player",
+     "old_id": 3480
+    },
+    "b": {
+     "name": "Dave Tregale",
+     "kind": "player",
+     "old_id": 3517
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26412
+   },
+   {
+    "round": 2,
+    "slot": 5,
+    "a": {
+     "name": "Andy Peers",
+     "kind": "player",
+     "old_id": 3476
+    },
+    "b": {
+     "name": "Len Flower",
+     "kind": "player",
+     "old_id": 3537
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26414
+   },
+   {
+    "round": 2,
+    "slot": 6,
+    "a": {
+     "name": "Bob Stephens",
+     "kind": "player",
+     "old_id": 3479
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26416
+   },
+   {
+    "round": 2,
+    "slot": 7,
+    "a": {
+     "name": "Chris Perring",
+     "kind": "player",
+     "old_id": 3544
+    },
+    "b": {
+     "name": "Mike Williams",
+     "kind": "player",
+     "old_id": 3498
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26419
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": {
+     "name": "Steve Williams",
+     "kind": "player",
+     "old_id": 3410
+    },
+    "b": {
+     "name": "Andy Peers",
+     "kind": "player",
+     "old_id": 3476
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26905
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": {
+     "name": "John Daniell",
+     "kind": "player",
+     "old_id": 3535
+    },
+    "b": {
+     "name": "Chris Perring",
+     "kind": "player",
+     "old_id": 3544
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26906
+   },
+   {
+    "round": 3,
+    "slot": 2,
+    "a": {
+     "name": "Dave Tregale",
+     "kind": "player",
+     "old_id": 3517
+    },
+    "b": {
+     "name": "Terry Middleton",
+     "kind": "player",
+     "old_id": 3416
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26907
+   },
+   {
+    "round": 3,
+    "slot": 3,
+    "a": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26908
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": {
+     "name": "Andy Peers",
+     "kind": "player",
+     "old_id": 3476
+    },
+    "b": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-03-20 19:30",
+    "old_event": 27474
+   },
+   {
+    "round": 4,
+    "slot": 1,
+    "a": {
+     "name": "Chris Perring",
+     "kind": "player",
+     "old_id": 3544
+    },
+    "b": {
+     "name": "Terry Middleton",
+     "kind": "player",
+     "old_id": 3416
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-03-20 19:30",
+    "old_event": 27475
+   },
+   {
+    "round": 5,
+    "slot": 0,
+    "a": {
+     "name": "Chris Perring",
+     "kind": "player",
+     "old_id": 3544
+    },
+    "b": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-17 19:30",
+    "old_event": 28033
+   }
+  ]
+ },
+ {
+  "title": "Singles 2024-2025",
+  "old_id": 25328,
+  "mode": "player",
+  "rounds": 5,
+  "labels": [
+   "Last 32",
+   "Last 16",
+   "Quarter Final",
+   "Semi Final",
+   "Final"
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Ryan Bilson",
+     "kind": "player",
+     "old_id": 3552
+    },
+    "b": {
+     "name": "Andrew Best",
+     "kind": "player",
+     "old_id": 3487
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25624
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": {
+     "name": "Jason Pascoe",
+     "kind": "player",
+     "old_id": 3392
+    },
+    "b": {
+     "name": "Geoff Merriman",
+     "kind": "player",
+     "old_id": 3450
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25625
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "Garry Stephens",
+     "kind": "player",
+     "old_id": 3475
+    },
+    "b": {
+     "name": "Gary Spencer",
+     "kind": "player",
+     "old_id": 3488
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25626
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": {
+     "name": "Jason Cocks",
+     "kind": "player",
+     "old_id": 3554
+    },
+    "b": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25627
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": {
+     "name": "Dave Rundle",
+     "kind": "player",
+     "old_id": 3495
+    },
+    "b": {
+     "name": "Keiran Pearce",
+     "kind": "player",
+     "old_id": 11816
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25628
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "b": {
+     "name": "John Bates",
+     "kind": "player",
+     "old_id": 14573
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25629
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "b": {
+     "name": "Andy Peers",
+     "kind": "player",
+     "old_id": 3476
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25630
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": {
+     "name": "Andrew Gooch",
+     "kind": "player",
+     "old_id": 9770
+    },
+    "b": {
+     "name": "Nathan Shaw",
+     "kind": "player",
+     "old_id": 3514
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25631
+   },
+   {
+    "round": 1,
+    "slot": 8,
+    "a": {
+     "name": "Matt Green",
+     "kind": "player",
+     "old_id": 3477
+    },
+    "b": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25632
+   },
+   {
+    "round": 1,
+    "slot": 9,
+    "a": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "b": {
+     "name": "Bob Stephens",
+     "kind": "player",
+     "old_id": 3479
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26330
+   },
+   {
+    "round": 1,
+    "slot": 10,
+    "a": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "b": {
+     "name": "Bob Stephens",
+     "kind": "player",
+     "old_id": 3479
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26331
+   },
+   {
+    "round": 1,
+    "slot": 11,
+    "a": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "b": {
+     "name": "Bob Stephens",
+     "kind": "player",
+     "old_id": 3479
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26332
+   },
+   {
+    "round": 1,
+    "slot": 12,
+    "a": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "b": {
+     "name": "Bob Stephens",
+     "kind": "player",
+     "old_id": 3479
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26333
+   },
+   {
+    "round": 1,
+    "slot": 13,
+    "a": {
+     "name": "Jason Pascoe",
+     "kind": "player",
+     "old_id": 3392
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26334
+   },
+   {
+    "round": 1,
+    "slot": 14,
+    "a": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "b": {
+     "name": "Bob Stephens",
+     "kind": "player",
+     "old_id": 3479
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-08 10:25",
+    "old_event": 26335
+   },
+   {
+    "round": 1,
+    "slot": 15,
+    "a": {
+     "name": "Jason Pascoe",
+     "kind": "player",
+     "old_id": 3392
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-08 10:25",
+    "old_event": 26337
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "b": {
+     "name": "Bob Stephens",
+     "kind": "player",
+     "old_id": 3479
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26339
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": {
+     "name": "Jason Pascoe",
+     "kind": "player",
+     "old_id": 3392
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26341
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "b": {
+     "name": "Steve Courts",
+     "kind": "player",
+     "old_id": 3543
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26343
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": {
+     "name": "Kevin Harris",
+     "kind": "player",
+     "old_id": 20168
+    },
+    "b": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26345
+   },
+   {
+    "round": 2,
+    "slot": 4,
+    "a": {
+     "name": "Garry Stephens",
+     "kind": "player",
+     "old_id": 3475
+    },
+    "b": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26347
+   },
+   {
+    "round": 2,
+    "slot": 5,
+    "a": {
+     "name": "Dave Rundle",
+     "kind": "player",
+     "old_id": 3495
+    },
+    "b": {
+     "name": "Joshua Bristow",
+     "kind": "player",
+     "old_id": 3460
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26349
+   },
+   {
+    "round": 2,
+    "slot": 6,
+    "a": {
+     "name": "Justin Oxenham",
+     "kind": "player",
+     "old_id": 9714
+    },
+    "b": {
+     "name": "Andrew Best",
+     "kind": "player",
+     "old_id": 3487
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26351
+   },
+   {
+    "round": 2,
+    "slot": 7,
+    "a": {
+     "name": "Andrew Gooch",
+     "kind": "player",
+     "old_id": 9770
+    },
+    "b": {
+     "name": "Colin Rundle",
+     "kind": "player",
+     "old_id": 3496
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26352
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": {
+     "name": "Andrew Gooch",
+     "kind": "player",
+     "old_id": 9770
+    },
+    "b": {
+     "name": "Andrew Best",
+     "kind": "player",
+     "old_id": 3487
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26900
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": {
+     "name": "Joshua Bristow",
+     "kind": "player",
+     "old_id": 3460
+    },
+    "b": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26901
+   },
+   {
+    "round": 3,
+    "slot": 2,
+    "a": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "b": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26902
+   },
+   {
+    "round": 3,
+    "slot": 3,
+    "a": {
+     "name": "Jason Pascoe",
+     "kind": "player",
+     "old_id": 3392
+    },
+    "b": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26903
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "b": {
+     "name": "Andrew Gooch",
+     "kind": "player",
+     "old_id": 9770
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-03-20 19:30",
+    "old_event": 27472
+   },
+   {
+    "round": 4,
+    "slot": 1,
+    "a": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "b": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-03-20 19:30",
+    "old_event": 27473
+   },
+   {
+    "round": 5,
+    "slot": 0,
+    "a": {
+     "name": "Darran Lock",
+     "kind": "player",
+     "old_id": 3545
+    },
+    "b": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "score_a": 4,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-10 19:30",
+    "old_event": 28027
+   }
+  ]
+ },
+ {
+  "title": "Snooker Shoot Out 2024",
+  "old_id": 25331,
+  "mode": "player",
+  "rounds": 5,
+  "labels": [
+   "Round 1",
+   "Round 2",
+   "Round 3",
+   "Round 4",
+   "Round 5"
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Gavin Dyche",
+     "kind": "player",
+     "old_id": 3394
+    },
+    "b": {
+     "name": "Justin Oxenham",
+     "kind": "player",
+     "old_id": 9714
+    },
+    "score_a": 33,
+    "score_b": 34,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-09-17 18:45",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "Martin Richards",
+     "kind": "player",
+     "old_id": 9947
+    },
+    "b": {
+     "name": "Liam Reynolds",
+     "kind": "player",
+     "old_id": 3429
+    },
+    "score_a": 28,
+    "score_b": 23,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-09-17 18:45",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": {
+     "name": "Matt Green",
+     "kind": "player",
+     "old_id": 3477
+    },
+    "b": {
+     "name": "Keiran Pearce",
+     "kind": "player",
+     "old_id": 11816
+    },
+    "score_a": 68,
+    "score_b": 17,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-09-17 19:00",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "Geoff Merriman",
+     "kind": "player",
+     "old_id": 3450
+    },
+    "b": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "score_a": 35,
+    "score_b": 27,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-09-17 19:00",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 8,
+    "a": {
+     "name": "George Taylor",
+     "kind": "player",
+     "old_id": 24872
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": 35,
+    "score_b": 29,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-09-17 19:15",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 9,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 10,
+    "a": {
+     "name": "Owen Simpson",
+     "kind": "player",
+     "old_id": 3469
+    },
+    "b": {
+     "name": "Andrew Gooch",
+     "kind": "player",
+     "old_id": 9770
+    },
+    "score_a": 43,
+    "score_b": 19,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-09-17 19:15",
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 11,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 12,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 13,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 14,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 1,
+    "slot": 15,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": {
+     "name": "Justin Oxenham",
+     "kind": "player",
+     "old_id": 9714
+    },
+    "b": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "score_a": 73,
+    "score_b": 18,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-09-17 19:30",
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": {
+     "name": "Martin Richards",
+     "kind": "player",
+     "old_id": 9947
+    },
+    "b": {
+     "name": "Jamie Daniell",
+     "kind": "player",
+     "old_id": 11560
+    },
+    "score_a": 22,
+    "score_b": 51,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-09-17 19:30",
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": {
+     "name": "Matt Green",
+     "kind": "player",
+     "old_id": 3477
+    },
+    "b": {
+     "name": "Paul Baron",
+     "kind": "player",
+     "old_id": 6692
+    },
+    "score_a": 42,
+    "score_b": 75,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-09-17 19:45",
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": {
+     "name": "Geoff Merriman",
+     "kind": "player",
+     "old_id": 3450
+    },
+    "b": {
+     "name": "Kevin Harris",
+     "kind": "player",
+     "old_id": 20168
+    },
+    "score_a": 25,
+    "score_b": 47,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-09-17 19:45",
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 4,
+    "a": {
+     "name": "George Taylor",
+     "kind": "player",
+     "old_id": 24872
+    },
+    "b": {
+     "name": "Darren Roberts",
+     "kind": "player",
+     "old_id": 6048
+    },
+    "score_a": 26,
+    "score_b": 13,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-09-17 20:00",
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 5,
+    "a": {
+     "name": "Owen Simpson",
+     "kind": "player",
+     "old_id": 3469
+    },
+    "b": {
+     "name": "Mark Cockayne",
+     "kind": "player",
+     "old_id": 3430
+    },
+    "score_a": 21,
+    "score_b": 27,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-09-17 20:00",
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 6,
+    "a": {
+     "name": "Ryan Orchard",
+     "kind": "player",
+     "old_id": 7768
+    },
+    "b": {
+     "name": "Joshua Bristow",
+     "kind": "player",
+     "old_id": 3460
+    },
+    "score_a": 54,
+    "score_b": 40,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-09-17 20:15",
+    "old_event": null
+   },
+   {
+    "round": 2,
+    "slot": 7,
+    "a": {
+     "name": "Mike Haley",
+     "kind": "player",
+     "old_id": 7657
+    },
+    "b": {
+     "name": "Mark Ashton",
+     "kind": "player",
+     "old_id": 3502
+    },
+    "score_a": 35,
+    "score_b": 36,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-09-17 20:15",
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 3,
+    "slot": 3,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 4,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   },
+   {
+    "round": 5,
+    "slot": 0,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": null,
+    "old_event": null
+   }
+  ]
+ },
+ {
+  "title": "Team Handicap 2024-2025",
+  "old_id": 25334,
+  "mode": "team",
+  "rounds": 5,
+  "labels": [
+   "Preliminary Round",
+   "Last 16",
+   "Quarter Final",
+   "Semi Final",
+   "Final"
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Bugle B",
+     "kind": "team",
+     "old_id": 61
+    },
+    "b": {
+     "name": "Mevagissey C",
+     "kind": "team",
+     "old_id": 64
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-20 19:30",
+    "old_event": 25859
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-15 08:30",
+    "old_event": 26056
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-15 08:30",
+    "old_event": 26058
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": {
+     "name": "St Blazey B",
+     "kind": "team",
+     "old_id": 213
+    },
+    "b": {
+     "name": "Mevagissey B",
+     "kind": "team",
+     "old_id": 60
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": 201,
+    "points_b": 364,
+    "starts_at": "2024-10-22 19:30",
+    "old_event": 25864
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-15 08:30",
+    "old_event": 26060
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-15 08:31",
+    "old_event": 26062
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-15 08:31",
+    "old_event": 26064
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-15 08:31",
+    "old_event": 26066
+   },
+   {
+    "round": 1,
+    "slot": 8,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-15 08:31",
+    "old_event": 26068
+   },
+   {
+    "round": 1,
+    "slot": 9,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-15 08:31",
+    "old_event": 26070
+   },
+   {
+    "round": 1,
+    "slot": 10,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-15 08:31",
+    "old_event": 26072
+   },
+   {
+    "round": 1,
+    "slot": 11,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-15 08:31",
+    "old_event": 26074
+   },
+   {
+    "round": 1,
+    "slot": 12,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-15 08:31",
+    "old_event": 26076
+   },
+   {
+    "round": 1,
+    "slot": 13,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-15 08:31",
+    "old_event": 26078
+   },
+   {
+    "round": 1,
+    "slot": 14,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-15 08:31",
+    "old_event": 26080
+   },
+   {
+    "round": 1,
+    "slot": 15,
+    "a": null,
+    "b": null,
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-15 08:31",
+    "old_event": 26082
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": {
+     "name": "Mevagissey C",
+     "kind": "team",
+     "old_id": 64
+    },
+    "b": {
+     "name": "Lerryn",
+     "kind": "team",
+     "old_id": 219
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-22 19:30",
+    "old_event": 25889
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": {
+     "name": "Mevagissey A",
+     "kind": "team",
+     "old_id": 58
+    },
+    "b": {
+     "name": "Mevagissey B",
+     "kind": "team",
+     "old_id": 60
+    },
+    "score_a": 0,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-22 08:01",
+    "old_event": 26049
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": {
+     "name": "Pelynt",
+     "kind": "team",
+     "old_id": 59
+    },
+    "b": {
+     "name": "Bugle A",
+     "kind": "team",
+     "old_id": 24
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": 214,
+    "points_b": 237,
+    "starts_at": "2024-10-22 19:30",
+    "old_event": 25891
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": {
+     "name": "St Neot",
+     "kind": "team",
+     "old_id": 57
+    },
+    "b": {
+     "name": "Gorran Haven",
+     "kind": "team",
+     "old_id": 216
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": 300,
+    "points_b": 236,
+    "starts_at": "2024-10-22 19:30",
+    "old_event": 25892
+   },
+   {
+    "round": 2,
+    "slot": 4,
+    "a": {
+     "name": "Bethel A",
+     "kind": "team",
+     "old_id": 56
+    },
+    "b": {
+     "name": "Bethel D",
+     "kind": "team",
+     "old_id": 212
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": 264,
+    "points_b": 282,
+    "starts_at": "2024-10-22 19:30",
+    "old_event": 25893
+   },
+   {
+    "round": 2,
+    "slot": 5,
+    "a": {
+     "name": "Tregonissey B",
+     "kind": "team",
+     "old_id": 211
+    },
+    "b": {
+     "name": "St Blazey A",
+     "kind": "team",
+     "old_id": 8349
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": 268,
+    "points_b": 231,
+    "starts_at": "2024-10-22 19:30",
+    "old_event": 25894
+   },
+   {
+    "round": 2,
+    "slot": 6,
+    "a": {
+     "name": "Tregonissey C",
+     "kind": "team",
+     "old_id": 221
+    },
+    "b": {
+     "name": "Bethel B",
+     "kind": "team",
+     "old_id": 214
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": 220,
+    "points_b": 164,
+    "starts_at": "2024-10-22 19:30",
+    "old_event": 25895
+   },
+   {
+    "round": 2,
+    "slot": 7,
+    "a": {
+     "name": "Bethel C",
+     "kind": "team",
+     "old_id": 62
+    },
+    "b": {
+     "name": "Tregonissey A",
+     "kind": "team",
+     "old_id": 25
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": 274,
+    "points_b": 230,
+    "starts_at": "2024-10-22 19:30",
+    "old_event": 25896
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": {
+     "name": "Bethel A",
+     "kind": "team",
+     "old_id": 56
+    },
+    "b": {
+     "name": "Bugle A",
+     "kind": "team",
+     "old_id": 24
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-10 19:30",
+    "old_event": 26302
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": {
+     "name": "Mevagissey A",
+     "kind": "team",
+     "old_id": 58
+    },
+    "b": {
+     "name": "St Neot",
+     "kind": "team",
+     "old_id": 57
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-10 19:30",
+    "old_event": 26303
+   },
+   {
+    "round": 3,
+    "slot": 2,
+    "a": {
+     "name": "Tregonissey C",
+     "kind": "team",
+     "old_id": 221
+    },
+    "b": {
+     "name": "Mevagissey C",
+     "kind": "team",
+     "old_id": 64
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-10 19:30",
+    "old_event": 26304
+   },
+   {
+    "round": 3,
+    "slot": 3,
+    "a": {
+     "name": "Tregonissey A",
+     "kind": "team",
+     "old_id": 25
+    },
+    "b": {
+     "name": "Tregonissey B",
+     "kind": "team",
+     "old_id": 211
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": 254,
+    "points_b": 161,
+    "starts_at": "2024-12-10 19:30",
+    "old_event": 26305
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": {
+     "name": "Mevagissey C",
+     "kind": "team",
+     "old_id": 64
+    },
+    "b": {
+     "name": "Bugle A",
+     "kind": "team",
+     "old_id": 24
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-17 19:30",
+    "old_event": 26899
+   },
+   {
+    "round": 4,
+    "slot": 1,
+    "a": {
+     "name": "Tregonissey A",
+     "kind": "team",
+     "old_id": 25
+    },
+    "b": {
+     "name": "Mevagissey A",
+     "kind": "team",
+     "old_id": 58
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-01-29 15:01",
+    "old_event": 27231
+   },
+   {
+    "round": 5,
+    "slot": 0,
+    "a": {
+     "name": "Bugle A",
+     "kind": "team",
+     "old_id": 24
+    },
+    "b": {
+     "name": "Tregonissey A",
+     "kind": "team",
+     "old_id": 25
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-01 19:30",
+    "old_event": 27548
+   }
+  ]
+ },
+ {
+  "title": "Team Pairs 2024-2025",
+  "old_id": 25337,
+  "mode": "team",
+  "rounds": 4,
+  "labels": [
+   "Last 16",
+   "Quarter Final",
+   "Semi Final",
+   "Final"
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Mevagissey B",
+     "kind": "team",
+     "old_id": 60
+    },
+    "b": {
+     "name": "Bugle B",
+     "kind": "team",
+     "old_id": 61
+    },
+    "score_a": 2,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-26 19:30",
+    "old_event": 25598
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": {
+     "name": "Bethel B",
+     "kind": "team",
+     "old_id": 214
+    },
+    "b": {
+     "name": "Pelynt",
+     "kind": "team",
+     "old_id": 59
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-26 19:30",
+    "old_event": 25599
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "Bugle A",
+     "kind": "team",
+     "old_id": 24
+    },
+    "b": {
+     "name": "St Blazey A",
+     "kind": "team",
+     "old_id": 8349
+    },
+    "score_a": 2,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-26 19:30",
+    "old_event": 25600
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": {
+     "name": "St Blazey B",
+     "kind": "team",
+     "old_id": 213
+    },
+    "b": {
+     "name": "St Neot",
+     "kind": "team",
+     "old_id": 57
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-26 19:30",
+    "old_event": 25601
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": {
+     "name": "Bethel C",
+     "kind": "team",
+     "old_id": 62
+    },
+    "b": {
+     "name": "Bethel D",
+     "kind": "team",
+     "old_id": 212
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-26 19:30",
+    "old_event": 25602
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": {
+     "name": "St Neot",
+     "kind": "team",
+     "old_id": 57
+    },
+    "b": {
+     "name": "Bugle B",
+     "kind": "team",
+     "old_id": 61
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-01-28 19:30",
+    "old_event": 26892
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "Bethel D",
+     "kind": "team",
+     "old_id": 212
+    },
+    "b": {
+     "name": "St Blazey A",
+     "kind": "team",
+     "old_id": 8349
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-01-28 19:30",
+    "old_event": 26893
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": {
+     "name": "Tregonissey B",
+     "kind": "team",
+     "old_id": 211
+    },
+    "b": {
+     "name": "Tregonissey A",
+     "kind": "team",
+     "old_id": 25
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-01-28 19:30",
+    "old_event": 26894
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": {
+     "name": "Pelynt",
+     "kind": "team",
+     "old_id": 59
+    },
+    "b": {
+     "name": "Bethel A",
+     "kind": "team",
+     "old_id": 56
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-01-28 19:30",
+    "old_event": 26895
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": {
+     "name": "Bethel D",
+     "kind": "team",
+     "old_id": 212
+    },
+    "b": {
+     "name": "St Blazey A",
+     "kind": "team",
+     "old_id": 8349
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-01-28 19:30",
+    "old_event": 26896
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": {
+     "name": "Tregonissey B",
+     "kind": "team",
+     "old_id": 211
+    },
+    "b": {
+     "name": "Tregonissey A",
+     "kind": "team",
+     "old_id": 25
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-01-28 19:30",
+    "old_event": 26897
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": {
+     "name": "St Neot",
+     "kind": "team",
+     "old_id": 57
+    },
+    "b": {
+     "name": "Bugle B",
+     "kind": "team",
+     "old_id": 61
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-01-28 19:30",
+    "old_event": 26898
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": {
+     "name": "St Neot",
+     "kind": "team",
+     "old_id": 57
+    },
+    "b": {
+     "name": "Tregonissey A",
+     "kind": "team",
+     "old_id": 25
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-03-20 19:30",
+    "old_event": 27484
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": {
+     "name": "St Blazey A",
+     "kind": "team",
+     "old_id": 8349
+    },
+    "b": {
+     "name": "Bethel A",
+     "kind": "team",
+     "old_id": 56
+    },
+    "score_a": 2,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-03-20 19:30",
+    "old_event": 27485
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": {
+     "name": "St Blazey A",
+     "kind": "team",
+     "old_id": 8349
+    },
+    "b": {
+     "name": "Tregonissey A",
+     "kind": "team",
+     "old_id": 25
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-08 19:30",
+    "old_event": 28024
+   }
+  ]
+ },
+ {
+  "title": "Rees League Singles 2024-2025",
+  "old_id": 25432,
+  "mode": "player",
+  "rounds": 5,
+  "labels": [
+   "Last 32",
+   "Last 16",
+   "Quarter Final",
+   "Semi Final",
+   "Final"
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "George Taylor",
+     "kind": "player",
+     "old_id": 24872
+    },
+    "b": {
+     "name": "Craig Nicholls",
+     "kind": "player",
+     "old_id": 3424
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25633
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "b": {
+     "name": "Terry Middleton",
+     "kind": "player",
+     "old_id": 3416
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25634
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "Leigh Rosevear",
+     "kind": "player",
+     "old_id": 3484
+    },
+    "b": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25635
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": {
+     "name": "Dave Rundle",
+     "kind": "player",
+     "old_id": 3495
+    },
+    "b": {
+     "name": "Dave Tregale",
+     "kind": "player",
+     "old_id": 3517
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25636
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": {
+     "name": "Mike Williams",
+     "kind": "player",
+     "old_id": 3498
+    },
+    "b": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26354
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": {
+     "name": "Mike Williams",
+     "kind": "player",
+     "old_id": 3498
+    },
+    "b": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26355
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "Mike Williams",
+     "kind": "player",
+     "old_id": 3498
+    },
+    "b": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-08 10:53",
+    "old_event": 26356
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-08 10:53",
+    "old_event": 26358
+   },
+   {
+    "round": 1,
+    "slot": 8,
+    "a": {
+     "name": "Darren Biggen",
+     "kind": "player",
+     "old_id": 3426
+    },
+    "b": {
+     "name": "Matt Moore",
+     "kind": "player",
+     "old_id": 3427
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-08 10:53",
+    "old_event": 26360
+   },
+   {
+    "round": 1,
+    "slot": 9,
+    "a": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "b": {
+     "name": "John Hancock",
+     "kind": "player",
+     "old_id": 3419
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-08 10:53",
+    "old_event": 26362
+   },
+   {
+    "round": 1,
+    "slot": 10,
+    "a": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "b": {
+     "name": "Colin Rundle",
+     "kind": "player",
+     "old_id": 3496
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-08 10:53",
+    "old_event": 26364
+   },
+   {
+    "round": 1,
+    "slot": 11,
+    "a": {
+     "name": "Craig Nicholls",
+     "kind": "player",
+     "old_id": 3424
+    },
+    "b": {
+     "name": "Martin Richards",
+     "kind": "player",
+     "old_id": 9947
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-08 10:53",
+    "old_event": 26366
+   },
+   {
+    "round": 1,
+    "slot": 12,
+    "a": {
+     "name": "Gavin Dyche",
+     "kind": "player",
+     "old_id": 3394
+    },
+    "b": {
+     "name": "Darwin Fitz",
+     "kind": "player",
+     "old_id": 24205
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-08 10:53",
+    "old_event": 26368
+   },
+   {
+    "round": 1,
+    "slot": 13,
+    "a": {
+     "name": "Les Shakespeare",
+     "kind": "player",
+     "old_id": 14663
+    },
+    "b": {
+     "name": "Dave Rundle",
+     "kind": "player",
+     "old_id": 3495
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-08 10:53",
+    "old_event": 26370
+   },
+   {
+    "round": 1,
+    "slot": 14,
+    "a": {
+     "name": "Mike Williams",
+     "kind": "player",
+     "old_id": 3498
+    },
+    "b": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-11-08 10:54",
+    "old_event": 26372
+   },
+   {
+    "round": 1,
+    "slot": 15,
+    "a": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26374
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": {
+     "name": "Mike Williams",
+     "kind": "player",
+     "old_id": 3498
+    },
+    "b": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26375
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26377
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": {
+     "name": "Darren Biggen",
+     "kind": "player",
+     "old_id": 3426
+    },
+    "b": {
+     "name": "Matt Moore",
+     "kind": "player",
+     "old_id": 3427
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26379
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "b": {
+     "name": "John Hancock",
+     "kind": "player",
+     "old_id": 3419
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26381
+   },
+   {
+    "round": 2,
+    "slot": 4,
+    "a": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "b": {
+     "name": "Colin Rundle",
+     "kind": "player",
+     "old_id": 3496
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26383
+   },
+   {
+    "round": 2,
+    "slot": 5,
+    "a": {
+     "name": "Craig Nicholls",
+     "kind": "player",
+     "old_id": 3424
+    },
+    "b": {
+     "name": "Martin Richards",
+     "kind": "player",
+     "old_id": 9947
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26385
+   },
+   {
+    "round": 2,
+    "slot": 6,
+    "a": {
+     "name": "Gavin Dyche",
+     "kind": "player",
+     "old_id": 3394
+    },
+    "b": {
+     "name": "Darwin Fitz",
+     "kind": "player",
+     "old_id": 24205
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26389
+   },
+   {
+    "round": 2,
+    "slot": 7,
+    "a": {
+     "name": "Les Shakespeare",
+     "kind": "player",
+     "old_id": 14663
+    },
+    "b": {
+     "name": "Dave Rundle",
+     "kind": "player",
+     "old_id": 3495
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26390
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": {
+     "name": "Gavin Dyche",
+     "kind": "player",
+     "old_id": 3394
+    },
+    "b": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26884
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "b": {
+     "name": "Matt Moore",
+     "kind": "player",
+     "old_id": 3427
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26885
+   },
+   {
+    "round": 3,
+    "slot": 2,
+    "a": {
+     "name": "Dave Rundle",
+     "kind": "player",
+     "old_id": 3495
+    },
+    "b": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26886
+   },
+   {
+    "round": 3,
+    "slot": 3,
+    "a": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "b": {
+     "name": "Craig Nicholls",
+     "kind": "player",
+     "old_id": 3424
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26887
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "b": {
+     "name": "Dave Rundle",
+     "kind": "player",
+     "old_id": 3495
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-03-20 19:30",
+    "old_event": 27476
+   },
+   {
+    "round": 4,
+    "slot": 1,
+    "a": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "b": {
+     "name": "Gavin Dyche",
+     "kind": "player",
+     "old_id": 3394
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-03-20 19:30",
+    "old_event": 27477
+   },
+   {
+    "round": 5,
+    "slot": 0,
+    "a": {
+     "name": "Gavin Dyche",
+     "kind": "player",
+     "old_id": 3394
+    },
+    "b": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "score_a": 3,
+    "score_b": 0,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-02 19:30",
+    "old_event": 28025
+   }
+  ]
+ },
+ {
+  "title": "Willie Thomas 2024-2025",
+  "old_id": 25586,
+  "mode": "player",
+  "rounds": 5,
+  "labels": [
+   "Last 32",
+   "Last 16",
+   "Quarter Final",
+   "Semi Final",
+   "Final"
+  ],
+  "matches": [
+   {
+    "round": 1,
+    "slot": 0,
+    "a": {
+     "name": "Les Shakespeare",
+     "kind": "player",
+     "old_id": 14663
+    },
+    "b": {
+     "name": "Dave Tregale",
+     "kind": "player",
+     "old_id": 3517
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25618
+   },
+   {
+    "round": 1,
+    "slot": 1,
+    "a": {
+     "name": "Gavin Dyche",
+     "kind": "player",
+     "old_id": 3394
+    },
+    "b": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25619
+   },
+   {
+    "round": 1,
+    "slot": 2,
+    "a": {
+     "name": "Leigh Rosevear",
+     "kind": "player",
+     "old_id": 3484
+    },
+    "b": {
+     "name": "John Hancock",
+     "kind": "player",
+     "old_id": 3419
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25620
+   },
+   {
+    "round": 1,
+    "slot": 3,
+    "a": {
+     "name": "George Taylor",
+     "kind": "player",
+     "old_id": 24872
+    },
+    "b": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25621
+   },
+   {
+    "round": 1,
+    "slot": 4,
+    "a": {
+     "name": "Roger Smithson",
+     "kind": "player",
+     "old_id": 3480
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25622
+   },
+   {
+    "round": 1,
+    "slot": 5,
+    "a": {
+     "name": "Clive Stuthridge",
+     "kind": "player",
+     "old_id": 3384
+    },
+    "b": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-10-17 19:30",
+    "old_event": 25623
+   },
+   {
+    "round": 1,
+    "slot": 6,
+    "a": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "b": {
+     "name": "Martin Richards",
+     "kind": "player",
+     "old_id": 9947
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26310
+   },
+   {
+    "round": 1,
+    "slot": 7,
+    "a": {
+     "name": "Colin Rundle",
+     "kind": "player",
+     "old_id": 3496
+    },
+    "b": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26311
+   },
+   {
+    "round": 1,
+    "slot": 8,
+    "a": {
+     "name": "Craig Nicholls",
+     "kind": "player",
+     "old_id": 3424
+    },
+    "b": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26312
+   },
+   {
+    "round": 1,
+    "slot": 9,
+    "a": {
+     "name": "Dave Tregale",
+     "kind": "player",
+     "old_id": 3517
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26313
+   },
+   {
+    "round": 1,
+    "slot": 10,
+    "a": {
+     "name": "Matt Moore",
+     "kind": "player",
+     "old_id": 3427
+    },
+    "b": {
+     "name": "James Smithson",
+     "kind": "player",
+     "old_id": 11814
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26314
+   },
+   {
+    "round": 1,
+    "slot": 11,
+    "a": {
+     "name": "Roy Bayliss",
+     "kind": "player",
+     "old_id": 3398
+    },
+    "b": {
+     "name": "Darren Biggen",
+     "kind": "player",
+     "old_id": 3426
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26315
+   },
+   {
+    "round": 1,
+    "slot": 12,
+    "a": {
+     "name": "Terry Middleton",
+     "kind": "player",
+     "old_id": 3416
+    },
+    "b": {
+     "name": "Leigh Rosevear",
+     "kind": "player",
+     "old_id": 3484
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26316
+   },
+   {
+    "round": 1,
+    "slot": 13,
+    "a": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "b": {
+     "name": "Martin Richards",
+     "kind": "player",
+     "old_id": 9947
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:00",
+    "old_event": 26317
+   },
+   {
+    "round": 1,
+    "slot": 14,
+    "a": {
+     "name": "Colin Rundle",
+     "kind": "player",
+     "old_id": 3496
+    },
+    "b": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26318
+   },
+   {
+    "round": 1,
+    "slot": 15,
+    "a": {
+     "name": "Craig Nicholls",
+     "kind": "player",
+     "old_id": 3424
+    },
+    "b": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "score_a": null,
+    "score_b": null,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26319
+   },
+   {
+    "round": 2,
+    "slot": 0,
+    "a": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "b": {
+     "name": "Martin Richards",
+     "kind": "player",
+     "old_id": 9947
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26320
+   },
+   {
+    "round": 2,
+    "slot": 1,
+    "a": {
+     "name": "Colin Rundle",
+     "kind": "player",
+     "old_id": 3496
+    },
+    "b": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26321
+   },
+   {
+    "round": 2,
+    "slot": 2,
+    "a": {
+     "name": "Craig Nicholls",
+     "kind": "player",
+     "old_id": 3424
+    },
+    "b": {
+     "name": "Matthew Chesterfield",
+     "kind": "player",
+     "old_id": 4916
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26322
+   },
+   {
+    "round": 2,
+    "slot": 3,
+    "a": {
+     "name": "Dave Tregale",
+     "kind": "player",
+     "old_id": 3517
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": 2,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26323
+   },
+   {
+    "round": 2,
+    "slot": 4,
+    "a": {
+     "name": "Matt Moore",
+     "kind": "player",
+     "old_id": 3427
+    },
+    "b": {
+     "name": "James Smithson",
+     "kind": "player",
+     "old_id": 11814
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26324
+   },
+   {
+    "round": 2,
+    "slot": 5,
+    "a": {
+     "name": "Roy Bayliss",
+     "kind": "player",
+     "old_id": 3398
+    },
+    "b": {
+     "name": "Darren Biggen",
+     "kind": "player",
+     "old_id": 3426
+    },
+    "score_a": 3,
+    "score_b": 2,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26325
+   },
+   {
+    "round": 2,
+    "slot": 6,
+    "a": {
+     "name": "Terry Middleton",
+     "kind": "player",
+     "old_id": 3416
+    },
+    "b": {
+     "name": "Leigh Rosevear",
+     "kind": "player",
+     "old_id": 3484
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26326
+   },
+   {
+    "round": 2,
+    "slot": 7,
+    "a": {
+     "name": "Darwin Fitz",
+     "kind": "player",
+     "old_id": 24205
+    },
+    "b": {
+     "name": "Dave Rundle",
+     "kind": "player",
+     "old_id": 3495
+    },
+    "score_a": 0,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2024-12-31 19:30",
+    "old_event": 26328
+   },
+   {
+    "round": 3,
+    "slot": 0,
+    "a": {
+     "name": "Roy Bayliss",
+     "kind": "player",
+     "old_id": 3398
+    },
+    "b": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26888
+   },
+   {
+    "round": 3,
+    "slot": 1,
+    "a": {
+     "name": "Dave Rundle",
+     "kind": "player",
+     "old_id": 3495
+    },
+    "b": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26889
+   },
+   {
+    "round": 3,
+    "slot": 2,
+    "a": {
+     "name": "James Smithson",
+     "kind": "player",
+     "old_id": 11814
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26890
+   },
+   {
+    "round": 3,
+    "slot": 3,
+    "a": {
+     "name": "Craig Nicholls",
+     "kind": "player",
+     "old_id": 3424
+    },
+    "b": {
+     "name": "Leigh Rosevear",
+     "kind": "player",
+     "old_id": 3484
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-02-10 19:30",
+    "old_event": 26891
+   },
+   {
+    "round": 4,
+    "slot": 0,
+    "a": {
+     "name": "Craig Nicholls",
+     "kind": "player",
+     "old_id": 3424
+    },
+    "b": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-03-20 19:30",
+    "old_event": 27482
+   },
+   {
+    "round": 4,
+    "slot": 1,
+    "a": {
+     "name": "Ben Prynn",
+     "kind": "player",
+     "old_id": 3509
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": 1,
+    "score_b": 3,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-03-20 19:30",
+    "old_event": 27483
+   },
+   {
+    "round": 5,
+    "slot": 0,
+    "a": {
+     "name": "Kyle Masters",
+     "kind": "player",
+     "old_id": 25168
+    },
+    "b": {
+     "name": "Keith Moore",
+     "kind": "player",
+     "old_id": 3494
+    },
+    "score_a": 3,
+    "score_b": 1,
+    "points_a": null,
+    "points_b": null,
+    "starts_at": "2025-04-01 19:30",
+    "old_event": 28031
+   }
+  ]
+ }
+]

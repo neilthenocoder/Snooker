@@ -45,7 +45,7 @@ export default async function home(view, { user } = {}) {
   // The home page is the same for everyone (My Snooker is a page of its own, in the menu).
 
   mount(view, html`
-    <section class="hero hero-l-${heroLayout(site)}" style="${site.hero_image_url ? `--hero-img:${cssUrl(site.hero_image_url)}` : ""}">
+    <section class="hero hero-l-${heroLayout(site)}" style="${site.hero_image_url && heroLayout(site) !== "white" ? `--hero-img:${cssUrl(site.hero_image_url)}` : ""}">
       ${heroLayout(site) === "big" ? html`<div class="hero-bgs" aria-hidden="true">${slides.map((a, i) => html`<div class="hero-bg ${i ? "" : "on"}" style="${a.image_url || a.circle_image_url ? `background-image:${cssUrl(a.image_url || a.circle_image_url)}` : ""}"></div>`)}</div>` : ""}
       <div class="wrap hero-inner">
         <div class="hero-slides" data-slides>
@@ -169,7 +169,8 @@ export default async function home(view, { user } = {}) {
 }
 
 /** The banner's layout (Admin → Site settings → Home page banner — Rich, round 23): picture beside, one big picture, or headline only. */
-const heroLayout = (site) => (["big", "text"].includes(site.hero_layout) ? site.hero_layout : "side");
+// Round 28: "white" — a white banner, the headline on the left and the picture on the right (like World Snooker's).
+const heroLayout = (site) => (["big", "text", "white"].includes(site.hero_layout) ? site.hero_layout : "side");
 
 /** One banner article: headline, category and date, a small "continue reading" — all linking to the article. */
 function heroSlide(a, on) {

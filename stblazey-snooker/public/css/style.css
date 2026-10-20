@@ -3807,3 +3807,31 @@ p.not-upd { margin: 0; }
 .cv-empty .not-upd { color: #bbb; }
 .stats-empty { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #e6e6e6; padding: 16px 18px; }
 .stats-empty b { font: 700 15px var(--font-head); text-transform: uppercase; }
+
+/* Round 28: the "white" banner — white background, headline on the left, the article's picture on the right
+   (Site settings → Home page banner → Banner layout). The background photo isn't used. */
+.hero.hero-l-white { background: #fff; color: var(--ink, #111); border-bottom: 1px solid #e4e4e4; }
+.hero.hero-l-white .hero-inner { padding-top: 30px; padding-bottom: 26px; }
+.hero.hero-l-white .hero-slide { grid-template-columns: minmax(0, 6fr) minmax(0, 7fr); gap: 40px; align-items: center; }
+.hero.hero-l-white .hero-pic { background: #eee; }
+.hero.hero-l-white .hero-text h2 { font-size: clamp(26px, 3vw, 42px); line-height: 1.08; margin-left: 0; -webkit-line-clamp: 4; text-transform: uppercase; letter-spacing: -.01em; }
+.hero.hero-l-white .hero-text h2 a, .hero.hero-l-white .hero-text h2 a:hover { color: var(--ink, #111); }
+.hero.hero-l-white .hero-text h2 a:hover span { color: var(--red); }
+.hero.hero-l-white .hero-text h2 span { background: none; padding: 0; text-shadow: none; }
+.hero.hero-l-white .hero-meta { order: -1; margin: 0 0 12px; color: var(--red); text-shadow: none; text-transform: uppercase; letter-spacing: .06em; font-size: 12.5px; font-weight: 700; }
+.hero.hero-l-white .hero-text { display: flex !important; flex-direction: column; align-items: flex-start; }
+.hero.hero-l-white .hero-more { margin-top: 20px; padding: 12px 18px; border-radius: 3px; }
+.hero.hero-l-white .hero-pic-link { display: block; border: 0; border-radius: 0; }
+.hero.hero-l-white .hero-pic-link:hover { transform: none; }
+.hero.hero-l-white .hero-pic-link:hover .hero-pic { transform: scale(1.03); }
+.hero.hero-l-white .hero-pic { transition: transform .4s; }
+.hero.hero-l-white .hero-dots button { border-color: #bbb; }
+.hero.hero-l-white .hero-dots button.on { background: var(--red); border-color: var(--red); }
+.hero.hero-l-white .live-strip-wrap { background: #111; padding-top: 16px; }
+@media (max-width: 760px) {
+  .hero.hero-l-white .hero-inner { padding-top: 0; padding-bottom: 18px; }
+  .hero.hero-l-white .hero-slide { grid-template-columns: 1fr; gap: 14px; }
+  .hero.hero-l-white .hero-pic-link { display: block; order: -1; margin: 0 -16px; }
+  .hero.hero-l-white .hero-text h2 { font-size: 26px; }
+  .hero.hero-l-white .hero-more { margin-top: 14px; }
+}
