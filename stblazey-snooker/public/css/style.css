@@ -3863,3 +3863,20 @@ p.not-upd { margin: 0; }
 .ms-sec-handicaps .hc-val { padding: 3px 7px; }
 .ms-sec-handicaps .form-badge { min-width: 34px; padding: 2px 6px; font-size: 12px; }
 .ms-sec-handicaps td small.muted { font-size: 11px; }
+
+/* Round 31 (Rich): the White banner on the page's light grey, the headline in its own white panel, a small gap,
+   then the picture — rounded corners on both (our own look: soft corners, not WST's angled cuts). */
+.hero.hero-l-white { background: var(--cream, #f7f6ee); border-bottom: 0; }
+.hero.hero-l-white .hero-inner { padding-top: 22px; padding-bottom: 22px; }
+.hero.hero-l-white .hero-slide { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 14px; align-items: stretch; }
+.hero.hero-l-white .hero-text { background: #fff; border-radius: 16px; padding: clamp(20px, 3vw, 40px); justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+.hero.hero-l-white .hero-pic-link { border-radius: 16px; overflow: hidden; align-self: stretch; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.hero.hero-l-white .hero-pic { height: 100%; min-height: 100%; aspect-ratio: 16 / 9; }
+.hero.hero-l-white .hero-dots { margin-top: 14px; }
+@media (max-width: 760px) {
+  .hero.hero-l-white .hero-inner { padding-top: 14px; }
+  .hero.hero-l-white .hero-slide { grid-template-columns: 1fr; gap: 10px; }
+  .hero.hero-l-white .hero-pic-link { margin: 0; border-radius: 14px; order: -1; }
+  .hero.hero-l-white .hero-pic { height: auto; min-height: 0; }
+  .hero.hero-l-white .hero-text { border-radius: 14px; padding: 18px; }
+}
