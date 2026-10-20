@@ -562,6 +562,16 @@ No database changes — nothing to run in Supabase this time.
 - **My Snooker → Team & handicaps:** "Won" shows won/played in one column, so the table fits the side column.
 - **Account menu:** officers no longer get "Write news" (it is in the dashboard) or "Form guide" (it is in the menu). A Master Admin whose login isn't linked to a player gets "Do you play? Link your player profile" (Admin → Logins → own login → Player profile); My profile and My form then appear.
 
+## 3x. The old website's news
+
+**Run `supabase/legacy/10-news-1-live.sql` to `16-news-7-drafts.sql` once, in order** (after the other legacy files).
+
+- All 528 articles from the old WordPress site, with their category, date, author, opening paragraph ("lead") and pull quote. HTML is turned into plain paragraphs (headings, lists and tables kept as lines; the old layout codes taken out).
+- **Live:** the 186 league and competition articles from 2019 onwards (Match Reports, Latest News → League News, League Competitions / Team Handicap / Team Pairs / GB Trophy / Shootout → Competitions, League Meetings).
+- **Kept, not live** (Rich, round 30): 342 drafts in Admin → News — Professional Snooker, CueViews, Snooker Memories and the old archive (all dated 1 January 2014 on the old site: the real dates were lost). Tick "Published" to put one live. New categories (Professional Snooker, Snooker Memories) are added after the others; a category with nothing published has no tab.
+- **Pictures** are not brought across — Rich is sorting them. `real-data/legacy/news-pictures.csv` lists every article, its new address and the picture(s) it had on the old site.
+- None is "featured", so the News page and the banner keep showing the newest articles. Made by `scripts/import-old-news.py`.
+
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
 | Rule | Current setting |

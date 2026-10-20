@@ -283,7 +283,8 @@ commit;
 
 folder = os.path.join(ROOT, "supabase", "legacy")
 os.makedirs(folder, exist_ok=True)
-for f in os.listdir(folder): os.remove(os.path.join(folder, f))
+for f in os.listdir(folder):
+    if re.match(r"0\d-", f): os.remove(os.path.join(folder, f))   # only its own files (the news files are made by import-old-news.py)
 open(os.path.join(folder, "01-seasons-teams-players.sql"), "w").write(SETUP)
 for n, season in enumerate(seasons, 2):
     open(os.path.join(folder, f"{n:02d}-{season}.sql"), "w").write(season_sql(season))
