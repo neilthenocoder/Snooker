@@ -2274,7 +2274,7 @@ end $$;
 --    'side' = headline with the picture beside it, 'big' = the article's picture across the whole banner, 'text' = headline only.
 alter table settings add column if not exists hero_layout text not null default 'side';
 alter table settings drop constraint if exists settings_hero_layout_check;
-alter table settings add constraint settings_hero_layout_check check (hero_layout in ('side', 'big', 'text'));
+alter table settings add constraint settings_hero_layout_check check (hero_layout in ('side', 'big', 'text', 'white'));   -- 'white': round 28
 
 -- 2. Paid adverts in the side column (Admin → Website → Side adverts), shown everywhere or only on chosen pages:
 --    one venue, one team, one competition, one league, or a kind of page (presentation night, in memoriam…).
@@ -2470,7 +2470,7 @@ alter table handicap_changes alter column new_handicap drop not null;
 -- when everything above it has run. If the website files are uploaded without this file being run, the admin
 -- dashboard says "The database needs updating" at the top of every page.
 -- When something is added to this file that the website needs: raise this number and the one in version.js.
-create or replace function public.schema_version() returns int language sql immutable as $$ select 20 $$;
+create or replace function public.schema_version() returns int language sql immutable as $$ select 21 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

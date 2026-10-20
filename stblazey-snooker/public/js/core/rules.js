@@ -231,6 +231,10 @@ export function liveState(matches, now, ukDay) {
   return "idle";
 }
 
+/** One match starting within the next hour that hasn't started yet (Rich, round 30: the orange "Live soon"). */
+export const isLiveSoon = (m, now = Date.now()) => !!m?.starts_at && ["scheduled", undefined, null, "setup"].includes(m.status)
+  && Date.parse(m.starts_at) > now && Date.parse(m.starts_at) - now <= LIVE_SOON_MINUTES * 60e3;
+
 // ── Postponed matches ────────────────────────────────────────────
 /** A postponed match must be rearranged within this many weeks. */
 export const POSTPONE_WEEKS = 3;

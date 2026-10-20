@@ -15,6 +15,7 @@ import { SITE } from "../config.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import { competitionSummaries } from "./competitions.js";
 import { loadForm, formBadge, formChips } from "../core/form.js";
+import { liveSoonTag } from "../core/components.js";
 
 const ROTATE_MS = 7000;      // banner: time each article is shown
 const CAROUSEL_MS = 4500;    // live strip: time before it moves on one card
@@ -267,7 +268,7 @@ async function liveStrip() {
 
   const cards = [
     ...fixtures.map((fx) => ({
-      when: fx.starts_at, live: fx.status === "in_progress", done: ["submitted", "approved"].includes(fx.status),
+      when: fx.starts_at, status: fx.status, live: fx.status === "in_progress", done: ["submitted", "approved"].includes(fx.status),
       title: leagues.find((l) => l.id === fx.league_id)?.name ?? "League",
       a: { name: team.get(fx.home_team_id)?.name ?? "?", team: team.get(fx.home_team_id) },
       b: { name: team.get(fx.away_team_id)?.name ?? "?", team: team.get(fx.away_team_id) }, score: matchScore(framesBy.get(fx.id)),
@@ -283,7 +284,7 @@ async function liveStrip() {
       // Team cups show the team emblem; singles show the player's photo.
       const who = (id) => { const e = compData.entries.find((x) => x.id === id); return { name: e.name, team: team.get(e.team_id), player: players.find((p) => p.id === e.player_id) }; };
       return {
-        when: m.starts_at, live: m.status === "in_progress", done: m.status === "completed", title: c.name,
+        when: m.starts_at, status: m.status, live: m.status === "in_progress", done: m.status === "completed", title: c.name,
         a: who(bm.a), b: who(bm.b),
         score: { home: m.score_a ?? 0, away: m.score_b ?? 0 }, hasFrames: m.score_a != null, href: `/cup-match/${m.no ?? m.id}`, venue: venues.find((v) => v.id === m.venue_id),
       };
@@ -320,7 +321,7 @@ async function liveStrip() {
       <div class="sc-top"><span>${ukDay(c.when) === todayUK() ? "Tonight" : fmtDate(c.when)}</span><span class="sc-comp">${c.title}</span></div>
       <div class="sc-body">${side(c.a)}
         <div class="sc-mid">${c.hasFrames || c.done ? html`<b>${c.score.home} - ${c.score.away}</b>` : html`<b class="time">${fmtTime(c.when)}</b>`}
-          ${c.live ? html`<span class="live-dot">Live</span>` : c.done ? html`<small>Result</small>` : ""}</div>
+          ${c.live ? html`<span class="live-dot">Live</span>` : c.done ? html`<small>Result</small>` : c.hasFrames ? "" : liveSoonTag({ starts_at: c.when, status: c.status ?? "scheduled" })}</div>
         ${side(c.b)}</div>
       <div class="sc-foot">${c.venue?.name ?? ""}</div>
     </a>`))}</div>`;

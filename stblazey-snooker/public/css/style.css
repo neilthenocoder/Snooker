@@ -3835,3 +3835,31 @@ p.not-upd { margin: 0; }
   .hero.hero-l-white .hero-text h2 { font-size: 26px; }
   .hero.hero-l-white .hero-more { margin-top: 14px; }
 }
+
+/* Round 30: "Live soon" — orange, pulsing, on a match that starts within the hour (as the LIVE button does). */
+.live-soon { display: inline-flex; align-items: center; gap: 6px; background: var(--soon-orange, #ff8a00); color: #fff; font: 700 11.5px var(--font-head);
+  padding: 3px 8px; border-radius: 3px; text-transform: uppercase; letter-spacing: .03em; vertical-align: middle; white-space: nowrap;
+  animation: livePulse 1.6s infinite; --pulse: 255, 138, 0; }
+.live-soon::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: pulse 1.2s infinite; }
+.sc-mid .live-soon { margin-top: 4px; }
+.mh-score .live-soon { flex-basis: auto; margin: 6px auto 0; }
+.cal-when .live-soon { margin-left: 6px; }
+@media (prefers-reduced-motion: reduce) { .live-soon, .live-soon::before { animation: none; } }
+/* Round 30: Latest results — a tag saying which league or competition, gold for cups; a drawn chevron. */
+.res-top { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.res-tag { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 999px; font: 700 10.5px var(--font-head); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.res-tag.league { background: #e7f3e7; color: var(--green); }
+.res-tag.cup { background: #fff3cf; color: #8a6200; border: 1px solid #f0c94f; }
+.res-tag i { font-style: normal; font-size: 10px; }
+.res-card.cup, .res-mini.cup { box-shadow: inset 4px 0 0 #e0a800; }
+.res-toggle { width: 28px; height: 28px; background: transparent; border: 1.5px solid #d6d6d6; color: #555; transition: transform .25s, background .2s, border-color .2s, color .2s; }
+.res-toggle svg { width: 18px; height: 18px; fill: currentColor; display: block; }
+.res-head:hover .res-toggle { border-color: var(--ink); color: var(--ink); }
+.res-card.open .res-toggle { background: var(--ink); border-color: var(--ink); color: #fff; }
+/* My Snooker: Team & handicaps fits its column (round 30) */
+.ms-sec-handicaps table.data { table-layout: auto; width: 100%; }
+.ms-sec-handicaps table.data th, .ms-sec-handicaps table.data td { padding-left: 6px; padding-right: 6px; }
+.ms-sec-handicaps table.data td:first-child { min-width: 0; }
+.ms-sec-handicaps .hc-val { padding: 3px 7px; }
+.ms-sec-handicaps .form-badge { min-width: 34px; padding: 2px 6px; font-size: 12px; }
+.ms-sec-handicaps td small.muted { font-size: 11px; }

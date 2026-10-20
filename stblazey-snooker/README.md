@@ -553,6 +553,15 @@ No database changes — nothing to run in Supabase this time.
 - **Calendar:** the month strip and the ‹ › arrows now always land on the month pressed. The page and the strip used to be scrolled at the same time, and Chrome cancelled the first scroll.
 - **Banner layout "White"** (Site settings → Home page banner): a white banner with the headline on the left and the article's picture on the right, like the World Snooker home page; on a phone the picture sits on top.
 
+## 3w. Round 30
+
+**Run `supabase/schema.sql` again** (database version 21) — the "White" banner layout was refused by the database until then ("settings_hero_layout_check").
+
+- **Live soon:** a match that starts within the hour gets an orange, pulsing "Live soon" label — on the home page strip, fixture lists, the match page, the calendar and My Snooker's next match — like the LIVE button (`isLiveSoon()` in `core/rules.js`, `LIVE_SOON_MINUTES`).
+- **Latest results:** every result has a tag: its league (green) or its competition (gold, with a gold edge). Competition results appear when Site settings → Side column: top box is "League and competition results". The open/close arrow is now a drawn chevron in a ring.
+- **My Snooker → Team & handicaps:** "Won" shows won/played in one column, so the table fits the side column.
+- **Account menu:** officers no longer get "Write news" (it is in the dashboard) or "Form guide" (it is in the menu). A Master Admin whose login isn't linked to a player gets "Do you play? Link your player profile" (Admin → Logins → own login → Player profile); My profile and My form then appear.
+
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
 | Rule | Current setting |

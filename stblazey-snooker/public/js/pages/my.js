@@ -11,7 +11,7 @@ import { upcomingFor, pickedCount, dayText, untilText, fixtureLine } from "../co
 import { deadlineWarnings, deadlineList } from "../core/comp-deadlines.js";
 import { SECTIONS, prefsToSave } from "../core/my-snooker.js";
 import { listField, wireListFields } from "../core/list-field.js";
-import { canWriteNews, isStaff, isCaptain, isMember, isPlainPlayer, mySnookerOn, myPrefs, refreshUser, canEditFixture, canPostpone, canEditCompMatch, canAddMatchPhotos, changePassword, roleText } from "../core/auth.js";
+import { canWriteNews, isStaff, isCaptain, isMember, isPlainPlayer, mySnookerOn, myPrefs, refreshUser, canEditFixture, canPostpone, canEditCompMatch, canAddMatchPhotos, changePassword, roleText, isMaster } from "../core/auth.js";
 import { buildBracket, isEntry, roundName } from "../core/bracket.js";
 import { extCounts, EXT_PER_SEASON, POSTPONE_WEEKS, rearrangeBy, RULES } from "../core/rules.js";
 import { CUEVIEW } from "../core/cueview.js";
@@ -367,9 +367,10 @@ function fixturesTab(el, { ctx, user, team }) {
 }
 
 // ── Profile (your own player page) ─────────────────────────────
-function profileTab(el, { me, ctx }) {
-  if (!me) return mount(el, html`<div class="notice">Your login isn't linked to a player profile yet. Ask the league secretary to link it
-    (Admin → Logins → Player profile), and you'll be able to edit your photo, bio, career history and CueView here.</div>`);
+function profileTab(el, { me, ctx, user }) {
+  if (!me) return mount(el, html`<div class="notice">Your login isn't linked to a player profile yet. ${isMaster(user)
+    ? html`As Master Admin you can link it yourself: <a href="/admin/accounts" style="font-weight:700">Admin → Logins</a> → your own login → <b>Player profile</b> → choose yourself → Save.`
+    : html`Ask the league secretary to link it (Admin → Logins → Player profile).`} You'll then be able to edit your photo, bio, career history and CueView here, and see your form.</div>`);
   let photo = me.avatar_url || "";
   let pictures = [...(me.gallery ?? [])];
   const drawPics = () => mount($("[data-pics]", el), html`${pictures.map((u, i) => html`<figure class="gal-thumb"><img src="${u}" alt="">

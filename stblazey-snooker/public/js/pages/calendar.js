@@ -7,7 +7,7 @@ import { seasonContext } from "../core/context.js";
 import { loadCompetitions, table } from "../core/api.js";
 import { buildBracket, isEntry, roundName } from "../core/bracket.js";
 import { addDays } from "../core/schedule.js";
-import { breadcrumb, urls } from "../core/components.js";
+import { breadcrumb, urls, liveSoonTag } from "../core/components.js";
 import { SITE } from "../config.js";
 import { setTitle, adminEdit } from "../core/router.js";
 
@@ -75,7 +75,7 @@ export default async function calendar(view, { query }) {
         <small class="cal-tag">${tag}${live ? html` <span class="live-dot">Live</span>` : ""}</small>
         <h3><a href="${e.href}">${e.title}</a></h3>
         <p class="cal-when">${calIcon}<span>${e.allDay ? (e.until ? `${part(e.day, { weekday: "short", day: "numeric", month: "short" })} – ${part(e.until, { weekday: "short", day: "numeric", month: "short", year: "numeric" })}` : e.kind === "bye" ? "No match this week" : "All day")
-          : html`<b>${fmtTime(e.when)}</b>`}${e.score ? html` <span class="res-score done">${e.score}</span>` : e.notUpdated ? html` <span class="not-upd">Not updated yet</span>` : ""}</span></p>
+          : html`<b>${fmtTime(e.when)}</b>`}${e.score ? html` <span class="res-score done">${e.score}</span>` : e.notUpdated ? html` <span class="not-upd">Not updated yet</span>` : e.kind === "league" || e.kind === "cup" ? liveSoonTag({ starts_at: e.when, status: e.status }) : ""}</span></p>
         ${e.venue ? html`<p class="cal-where">${pinIcon}<span>${e.venue}</span></p>` : e.kind === "key" && e.sub ? html`<p class="cal-where"><span>${e.sub}</span></p>` : ""}
       </div>
       <div class="cal-btns">

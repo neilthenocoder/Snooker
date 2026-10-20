@@ -13,7 +13,7 @@ import { deadlineWarnings, deadlineList } from "./comp-deadlines.js";
 import { myPrefs, mySnookerOn, refreshUser } from "./auth.js";
 import { buildBracket, isEntry, roundName } from "./bracket.js";
 import { answered } from "./cueview.js";
-import { panel, dataTable, leagueTablePanel, playerLink, handicapTag, urls, badge, avatar, resultText, articleThumb, picture, outcomeTag, topPoints, breakTag } from "./components.js";
+import { panel, dataTable, leagueTablePanel, playerLink, handicapTag, urls, badge, avatar, resultText, articleThumb, picture, outcomeTag, topPoints, breakTag, liveSoonTag } from "./components.js";
 import { refreshShell } from "./router.js";
 import { loadForm, formBadge, formChips } from "./form.js";
 
@@ -145,7 +145,7 @@ function view(user, { ctx, news, comps, site = {}, form: formData = null }, pref
 
   const parts = {
     next: () => (!team ? "" : next ? html`<a class="next-match ms-next" href="${urls.match(next)}">
-        <div><small>${next.status === "in_progress" ? "On now" : "Next match"} · ${fmtDate(next.starts_at)} ${fmtTime(next.starts_at)}</small>
+        <div><small>${next.status === "in_progress" ? "On now" : "Next match"} · ${fmtDate(next.starts_at)} ${fmtTime(next.starts_at)} ${liveSoonTag(next)}</small>
           <strong>${next.home_team_id === team.id ? "Home" : "Away"} v ${opp(next)?.name}</strong>
           <span>${ctx.venue.get(next.venue_id)?.name ?? ""}</span></div>
         <span class="btn green">${next.status === "in_progress" ? "Follow it live" : "Match preview"}</span></a>`
@@ -183,9 +183,9 @@ function view(user, { ctx, news, comps, site = {}, form: formData = null }, pref
       { color: "blue", foot: { href: "/news", label: "All the news" } }) : ""),
     handicaps: () => (!team ? "" : panel(`${team.name}: team & handicaps`, dataTable([
         { label: "Player", cell: (p) => html`${playerLink(p)}${p.position && p.position !== "Player" ? html` <small class="muted">${p.position}</small>` : ""}` },
-        { label: "Handicap", cell: (p) => handicapTag(p.handicap), cls: "num" },
-        { label: "Played", cell: (p) => lineOf(p)?.played ?? 0, cls: "num" },
-        { label: "Won", cell: (p) => lineOf(p)?.won ?? 0, cls: "num" },
+        { label: "Hcp", cell: (p) => handicapTag(p.handicap), cls: "num" },
+        // Rich, round 30: it sits in the narrow column, so "won of played" share one column (no sideways scrolling).
+        { label: "Won", cell: (p) => html`${lineOf(p)?.won ?? 0}<small class="muted">/${lineOf(p)?.played ?? 0}</small>`, cls: "num" },
         { label: "Pts", cell: (p) => lineOf(p)?.pts ?? 0, cls: "num strong" },
         ...(formData ? [{ label: "Form", cell: (p) => formBadge(formData.player(p.id)), cls: "num" }] : []),
       ], bySeniority(squad), { rowClass: (p) => (followIds.has(p.id) ? "lt-mine" : ""), empty: "No players listed yet.", phoneLimit: 5, minHidden: 1, more: "players" }), { foot: { href: "/handicaps", label: "Every team's handicaps" } })),

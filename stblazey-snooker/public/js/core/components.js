@@ -1,7 +1,7 @@
 // Reusable building blocks. Every table, panel and card on the site
 // is drawn by one of these functions — change it here, it changes everywhere.
 import { html, fmtDate, fmtTime } from "./dom.js";
-import { isProvisional, PROVISIONAL_NOTE, frameWinner, NOT_UPDATED } from "./rules.js";
+import { isProvisional, PROVISIONAL_NOTE, frameWinner, NOT_UPDATED, isLiveSoon } from "./rules.js";
 import { formBadge as formBadgeFn, formChips as formChipsFn } from "./form.js";
 
 // ── URLs (one place to change the site's link structure) ──────
@@ -78,6 +78,8 @@ export const statusBadge = (status) => html`<span class="status ${status}">${Str
 /** "Not updated yet" when the league hasn't set one (real data, round 27). */
 export const handicapText = (h) => (h === null || h === undefined || h === "" ? NOT_UPDATED : Number(h) > 0 ? `+${h}` : String(h));
 export const notUpdatedTag = (text = NOT_UPDATED) => html`<span class="not-upd">${text}</span>`;
+/** The orange pulsing "Live soon" label, for a match starting within the hour (round 30). */
+export const liveSoonTag = (m) => (isLiveSoon(m) ? html`<span class="live-soon">Live soon</span>` : "");
 
 /** Up or down arrow against last year's handicap (set at the yearly review), or nothing if it hasn't moved. */
 /** A handicap as a coloured tag: scratch and minus handicaps green, plus handicaps red. */
@@ -387,9 +389,12 @@ function sideBox(ctx, news, count, box) {
   }
   const league = mode === "cup" ? [] : ctx.fixtures
     .filter((f) => ctx.hasResult(f) && f.status !== "in_progress" && (!site.side_box_league || f.league_id === site.side_box_league))
-    .map((f) => { const s = ctx.scoreOf(f); return { fx: f, when: f.starts_at, homeTeam: ctx.team.get(f.home_team_id), awayTeam: ctx.team.get(f.away_team_id), home: ctx.team.get(f.home_team_id)?.name, away: ctx.team.get(f.away_team_id)?.name,
+    .map((f) => { const s = ctx.scoreOf(f); return { fx: f, kind: "league", tag: ctx.league.get(f.league_id)?.name ?? "League", when: f.starts_at, homeTeam: ctx.team.get(f.home_team_id), awayTeam: ctx.team.get(f.away_team_id), home: ctx.team.get(f.home_team_id)?.name, away: ctx.team.get(f.away_team_id)?.name,
       hs: s.home, as: s.away, score: `${s.home} – ${s.away}`, href: urls.match(f), won: s.home > s.away ? "h" : s.away > s.home ? "a" : "" }; });
-  const cups = mode === "results" ? [] : box?.cups ?? [];
+  const cups = mode === "results" ? [] : (box?.cups ?? []).map((c) => ({ ...c, kind: "cup", tag: c.title }));
+  // Rich, round 30: each result says what it was — the league (green tag) or the competition (gold tag, gold edge).
+  const tag = (r) => html`<span class="res-tag ${r.kind}">${r.kind === "cup" ? html`<i aria-hidden="true">🏆</i>` : ""}${r.tag}</span>`;
+  const chevron = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.7 8.6 12 13.9l5.3-5.3 1.4 1.4-6.7 6.7-6.7-6.7Z"/></svg>`;
   const rows = [...league, ...cups].sort((a, b) => String(b.when ?? "").localeCompare(String(a.when ?? ""))).slice(0, Math.max(1, site.side_box_count || 5));
   // Rich, round 23: more visual — emblems and a score pill — and point at (or tap) a result to see more:
   // every frame, the best break, the venue and a link to the full scorecard.
@@ -412,14 +417,14 @@ function sideBox(ctx, news, count, box) {
       <a class="btn small res-go" href="${r.href}">View full match statistics →</a></div></div>`;
   };
   return html`${panel(site.side_box_title || "Latest Results", rows.length
-      ? html`<div class="res-list res-rich">${rows.map((r) => (r.fx ? html`<div class="res-card">
-          <button type="button" class="res-mini res-head" data-res-more aria-expanded="false" aria-controls="res-${r.fx.id}"><small>${r.when ? fmtDate(r.when) : ""}${r.title ? ` · ${r.title}` : ""}</small>
+      ? html`<div class="res-list res-rich">${rows.map((r) => (r.fx ? html`<div class="res-card ${r.kind}">
+          <button type="button" class="res-mini res-head" data-res-more aria-expanded="false" aria-controls="res-${r.fx.id}"><small class="res-top">${r.when ? fmtDate(r.when) : ""}${tag(r)}</small>
             <span class="res-team ${r.won === "h" ? "won" : r.won ? "lost" : ""}">${badge(r.homeTeam ?? { name: r.home })}<em>${r.home}</em></span>
             <b class="res-pill"><i class="${r.won === "h" ? "w" : ""}">${r.hs}</i><i class="${r.won === "a" ? "w" : ""}">${r.as}</i></b>
             <span class="res-team ${r.won === "a" ? "won" : r.won ? "lost" : ""}"><em>${r.away}</em>${badge(r.awayTeam ?? { name: r.away })}</span>
-            <span class="res-toggle" aria-hidden="true">⌄</span></button>${more(r)}</div>`
-        : html`<a class="res-mini" href="${r.href}">
-          <small>${r.when ? fmtDate(r.when) : ""}${r.title ? ` · ${r.title}` : ""}</small>
+            <span class="res-toggle" aria-hidden="true">${chevron}</span></button>${more(r)}</div>`
+        : html`<a class="res-mini res-cupline ${r.kind}" href="${r.href}">
+          <small class="res-top">${r.when ? fmtDate(r.when) : ""}${tag(r)}</small>
           <span class="${r.won === "h" ? "won" : r.won ? "lost" : ""}">${r.home}</span><b>${r.score}</b><span class="${r.won === "a" ? "won" : r.won ? "lost" : ""}">${r.away}</span></a>`))}</div>`
       : html`<div class="empty">No results yet.</div>`, { color: "green", href: "/results" })}
     <a class="btn-bar green" href="/results">See all results</a>`;
@@ -452,7 +457,7 @@ export function fixturesTable(ctx, fixtures, { actions, byes = [], forTeam = nul
     { label: "Date", cell: (f) => fmtDate(f.starts_at), cls: "fx-date" },
     { label: "Fixtures", cell: (f) => (f.bye ? html`<span class="bye-row">${ctx.team.get(f.team_id)?.name} <b>Bye week</b></span>`
       : html`<a href="${urls.match(f)}">${ctx.team.get(f.home_team_id)?.name} vs ${ctx.team.get(f.away_team_id)?.name}</a>`), cls: "fx-name" },
-    { label: "Results", cell: (f) => (f.bye ? html`<span class="fx-none">–</span>` : ctx.notUpdated?.(f) ? notUpdatedTag() : html`<span class="res-score ${done(f) ? "done" : ""}">${resultText(ctx, f)}</span>${f.status === "in_progress" ? html` <span class="live-dot">Live</span>` : ""}`), cls: "num fx-res" },
+    { label: "Results", cell: (f) => (f.bye ? html`<span class="fx-none">–</span>` : ctx.notUpdated?.(f) ? notUpdatedTag() : html`<span class="res-score ${done(f) ? "done" : ""}">${resultText(ctx, f)}</span>${f.status === "in_progress" ? html` <span class="live-dot">Live</span>` : liveSoonTag(f)}`), cls: "num fx-res" },
     ...(forTeam ? [{ label: "Won / Lost", cell: (f) => outcomeTag(outcome(f)) || html`<span class="fx-none">–</span>`, cls: "num fx-out" }] : []),
     { label: "League", cell: (f) => ctx.league.get(f.league_id)?.name, cls: "hide-sm" },
     { label: "Season", cell: () => ctx.season?.name, cls: "hide-sm" },

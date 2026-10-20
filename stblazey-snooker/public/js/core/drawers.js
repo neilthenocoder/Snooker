@@ -8,7 +8,7 @@
 import { html, mount, $, readForm, toast, fmtDate, safeHref } from "./dom.js";
 import { DEMO_MODE } from "../config.js";
 import { canInstall, installApp } from "./install.js";
-import { signInChecked, homeFor, isStaff, isMember, isPlainPlayer, roleText, mySnookerOn, canWriteNews } from "./auth.js";
+import { signInChecked, homeFor, isStaff, isMember, isPlainPlayer, isMaster, roleText, mySnookerOn, canWriteNews } from "./auth.js";
 import { notificationsOn, setNotifications, NOTIFY_KINDS, notifyPrefs, setNotifyPref, latestNotices, markNoticesSeen, seenNotices, NOTICE_KIND } from "./notify.js";
 import { navigate, refreshShell } from "./router.js";
 
@@ -104,11 +104,11 @@ export function openAccount(user, { message = "" } = {}) {
       ${link(mySnookerOn(user) ? "/myteam" : "/my/snooker", ICON.star, "My Snooker", mySnookerOn(user) ? "Your own page: the teams and players you follow" : "Switched off — press to switch it on")}
       ${isMember(user) && !isPlainPlayer(user) ? link("/my", ICON.team, "My Team", "Scorecards, fixtures and your team") : ""}
       ${isStaff(user) ? link("/admin", ICON.admin, "Admin dashboard", "Everything your role looks after") : ""}
-      ${canWriteNews(user) ? link(isStaff(user) ? "/admin/write" : "/my/news", ICON.pen, "Write news", "Step by step: headline, story, pictures, this week's tables") : ""}
+      ${canWriteNews(user) && !isStaff(user) ? link("/my/news", ICON.pen, "Write news", "Step by step: headline, story, pictures, this week's tables") : ""}
       ${p.player_id ? link(`/player/${p.player_id}#form`, ICON.form, "My form", "Your mark out of 10 from your last 6 matches") : ""}
-      ${link("/form", ICON.form, "Form guide", "Every player's and team's form — see how others are doing")}
       ${link("/my/snooker", ICON.cog, "My Snooker settings", "Who you follow and what you see on your page")}
       ${p.player_id ? link("/my/profile", ICON.team, "My profile", "Your photo, bio and CueView") : ""}
+      ${!p.player_id && isMaster(user) ? link("/admin/accounts", ICON.team, "Do you play? Link your player profile", "Logins → your own login → Player profile: then My profile and My form appear here") : ""}
       ${link("/my/details", ICON.key, "Password & details")}
     </nav>
     ${installBlock()}

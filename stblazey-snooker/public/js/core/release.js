@@ -4,9 +4,11 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.28.0";
+export const SITE_VERSION = "1.29.0";
 export const CHANGES = [
-  "The league's past seasons (2018-19 to 2025-26) brought across from the old website: supabase/legacy/ (one file per season)",
-  "Calendar: pressing a month or an arrow now goes to that month (it used to stop half way)",
-  "New home page banner layout: white, headline on the left and picture on the right",
+  "Fixed: choosing the White banner layout gave an error (run schema.sql — database version 21)",
+  "“Live soon”: an orange pulsing label on a match that starts within the hour (home page strip, fixtures, match page, calendar, My Snooker)",
+  "Latest results: each result is tagged with its league (green) or competition (gold); a proper arrow to open it",
+  "My Snooker: Team & handicaps fits the side column (no sideways scrolling)",
+  "Account menu: Write news and Form guide taken out for officers; the Master Admin can link his own player profile",
 ].join("\n");
