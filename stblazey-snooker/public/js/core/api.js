@@ -110,9 +110,30 @@ export async function headToHead(teamA, teamB) {
 }
 
 export async function articles() {
-  return (await table("articles", "published_at"))
+  return (await articleList())
     .filter((a) => a.is_published)
     .sort((a, b) => b.published_at.localeCompare(a.published_at));
+}
+
+// Round 32: with the old website's 528 articles in, every page was fetching every article's full text (well over
+// a megabyte) just to list headlines. Lists now fetch everything EXCEPT the long text; an article's own page fetches
+// it in full (fullArticle). word_count (schema.sql, version 22) keeps "3 min read" right without the text.
+// If the database hasn't been updated yet (no word_count), the list falls back to fetching everything, as before.
+const ARTICLE_LIST = ["id", "title", "slug", "category", "more_categories", "excerpt", "image_url", "circle_image_url", "published_at", "is_published",
+  "featured", "hub_featured", "breaking", "awaiting_approval", "created_by", "author", "player_ids", "league_id", "competition_id", "week_ending",
+  "cueview", "cueview_name", "cueview_extra", "cueview_featured", "video_url", "social_image_url", "social_description", "word_count"].join(",");
+/** Every article without its long text (cached until the next write). */
+export function articleList() {
+  if (!cache.has("articles:list")) cache.set("articles:list", selectAll(() => db.from("articles").select(ARTICLE_LIST).order("published_at"))
+    .catch(() => table("articles", "published_at"))
+    .catch((e) => { cache.delete("articles:list"); throw e; }));
+  return cache.get("articles:list");
+}
+/** One article in full (its story, lead and quote), by its web address. Null if it isn't there or can't be read. */
+export async function fullArticle(slug) {
+  const key = `article:${slug}`;
+  if (!cache.has(key)) cache.set(key, run(db.from("articles").select("*").eq("slug", slug).maybeSingle()).catch((e) => { cache.delete(key); throw e; }));
+  return cache.get(key);
 }
 
 // ── scorecards ───────────────────────────────────────────────────
@@ -144,6 +165,22 @@ export function subscribe(tables, onChange) {
 }
 
 // ── competitions ─────────────────────────────────────────────────
+/**
+ * This season's competitions only (and any with no season set), with their entrants and draws — for the pages
+ * every visitor opens first (home page, side column, My Snooker, form, notifications). Round 32: with the past
+ * seasons' cups in, loading every competition ever played there made the first page slow on phones.
+ */
+export async function currentCompetitions() {
+  if (!cache.has("comps:current")) cache.set("comps:current", (async () => {
+    const [competitions, season] = await Promise.all([table("competitions", "sort"), currentSeason()]);
+    const mine = competitions.filter((c) => !c.season_id || c.season_id === season?.id);
+    const ids = mine.map((c) => c.id);
+    const [entries, matches] = await Promise.all([selectIn("competition_entries", "competition_id", ids), selectIn("competition_matches", "competition_id", ids)]);
+    return { competitions: mine, entries: entries.sort((a, b) => (a.seed ?? 0) - (b.seed ?? 0)), matches: matches.sort((a, b) => a.round - b.round) };
+  })().catch((e) => { cache.delete("comps:current"); throw e; }));
+  return cache.get("comps:current");
+}
+
 /** Every competition with its entrants and draw (small tables, cached). */
 export async function loadCompetitions() {
   const [competitions, entries, matches] = await Promise.all([
@@ -304,7 +341,9 @@ export async function nearbyMatches(hours = 36) {
     selectAll(() => db.from("fixtures").select("*").gte("starts_at", from).lte("starts_at", to).order("starts_at")),
     selectAll(() => db.from("fixtures").select("*").eq("status", "in_progress")),
     selectAll(() => db.from("competition_matches").select("*").gte("starts_at", from).lte("starts_at", to).order("starts_at")),
-  ]);
+    // Rich, round 33: a cup match being scored is live whatever date it has — often none (a draw without dates).
+    selectAll(() => db.from("competition_matches").select("*").eq("status", "in_progress")).catch(() => []),
+  ]).then(([f, l, c, cl]) => [f, l, [...new Map([...c, ...cl].map((m) => [m.id, m])).values()]]);
   const byId = new Map([...fixtures, ...live].map((f) => [f.id, f]));
   return { fixtures: [...byId.values()].sort((a, b) => a.starts_at.localeCompare(b.starts_at)), comps };
 }
@@ -316,7 +355,8 @@ export async function upcomingMatches(limit = 12) {
     selectAll(() => db.from("fixtures").select("*").gte("starts_at", since).neq("status", "postponed").order("starts_at").limit(limit)),
     selectAll(() => db.from("fixtures").select("*").eq("status", "in_progress")),
     selectAll(() => db.from("competition_matches").select("*").gte("starts_at", since).order("starts_at").limit(limit)),
-  ]);
+    selectAll(() => db.from("competition_matches").select("*").eq("status", "in_progress")).catch(() => []),
+  ]).then(([f, l, c, cl]) => [f, l, [...new Map([...cl, ...c].map((m) => [m.id, m])).values()]]);
   const ids = [...new Set([...live, ...fixtures].map((f) => f.id))];
   const all = [...new Map([...live, ...fixtures].map((f) => [f.id, f])).values()];
   const frames = await selectIn("frames", "fixture_id", ids);

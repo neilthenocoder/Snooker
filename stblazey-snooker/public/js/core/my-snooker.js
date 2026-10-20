@@ -8,7 +8,7 @@
 // ─────────────────────────────────────────────────────────────
 import { html, mount, fmtDate, fmtTime } from "./dom.js";
 import { seasonContext } from "./context.js";
-import { articles, loadCompetitions, setMyPrefs, settings } from "./api.js";
+import { articles, loadCompetitions, setMyPrefs, settings, currentCompetitions } from "./api.js";
 import { deadlineWarnings, deadlineList } from "./comp-deadlines.js";
 import { myPrefs, mySnookerOn, refreshUser } from "./auth.js";
 import { buildBracket, isEntry, roundName } from "./bracket.js";
@@ -64,7 +64,7 @@ const bySeniority = (list) => [...list].sort((a, b) => (RANK[a.position] ?? 2) -
 // ── the view ───────────────────────────────────────────────────
 /** Everything the view needs, loaded once. */
 export async function mySnookerData() {
-  const [ctx, news, comps, site] = await Promise.all([seasonContext(), articles().catch(() => []), loadCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] })), settings().catch(() => ({}))]);
+  const [ctx, news, comps, site] = await Promise.all([seasonContext(), articles().catch(() => []), currentCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] })), settings().catch(() => ({}))]);
   const form = await loadForm(ctx, comps).catch(() => null);
   return { ctx, news, comps, site, form };
 }

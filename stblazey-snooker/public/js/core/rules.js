@@ -222,8 +222,8 @@ export const LIVE_SOON_MINUTES = 60;
  * `ukDay(iso)` gives the UK calendar day (passed in to keep this file DOM-free).
  */
 export function liveState(matches, now, ukDay) {
+  if (matches.some((m) => m.status === "in_progress")) return "live";      // being played — with or without a date
   const active = matches.filter((m) => !["postponed"].includes(m.status) && m.starts_at);
-  if (active.some((m) => m.status === "in_progress")) return "live";
   const today = ukDay(new Date(now).toISOString());
   const tonight = active.filter((m) => ukDay(m.starts_at) === today);
   if (tonight.some((m) => now >= Date.parse(m.starts_at))) return "live";

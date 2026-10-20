@@ -572,6 +572,28 @@ No database changes — nothing to run in Supabase this time.
 - **Pictures** are not brought across — Rich is sorting them. `real-data/legacy/news-pictures.csv` lists every article, its new address and the picture(s) it had on the old site.
 - None is "featured", so the News page and the banner keep showing the newest articles. Made by `scripts/import-old-news.py`.
 
+## 3y. Round 32: the slow first page
+
+**Run `supabase/schema.sql` again** (database version 22). The website works before you do (it falls back to the old, slower way), but the news lists are only light once it has run.
+
+After the old seasons (1,280 matches) and the 528 old articles went in, the first page on a phone could take over 12 seconds, and the loading screen's safety net ("taking longer than it should… Start fresh") appeared. Measured on a slow phone connection against a copy of the real data: home page 16 s before, about 9 s after, with less than half the data.
+
+- **The notification check** (`startNotifications()` in `core/notify.js`) cleared the website's data cache at start-up — twice — so the page being opened fetched everything two or three times. It now waits until the first page is showing and only clears the cache after a real change.
+- **News lists** fetch every article except its long text (`articleList()` in `core/api.js`); an article's own page fetches it in full (`fullArticle()`). The reading time comes from `articles.word_count`, a column the database keeps up to date by itself.
+- **This season's competitions only** on the pages everyone opens (home page, side column, My Snooker, form, calendar, notifications): `currentCompetitions()`. Competition pages, the archive and player pages still load every season.
+- The loading screen's safety net now waits 20 seconds instead of 12.
+- **Cup matches on the home page** (1.31.1): a cup match being scored counts as live whatever its date (draws often have none) — on the Live & upcoming strip and for the LIVE button. The strip keeps up to four of its twelve places for the next cup matches and draws, so a league night doesn't push them off. A cup match only appears as *upcoming* once it has a date and time (Admin → Draws & results) and both players or teams are known.
+
+## 3z. Round 34: trophy or full picture
+
+**Run `supabase/schema.sql` again** (database version 23).
+
+Admin → Competitions → Edit → **"The competition's box on the Competitions page and home page shows"**:
+- *Automatic* (as before): the picture with the trophy in the corner if a Picture is uploaded, otherwise the trophy.
+- *The trophy*: the trophy in the middle of the dark box (the picture is still used as the background of the competition's own page).
+- *The picture*: the Picture fills the whole box, no trophy. With no picture uploaded it falls back to the trophy.
+Saved in `competitions.card_style`; `compBoxStyle()` in `core/components.js`.
+
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
 | Rule | Current setting |

@@ -4,7 +4,7 @@
 // can add their matches to their phone. Key dates (Admin → Key dates) and bye weeks are in it too.
 import { html, mount, $, fmtTime, ukDay, todayUK, safeHref } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
-import { loadCompetitions, table } from "../core/api.js";
+import { loadCompetitions, table, currentCompetitions } from "../core/api.js";
 import { buildBracket, isEntry, roundName } from "../core/bracket.js";
 import { addDays } from "../core/schedule.js";
 import { breadcrumb, urls, liveSoonTag } from "../core/components.js";
@@ -16,7 +16,7 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 export default async function calendar(view, { query }) {
   setTitle("Calendar");
   adminEdit("fixtures");
-  const [ctx, compData, venues, keyDates] = await Promise.all([seasonContext(), loadCompetitions(), table("venues", "name"), table("key_dates", "starts_on").catch(() => [])]);
+  const [ctx, compData, venues, keyDates] = await Promise.all([seasonContext(), currentCompetitions(), table("venues", "name"), table("key_dates", "starts_on").catch(() => [])]);
   let teamId = query.get("team") ?? "";
   let month = (query.get("month") ?? todayUK().slice(0, 7));
 

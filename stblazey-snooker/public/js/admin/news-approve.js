@@ -5,14 +5,17 @@
 //  Master Admin reads each one, then puts it live or sends it back as a draft for the writer.
 // ─────────────────────────────────────────────────────────────
 import { html, mount, toast, fmtDate } from "../core/dom.js";
-import { table, save, invalidate } from "../core/api.js";
+import { articleList, save, invalidate, selectAll } from "../core/api.js";
+import { db } from "../core/db.js";
 
-export const waitingNews = async () => (await table("articles", "published_at")).filter((a) => a.awaiting_approval && !a.is_published);
+/** How many are waiting (the red number in the menu): from the light list. The page itself reads them in full. */
+export const waitingNews = async () => (await articleList()).filter((a) => a.awaiting_approval && !a.is_published);
+const waitingInFull = () => selectAll(() => db.from("articles").select("*").eq("awaiting_approval", true).eq("is_published", false).order("published_at"));
 
 export async function newsApprovePage(el, { onChange = () => {} } = {}) {
   const draw = async () => {
     invalidate();
-    const list = (await waitingNews()).sort((a, b) => String(a.published_at).localeCompare(String(b.published_at)));
+    const list = (await waitingInFull()).sort((a, b) => String(a.published_at).localeCompare(String(b.published_at)));
     mount(el, html`<div class="notice">News written by anyone except the Master Admin waits here until you approve it. <b>Approve and publish</b> puts it on the website;
         <b>Send back</b> keeps it off the website as a draft, which its writer can change and send again. Changes to an article that is already live don't need approving.</div>
       ${list.length ? html`<div class="stack">${list.map((a) => html`<article class="appr">

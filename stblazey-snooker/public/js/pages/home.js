@@ -5,7 +5,7 @@ import { mountSquadBox } from "../core/squad.js";
 import { mySnookerOn, mySnookerSetUp, mySnookerTeamId, mySnookerHome } from "../core/auth.js";
 import { openForEntry } from "./enter.js";
 import { seasonContext, sideBoxData } from "../core/context.js";
-import { articles, settings, upcomingMatches, loadCompetitions, subscribe, table, liveMatches } from "../core/api.js";
+import { articles, settings, upcomingMatches, loadCompetitions, subscribe, table, liveMatches, currentCompetitions } from "../core/api.js";
 import { deadlineWarnings, deadlineBar } from "../core/comp-deadlines.js";
 import { matchScore, shieldHolder } from "../core/rules.js";
 import { buildBracket, isEntry } from "../core/bracket.js";
@@ -15,7 +15,7 @@ import { SITE } from "../config.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import { competitionSummaries } from "./competitions.js";
 import { loadForm, formBadge, formChips } from "../core/form.js";
-import { liveSoonTag } from "../core/components.js";
+import { liveSoonTag, compBoxStyle } from "../core/components.js";
 
 const ROTATE_MS = 7000;      // banner: time each article is shown
 const CAROUSEL_MS = 4500;    // live strip: time before it moves on one card
@@ -33,7 +33,7 @@ const quickIcon = {
 export default async function home(view, { user } = {}) {
   setTitle("");
   adminEdit("settings", null, { label: "Edit home page" });
-  const [ctx, news, allComps, site, box, notices, dates] = await Promise.all([seasonContext(), articles(), competitionSummaries(), settings(), sideBoxData(),
+  const [ctx, news, allComps, site, box, notices, dates] = await Promise.all([seasonContext(), articles(), competitionSummaries({ current: true }), settings(), sideBoxData(),
     table("announcements", "sort").catch(() => []), table("key_dates", "starts_on").catch(() => [])]);
   // Form (Rich, round 25) beside the player and team of the week.
   if (site.player_of_week_show || site.team_of_week_show || site.player_of_month_show || site.team_of_month_show) ctx.form = await loadForm(ctx).catch(() => null);
@@ -69,7 +69,7 @@ export default async function home(view, { user } = {}) {
           <a style="background:var(--green)" href="/fixtures">${quickIcon.fixtures}<span>Fixtures</span></a>
         </nav>
         ${featureBox(site, notices, today)}
-        ${user ? deadlineBar(deadlineWarnings(user, ctx, await loadCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] })), site)) : ""}
+        ${user ? deadlineBar(deadlineWarnings(user, ctx, await currentCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] })), site)) : ""}
         ${entering.length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${entering.map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
         ${keyDates(site, dates, allComps.map((x) => x.c), today)}
         </div>
@@ -78,7 +78,7 @@ export default async function home(view, { user } = {}) {
         ${spotlights(ctx, site)}
         ${site.cueviews_show !== false ? cueviewBox(ctx, news) : ""}
         ${panel("Latest Competitions", html`<div class="list-rows comp-cols" style="background:var(--cream)">
-          ${comps.length ? comps.map(({ c, season, progress }) => html`<a href="${urls.competition(c)}">${c.image_url ? html`<span class="cc-pic">${picture(c.image_url)}</span>` : html`<div class="ph trophy-ph">${trophy(c)}</div>`}<div><strong>${c.name}</strong><small>${c.kind}${season ? ` · ${season.name}` : ""}</small><span class="cc-prog">${progress}</span></div></a>`)
+          ${comps.length ? comps.map(({ c, season, progress }) => html`<a href="${urls.competition(c)}">${compBoxStyle(c) !== "trophy" ? html`<span class="cc-pic">${picture(c.image_url)}</span>` : html`<div class="ph trophy-ph">${trophy(c)}</div>`}<div><strong>${c.name}</strong><small>${c.kind}${season ? ` · ${season.name}` : ""}</small><span class="cc-prog">${progress}</span></div></a>`)
             : html`<div class="empty">No competitions yet.</div>`}
         </div>`, { color: "yellow", href: "/competitions" })}
       </div>
@@ -259,14 +259,14 @@ function keyDates(site, dates, competitions, today) {
 // ── live & upcoming strip ─────────────────────────────────────
 async function liveStrip() {
   const [{ fixtures, comps, frames }, teams, leagues, compData, venues, players, boards] = await Promise.all([
-    upcomingMatches(), table("teams", "name"), table("leagues", "sort"), loadCompetitions(), table("venues", "name"), table("players", "full_name"), liveMatches().catch(() => []),
+    upcomingMatches(), table("teams", "name"), table("leagues", "sort"), currentCompetitions(), table("venues", "name"), table("players", "full_name"), liveMatches().catch(() => []),
   ]);
   const team = new Map(teams.map((t) => [t.id, t]));
   const framesBy = new Map();
   for (const f of frames) (framesBy.get(f.fixture_id) ?? framesBy.set(f.fixture_id, []).get(f.fixture_id)).push(f);
   const brackets = new Map(compData.competitions.map((c) => [c.id, buildBracket(compData.entries.filter((e) => e.competition_id === c.id), compData.matches.filter((m) => m.competition_id === c.id))]));
 
-  const cards = [
+  const all = [
     ...fixtures.map((fx) => ({
       when: fx.starts_at, status: fx.status, live: fx.status === "in_progress", done: ["submitted", "approved"].includes(fx.status),
       title: leagues.find((l) => l.id === fx.league_id)?.name ?? "League",
@@ -284,7 +284,7 @@ async function liveStrip() {
       // Team cups show the team emblem; singles show the player's photo.
       const who = (id) => { const e = compData.entries.find((x) => x.id === id); return { name: e.name, team: team.get(e.team_id), player: players.find((p) => p.id === e.player_id) }; };
       return {
-        when: m.starts_at, status: m.status, live: m.status === "in_progress", done: m.status === "completed", title: c.name,
+        when: m.starts_at ?? new Date().toISOString(), status: m.status, live: m.status === "in_progress", done: m.status === "completed", title: c.name, cup: true,
         a: who(bm.a), b: who(bm.b),
         score: { home: m.score_a ?? 0, away: m.score_b ?? 0 }, hasFrames: m.score_a != null, href: `/cup-match/${m.no ?? m.id}`, venue: venues.find((v) => v.id === m.venue_id),
       };
@@ -306,7 +306,24 @@ async function liveStrip() {
         return { draw: true, live: false, when: c.draw_at, title: c.name, text: `Draw at ${fmtTime(c.draw_at)}`, foot: "Live on the website →", href: `/draw/${c.slug}` };
       return null;
     }).filter(Boolean),
-  ].sort((x, y) => (y.live - x.live) || x.when.localeCompare(y.when)).slice(0, 12);
+  ].sort((x, y) => (y.live - x.live) || String(x.when).localeCompare(String(y.when)));
+  // Rich, round 33: a league night fills a dozen places on its own, so cup matches a week or two away never got a
+  // look in. Everything live comes first; then the next matches in date order, keeping up to four places for the
+  // next cup matches (and draws) that would otherwise drop off the end.
+  const PLACES = 12, CUP_PLACES = 4;
+  const live = all.filter((c) => c.live), rest = all.filter((c) => !c.live);
+  const isCup = (c) => c.cup || c.draw;
+  let shown = rest.slice(0, Math.max(0, PLACES - live.length));
+  const wanted = Math.min(CUP_PLACES, rest.filter(isCup).length, shown.length);
+  // Swap the latest league matches for the next cup matches until there are enough cup cards.
+  for (const cup of rest.filter((c) => isCup(c) && !shown.includes(c))) {
+    if (shown.filter(isCup).length >= wanted) break;
+    const lastLeague = shown.map((c, i) => [c, i]).filter(([c]) => !isCup(c)).at(-1);
+    if (!lastLeague) break;
+    shown.splice(lastLeague[1], 1); shown.push(cup);
+  }
+  shown.sort((x, y) => String(x.when).localeCompare(String(y.when)));
+  const cards = [...live, ...shown];
 
   if (!cards.length) return html`<div class="strip-empty">No matches coming up. <a href="/calendar">See the calendar</a></div>`;
   const face = (s) => (s.player ? avatar(s.player, "avatar sc-face") : s.team ? badge(s.team) : html`<span class="badge">${s.name.slice(0, 2).toUpperCase()}</span>`);

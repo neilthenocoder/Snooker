@@ -12,7 +12,7 @@ try {
   if (b.loader) { var img = boot.querySelector("img"); img.src = b.loader; img.hidden = false; }
 } catch (e) {}
 
-// A safety net. If the website has not managed to show its first page after 12 seconds (a phone holding on to
+// A safety net. If the website has not managed to show its first page after 20 seconds (12 until round 32) (a phone holding on to
 // out-of-date files from an earlier version, a login that could not be refreshed, no signal…), the loading screen
 // does not just stay there: it says so and offers two buttons. main.js sets window.sbdslStarted once a page is up.
 setTimeout(function () {
@@ -38,4 +38,4 @@ setTimeout(function () {
     // A new address makes the browser fetch the page again rather than reuse what it kept.
     location.replace(location.pathname + "?v=" + Date.now());
   });
-}, 12000);
+}, 20000);

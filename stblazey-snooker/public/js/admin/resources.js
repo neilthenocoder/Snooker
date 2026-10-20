@@ -92,6 +92,9 @@ export const RESOURCES = {
       { name: "best_of", label: "Frames per match (best of)", type: "number", default: 5 },
       { name: "sort", label: "Display order", type: "number", default: 1 },
       { name: "image_url", label: "Picture (winner photo, venue… — the background of the competition's page)", type: "image", folder: "competitions", maxSize: 1200 },
+      // Rich, round 34: the box on the Competitions page (and the home page card) shows the trophy OR fills with the picture.
+      { name: "card_style", label: "The competition's box on the Competitions page and home page shows", type: "select", options: ["", "trophy", "picture"],
+        labels: { "": "Automatic: the picture if there is one (with the trophy in the corner), otherwise the trophy", trophy: "The trophy, in the middle of the dark box", picture: "The picture, filling the whole box" } },
       { name: "trophy_url", label: "Trophy (a cut-out picture of the trophy: transparent PNG or SVG — shown wherever the competition appears; a placeholder cup is used until you add one)", short: "Trophy", type: "image", folder: "trophies", maxSize: 700 },
       { name: "info", label: "Competition information (rules, dates, format)", type: "textarea" },
       { name: "parent_id", label: "Plate competition of (leave empty for a normal competition)", type: "ref", ref: "competitions" },

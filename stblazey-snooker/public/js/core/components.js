@@ -42,6 +42,13 @@ export const shieldPicture = (league, cls = "") => (league?.shield_image_url
 export const trophy = (thing, cls = "", { always = true } = {}) => (thing?.trophy_url || always
   ? html`<img class="trophy ${cls} ${thing?.trophy_url ? "" : "placeholder"}" src="${thing?.trophy_url || "/assets/trophy.svg"}" alt="${thing?.trophy_url ? `${thing?.name ?? ""} trophy` : ""}" loading="lazy">` : "");
 
+/**
+ * What a competition's box shows (Admin → Competitions → "The competition's box … shows", Rich, round 34):
+ * "picture" — the picture filling the box; "trophy" — the trophy on its own; empty — the picture with the trophy in
+ * the corner if there is a picture, otherwise the trophy. A "picture" choice with no picture uploaded shows the trophy.
+ */
+export const compBoxStyle = (c) => (c?.card_style === "trophy" || !c?.image_url ? "trophy" : c?.card_style === "picture" ? "picture" : "both");
+
 export const shortName = (league) => league.short_name || league.name.replace(/ League$/i, "");
 
 // ── primitives ────────────────────────────────────────────────
@@ -513,7 +520,9 @@ export function cupMatchInfo(compData, match, buildBracket) {
 // ── news: the related-news strip, video and share buttons ─────
 const WORDS_A_MINUTE = 200;
 /** Roughly how long an article takes to read, in whole minutes. */
-export const readTime = (a) => Math.max(1, Math.round(String(`${a.excerpt ?? ""} ${a.lead ?? ""} ${a.body ?? ""}`).trim().split(/\s+/).length / WORDS_A_MINUTE));
+// Lists carry word_count instead of the text itself (round 32); an article's own page has the text.
+export const readTime = (a) => Math.max(1, Math.round((a.body == null && a.word_count != null ? a.word_count
+  : String(`${a.excerpt ?? ""} ${a.lead ?? ""} ${a.body ?? ""}`).trim().split(/\s+/).length) / WORDS_A_MINUTE));
 /** Every category an article is listed under: its main one first, then any others. */
 export const categoriesOf = (a) => [...new Set([a.category, ...(Array.isArray(a.more_categories) ? a.more_categories : [])].filter(Boolean))];
 

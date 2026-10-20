@@ -1,5 +1,5 @@
 // Turns raw season data into lookups and calculated tables (via rules.js).
-import { loadSeason, currentSeason, settings, loadCompetitions } from "./api.js";
+import { loadSeason, currentSeason, settings, loadCompetitions, currentCompetitions } from "./api.js";
 import { buildBracket, winnerSide } from "./bracket.js";
 import { leagueTable, playerRankings, matchScore, isCounted, isProvisional, isNotUpdated } from "./rules.js";
 import { ukDay } from "./dom.js";
@@ -80,7 +80,7 @@ export async function seasonContext(seasonId) {
 
 /** Every finished competition match, newest first: { when, title, home, away, score, href, won }. */
 export async function cupResults() {
-  const data = await loadCompetitions();
+  const data = await currentCompetitions();
   return data.competitions.flatMap((c) => {
     const b = buildBracket(data.entries.filter((e) => e.competition_id === c.id), data.matches.filter((m) => m.competition_id === c.id));
     const name = (id) => b.entryById.get(id)?.name ?? "?";

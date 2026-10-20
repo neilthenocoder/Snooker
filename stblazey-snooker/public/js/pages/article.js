@@ -1,6 +1,6 @@
 import { html, mount, fmtDate, paragraphs, cssUrl, ukDay } from "../core/dom.js";
 import { seasonContext, sideBoxData } from "../core/context.js";
-import { articles, table } from "../core/api.js";
+import { articles, fullArticle } from "../core/api.js";
 import { getUser, isMaster, canManage } from "../core/auth.js";
 import { addDays } from "../core/schedule.js";
 import { breadcrumb, panel, dataTable, quoteBox, playerLink, teamLink, leagueTablePanel, urls, cueviewSection, gallery, newsStrip, videoEmbed, shareBar, readTime, categoriesOf, breakTag } from "../core/components.js";
@@ -11,11 +11,13 @@ import notFound from "./not-found.js";
 
 export default async function article(view, { params }) {
   const [ctx, news, box] = await Promise.all([seasonContext(), articles(), sideBoxData()]);
-  let a = news.find((x) => x.slug === params.slug), preview = false;
+  // The list has no long text (round 32); this page fetches the article in full.
+  const whole = await fullArticle(params.slug).catch(() => null);
+  let a = news.find((x) => x.slug === params.slug) && whole ? whole : null, preview = false;
   // Not on the website yet: the Master Admin (approving it), the News & website officers and its writer can still read it.
   if (!a) {
     const user = await getUser();
-    const hidden = user ? (await table("articles", "published_at")).find((x) => x.slug === params.slug) : null;
+    const hidden = user && whole && !whole.is_published ? whole : null;
     if (hidden && (isMaster(user) || canManage(user, "website") || (hidden.created_by && hidden.created_by === user.id))) { a = hidden; preview = true; }
   }
   if (!a) return notFound(view);

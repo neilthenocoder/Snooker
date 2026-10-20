@@ -1,13 +1,13 @@
 import { html, mount, fmtDate } from "../core/dom.js";
-import { table, loadCompetitions } from "../core/api.js";
+import { table, loadCompetitions, currentCompetitions } from "../core/api.js";
 import { buildBracket, progressText } from "../core/bracket.js";
-import { breadcrumb, picture, urls, shortName, trophy } from "../core/components.js";
+import { breadcrumb, picture, urls, shortName, trophy, compBoxStyle } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import { openForEntry } from "./enter.js";
 
 /** Summary line for each competition, shared with the home page. */
-export async function competitionSummaries() {
-  const [data, seasons, leagues] = await Promise.all([loadCompetitions(), table("seasons", "name"), table("leagues", "sort")]);
+export async function competitionSummaries({ current = false } = {}) {
+  const [data, seasons, leagues] = await Promise.all([current ? currentCompetitions() : loadCompetitions(), table("seasons", "name"), table("leagues", "sort")]);
   return data.competitions.map((c) => ({
     c, season: seasons.find((s) => s.id === c.season_id),
     parent: data.competitions.find((x) => x.id === c.parent_id),
@@ -42,7 +42,8 @@ export default async function competitions(view, { query }) {
       <select data-season-picker>${choices.map((s) => html`<option value="${s.id}" ${s.id === season?.id ? "selected" : ""}>${s.name}${s.id === current?.id ? " (this season)" : ""}</option>`)}</select></label>` : ""}
     ${openForEntry(all.map((x) => x.c)).length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${openForEntry(all.map((x) => x.c)).map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
     ${list.length ? html`<div class="comp-list">${list.map(({ c, progress, parent, openTo, facts }) => html`<a class="comp-row" href="${urls.competition(c)}">
-      <div class="comp-pic">${c.image_url ? picture(c.image_url, "") : html`<div class="ph"></div>`}${trophy(c, "comp-row-trophy")}</div>
+      <div class="comp-pic is-${compBoxStyle(c)}">${compBoxStyle(c) === "trophy" ? html`<div class="ph"></div>${trophy(c, "comp-row-trophy")}`
+        : compBoxStyle(c) === "picture" ? picture(c.image_url, "") : html`${picture(c.image_url, "")}${trophy(c, "comp-row-trophy")}`}</div>
       <div class="comp-info">
         <small class="comp-kind">${[c.handicap ? `Handicap ${c.kind.toLowerCase()}` : c.kind, openTo ? `${openTo} only` : "", parent ? `Plate of the ${parent.name}` : ""].filter(Boolean).join(" · ")}</small>
         <h3>${c.name}</h3>

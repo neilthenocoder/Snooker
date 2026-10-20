@@ -3880,3 +3880,6 @@ p.not-upd { margin: 0; }
   .hero.hero-l-white .hero-pic { height: auto; min-height: 0; }
   .hero.hero-l-white .hero-text { border-radius: 14px; padding: 18px; }
 }
+/* Round 34: a competition's box — the trophy on its own, or the picture filling it */
+.comp-pic.is-trophy .comp-row-trophy { right: 50%; bottom: 50%; transform: translate(50%, 50%); width: 70px; height: 88px; }
+@media (max-width: 640px) { .comp-pic.is-trophy .comp-row-trophy { width: 48px; height: 60px; } }

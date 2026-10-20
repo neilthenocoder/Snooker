@@ -16,7 +16,7 @@
 //  Change a number below and the whole site follows.
 // ─────────────────────────────────────────────────────────────
 import { html, fmtDate } from "./dom.js";
-import { loadCompetitions, competitionBreaks } from "./api.js";
+import { loadCompetitions, competitionBreaks, currentCompetitions } from "./api.js";
 import { frameWinner, isCounted, RULES } from "./rules.js";
 import { winnerSide } from "./bracket.js";
 
@@ -62,7 +62,7 @@ function summarise(list) {
  */
 export async function loadForm(ctx, compsLoaded = null) {
   const seasonId = ctx.season?.id;
-  const comps = compsLoaded ?? await loadCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] }));
+  const comps = compsLoaded ?? await (ctx.season?.is_current ? currentCompetitions() : loadCompetitions()).catch(() => ({ competitions: [], entries: [], matches: [] }));
   // One season at a time (Rich, round 26): form starts again from nothing when a new season begins.
   // Competitions of this season count; one with no season set counts only in the current season, and only its
   // matches from this season's first league match on (so last season's cup results never carry over).

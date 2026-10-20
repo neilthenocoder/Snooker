@@ -2464,13 +2464,24 @@ alter table players alter column handicap drop not null;
 alter table players alter column handicap drop default;
 alter table handicap_changes alter column new_handicap drop not null;
 
+-- ── Round 32: faster first page ──────────────────────────────────
+-- News lists no longer download every article's whole text (with the old website's 528 articles in, that was well
+-- over a megabyte on every page): they read this word count for "3 min read" instead.
+alter table articles add column if not exists word_count int generated always as (
+  coalesce(array_length(regexp_split_to_array(btrim(coalesce(excerpt, '') || ' ' || coalesce(lead, '') || ' ' || coalesce(body, '')), '\s+'), 1), 0)) stored;
+
+-- ── Round 34: a competition's box shows the trophy or a full picture ──
+alter table competitions add column if not exists card_style text;
+alter table competitions drop constraint if exists competitions_card_style_check;
+alter table competitions add constraint competitions_card_style_check check (card_style is null or card_style in ('', 'trophy', 'picture'));
+
 -- ── the version of this file ─────────────────────────────────────
 -- KEEP THIS AT THE VERY END. The website asks the database for this number (public/js/core/version.js holds
 -- the one it expects). Because it is the last thing in the file, the database only reports the new number
 -- when everything above it has run. If the website files are uploaded without this file being run, the admin
 -- dashboard says "The database needs updating" at the top of every page.
 -- When something is added to this file that the website needs: raise this number and the one in version.js.
-create or replace function public.schema_version() returns int language sql immutable as $$ select 21 $$;
+create or replace function public.schema_version() returns int language sql immutable as $$ select 23 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

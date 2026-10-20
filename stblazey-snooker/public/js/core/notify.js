@@ -10,7 +10,7 @@
 //  browser only). The same listener sets off the confetti for the
 //  big moments (Admin → Site settings → Celebrations).
 // ─────────────────────────────────────────────────────────────
-import { listen, table, selectIn, nearbyMatches, settings, invalidate, competitionBreaks, loadCompetitions } from "./api.js";
+import { listen, table, selectIn, nearbyMatches, settings, invalidate, competitionBreaks, loadCompetitions, currentCompetitions, articleList } from "./api.js";
 import { frameWinner, RULES } from "./rules.js";
 import { celebrate } from "./celebrate.js";
 import { buildBracket } from "./bracket.js";
@@ -62,7 +62,7 @@ export const noticeLive = (n) => n.is_active !== false && !!n.title && (!n.ends_
   && Date.now() - Date.parse(n.created_at ?? 0) < NOTICE_DAYS * 864e5;
 /** The notices to list behind the bell, newest first — only the kinds this visitor has left switched on. */
 export async function latestNotices() {
-  const [rows, news] = await Promise.all([table("notices", "created_at").catch(() => []), table("articles", "published_at").catch(() => [])]);
+  const [rows, news] = await Promise.all([table("notices", "created_at").catch(() => []), articleList().catch(() => [])]);
   const prefs = notifyPrefs();
   const fromNews = news.filter((a) => a.is_published && a.breaking).map((a) => ({ id: `article-${a.id}`, kind: "breaking", title: a.title, body: a.excerpt ?? "",
     url: `/news/${a.slug}`, created_at: `${a.published_at}T12:00:00Z`, is_active: true }));
@@ -196,6 +196,9 @@ async function recordBreak(row, isCup, mode) {
 
 export async function startNotifications() {
   stopNotifications();
+  // Wait until the first page is up (main.js sets sbdslStarted): this is background work, and it shouldn't compete
+  // with the page the visitor is waiting for.
+  for (let i = 0; i < 40 && !window.sbdslStarted; i++) await new Promise((r) => setTimeout(r, 250));
   // Remember everything already played tonight, so re-saved frames don't pop up again.
   const { fixtures, comps } = await nearbyMatches(24).catch(() => ({ fixtures: [], comps: [] }));
   tonight = new Set([...fixtures, ...comps].map((m) => m.id)); checkedAt = Date.now();
@@ -212,13 +215,13 @@ export async function startNotifications() {
   const tiesSeen = new Map((await table("competitions", "sort").catch(() => [])).map((c) => [c.id, c.draw_live?.log?.length ?? 0]));
 
   // News already published, so only a NEW article makes a pop-up.
-  const newsSeen = new Set((await table("articles", "published_at").catch(() => [])).filter((a) => a.is_published).map((a) => a.id));
+  const newsSeen = new Set((await articleList().catch(() => [])).filter((a) => a.is_published).map((a) => a.id));
   // Who leads each league and its rankings now, and who has won each competition — to spot a change.
   let tops = await leaders().catch(() => null);
   let champs = await champions().catch(() => null);
   let leaderTimer = null, champTimer = null;
   const checkLeaders = () => { clearTimeout(leaderTimer); leaderTimer = setTimeout(async () => {
-    const [now, site] = await Promise.all([leaders().catch(() => null), settings().catch(() => ({}))]);
+    const [now, site] = await Promise.all([leaders(true).catch(() => null), settings().catch(() => ({}))]);
     if (!now || !tops) { tops = now ?? tops; return; }
     for (const [id, l] of now) {
       const was = tops.get(id);
@@ -237,7 +240,7 @@ export async function startNotifications() {
     tops = now;
   }, 1500); };
   const checkChampions = () => { clearTimeout(champTimer); champTimer = setTimeout(async () => {
-    const [now, site] = await Promise.all([champions().catch(() => null), settings().catch(() => ({}))]);
+    const [now, site] = await Promise.all([champions(true).catch(() => null), settings().catch(() => ({}))]);
     if (!now || !champs) { champs = now ?? champs; return; }
     for (const [id, c] of now) {
       if (!c.winner || champs.get(id)?.winner === c.winner) continue;
@@ -318,8 +321,10 @@ export async function startNotifications() {
 export function stopNotifications() { if (stop) stop(); stop = null; }
 
 /** Who is top of each league's table and of its player rankings right now: Map(league id → { name, team, player, pts, href, rankHref }). */
-async function leaders() {
-  invalidate();
+async function leaders(fresh = false) {
+  // Only after a change (fresh): at start-up the page that is loading uses the same data, and clearing it made
+  // every first page load everything two or three times over (Rich, round 32: stuck on the loading screen).
+  if (fresh) invalidate();
   const { seasonContext } = await import("./context.js");
   const ctx = await seasonContext();
   return new Map(ctx.leagues.map((l) => {
@@ -329,9 +334,9 @@ async function leaders() {
   }));
 }
 /** The winner (if there is one yet) of every competition: Map(competition id → { name, winner, trophy, href }). */
-async function champions() {
-  invalidate();
-  const data = await loadCompetitions();
+async function champions(fresh = false) {
+  if (fresh) invalidate();
+  const data = await currentCompetitions();
   return new Map(data.competitions.map((c) => {
     const b = buildBracket(data.entries.filter((e) => e.competition_id === c.id), data.matches.filter((m) => m.competition_id === c.id));
     return [c.id, { name: c.name, winner: b.champion ? b.entryById.get(b.champion)?.name ?? null : null, trophy: c.trophy_url || "", href: `/competition/${c.slug}` }];

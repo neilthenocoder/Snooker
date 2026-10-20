@@ -4,13 +4,8 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.30.1";
+export const SITE_VERSION = "1.32.0";
 export const CHANGES = [
-  "White banner: on the light grey of the page, the headline in a white panel, a small gap, rounded corners on both",
-  "The old website's 528 news articles brought across (supabase/legacy/10–16): 186 league and competition articles live, the rest kept as drafts",
-  "Fixed: choosing the White banner layout gave an error (run schema.sql — database version 21)",
-  "“Live soon”: an orange pulsing label on a match that starts within the hour (home page strip, fixtures, match page, calendar, My Snooker)",
-  "Latest results: each result is tagged with its league (green) or competition (gold); a proper arrow to open it",
-  "My Snooker: Team & handicaps fits the side column (no sideways scrolling)",
-  "Account menu: Write news and Form guide taken out for officers; the Master Admin can link his own player profile",
+  "Competitions: each competition's box can show its trophy or fill with a full picture (Admin → Competitions → Edit) — run schema.sql (version 23)",
+  "Cup matches: one being scored shows as live on the home page and turns the LIVE button green, even with no date; the Live & upcoming strip keeps places for the next cup matches",
 ].join("\n");
