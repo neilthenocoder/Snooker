@@ -1,7 +1,7 @@
 // Live frame-by-frame scorecard for a cup match (singles, doubles or teams).
-import { html, mount, $ } from "../core/dom.js";
-import { loadCompMatch, loadCompetitions, saveCompScorecard, table } from "../core/api.js";
-import { buildBracket, roundName } from "../core/bracket.js";
+import { html, mount, $, toast, confirmBox } from "../core/dom.js";
+import { loadCompMatch, loadCompetitions, saveCompScorecard, setWalkover, table } from "../core/api.js";
+import { buildBracket, roundName, walkoverSide } from "../core/bracket.js";
 import { canEditCompMatch, canManage } from "../core/auth.js";
 import { scorecardEditor, breaksText } from "../core/scorecard-editor.js";
 import { breadcrumb, cupMatchInfo, urls, isActivePlayer } from "../core/components.js";
@@ -56,11 +56,30 @@ export default async function cupScorecard(view, { params, user }) {
     b_player_id: f.b[0].player_id, b_player2_id: f.b[1]?.player_id ?? null,
   });
 
+  // Round 37: the league admin and competition secretary can give a walkover here as well as under Draws & results.
+  const staff = canManage(user, "competitions"), wo = walkoverSide(match);
   mount(view, html`<div class="wrap">
     ${breadcrumb([["Home", "/"], [c.name, urls.competition(c)], ["Scorecard"]])}
     <p class="sc-intro">Each frame you save shows on the competition page straight away. Press <b>Finish match</b> at the end and the winner goes through.</p>
+    ${staff ? html`<div class="wo-bar" data-wo-bar>${wo
+      ? html`<span><b>Walkover</b> to ${wo === "a" ? info.a.name : info.b.name} — this match wasn't played.</span><button type="button" class="btn small ghost" data-wo="">Undo the walkover</button>`
+      : html`<span><b>Not played?</b> Give a walkover:</span><button type="button" class="btn small ghost" data-wo="a">to ${info.a.name}</button><button type="button" class="btn small ghost" data-wo="b">to ${info.b.name}</button>`}</div>` : ""}
     <div data-editor></div>
   </div>`);
+
+  $("[data-wo-bar]", view)?.addEventListener("click", async (e) => {
+    const btn = e.target.closest("[data-wo]");
+    if (!btn) return;
+    const side = btn.dataset.wo || null;
+    const who = side === "a" ? info.a.name : info.b.name;
+    if (side && !(await confirmBox(`Give ${who} a walkover?\n\nThe match is marked as not played${bundle.frames.length ? " and the frames entered so far are removed" : ""}, and the next-round place goes to ${who}.`))) return;
+    try {
+      btn.disabled = true;
+      await setWalkover(match.id, side);
+      toast(side ? `Walkover saved — ${who} through to the next round` : "Walkover taken off — the match can be played and scored");
+      navigate(side ? `/cup-match/${match.no ?? match.id}` : location.pathname, { replace: !side });
+    } catch (err) { btn.disabled = false; toast(err.message, "error"); }
+  });
 
   return scorecardEditor({
     person: (id) => { const p = players.find((x) => x.id === id); return { name: p?.full_name ?? "A player", avatar_url: p?.avatar_url, club: team(p?.team_id)?.name }; },

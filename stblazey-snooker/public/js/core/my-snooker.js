@@ -11,7 +11,7 @@ import { seasonContext } from "./context.js";
 import { articles, loadCompetitions, setMyPrefs, settings, currentCompetitions } from "./api.js";
 import { deadlineWarnings, deadlineList } from "./comp-deadlines.js";
 import { myPrefs, mySnookerOn, refreshUser } from "./auth.js";
-import { buildBracket, isEntry, roundName } from "./bracket.js";
+import { buildBracket, isEntry, roundName, compScoreText } from "./bracket.js";
 import { answered } from "./cueview.js";
 import { panel, dataTable, leagueTablePanel, playerLink, handicapTag, urls, badge, avatar, resultText, articleThumb, picture, outcomeTag, topPoints, breakTag, liveSoonTag } from "./components.js";
 import { refreshShell } from "./router.js";
@@ -176,7 +176,7 @@ function view(user, { ctx, news, comps, site = {}, form: formData = null }, pref
         { label: "Date", cell: ({ m }) => (m.row.starts_at ? fmtDate(m.row.starts_at) : "TBC") },
         { label: "Competition", cell: ({ c, b, m }) => html`<a href="${urls.competition(c)}">${c.name}</a> <small class="muted">${roundName(m.round, b.totalRounds)}</small>` },
         { label: "Match", cell: ({ b, m }) => html`<a href="/cup-match/${m.row.no ?? m.row.id}">${cupName(b, m.a)} v ${cupName(b, m.b)}</a>` },
-        { label: "Score", cell: ({ m }) => (m.row.score_a != null ? html`<span class="res-score done">${m.row.score_a} - ${m.row.score_b}</span>` : "–"), cls: "num" },
+        { label: "Score", cell: ({ m }) => (compScoreText(m.row) ? html`<span class="res-score done">${compScoreText(m.row)}</span>` : "–"), cls: "num" },
       ], cup.slice(0, home ? 4 : 30)), { foot: { href: "/competitions", label: "All competitions" } }) : ""),
     team_news: () => (teamNews.length ? panel("Team news", html`<div class="ms-news-list">${teamNews.slice(0, home ? 3 : 5).map(newsRow)}</div>`, { color: "blue" }) : ""),
     news: () => (latest.length ? panel(prefs.cats.length ? "News you follow" : "Latest news", html`<div class="ms-news-list">${latest.slice(0, home ? 3 : 5).map(newsRow)}</div>`,

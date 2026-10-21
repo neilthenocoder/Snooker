@@ -94,11 +94,32 @@ export function buildBracket(entries, matchRows) {
 export const isEntry = (x) => x !== EMPTY && x !== PENDING && x != null;
 
 /**
+ * Walkovers (Rich, round 37): the side given the match without it being played — "a", "b" or null.
+ * A walkover has no score; the side goes through as if it had won (advance_winner() in schema.sql does the same).
+ */
+export const walkoverSide = (row) => (row?.walkover === "a" || row?.walkover === "b" ? row.walkover : null);
+
+/** A competition match's result as text: "3 - 1", "W/O" for a walkover, or "" when there is no result yet. */
+export function compScoreText(row, sep = " - ") {
+  if (walkoverSide(row)) return "W/O";
+  return row?.score_a != null && row?.score_b != null ? `${row.score_a}${sep}${row.score_b}` : "";
+}
+
+/** What one side's score box shows: its frames, "W/O" for the side given a walkover, "" for the other side. */
+export function sideScore(row, side) {
+  const wo = walkoverSide(row);
+  if (wo) return wo === side ? "W/O" : "";
+  return row?.[side === "a" ? "score_a" : "score_b"] ?? null;
+}
+
+/**
  * Who won a match row: "a", "b" or null. More frames wins. A finished match that is level on
  * frames goes to the side with more points in total (handicap competitions — the points include
  * the handicap starts). Mirrors advance_winner() in supabase/schema.sql.
  */
 export function winnerSide(row) {
+  const wo = walkoverSide(row);
+  if (wo) return wo;
   if (row?.score_a == null || row?.score_b == null) return null;
   if (row.score_a !== row.score_b) return row.score_a > row.score_b ? "a" : "b";
   if (row.status !== "completed" || row.points_a == null || row.points_b == null || row.points_a === row.points_b) return null;
@@ -126,7 +147,7 @@ export function competitionStandings(bracket) {
       const r = rows.get(id);
       r.reached = Math.max(r.reached, m.round);
       if (m.played) {
-        r.f += m.row[scoreKey]; r.a += m.row[otherKey];
+        r.f += m.row[scoreKey] ?? 0; r.a += m.row[otherKey] ?? 0;
         if (m.winner === id) { r.w++; r.lastWon = m.round; } else { r.l++; r.out = true; }
       }
     }

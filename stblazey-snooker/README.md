@@ -600,6 +600,19 @@ Saved in `competitions.card_style`; `compBoxStyle()` in `core/components.js`.
 
 A cup result typed into Admin → Draws & results was saved as finished but with no date, and the home page only finds cup matches by their date, so it never showed. The database now stamps the moment a cup result goes in (or a cup match starts being scored) in `competition_matches.result_at` (trigger `stamp_comp_result`). The Live & upcoming strip shows cup results from the last two days, and the side column's Latest Results box (when it is set to show competition results — Site settings → Side column: top box) sorts them by that time when the match had no date.
 
+## 3zb. Round 37: walkovers and the head-to-head write-up
+
+**Run `supabase/schema.sql` again** (database version 25).
+
+**Walkovers in competitions.** When a cup match isn't played and one side is given it:
+- Admin → Draws & results → the match's row: under the score choose **Walkover to …** and press **Save**. Or open the match's **Scorecard**: the league admin and competition secretary see a *Not played? Give a walkover* bar at the top.
+- The match is marked completed with no score, any frames already entered are removed, and the side goes into the next round. It shows as **W/O** in the bracket, the round cards, the match page, the home page strip and the results lists.
+- To take it back: choose *No walkover* on Draws & results and Save, or press *Undo the walkover* on the scorecard. The side is taken back out of the next round (refused once the next round's match has been played). Typing a score or scoring frames also clears a walkover.
+- Walkovers don't count towards anyone's form (they weren't played).
+- Database: `competition_matches.walkover` ('a' or 'b') and the function `set_walkover(match, side)` (league admin / competition secretary only). `walkoverSide()`, `compScoreText()` and `sideScore()` in `core/bracket.js`.
+
+**Head-to-head write-up on match pages.** Below the scorecard, a *Head to head* panel sums up the earlier league meetings of the two teams (every season imported, 2018-19 onwards): the last meeting and its score (a close match, a clean sweep…), who won the last frame of a 3–2, the highest break that night, the overall record and frames, a run of wins, the home side's record in this fixture, and the best break ever made in it. It is written from fixed sentence patterns filled in with the real results — nothing is made up; a sentence is left out when its data isn't there (old results with only a final score have no breaks). Teams that have never met get no panel. Code: `core/h2h-summary.js`.
+
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
 | Rule | Current setting |

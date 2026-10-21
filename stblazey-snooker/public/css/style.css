@@ -3030,6 +3030,10 @@ table.data tbody tr.total-row td { background: var(--head-row); font-weight: 700
 .deadline-round label { margin-bottom: 8px; font-size: 12px; }
 .home-switch { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 12px; font-weight: 400; color: var(--muted); white-space: nowrap; cursor: pointer; }
 .home-switch input { width: 16px; height: 16px; margin: 0; }
+.wo-pick { display: block; margin: 6px auto 0; max-width: 190px; font-size: 12px; padding: 4px 6px; }
+/* Round 37: walkover bar on the cup scorecard (staff only) */
+.wo-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 16px; padding: 10px 14px; border: 1px dashed var(--line, #ccc); border-radius: 10px; font-size: 14px; }
+.wo-bar b { margin-right: 4px; }
 /* 5. Admin → Branding → App icon: how the icon will look on an iPhone, an Android phone and as an installed app. */
 .appicon-previews { display: flex; flex-wrap: wrap; gap: 16px; margin: 6px 0 10px; }
 .appicon-previews figure { margin: 0; display: grid; justify-items: center; gap: 4px; }
@@ -3883,3 +3887,6 @@ p.not-upd { margin: 0; }
 /* Round 34: a competition's box — the trophy on its own, or the picture filling it */
 .comp-pic.is-trophy .comp-row-trophy { right: 50%; bottom: 50%; transform: translate(50%, 50%); width: 70px; height: 88px; }
 @media (max-width: 640px) { .comp-pic.is-trophy .comp-row-trophy { width: 48px; height: 60px; } }
+/* Round 37: match preview — head to head write-up */
+.h2h-summary { padding: 14px 18px 6px; }
+.h2h-summary p { margin: 0 0 10px; line-height: 1.55; }

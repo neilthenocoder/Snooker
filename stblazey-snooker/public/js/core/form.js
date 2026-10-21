@@ -18,7 +18,7 @@
 import { html, fmtDate } from "./dom.js";
 import { loadCompetitions, competitionBreaks, currentCompetitions } from "./api.js";
 import { frameWinner, isCounted, RULES } from "./rules.js";
-import { winnerSide } from "./bracket.js";
+import { winnerSide, walkoverSide } from "./bracket.js";
 
 export const FORM = {
   last: 6,                         // how many recent matches count
@@ -70,7 +70,7 @@ export async function loadForm(ctx, compsLoaded = null) {
   const inSeason = (c, m) => !!seasonId && (c.season_id === seasonId
     || (!c.season_id && ctx.season?.is_current && !!seasonStart && String(m.starts_at ?? "") >= seasonStart));
   const compById = new Map(comps.competitions.map((c) => [c.id, c]));
-  const played = comps.matches.filter((m) => compById.has(m.competition_id) && inSeason(compById.get(m.competition_id), m) && winnerSide(m) && m.entry_a && m.entry_b);
+  const played = comps.matches.filter((m) => compById.has(m.competition_id) && inSeason(compById.get(m.competition_id), m) && winnerSide(m) && !walkoverSide(m) && m.entry_a && m.entry_b);
   const cBreaks = played.length ? await competitionBreaks(played.map((m) => m.id)).catch(() => []) : [];
   const now = new Date().toISOString();
 

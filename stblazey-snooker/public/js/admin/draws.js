@@ -1,7 +1,7 @@
 // Admin: entrants, the draw and results for one knockout competition.
 import { html, mount, $, toast, readForm, toLocalInput, fromLocalInput, fmtDate, fmtTime, confirmBox } from "../core/dom.js";
-import { table, save, remove, insertMany, loadCompetitions, replaceDraw } from "../core/api.js";
-import { buildBracket, makeDraw, shuffle, roundName, isEntry, redrawNextRound, winnerAdvance, firstMatchLosers, drawPlan, drawNextTie, PENDING } from "../core/bracket.js";
+import { table, save, remove, insertMany, loadCompetitions, replaceDraw, setWalkover } from "../core/api.js";
+import { buildBracket, makeDraw, shuffle, roundName, isEntry, walkoverSide, redrawNextRound, winnerAdvance, firstMatchLosers, drawPlan, drawNextTie, PENDING } from "../core/bracket.js";
 import { slugify } from "../core/schedule.js";
 import { panel, dataTable, urls, shortName, isActivePlayer } from "../core/components.js";
 import { navigate } from "../core/router.js";
@@ -140,8 +140,12 @@ export async function draws(el, { user } = {}) {
           <td class="strong">${roundName(m.round, b.totalRounds)}${m.row.status === "in_progress" ? html` <span class="live-dot">Live</span>` : ""}</td>
           <td class="right">${pickSide("a")}</td>
           <td class="num" style="white-space:nowrap">${m.isBye ? html`<span class="muted">bye</span>` : html`
-            <input type="number" min="0" max="99" name="score_a" value="${m.row.score_a ?? ""}" style="width:58px" ${ready ? "" : "disabled"}> –
-            <input type="number" min="0" max="99" name="score_b" value="${m.row.score_b ?? ""}" style="width:58px" ${ready ? "" : "disabled"}>`}</td>
+            <input type="number" min="0" max="99" name="score_a" value="${m.row.score_a ?? ""}" style="width:58px" ${ready && !walkoverSide(m.row) ? "" : "disabled"}> –
+            <input type="number" min="0" max="99" name="score_b" value="${m.row.score_b ?? ""}" style="width:58px" ${ready && !walkoverSide(m.row) ? "" : "disabled"}>
+            ${ready ? html`<select name="walkover" class="wo-pick" aria-label="Walkover" title="Not played: give the match to one side">
+              <option value="">No walkover</option>
+              <option value="a" ${walkoverSide(m.row) === "a" ? "selected" : ""}>Walkover to ${b.entryById.get(m.a)?.name}</option>
+              <option value="b" ${walkoverSide(m.row) === "b" ? "selected" : ""}>Walkover to ${b.entryById.get(m.b)?.name}</option></select>` : ""}`}</td>
           <td>${pickSide("b")}${m.isBye ? "" : html`<label class="home-switch" title="The home player didn't contact their opponent in time: the second-named is now at home"><input type="checkbox" name="home_switched" ${m.row.home_switched ? "checked" : ""}> now at home</label>`}</td>
           <td>${m.isBye ? "" : html`<input type="datetime-local" name="starts_at" value="${toLocalInput(m.row.starts_at)}">`}</td>
           <td>${m.isBye ? "" : html`<select name="venue_id"><option value="">–</option>${venues.map((v) => html`<option value="${v.id}" ${v.id === m.row.venue_id ? "selected" : ""}>${v.name}</option>`)}</select>`}</td>
@@ -150,11 +154,17 @@ export async function draws(el, { user } = {}) {
         </tr>`;
       })}</tbody></table></div>
       <p class="muted" style="padding:0 14px">Type a final score and press Save, or use <b>Scorecard</b> to score it frame by frame live (with breaks).
+        Not played? Choose <b>Walkover to …</b> under the score and press Save.
         Winners move into the next round automatically. Changing a pairing by hand overrides the bracket for that match.</p>`) : ""}
   </div>`);
 
   const root = $("#draws-root");
   $("[data-pick]", root).addEventListener("change", (e) => navigate(`/admin/draws?c=${e.target.value}`));
+  // A walkover has no score: the score boxes switch off while one is chosen.
+  root.addEventListener("change", (e) => {
+    if (!e.target.matches(".wo-pick")) return;
+    for (const n of ["score_a", "score_b"]) { const box = e.target.closest("tr").querySelector(`[name=${n}]`); box.disabled = !!e.target.value; if (e.target.value) box.value = ""; }
+  });
   const guard = async (fn) => { try { await fn(); } catch (err) { toast(friendly(err), "error"); } };
 
   // Add one entrant (the name defaults to the linked team/player's name).
@@ -263,7 +273,7 @@ export async function draws(el, { user } = {}) {
       if (!confirm(`Make a random draw for the ${roundName(round + 1, b.totalRounds).toLowerCase()}?`)) return;
       for (const n of next) {
         const row = rows.find((r) => r.round === round + 1 && r.slot === n.slot);
-        await save("competition_matches", { id: row.id, entry_a: n.entry_a, entry_b: n.entry_b, score_a: null, score_b: null, status: "scheduled" });
+        await save("competition_matches", { id: row.id, entry_a: n.entry_a, entry_b: n.entry_b, score_a: null, score_b: null, walkover: null, status: "scheduled" });
       }
       toast("Next round drawn"); redraw();
     }
@@ -276,6 +286,16 @@ export async function draws(el, { user } = {}) {
       if (get("starts_at")) Object.assign(row, { starts_at: fromLocalInput(get("starts_at").value), venue_id: get("venue_id").value || null });
       if (get("home_switched")) row.home_switched = get("home_switched").checked;
       if (row.entry_a && row.entry_a === row.entry_b) return toast("Someone can't play themselves", "error");
+      // Round 37: a walkover — save the pairing, date and venue, then the database gives the match to that side.
+      const wo = get("walkover")?.value || null, before = rows.find((r) => r.id === row.id);
+      if (wo) {
+        delete row.score_a; delete row.score_b;
+        t.disabled = true;
+        await save("competition_matches", row);
+        await setWalkover(row.id, wo);
+        toast(`Walkover saved — ${b.entryById.get(wo === "a" ? row.entry_a ?? before?.entry_a : row.entry_b ?? before?.entry_b)?.name ?? "the winner"} through to the next round`); return redraw();
+      }
+      if (walkoverSide(before)) await setWalkover(row.id, null);
       if ((row.score_a == null) !== (row.score_b == null)) return toast("Enter both scores (or neither)", "error");
       if ("score_a" in row) row.status = row.score_a != null ? "completed" : "scheduled";
       // Level on frames is only possible when the scorecard's total points decided it (handicap competitions).

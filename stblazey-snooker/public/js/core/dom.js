@@ -42,6 +42,9 @@ const dateF = fmt({ day: "2-digit", month: "2-digit", year: "numeric" });
 const timeF = fmt({ hour: "2-digit", minute: "2-digit", hour12: false });
 const dayF = fmt({ year: "numeric", month: "2-digit", day: "2-digit" });
 export const fmtDate = (iso) => (iso ? dateF.format(new Date(iso)) : "");
+const longF = fmt({ day: "numeric", month: "long", year: "numeric" });
+/** "12 November 2024" — for dates inside sentences (the match preview summary). */
+export const fmtLongDate = (iso) => (iso ? longF.format(new Date(iso)) : "");
 export const fmtTime = (iso) => (iso ? timeF.format(new Date(iso)) : "");
 /** "YYYY-MM-DD" of an ISO timestamp in UK time. */
 export const ukDay = (iso) => dayF.format(new Date(iso)).split("/").reverse().join("-");

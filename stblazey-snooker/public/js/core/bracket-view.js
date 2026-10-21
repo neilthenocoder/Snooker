@@ -1,7 +1,7 @@
 // HTML for knockout competitions: the bracket "roadmap", round cards and
 // standings. The logic (who plays whom, who won) lives in bracket.js.
 import { html, fmtDate, fmtTime } from "./dom.js";
-import { roundName, isEntry, EMPTY, competitionStandings } from "./bracket.js";
+import { roundName, isEntry, EMPTY, competitionStandings, walkoverSide, sideScore } from "./bracket.js";
 import { dataTable, urls } from "./components.js";
 
 const MATCH_HEIGHT = 102; // px per first-round match; later rounds share the same height
@@ -23,11 +23,11 @@ function entryHref(entry) {
 }
 
 /** A finished match that was level on frames is decided on total points (handicap competitions). */
-const onPoints = (m) => (m.played && m.row.score_a === m.row.score_b ? `On points ${m.row.points_a}–${m.row.points_b}` : "");
+const onPoints = (m) => (m.played && !walkoverSide(m.row) && m.row.score_a === m.row.score_b ? `On points ${m.row.points_a}–${m.row.points_b}` : "");
 
 function teamRow(b, m, side) {
   const id = m[side];
-  const score = m.row[side === "a" ? "score_a" : "score_b"];
+  const score = sideScore(m.row, side);
   const state = !isEntry(id) ? "tbc" : m.winner === id ? "won" : m.loser === id ? "lost" : "";
   const onPath = b.champion && id === b.champion ? "path" : "";
   return html`<div class="br-team ${state} ${onPath}" ${isEntry(id) ? html`data-entry="${id}"` : ""}>
@@ -98,9 +98,9 @@ export function roundCards(b, venueById, deadlines = {}) {
           const name = sideLabel(b, m, side);
           return html`<div class="fx-side ${m.winner === id && m.played ? "won" : m.loser === id && m.played ? "lost" : ""}">
             ${href ? html`<a href="${href}">${name}</a>` : html`<span>${name}</span>`}
-            <b>${m.row[side === "a" ? "score_a" : "score_b"] ?? "-"}</b></div>`;
+            <b>${sideScore(m.row, side) ?? "-"}</b></div>`;
         };
-        return html`<div class="fx-card">${cell("a")}<div class="fx-v">v ${m.row.id ? html`<a class="fx-link" href="/cup-match/${m.row.no ?? m.row.id}">${m.row.status === "in_progress" ? "Live" : m.played ? "Scorecard" : "Match page"} →</a>` : ""}</div>${cell("b")}
+        return html`<div class="fx-card">${cell("a")}<div class="fx-v">v ${m.row.id ? html`<a class="fx-link" href="/cup-match/${m.row.no ?? m.row.id}">${m.row.status === "in_progress" ? "Live" : walkoverSide(m.row) ? "Walkover" : m.played ? "Scorecard" : "Match page"} →</a>` : ""}</div>${cell("b")}
           <div class="fx-meta">${m.row.starts_at ? `${fmtDate(m.row.starts_at)} ${fmtTime(m.row.starts_at)}` : "Date TBC"}${v ? html` · <a href="${urls.venue(v)}">${v.name}</a>` : ""}${onPoints(m) ? html` · <b>${onPoints(m)}</b>` : ""}</div></div>`;
       })}</div>`;
   });

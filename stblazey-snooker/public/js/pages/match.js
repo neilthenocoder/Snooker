@@ -9,6 +9,7 @@ import { breadcrumb, panel, dataTable, resultsList, statusBadge, urls, teamLink,
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
 import { matchChat } from "../core/comments.js";
+import { headToHeadSummary } from "../core/h2h-summary.js";
 
 export default async function match(view, { params, user }) {
   // Match night chat (Rich, round 24): a button near the top opens it from the bottom of the screen.
@@ -59,6 +60,9 @@ export default async function match(view, { params, user }) {
     const h2hFrames = new Map();
     for (const f of h2h.frames) (h2hFrames.get(f.fixture_id) ?? h2hFrames.set(f.fixture_id, []).get(f.fixture_id)).push(f);
     const past = h2h.fixtures.filter((f) => f.id !== fx.id && h2hFrames.has(f.id));
+    // Round 37 (Rich): the match preview ends with a short write-up of earlier meetings between the two teams.
+    const summary = headToHeadSummary({ fixture: fx, home, away, meetings: past, framesBy: h2hFrames, breaks: h2h.breaks ?? [],
+      playerName: (id) => ctx.player.get(id)?.full_name ?? null, leagueName: (id) => ctx.league.get(id)?.name ?? "" });
 
     // Win in green, loss in red — the same colours as the scorecard below it.
     const outcome = (side) => {
@@ -146,6 +150,7 @@ export default async function match(view, { params, user }) {
           ], frames))}
           <div class="compare">${bar("Points", "points")}${bar("Wins", "wins")}${bar("Loss", "loss")}${bar("Brks", "brks")}</div>
         ` : html`<div class="notice">No frames entered yet${fx.status === "scheduled" ? " — check back on match night." : "."}</div>`}
+        ${summary?.sentences.length ? panel("Head to head", html`<div class="h2h-summary">${summary.sentences.map((s) => html`<p>${s}</p>`)}</div>`) : ""}
         ${panel("Past Meetings", resultsList(ctx, past, { scoreFn: (f) => { const s = matchScore(h2hFrames.get(f.id)); return `${s.home} - ${s.away}`; } }))}
       </div>`);
     if (chat) $("[data-chat-slot]", view)?.replaceWith(chat.button);

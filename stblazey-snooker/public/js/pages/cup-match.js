@@ -1,7 +1,7 @@
 // Public page for one cup match: score, frames, breaks — updates live.
 import { html, mount, fmtDate, fmtTime } from "../core/dom.js";
 import { loadCompMatch, loadCompetitions, subscribe, table } from "../core/api.js";
-import { buildBracket, roundName, winnerSide } from "../core/bracket.js";
+import { buildBracket, roundName, winnerSide, walkoverSide } from "../core/bracket.js";
 import { canEditCompMatch } from "../core/auth.js";
 import { breadcrumb, panel, dataTable, cupMatchInfo, urls, badge, handicapText, breakList } from "../core/components.js";
 import { handicapStarts, handicapMode } from "../core/rules.js";
@@ -46,6 +46,7 @@ export default async function cupMatch(view, { params, user }) {
     const venue = venues.find((v) => v.id === match.venue_id);
     const live = match.status === "in_progress";
     const won = (s) => match.status === "completed" && winnerSide(match) === s;
+    const wo = walkoverSide(match);   // round 37: a walkover — no frames, one side goes through
 
     mount(view, html`<div class="wrap stack">
       <div class="cm-row">${breadcrumb([["Home", "/"], ["Competitions", "/competitions"], [c?.name ?? "Competition", c ? urls.competition(c) : null], [`${nameA} vs ${nameB}`]])}<span data-chat-slot></span></div>
@@ -53,16 +54,17 @@ export default async function cupMatch(view, { params, user }) {
         <div class="mh-band">${c?.name} · ${roundName(match.round, info.bracket.totalRounds)}${match.starts_at ? ` · ${fmtDate(match.starts_at)} ${fmtTime(match.starts_at)}` : ""}</div>
         <div class="mh-body">
           <div class="mh-side ${won("a") ? "won" : won("b") ? "lost" : ""}">${teamOf(info.a) ? badge(teamOf(info.a)) : ""}<span>${nameA}</span></div>
-          <div class="mh-score"><b>${match.score_a ?? "–"}</b><i>:</i><b>${match.score_b ?? "–"}</b>
-            ${live ? html`<span class="live-dot">Live</span>` : match.status === "completed" ? html`<small>Final</small>` : ""}</div>
+          <div class="mh-score">${wo ? html`<b>W/O</b>` : html`<b>${match.score_a ?? "–"}</b><i>:</i><b>${match.score_b ?? "–"}</b>`}
+            ${wo ? html`<small>Walkover</small>` : live ? html`<span class="live-dot">Live</span>` : match.status === "completed" ? html`<small>Final</small>` : ""}</div>
           <div class="mh-side ${won("b") ? "won" : won("a") ? "lost" : ""}">${teamOf(info.b) ? badge(teamOf(info.b)) : ""}<span>${nameB}</span></div>
         </div>
         ${c?.handicap && scored.length ? html`<div class="mh-foot">Total points: <b>${total.a}</b> to <b>${total.b}</b>${level && match.status === "completed" && winnerSide(match)
           ? html` · level on frames, so <b>${winnerSide(match) === "a" ? nameA : nameB}</b> go through on total points` : level ? " · level on frames — the higher total wins" : ""}</div>` : ""}
+        ${wo ? html`<div class="mh-foot">Walkover to <b>${wo === "a" ? nameA : nameB}</b> — the match wasn't played.</div>` : ""}
         ${venue ? html`<div class="mh-foot"><a href="${urls.venue(venue)}">${venue.name}</a></div>` : ""}
       </div>
       ${info.a && info.b && canEditCompMatch(user, match, [info.a, info.b], players) ? html`<div class="btn-row"><a class="btn" href="/cup-scorecard/${match.no ?? match.id}">${frames.length ? "Update scorecard" : "Start scoring"}</a></div>` : ""}
-      ${panel("Frame by frame", dataTable([
+      ${wo ? "" : panel("Frame by frame", dataTable([
         { label: "Frame", cell: (f) => f.frame_no, cls: "num" },
         { label: nameA, cell: (f) => html`<span class="${f.a_points > f.b_points ? "strong" : ""}">${sidePlayers(f, "a")}</span>`, cls: "right" },
         { label: "Score", cell: (f) => `${f.a_points ?? "–"} - ${f.b_points ?? "–"}`, cls: "num" },

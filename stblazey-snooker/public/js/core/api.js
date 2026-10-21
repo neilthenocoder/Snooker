@@ -105,8 +105,8 @@ export async function loadFixture(ref) {
 export async function headToHead(teamA, teamB) {
   const fixtures = (await selectAll(() => db.from("fixtures").select("*").in("home_team_id", [teamA, teamB]).order("starts_at", { ascending: false })))
     .filter((f) => [teamA, teamB].includes(f.away_team_id));
-  const frames = await selectIn("frames", "fixture_id", fixtures.map((f) => f.id));
-  return { fixtures, frames: withLegacyFrames(fixtures, frames) };
+  const [frames, breaks] = await Promise.all([selectIn("frames", "fixture_id", fixtures.map((f) => f.id)), selectIn("breaks", "fixture_id", fixtures.map((f) => f.id))]);
+  return { fixtures, frames: withLegacyFrames(fixtures, frames), breaks };
 }
 
 export async function articles() {
@@ -303,6 +303,15 @@ export async function saveCompScorecard(matchId, frames, breaks, finished) {
   await run(db.from("competition_breaks").delete().eq("match_id", matchId));
   if (breaks.length) await run(db.from("competition_breaks").insert(breaks.map((b) => ({ ...b, match_id: matchId }))).select());
   await run(db.rpc("sync_comp_match", { mid: matchId, finished }));
+  invalidate();
+}
+
+/**
+ * Give a competition match to one side without it being played (side "a" or "b"), or take a walkover back (null).
+ * The database moves the side into the next round (set_walkover() in schema.sql). Round 37.
+ */
+export async function setWalkover(matchId, side) {
+  await run(db.rpc("set_walkover", { mid: matchId, side: side || null }));
   invalidate();
 }
 

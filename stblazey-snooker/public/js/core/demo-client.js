@@ -464,7 +464,7 @@ export const demoClient = {
       if (args.finished && wa === wb && !(comp?.handicap && pa !== pb))
         return { data: null, error: { message: comp?.handicap ? "A knockout match needs a winner — the frames and the total points are both level" : "A knockout match needs a winner — the frames are level" } };
       Object.assign(m, { score_a: wa + wb ? wa : null, score_b: wa + wb ? wb : null, points_a: wa + wb ? pa : null, points_b: wa + wb ? pb : null,
-        status: args.finished ? "completed" : wa + wb ? "in_progress" : m.status });
+        status: args.finished ? "completed" : wa + wb ? "in_progress" : m.status, ...(wa + wb ? { walkover: null } : {}) });
       const changed = [m];
       // advance_winner(): bracket draws move the winner into the next round.
       const w = args.finished && ((wa > wb || (wa === wb && pa > pb)) ? m.entry_a : m.entry_b);
@@ -473,6 +473,31 @@ export const demoClient = {
         if (next) { next[m.slot % 2 ? "entry_b" : "entry_a"] = w; changed.push(next); }
       }
       persist(); emit("competition_matches", changed);
+      return { data: null, error: null };
+    }
+    if (name === "set_walkover") {
+      // Mirrors set_walkover() in supabase/schema.sql (round 37).
+      const m = state.tables.competition_matches.find((x) => x.id === args.mid);
+      if (!m) return { data: null, error: { message: "That match no longer exists" } };
+      if (args.side && (!m.entry_a || !m.entry_b)) return { data: null, error: { message: "Both sides need to be known before a walkover can be given (an empty side is a bye)" } };
+      if (!args.side && !m.walkover) return { data: null, error: null };
+      const comp = state.tables.competitions.find((c) => c.id === m.competition_id);
+      const side = (s) => (s === "a" ? m.entry_a : s === "b" ? m.entry_b : null);
+      const next = comp?.draw_mode !== "redraw" && state.tables.competition_matches.find((x) => x.competition_id === m.competition_id && x.round === m.round + 1 && x.slot === Math.floor(m.slot / 2));
+      const key = m.slot % 2 ? "entry_b" : "entry_a";
+      const was = m.status === "completed" ? (m.walkover ? side(m.walkover) : m.score_a > m.score_b ? m.entry_a : m.score_b > m.score_a ? m.entry_b : (m.points_a ?? 0) > (m.points_b ?? 0) ? m.entry_a : m.entry_b) : null;
+      if (next && was && was !== side(args.side)) {
+        if (next.score_a != null || next.walkover || (next.status ?? "scheduled") !== "scheduled") return { data: null, error: { message: "The next round has already been played, so this result can't be changed any more" } };
+        if (next[key] === was) next[key] = null;
+      }
+      if (!args.side) Object.assign(m, { walkover: null, status: "scheduled", result_at: null });
+      else {
+        state.tables.competition_frames = (state.tables.competition_frames ?? []).filter((f) => f.match_id !== m.id);
+        state.tables.competition_breaks = (state.tables.competition_breaks ?? []).filter((f) => f.match_id !== m.id);
+        Object.assign(m, { walkover: args.side, score_a: null, score_b: null, points_a: null, points_b: null, status: "completed", result_at: new Date().toISOString() });
+        if (next) next[key] = side(args.side);
+      }
+      persist(); emit("competition_matches", [m, ...(next ? [next] : [])]);
       return { data: null, error: null };
     }
     if (name === "set_my_prefs") {

@@ -881,9 +881,12 @@ declare m competition_matches; mode text; w uuid;
 begin
   select * into m from competition_matches where id = mid;
   select draw_mode into mode from competitions where id = m.competition_id;
-  if mode = 'redraw' or m.score_a is null or m.score_b is null then return; end if;
-  -- More frames wins; level on frames, the higher total points wins (handicap competitions).
-  w := case when m.score_a > m.score_b then m.entry_a
+  if mode = 'redraw' then return; end if;
+  -- A walkover (round 37): the side given it goes through. Otherwise more frames wins; level on frames,
+  -- the higher total points wins (handicap competitions).
+  if m.walkover is null and (m.score_a is null or m.score_b is null) then return; end if;
+  w := case when m.walkover = 'a' then m.entry_a when m.walkover = 'b' then m.entry_b
+            when m.score_a > m.score_b then m.entry_a
             when m.score_b > m.score_a then m.entry_b
             when coalesce(m.points_a, 0) > coalesce(m.points_b, 0) then m.entry_a
             when coalesce(m.points_b, 0) > coalesce(m.points_a, 0) then m.entry_b end;
@@ -920,6 +923,7 @@ begin
          score_b = case when wa + wb > 0 then wb end,
          points_a = case when wa + wb > 0 then pa end,
          points_b = case when wa + wb > 0 then pb end,
+         walkover = case when wa + wb > 0 then null else walkover end,
          status = case when finished then 'completed' when wa + wb > 0 then 'in_progress' else status end
    where id = mid;
   if finished then perform public.advance_winner(mid); end if;
@@ -1424,6 +1428,7 @@ begin
          score_b = case when coalesce(l.frames_a, 0) + coalesce(l.frames_b, 0) > 0 then l.frames_b end,
          points_a = case when coalesce(l.frames_a, 0) + coalesce(l.frames_b, 0) > 0 then pa end,
          points_b = case when coalesce(l.frames_a, 0) + coalesce(l.frames_b, 0) > 0 then pb end,
+         walkover = null,
          status = case when l.status = 'finished' then 'completed' when l.status = 'live' then 'in_progress' else 'scheduled' end
    where id = m.id;
   if l.status = 'finished' then
@@ -2483,6 +2488,7 @@ alter table competition_matches add column if not exists result_at timestamptz;
 create or replace function public.stamp_comp_result() returns trigger language plpgsql as $$
 begin
   if (new.score_a is distinct from old.score_a or new.score_b is distinct from old.score_b
+      or new.walkover is distinct from old.walkover
       or (new.status is distinct from old.status and new.status in ('in_progress', 'completed'))) then
     new.result_at := case when new.score_a is null and new.score_b is null and new.status = 'scheduled' then null else now() end;
   end if;
@@ -2491,13 +2497,68 @@ end $$;
 drop trigger if exists competition_matches_stamp_result on competition_matches;
 create trigger competition_matches_stamp_result before update on competition_matches for each row execute function public.stamp_comp_result();
 
+-- ── Round 37: walkovers in competitions ──────────────────────────
+-- Rich: "We need to add walkovers to comps." A match given to one side without being played: walkover is 'a' or 'b'
+-- (the side that goes through), there is no score and no frames, and the match counts as completed. Set and
+-- cleared with set_walkover() below (Draws & results, or the cup scorecard), which also moves the side into the
+-- next round. Typing a score or scoring frames later clears it. Walkovers don't count towards anyone's form.
+alter table competition_matches add column if not exists walkover text;
+alter table competition_matches drop constraint if exists competition_matches_walkover_check;
+alter table competition_matches add constraint competition_matches_walkover_check check (walkover is null or walkover in ('a', 'b'));
+
+create or replace function public.set_walkover(mid uuid, side text) returns void
+language plpgsql security definer set search_path = public as $$
+declare m competition_matches; nxt competition_matches; mode text; w uuid; keep uuid;
+begin
+  if not public.can_manage('competitions') then
+    raise exception 'Only the league admin or the competition secretary can give a walkover';
+  end if;
+  if side is not null and side not in ('a', 'b') then raise exception 'A walkover goes to side a or side b'; end if;
+  select * into m from competition_matches where id = mid;
+  if not found then raise exception 'That match no longer exists'; end if;
+  if side is not null and (m.entry_a is null or m.entry_b is null) then
+    raise exception 'Both sides need to be known before a walkover can be given (an empty side is a bye)';
+  end if;
+  if side is null and m.walkover is null then return; end if;   -- nothing to undo
+  select draw_mode into mode from competitions where id = m.competition_id;
+
+  -- Whoever this match had already sent through comes back out of the next round (unless that match has started).
+  if m.status = 'completed' and coalesce(mode, 'bracket') <> 'redraw' then
+    w := case when m.walkover = 'a' then m.entry_a when m.walkover = 'b' then m.entry_b
+              when m.score_a > m.score_b then m.entry_a when m.score_b > m.score_a then m.entry_b
+              when coalesce(m.points_a, 0) > coalesce(m.points_b, 0) then m.entry_a
+              when coalesce(m.points_b, 0) > coalesce(m.points_a, 0) then m.entry_b end;
+    keep := case side when 'a' then m.entry_a when 'b' then m.entry_b end;   -- the side going through now (none when undoing)
+    select * into nxt from competition_matches where competition_id = m.competition_id and round = m.round + 1 and slot = m.slot / 2;
+    if found and w is not null and w is distinct from keep then
+      if nxt.score_a is not null or nxt.walkover is not null or nxt.status <> 'scheduled' then
+        raise exception 'The next round has already been played, so this result can''t be changed any more';
+      end if;
+      if m.slot % 2 = 0 then update competition_matches set entry_a = null where id = nxt.id and entry_a = w;
+      else update competition_matches set entry_b = null where id = nxt.id and entry_b = w; end if;
+    end if;
+  end if;
+
+  if side is null then
+    update competition_matches set walkover = null, status = 'scheduled' where id = mid and walkover is not null;
+    return;
+  end if;
+  delete from competition_frames where match_id = mid;
+  delete from competition_breaks where match_id = mid;
+  update competition_matches set walkover = side, score_a = null, score_b = null, points_a = null, points_b = null, status = 'completed'
+   where id = mid;
+  perform public.advance_winner(mid);
+end $$;
+revoke all on function public.set_walkover(uuid, text) from public, anon;
+grant execute on function public.set_walkover(uuid, text) to authenticated;
+
 -- ── the version of this file ─────────────────────────────────────
 -- KEEP THIS AT THE VERY END. The website asks the database for this number (public/js/core/version.js holds
 -- the one it expects). Because it is the last thing in the file, the database only reports the new number
 -- when everything above it has run. If the website files are uploaded without this file being run, the admin
 -- dashboard says "The database needs updating" at the top of every page.
 -- When something is added to this file that the website needs: raise this number and the one in version.js.
-create or replace function public.schema_version() returns int language sql immutable as $$ select 24 $$;
+create or replace function public.schema_version() returns int language sql immutable as $$ select 25 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

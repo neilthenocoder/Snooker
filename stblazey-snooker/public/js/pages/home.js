@@ -8,7 +8,7 @@ import { seasonContext, sideBoxData } from "../core/context.js";
 import { articles, settings, upcomingMatches, loadCompetitions, subscribe, table, liveMatches, currentCompetitions } from "../core/api.js";
 import { deadlineWarnings, deadlineBar } from "../core/comp-deadlines.js";
 import { matchScore, shieldHolder } from "../core/rules.js";
-import { buildBracket, isEntry } from "../core/bracket.js";
+import { buildBracket, isEntry, walkoverSide } from "../core/bracket.js";
 import { answered, articleCueview } from "../core/cueview.js";
 import { leagueTablePanel, sidebar, panel, picture, urls, badge, avatar, articleThumb, shortName, latestNews, trophy, shieldPicture } from "../core/components.js";
 import { SITE } from "../config.js";
@@ -288,6 +288,8 @@ async function liveStrip() {
         when: m.starts_at ?? m.result_at ?? new Date().toISOString(), status: m.status, live: m.status === "in_progress", done: m.status === "completed", title: c.name, cup: true,
         a: who(bm.a), b: who(bm.b),
         score: { home: m.score_a ?? 0, away: m.score_b ?? 0 }, hasFrames: m.score_a != null, href: `/cup-match/${m.no ?? m.id}`, venue: venues.find((v) => v.id === m.venue_id),
+        // Round 37: a walkover has no score — the card says who went through.
+        walkover: walkoverSide(m) ? who(walkoverSide(m) === "a" ? bm.a : bm.b).name : null,
       };
     }).filter(Boolean),
     // Matches scored ball by ball (finals): on now, or set up with a date in the next three weeks.
@@ -338,10 +340,10 @@ async function liveStrip() {
       <div class="sc-foot">${c.foot}</div></a>` : html`<a class="strip-card ${c.live ? "is-live" : ""}" href="${c.href}">
       <div class="sc-top"><span>${ukDay(c.when) === todayUK() ? "Tonight" : fmtDate(c.when)}</span><span class="sc-comp">${c.title}</span></div>
       <div class="sc-body">${side(c.a)}
-        <div class="sc-mid">${c.hasFrames || c.done ? html`<b>${c.score.home} - ${c.score.away}</b>` : html`<b class="time">${fmtTime(c.when)}</b>`}
-          ${c.live ? html`<span class="live-dot">Live</span>` : c.done ? html`<small>Result</small>` : c.hasFrames ? "" : liveSoonTag({ starts_at: c.when, status: c.status ?? "scheduled" })}</div>
+        <div class="sc-mid">${c.walkover ? html`<b>W/O</b>` : c.hasFrames || c.done ? html`<b>${c.score.home} - ${c.score.away}</b>` : html`<b class="time">${fmtTime(c.when)}</b>`}
+          ${c.walkover ? html`<small>Walkover</small>` : c.live ? html`<span class="live-dot">Live</span>` : c.done ? html`<small>Result</small>` : c.hasFrames ? "" : liveSoonTag({ starts_at: c.when, status: c.status ?? "scheduled" })}</div>
         ${side(c.b)}</div>
-      <div class="sc-foot">${c.venue?.name ?? ""}</div>
+      <div class="sc-foot">${c.walkover ? `Walkover to ${c.walkover}` : c.venue?.name ?? ""}</div>
     </a>`))}</div>`;
 }
 
