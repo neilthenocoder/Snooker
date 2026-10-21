@@ -481,7 +481,7 @@ async function competitionsTab(el, { ctx, user, team, me }) {
       { label: "Date", cell: ({ m }) => (m.row.starts_at ? `${fmtDate(m.row.starts_at)} ${fmtTime(m.row.starts_at)}` : "TBC"), cls: "fx-date" },
       { label: "Competition", cell: ({ c, b, m }) => html`<a href="${urls.competition(c)}">${c.name}</a> <small class="muted">${roundName(m.round, b.totalRounds)}</small>`, cls: "fx-comp" },
       { label: "Match", cell: ({ b, m }) => html`<a href="/cup-match/${m.row.no ?? m.row.id}">${name(b, m.a)} v ${name(b, m.b)}</a>`, cls: "fx-name" },
-      { label: "Score", cell: ({ m }) => (compScoreText(m.row) || html`<span class="fx-none">–</span>`), cls: "num fx-res" },
+      { label: "Score", cell: ({ m }) => (compScoreText(m.row) || (m.row.status === "postponed" ? "P - P" : html`<span class="fx-none">–</span>`)), cls: "num fx-res" },
       { label: "", cls: "fx-act", cell: ({ b, m }) => (isEntry(m.a) && isEntry(m.b) && canEditCompMatch(user, m.row, [b.entryById.get(m.a), b.entryById.get(m.b)], ctx.players)
         ? html`<a class="btn small" href="/cup-scorecard/${m.row.no ?? m.row.id}">${m.row.score_a != null ? "Update scorecard" : "Score this match"}</a>`
         : statusBadge(m.row.status ?? "scheduled")) },

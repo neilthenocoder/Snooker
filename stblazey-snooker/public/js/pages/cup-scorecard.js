@@ -1,6 +1,6 @@
 // Live frame-by-frame scorecard for a cup match (singles, doubles or teams).
 import { html, mount, $, toast, confirmBox } from "../core/dom.js";
-import { loadCompMatch, loadCompetitions, saveCompScorecard, setWalkover, table } from "../core/api.js";
+import { loadCompMatch, loadCompetitions, saveCompScorecard, setWalkover, save, table } from "../core/api.js";
 import { buildBracket, roundName, walkoverSide } from "../core/bracket.js";
 import { canEditCompMatch, canManage } from "../core/auth.js";
 import { scorecardEditor, breaksText } from "../core/scorecard-editor.js";
@@ -63,11 +63,21 @@ export default async function cupScorecard(view, { params, user }) {
     <p class="sc-intro">Each frame you save shows on the competition page straight away. Press <b>Finish match</b> at the end and the winner goes through.</p>
     ${staff ? html`<div class="wo-bar" data-wo-bar>${wo
       ? html`<span><b>Walkover</b> to ${wo === "a" ? info.a.name : info.b.name} — this match wasn't played.</span><button type="button" class="btn small ghost" data-wo="">Undo the walkover</button>`
-      : html`<span><b>Not played?</b> Give a walkover:</span><button type="button" class="btn small ghost" data-wo="a">to ${info.a.name}</button><button type="button" class="btn small ghost" data-wo="b">to ${info.b.name}</button>`}</div>` : ""}
+      : html`<span><b>Not played?</b> Give a walkover:</span><button type="button" class="btn small ghost" data-wo="a">to ${info.a.name}</button><button type="button" class="btn small ghost" data-wo="b">to ${info.b.name}</button>
+        ${match.status === "postponed" ? html`<span class="pp-note">Postponed.</span><button type="button" class="btn small ghost" data-pp="off">Back on (rearranged)</button>`
+          : ["scheduled", null, undefined].includes(match.status) ? html`<span>or</span><button type="button" class="btn small ghost" data-pp="on">Mark postponed</button>` : ""}`}</div>` : ""}
     <div data-editor></div>
   </div>`);
 
   $("[data-wo-bar]", view)?.addEventListener("click", async (e) => {
+    // Round 38: postponed (and back on again once it has been rearranged).
+    const pp = e.target.closest("[data-pp]");
+    if (pp) {
+      try { pp.disabled = true; await save("competition_matches", { id: match.id, status: pp.dataset.pp === "on" ? "postponed" : "scheduled" });
+        toast(pp.dataset.pp === "on" ? "Marked as postponed" : "Back on — change its date under Draws & results"); navigate(location.pathname, { replace: true }); }
+      catch (err) { pp.disabled = false; toast(err.message, "error"); }
+      return;
+    }
     const btn = e.target.closest("[data-wo]");
     if (!btn) return;
     const side = btn.dataset.wo || null;

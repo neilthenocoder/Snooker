@@ -613,6 +613,17 @@ A cup result typed into Admin → Draws & results was saved as finished but with
 
 **Head-to-head write-up on match pages.** Below the scorecard, a *Head to head* panel sums up the earlier league meetings of the two teams (every season imported, 2018-19 onwards): the last meeting and its score (a close match, a clean sweep…), who won the last frame of a 3–2, the highest break that night, the overall record and frames, a run of wins, the home side's record in this fixture, and the best break ever made in it. It is written from fixed sentence patterns filled in with the real results — nothing is made up; a sentence is left out when its data isn't there (old results with only a final score have no breaks). Teams that have never met get no panel. Code: `core/h2h-summary.js`.
 
+## 3zc. Round 38: Save all, postponed cup matches, the strip's labels
+
+**Run `supabase/schema.sql` again** (database version 26).
+
+- **Save all** (Admin → Draws & results): change as many matches as you like — a changed row turns yellow — then press **Save all changes** under the table (it stays at the bottom of the screen). Rows are saved round by round, so winners move on before the next round is saved. A row that can't be saved (level scores, say) turns pink and the rest are still saved. Each row's own Save button still works. A pairing is only written when it was changed in that row, so Save all never undoes a winner that has just moved on.
+- **Postponed cup matches**: tick **postponed** under the date on Draws & results (then save), or press **Mark postponed** at the top of the match's cup scorecard. It shows as *Postponed* in the bracket, the round cards and on the match page, "P - P" in team lists, and leaves the home page strip and the calendar. Untick it (or press *Back on (rearranged)*) and change the date once it is rearranged.
+- **Home page strip**: finished matches stay on the strip with a label — **Completed**, or **Pending** for a league result waiting for approval (a walkover says *Walkover*). Admin → Site settings → **Home page: Live & upcoming strip**: how many hours results stay (standard 48; 0 = no results on the strip; a cup result typed in later counts from when it was typed in), and the colours of the Live, Live soon, Completed and Pending labels (the writing turns black or white to suit). At most eight results show, newest first, before what's coming up.
+- **Latest Results box**: a cup result typed in after the match (catching up) is placed by when it was typed in, so it shows among the latest instead of sinking below the league results since. (Cup results only appear there when Site settings → Side column: top box is set to competition results, or league and competition results together.)
+- A new best break in a competition now says **New highest break of the competition (its name)**.
+- Classic scorecard: when a player's handicap start ("starts on 5") shows under their name, the points box now stays level with the player box.
+
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
 | Rule | Current setting |

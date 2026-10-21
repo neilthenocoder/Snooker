@@ -137,7 +137,7 @@ export async function draws(el, { user } = {}) {
         };
         const ready = isEntry(m.a) && isEntry(m.b);
         return html`<tr data-row="${m.row.id ?? ""}" data-round="${m.round}" data-slot="${m.slot}">
-          <td class="strong">${roundName(m.round, b.totalRounds)}${m.row.status === "in_progress" ? html` <span class="live-dot">Live</span>` : ""}</td>
+          <td class="strong">${roundName(m.round, b.totalRounds)}${m.row.status === "in_progress" ? html` <span class="live-dot">Live</span>` : m.row.status === "postponed" ? html` <span class="status postponed">postponed</span>` : ""}</td>
           <td class="right">${pickSide("a")}</td>
           <td class="num" style="white-space:nowrap">${m.isBye ? html`<span class="muted">bye</span>` : html`
             <input type="number" min="0" max="99" name="score_a" value="${m.row.score_a ?? ""}" style="width:58px" ${ready && !walkoverSide(m.row) ? "" : "disabled"}> –
@@ -147,25 +147,81 @@ export async function draws(el, { user } = {}) {
               <option value="a" ${walkoverSide(m.row) === "a" ? "selected" : ""}>Walkover to ${b.entryById.get(m.a)?.name}</option>
               <option value="b" ${walkoverSide(m.row) === "b" ? "selected" : ""}>Walkover to ${b.entryById.get(m.b)?.name}</option></select>` : ""}`}</td>
           <td>${pickSide("b")}${m.isBye ? "" : html`<label class="home-switch" title="The home player didn't contact their opponent in time: the second-named is now at home"><input type="checkbox" name="home_switched" ${m.row.home_switched ? "checked" : ""}> now at home</label>`}</td>
-          <td>${m.isBye ? "" : html`<input type="datetime-local" name="starts_at" value="${toLocalInput(m.row.starts_at)}">`}</td>
+          <td>${m.isBye ? "" : html`<input type="datetime-local" name="starts_at" value="${toLocalInput(m.row.starts_at)}">
+            ${ready && !walkoverSide(m.row) && m.row.status !== "completed" ? html`<label class="home-switch" title="Not played on the day: shows as postponed until it is rearranged"><input type="checkbox" name="postponed" ${m.row.status === "postponed" ? "checked" : ""}> postponed</label>` : ""}`}</td>
           <td>${m.isBye ? "" : html`<select name="venue_id"><option value="">–</option>${venues.map((v) => html`<option value="${v.id}" ${v.id === m.row.venue_id ? "selected" : ""}>${v.name}</option>`)}</select>`}</td>
           <td style="white-space:nowrap">${!m.row.id ? "" : html`<button class="btn small green" data-save-row>Save</button>
             ${ready ? html`<a class="btn small ghost" href="/cup-scorecard/${m.row.no ?? m.row.id}">Scorecard</a>` : ""}`}</td>
         </tr>`;
       })}</tbody></table></div>
-      <p class="muted" style="padding:0 14px">Type a final score and press Save, or use <b>Scorecard</b> to score it frame by frame live (with breaks).
-        Not played? Choose <b>Walkover to …</b> under the score and press Save.
+      <div class="btn-row save-all-row"><button type="button" class="btn green" data-save-all>Save all changes</button><small class="muted" data-dirty-count>Change as many matches as you like, then save them all at once.</small></div>
+      <p class="muted" style="padding:0 14px">Type a final score and press Save (or <b>Save all changes</b> under the table), or use <b>Scorecard</b> to score it frame by frame live (with breaks).
+        Not played? Choose <b>Walkover to …</b> under the score, or tick <b>postponed</b> under the date — then save.
         Winners move into the next round automatically. Changing a pairing by hand overrides the bracket for that match.</p>`) : ""}
   </div>`);
 
   const root = $("#draws-root");
   $("[data-pick]", root).addEventListener("change", (e) => navigate(`/admin/draws?c=${e.target.value}`));
   // A walkover has no score: the score boxes switch off while one is chosen.
+  // Rows with unsaved changes are marked (and counted beside Save all).
+  const markDirty = (e) => {
+    const tr = e.target.closest("tr[data-row]");
+    if (!tr || !tr.dataset.row) return;
+    tr.classList.add("dirty"); tr.classList.remove("row-error");
+    const n = root.querySelectorAll("tr[data-row].dirty").length, note = $("[data-dirty-count]", root);
+    if (note) note.textContent = `${n} match${n > 1 ? "es" : ""} changed — not saved yet`;
+  };
+  root.addEventListener("input", markDirty);
+  root.addEventListener("change", markDirty);
   root.addEventListener("change", (e) => {
     if (!e.target.matches(".wo-pick")) return;
     for (const n of ["score_a", "score_b"]) { const box = e.target.closest("tr").querySelector(`[name=${n}]`); box.disabled = !!e.target.value; if (e.target.value) box.value = ""; }
   });
   const guard = async (fn) => { try { await fn(); } catch (err) { toast(friendly(err), "error"); } };
+
+  // Save one row of "Pairings, dates & results". Throws with a readable message when something isn't right;
+  // returns what to say when it worked. Used by each row's Save button and by Save all.
+  const saveRow = async (tr) => {
+    const get = (n) => tr.querySelector(`[name=${n}]`);
+    const num = (n) => (get(n).value === "" ? null : Number(get(n).value));
+    const before = rows.find((r) => r.id === tr.dataset.row);
+    const row = { id: tr.dataset.row };
+    // A pairing is only written when it was changed here — so Save all never undoes a winner that the
+    // database has just moved into this match from the round before.
+    const pickA = get("entry_a").value || null, pickB = get("entry_b").value || null;
+    if (pickA !== (before?.entry_a ?? null)) row.entry_a = pickA;
+    if (pickB !== (before?.entry_b ?? null)) row.entry_b = pickB;
+    if (get("score_a")) Object.assign(row, { score_a: num("score_a"), score_b: num("score_b") });
+    if (get("starts_at")) Object.assign(row, { starts_at: fromLocalInput(get("starts_at").value), venue_id: get("venue_id").value || null });
+    if (get("home_switched")) row.home_switched = get("home_switched").checked;
+    if (pickA && pickA === pickB) throw new Error("Someone can't play themselves");
+    // Round 37: a walkover — save the pairing, date and venue, then the database gives the match to that side.
+    const wo = get("walkover")?.value || null;
+    if (wo) {
+      delete row.score_a; delete row.score_b;
+      await save("competition_matches", row);
+      await setWalkover(row.id, wo);
+      return `Walkover saved — ${b.entryById.get(wo === "a" ? pickA ?? before?.entry_a : pickB ?? before?.entry_b)?.name ?? "the winner"} through to the next round`;
+    }
+    if (walkoverSide(before)) await setWalkover(row.id, null);
+    if ((row.score_a == null) !== (row.score_b == null)) throw new Error("Enter both scores (or neither)");
+    // Rich, round 38: a match can be postponed (no score yet). Untick it once it has been rearranged.
+    const postponed = !!get("postponed")?.checked;
+    if ("score_a" in row) row.status = row.score_a != null ? "completed" : postponed ? "postponed" : "scheduled";
+    // Level on frames is only possible when the scorecard's total points decided it (handicap competitions).
+    const onPoints = before?.status === "completed" && before.score_a === row.score_a && before.score_b === row.score_b && before.points_a != null && before.points_a !== before.points_b;
+    if (row.score_a != null && row.score_a === row.score_b && !onPoints) throw new Error(c.handicap
+      ? "Level on frames: enter the frames on the Scorecard instead, so the total points can decide the winner." : "A knockout match needs a winner — scores can't be level");
+    await save("competition_matches", row);
+    // Bracket draws: the winner moves straight into their next match.
+    if (c.draw_mode !== "redraw" && row.score_a != null) {
+      const fresh = await loadCompetitions();
+      const nb = buildBracket(fresh.entries.filter((x) => x.competition_id === c.id), fresh.matches.filter((x) => x.competition_id === c.id));
+      const adv = winnerAdvance(nb, Number(tr.dataset.round), Number(tr.dataset.slot));
+      if (adv) await save("competition_matches", adv);
+    }
+    return row.status === "postponed" ? "Saved — marked as postponed" : "Saved";
+  };
 
   // Add one entrant (the name defaults to the linked team/player's name).
   $("[data-add-entry]", root).addEventListener("submit", (e) => guard(async () => {
@@ -278,41 +334,23 @@ export async function draws(el, { user } = {}) {
       toast("Next round drawn"); redraw();
     }
     if (t.matches("[data-save-row]")) {
-      const tr = t.closest("tr");
-      const get = (n) => tr.querySelector(`[name=${n}]`);
-      const num = (n) => (get(n).value === "" ? null : Number(get(n).value));
-      const row = { id: tr.dataset.row, entry_a: get("entry_a").value || null, entry_b: get("entry_b").value || null };
-      if (get("score_a")) Object.assign(row, { score_a: num("score_a"), score_b: num("score_b") });
-      if (get("starts_at")) Object.assign(row, { starts_at: fromLocalInput(get("starts_at").value), venue_id: get("venue_id").value || null });
-      if (get("home_switched")) row.home_switched = get("home_switched").checked;
-      if (row.entry_a && row.entry_a === row.entry_b) return toast("Someone can't play themselves", "error");
-      // Round 37: a walkover — save the pairing, date and venue, then the database gives the match to that side.
-      const wo = get("walkover")?.value || null, before = rows.find((r) => r.id === row.id);
-      if (wo) {
-        delete row.score_a; delete row.score_b;
-        t.disabled = true;
-        await save("competition_matches", row);
-        await setWalkover(row.id, wo);
-        toast(`Walkover saved — ${b.entryById.get(wo === "a" ? row.entry_a ?? before?.entry_a : row.entry_b ?? before?.entry_b)?.name ?? "the winner"} through to the next round`); return redraw();
-      }
-      if (walkoverSide(before)) await setWalkover(row.id, null);
-      if ((row.score_a == null) !== (row.score_b == null)) return toast("Enter both scores (or neither)", "error");
-      if ("score_a" in row) row.status = row.score_a != null ? "completed" : "scheduled";
-      // Level on frames is only possible when the scorecard's total points decided it (handicap competitions).
-      const was = rows.find((r) => r.id === row.id);
-      const onPoints = was?.status === "completed" && was.score_a === row.score_a && was.score_b === row.score_b && was.points_a != null && was.points_a !== was.points_b;
-      if (row.score_a != null && row.score_a === row.score_b && !onPoints) return toast(c.handicap
-        ? "Level on frames: enter the frames on the Scorecard instead, so the total points can decide the winner." : "A knockout match needs a winner — scores can't be level", "error");
       t.disabled = true;
-      await save("competition_matches", row);
-      // Bracket draws: the winner moves straight into their next match.
-      if (c.draw_mode !== "redraw" && row.score_a != null) {
-        const fresh = await loadCompetitions();
-        const nb = buildBracket(fresh.entries.filter((x) => x.competition_id === c.id), fresh.matches.filter((x) => x.competition_id === c.id));
-        const adv = winnerAdvance(nb, Number(tr.dataset.round), Number(tr.dataset.slot));
-        if (adv) await save("competition_matches", adv);
+      try { const msg = await saveRow(t.closest("tr")); toast(msg); redraw(); }
+      finally { t.disabled = false; }
+    }
+    // Rich, round 38: one button saves every row that has been changed, round by round (so winners move on first).
+    if (t.matches("[data-save-all]")) {
+      const changed = [...root.querySelectorAll("tr[data-row].dirty")].sort((x, y) => Number(x.dataset.round) - Number(y.dataset.round) || Number(x.dataset.slot) - Number(y.dataset.slot));
+      if (!changed.length) return toast("Nothing has been changed yet");
+      t.disabled = true;
+      const problems = [];
+      for (const tr of changed) {
+        try { await saveRow(tr); tr.classList.remove("dirty"); }
+        catch (err) { problems.push(`${tr.querySelector("td")?.textContent.trim()}: ${friendly(err)}`); tr.classList.add("row-error"); }
       }
-      toast("Saved"); redraw();
+      t.disabled = false;
+      if (problems.length) return toast(`${changed.length - problems.length} saved. Not saved — ${problems.join(" · ")}`, "error");
+      toast(`${changed.length} match${changed.length > 1 ? "es" : ""} saved`); redraw();
     }
   }));
 }

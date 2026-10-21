@@ -2552,13 +2552,22 @@ end $$;
 revoke all on function public.set_walkover(uuid, text) from public, anon;
 grant execute on function public.set_walkover(uuid, text) to authenticated;
 
+-- ── Round 38: postponed cup matches, the Live & upcoming strip ────
+-- Cup matches can be postponed (status 'postponed' — the status column has no fixed list, so nothing to change).
+-- The home page strip: how long results stay on it, and the colours of its labels (Site settings; empty = standard).
+alter table settings add column if not exists strip_result_hours int not null default 48;
+alter table settings add column if not exists strip_live_color text;
+alter table settings add column if not exists strip_soon_color text;
+alter table settings add column if not exists strip_done_color text;
+alter table settings add column if not exists strip_pending_color text;
+
 -- ── the version of this file ─────────────────────────────────────
 -- KEEP THIS AT THE VERY END. The website asks the database for this number (public/js/core/version.js holds
 -- the one it expects). Because it is the last thing in the file, the database only reports the new number
 -- when everything above it has run. If the website files are uploaded without this file being run, the admin
 -- dashboard says "The database needs updating" at the top of every page.
 -- When something is added to this file that the website needs: raise this number and the one in version.js.
-create or replace function public.schema_version() returns int language sql immutable as $$ select 25 $$;
+create or replace function public.schema_version() returns int language sql immutable as $$ select 26 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

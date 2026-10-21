@@ -189,7 +189,8 @@ async function recordBreak(row, isCup, mode) {
     if (fx.status !== "approved") note = UNOFFICIAL;
   }
   const best = (list) => Math.max(0, ...list.map((b) => b.value));
-  if (row.value > best(others)) return { what: "New highest break of the season", where, href, note };
+  // Rich, round 38: in a competition it says so — "New highest break of the competition (Team Handicap)".
+  if (row.value > best(others)) return { what: isCup ? `New highest break of the competition (${where})` : "New highest break of the season", where, href, note };
   if (mode === "week" && row.value > best(others.filter((b) => b.when >= weekAgo))) return { what: "Highest break of the week", where, href, note };
   return null;
 }

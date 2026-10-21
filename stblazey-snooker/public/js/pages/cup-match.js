@@ -55,7 +55,7 @@ export default async function cupMatch(view, { params, user }) {
         <div class="mh-body">
           <div class="mh-side ${won("a") ? "won" : won("b") ? "lost" : ""}">${teamOf(info.a) ? badge(teamOf(info.a)) : ""}<span>${nameA}</span></div>
           <div class="mh-score">${wo ? html`<b>W/O</b>` : html`<b>${match.score_a ?? "–"}</b><i>:</i><b>${match.score_b ?? "–"}</b>`}
-            ${wo ? html`<small>Walkover</small>` : live ? html`<span class="live-dot">Live</span>` : match.status === "completed" ? html`<small>Final</small>` : ""}</div>
+            ${wo ? html`<small>Walkover</small>` : match.status === "postponed" ? html`<small class="pp-tag">Postponed</small>` : live ? html`<span class="live-dot">Live</span>` : match.status === "completed" ? html`<small>Final</small>` : ""}</div>
           <div class="mh-side ${won("b") ? "won" : won("a") ? "lost" : ""}">${teamOf(info.b) ? badge(teamOf(info.b)) : ""}<span>${nameB}</span></div>
         </div>
         ${c?.handicap && scored.length ? html`<div class="mh-foot">Total points: <b>${total.a}</b> to <b>${total.b}</b>${level && match.status === "completed" && winnerSide(match)

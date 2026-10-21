@@ -38,9 +38,9 @@ function teamRow(b, m, side) {
 
 function matchBox(b, m) {
   const when = m.row.starts_at ? `${fmtDate(m.row.starts_at)}` : "";
-  const live = m.row.status === "in_progress";
+  const live = m.row.status === "in_progress", pp = m.row.status === "postponed";   // round 38: postponed
   const inner = html`${teamRow(b, m, "a")}${teamRow(b, m, "b")}
-    ${when && !m.isBye ? html`<div class="br-meta">${live ? html`<span class="live-dot">Live</span> ` : ""}${when}${onPoints(m) ? ` · ${onPoints(m)}` : ""}</div>` : ""}`;
+    ${(when || pp) && !m.isBye ? html`<div class="br-meta">${live ? html`<span class="live-dot">Live</span> ` : ""}${pp ? html`<span class="pp">Postponed</span>${when ? " · was " : ""}` : ""}${when}${onPoints(m) ? ` · ${onPoints(m)}` : ""}</div>` : ""}`;
   return m.row.id && !m.isBye
     ? html`<a class="br-match ${m.played ? "played" : ""} ${live ? "live" : ""}" href="/cup-match/${m.row.no ?? m.row.id}">${inner}</a>`
     : html`<div class="br-match ${m.isBye ? "bye" : ""}">${inner}</div>`;
@@ -101,7 +101,7 @@ export function roundCards(b, venueById, deadlines = {}) {
             <b>${sideScore(m.row, side) ?? "-"}</b></div>`;
         };
         return html`<div class="fx-card">${cell("a")}<div class="fx-v">v ${m.row.id ? html`<a class="fx-link" href="/cup-match/${m.row.no ?? m.row.id}">${m.row.status === "in_progress" ? "Live" : walkoverSide(m.row) ? "Walkover" : m.played ? "Scorecard" : "Match page"} →</a>` : ""}</div>${cell("b")}
-          <div class="fx-meta">${m.row.starts_at ? `${fmtDate(m.row.starts_at)} ${fmtTime(m.row.starts_at)}` : "Date TBC"}${v ? html` · <a href="${urls.venue(v)}">${v.name}</a>` : ""}${onPoints(m) ? html` · <b>${onPoints(m)}</b>` : ""}</div></div>`;
+          <div class="fx-meta">${m.row.status === "postponed" ? html`<span class="pp">Postponed</span> · ` : ""}${m.row.starts_at ? `${m.row.status === "postponed" ? "was " : ""}${fmtDate(m.row.starts_at)} ${fmtTime(m.row.starts_at)}` : "Date TBC"}${v ? html` · <a href="${urls.venue(v)}">${v.name}</a>` : ""}${onPoints(m) ? html` · <b>${onPoints(m)}</b>` : ""}</div></div>`;
       })}</div>`;
   });
 }

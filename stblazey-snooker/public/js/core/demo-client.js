@@ -92,7 +92,10 @@ class Query {
       // Mirrors the players_log_handicap trigger in supabase/schema.sql.
       if (this.table === "players" && "handicap" in this.payload)
         for (const r of data) if (r.handicap !== this.payload.handicap) logHandicap(r, this.payload.handicap, "");
+      // Mirrors the stamp_comp_result trigger: when a cup result went in (round 35).
+      const stamp = this.table === "competition_matches" ? data.map((r) => ["score_a", "score_b", "status", "walkover"].some((k) => k in this.payload && this.payload[k] !== r[k])) : [];
       data.forEach((r) => { Object.assign(r, guardUpdate(this.table, r, this.payload)); shortAddress(this.table, r); });
+      data.forEach((r, i) => { if (stamp[i] && (r.score_a != null || r.walkover || ["in_progress", "completed"].includes(r.status))) r.result_at = new Date().toISOString(); else if (stamp[i] && r.status === "scheduled" && r.score_a == null) r.result_at = null; });
     } else if (this.action === "upsert") {
       data = [].concat(this.payload).map((r) => {
         const hit = rows.find((x) => this.conflict.every((c) => x[c] === r[c]));

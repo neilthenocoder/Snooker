@@ -357,20 +357,25 @@ export async function nearbyMatches(hours = 36) {
   return { fixtures: [...byId.values()].sort((a, b) => a.starts_at.localeCompare(b.starts_at)), comps };
 }
 
-/** Live matches plus the next few coming up (league fixtures and competition matches). */
-export async function upcomingMatches(limit = 12) {
+/**
+ * Live matches, recent results and the next few coming up (league fixtures and competition matches).
+ * `hours`: how far back results are fetched (Admin → Site settings → Live & upcoming strip; round 38).
+ */
+export async function upcomingMatches(limit = 12, hours = 48) {
   const since = new Date(Date.now() - 12 * 3600e3).toISOString();
-  const [fixtures, live, comps] = await Promise.all([
+  const back = new Date(Date.now() - Math.max(0, hours) * 3600e3).toISOString(), now = new Date().toISOString();
+  const [fixtures, live, recent, comps] = await Promise.all([
     selectAll(() => db.from("fixtures").select("*").gte("starts_at", since).neq("status", "postponed").order("starts_at").limit(limit)),
     selectAll(() => db.from("fixtures").select("*").eq("status", "in_progress")),
-    selectAll(() => db.from("competition_matches").select("*").gte("starts_at", since).order("starts_at").limit(limit)),
+    // Round 38: league results from the last `hours` (submitted = waiting for approval, approved = completed).
+    hours > 0 ? selectAll(() => db.from("fixtures").select("*").gte("starts_at", back).lte("starts_at", now).in("status", ["submitted", "approved"]).order("starts_at", { ascending: false }).limit(30)) : [],
+    selectAll(() => db.from("competition_matches").select("*").gte("starts_at", since).neq("status", "postponed").order("starts_at").limit(limit)),
     selectAll(() => db.from("competition_matches").select("*").eq("status", "in_progress")).catch(() => []),
-    // Round 35: cup results that went in during the last two days, dated or not (result_at: schema.sql version 24).
-    selectAll(() => db.from("competition_matches").select("*").gte("result_at", new Date(Date.now() - 48 * 3600e3).toISOString()).order("result_at", { ascending: false }).limit(limit)).catch(() => []),
-  ]).then(([f, l, c, cl, cr]) => [f, l, [...new Map([...cr, ...cl, ...c].map((m) => [m.id, m])).values()]]);
-  const ids = [...new Set([...live, ...fixtures].map((f) => f.id))];
-  const all = [...new Map([...live, ...fixtures].map((f) => [f.id, f])).values()];
-  const frames = await selectIn("frames", "fixture_id", ids);
+    // Round 35: cup results that went in during the last `hours`, dated or not (result_at: schema.sql version 24).
+    hours > 0 ? selectAll(() => db.from("competition_matches").select("*").gte("result_at", back).order("result_at", { ascending: false }).limit(30)).catch(() => []) : [],
+  ]).then(([f, l, r, c, cl, cr]) => [f, l, r, [...new Map([...cr, ...cl, ...c].map((m) => [m.id, m])).values()]]);
+  const all = [...new Map([...live, ...fixtures, ...recent].map((f) => [f.id, f])).values()];
+  const frames = await selectIn("frames", "fixture_id", all.map((f) => f.id));
   return { fixtures: all, comps, frames: withLegacyFrames(all, frames) };
 }
 

@@ -542,6 +542,8 @@ dialog.lightbox button { position: fixed; top: 14px; right: 18px; width: 40px; h
 .sc-table { width: 100%; border-collapse: collapse; }
 .sc-table th { background: #1d1d1d; color: #fff; text-align: left; font-size: 12px; text-transform: uppercase; padding: 10px 8px; }
 .sc-table td { padding: 6px 8px; border-bottom: 1px solid var(--row-alt); vertical-align: middle; }
+/* Rich, round 38: a "starts on" line under a player made the row taller and pushed the points box down: keep each row's boxes level along the top. */
+.sc-table tbody td.sc-players, .sc-table tbody td.sc-points { vertical-align: top; }
 .sc-table .sc-no { background: var(--red); color: #fff; text-align: center; font: 700 20px var(--font-head); width: 44px; }
 .sc-slot { display: grid; grid-template-columns: minmax(0, 1fr) 92px; gap: 6px; }
 .sc-slot + .sc-slot { margin-top: 6px; }
@@ -3890,3 +3892,20 @@ p.not-upd { margin: 0; }
 /* Round 37: match preview — head to head write-up */
 .h2h-summary { padding: 14px 18px 6px; }
 .h2h-summary p { margin: 0 0 10px; line-height: 1.55; }
+/* Round 38: Draws & results — rows changed but not saved yet, and the Save all bar */
+.results-edit tbody tr.dirty td { background: #fff8db; }
+.results-edit tbody tr.dirty td:first-child { box-shadow: inset 4px 0 0 var(--yellow); }
+.results-edit tbody tr.row-error td { background: #fdeef1; }
+.save-all-row { position: sticky; bottom: 0; z-index: 3; margin: 0; padding: 12px 14px; align-items: center; gap: 12px; background: var(--white, #fff); border-top: 1px solid var(--line); }
+.br-meta .pp, .fx-meta .pp { color: var(--red); font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: .04em; }
+.mh-score small.pp-tag { color: #ff8a8a; font-weight: 700; text-transform: uppercase; }
+/* Round 38: Live & upcoming strip — result labels, and every label's colour can be changed in Site settings */
+.sc-label { display: inline-flex; align-items: center; padding: 3px 7px; border-radius: 4px; font: 700 11px var(--font-head); text-transform: uppercase; letter-spacing: .03em;
+  background: var(--strip-done, #2f7d32); color: var(--strip-done-ink, #fff); }
+.sc-label.pending { background: var(--strip-pending, #f2b705); color: var(--strip-pending-ink, #111); }
+.sc-label.walkover { background: var(--strip-done, #2f7d32); color: var(--strip-done-ink, #fff); opacity: .85; }
+.live-strip .live-dot { background: var(--strip-live, var(--red)); color: var(--strip-live-ink, #fff); }
+.live-strip .live-dot::before { background: currentColor; }
+.live-strip .live-soon { background: var(--strip-soon, var(--soon-orange, #ff8a00)); color: var(--strip-soon-ink, #fff); }
+.live-strip .live-soon::before { background: currentColor; }
+.live-strip .strip-card.is-live { border-color: var(--strip-live, var(--live-green)); box-shadow: 0 0 0 1px var(--strip-live, var(--live-green)) inset; }

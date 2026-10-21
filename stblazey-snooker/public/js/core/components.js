@@ -402,7 +402,10 @@ function sideBox(ctx, news, count, box) {
   // Rich, round 30: each result says what it was — the league (green tag) or the competition (gold tag, gold edge).
   const tag = (r) => html`<span class="res-tag ${r.kind}">${r.kind === "cup" ? html`<i aria-hidden="true">🏆</i>` : ""}${r.tag}</span>`;
   const chevron = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.7 8.6 12 13.9l5.3-5.3 1.4 1.4-6.7 6.7-6.7-6.7Z"/></svg>`;
-  const rows = [...league, ...cups].sort((a, b) => String(b.when ?? "").localeCompare(String(a.when ?? ""))).slice(0, Math.max(1, site.side_box_count || 5));
+  // Rich, round 38: cup results typed in later than the match was played (catching up) go by when they were entered,
+  // so they show as the latest results rather than sinking below the league results of the weeks since.
+  const key = (r) => String(r.entered ?? r.when ?? "");
+  const rows = [...league, ...cups].sort((a, b) => key(b).localeCompare(key(a))).slice(0, Math.max(1, site.side_box_count || 5));
   // Rich, round 23: more visual — emblems and a score pill — and point at (or tap) a result to see more:
   // every frame, the best break, the venue and a link to the full scorecard.
   // Rich, round 24: a press on a result (the ⌄ or anywhere on the row) opens a short summary under it — who won the most

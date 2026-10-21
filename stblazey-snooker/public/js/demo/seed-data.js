@@ -337,7 +337,7 @@ export function buildSeed() {
     latest_news_mode: "not_banner", latest_news_category: "", latest_news_ids: [], latest_news_count: 1,
     entry_intro: "Enter this season's competitions here. It takes a minute: choose your name, tick the competitions you want, then pay the entry fee by bank transfer.",
     section_colors: true, sidebar_layout: "right", page_layouts: {}, font_embed: "", loader_show: true, loader_seconds: 0,
-    side_box_mode: "results", side_box_title: "", side_box_count: 5, side_box_league: null,
+    strip_result_hours: 48, side_box_mode: "results", side_box_title: "", side_box_count: 5, side_box_league: null,
     ticker_show: true, ticker_speed: "normal", ticker_pace: 3, maintenance_on: false, maintenance_text: "",
     text_sizes: {}, celebrate_breaks: "season", feature_announcements: true, feature_style: "scroll", key_dates_show: true, key_dates_count: 5,
     bacs_details: "Account name: St Blazey & District Snooker League (placeholder)\nSort code: 00-00-00\nAccount number: 00000000", entry_pay_days: 7,
