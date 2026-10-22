@@ -329,6 +329,7 @@ async function renderRoute() {
   crumbs.trail = ["admin", "my", "scorecard", "cup-scorecard"].includes(page);
   document.body.dataset.page = page;
   view.dataset.section = SECTION[page] ?? "";
+  document.documentElement.dataset.section = page === "home" ? "home" : SECTION[page] ?? "";   // the menu underlines this part (calm look)
   mount(view, "");
   mount($("#side"), ""); $("#shell").classList.remove("has-side");
   loaderOn();   // the black loading screen appears only if this takes more than a moment

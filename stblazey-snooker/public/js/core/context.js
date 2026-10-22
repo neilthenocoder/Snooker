@@ -96,6 +96,6 @@ export async function cupResults() {
 /** What the side column's top box needs (see sideBox() in components.js). */
 export async function sideBoxData() {
   const site = await settings();
-  const cups = ["cup", "both"].includes(site.side_box_mode) ? await cupResults().catch(() => []) : [];
+  const cups = site.side_box_mode !== "league" && site.side_box_mode !== "news" && site.side_box_mode !== "off" ? await cupResults().catch(() => []) : [];
   return { site, cups };
 }

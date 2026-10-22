@@ -336,7 +336,7 @@ export function buildSeed() {
     feature_show: true, feature_label: "NEW", feature_text: "Try our step-by-step scorecard — log in to find out more", feature_url: "/login", feature_bg: "#0b84e0",
     latest_news_mode: "not_banner", latest_news_category: "", latest_news_ids: [], latest_news_count: 1,
     entry_intro: "Enter this season's competitions here. It takes a minute: choose your name, tick the competitions you want, then pay the entry fee by bank transfer.",
-    section_colors: true, sidebar_layout: "right", page_layouts: {}, font_embed: "", loader_show: true, loader_seconds: 0,
+    section_colors: true, site_look: "calm", sidebar_layout: "right", page_layouts: {}, font_embed: "", loader_show: true, loader_seconds: 0,
     strip_result_hours: 48, strip_live_color: null, strip_soon_color: null, strip_done_color: null, strip_pending_color: null, strip_walkover_color: null, strip_postponed_color: null, reminders_on: true, reminders_both: false, side_box_mode: "results", side_box_title: "", side_box_count: 5, side_box_league: null,
     ticker_show: true, ticker_speed: "normal", ticker_pace: 3, maintenance_on: false, maintenance_text: "",
     text_sizes: {}, celebrate_breaks: "season", feature_announcements: true, feature_style: "scroll", key_dates_show: true, key_dates_count: 5,

@@ -170,7 +170,7 @@ export default async function home(view, { user } = {}) {
 }
 
 /** The banner's layout (Admin → Site settings → Home page banner — Rich, round 23): picture beside, one big picture, or headline only. */
-// Round 28: "white" — a white banner, the headline on the left and the picture on the right (like World Snooker's).
+// Round 28: "white" — a white banner, the headline on the left and the picture on the right .
 const heroLayout = (site) => (["big", "text", "white"].includes(site.hero_layout) ? site.hero_layout : "side");
 
 /** One banner article: headline, category and date, a small "continue reading" — all linking to the article. */

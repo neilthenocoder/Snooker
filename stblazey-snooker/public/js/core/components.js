@@ -3,6 +3,8 @@
 import { html, fmtDate, fmtTime, ukDay } from "./dom.js";
 import { isProvisional, PROVISIONAL_NOTE, frameWinner, NOT_UPDATED, isLiveSoon } from "./rules.js";
 import { formBadge as formBadgeFn, formChips as formChipsFn } from "./form.js";
+/** The picture for a player with no photo: grey in the calm look (round 43), red in the classic one. */
+export const blankAvatar = () => (document.documentElement.classList.contains("look-calm") ? "/assets/avatar-calm.svg" : "/assets/avatar.svg");
 
 // ── URLs (one place to change the site's link structure) ──────
 // Matches, cup matches and players have short addresses (/match/2627-14, /cup-match/27, /player/sam-bolitho);
@@ -54,7 +56,7 @@ export const shortName = (league) => league.short_name || league.name.replace(/ 
 // ── primitives ────────────────────────────────────────────────
 /** A player's photo, or the default cartoon if none has been uploaded. */
 export const avatar = (player, cls = "avatar") =>
-  html`<img class="${cls}" src="${player?.avatar_url || "/assets/avatar.svg"}" alt="" loading="lazy">`;
+  html`<img class="${cls}" src="${player?.avatar_url || blankAvatar()}" alt="" loading="lazy">`;
 
 /** Photo + name, linking to the player's page. */
 export const playerLink = (player, cls = "") =>
@@ -387,7 +389,9 @@ export function sidebar(ctx, news = [], { leagues = ctx.leagues, top = "", count
  */
 function sideBox(ctx, news, count, box) {
   const site = box?.site ?? {};
-  const mode = site.side_box_mode ?? "results";
+  // Round 43: the standard ("results") now shows league AND competition results together — Rich couldn't see the
+  // Team Handicap results because the standard was league only. "league" is league only; "both" (older choice) = standard.
+  const mode = site.side_box_mode === "both" ? "results" : (site.side_box_mode ?? "results");
   if (mode === "off") return "";
   if (mode === "news") {
     const latest = news.slice(0, Math.max(1, count));
@@ -398,7 +402,7 @@ function sideBox(ctx, news, count, box) {
     .filter((f) => ctx.hasResult(f) && f.status !== "in_progress" && (!site.side_box_league || f.league_id === site.side_box_league))
     .map((f) => { const s = ctx.scoreOf(f); return { fx: f, kind: "league", tag: ctx.league.get(f.league_id)?.name ?? "League", when: f.starts_at, homeTeam: ctx.team.get(f.home_team_id), awayTeam: ctx.team.get(f.away_team_id), home: ctx.team.get(f.home_team_id)?.name, away: ctx.team.get(f.away_team_id)?.name,
       hs: s.home, as: s.away, score: `${s.home} – ${s.away}`, href: urls.match(f), won: s.home > s.away ? "h" : s.away > s.home ? "a" : "" }; });
-  const cups = mode === "results" ? [] : (box?.cups ?? []).map((c) => ({ ...c, kind: "cup", tag: c.title }));
+  const cups = mode === "league" ? [] : (box?.cups ?? []).map((c) => ({ ...c, kind: "cup", tag: c.title }));
   // Rich, round 30: each result says what it was — the league (green tag) or the competition (gold tag, gold edge).
   const tag = (r) => html`<span class="res-tag ${r.kind}">${r.kind === "cup" ? html`<i aria-hidden="true">🏆</i>` : ""}${r.tag}</span>`;
   const chevron = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.7 8.6 12 13.9l5.3-5.3 1.4 1.4-6.7 6.7-6.7-6.7Z"/></svg>`;

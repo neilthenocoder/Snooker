@@ -138,8 +138,16 @@ function view(user, { ctx, news, comps, site = {}, form: formData = null }, pref
   const teamNews = news.filter((a) => (a.player_ids ?? []).some((id) => aboutIds.has(id)) || names.some((n) => `${a.title} ${a.excerpt ?? ""}`.toLowerCase().includes(n)));
   const inCats = (a) => !prefs.cats.length || [a.category, ...(a.more_categories ?? [])].some((c) => prefs.cats.includes(c));
   const latest = news.filter(inCats);
-  const newsRow = (a) => html`<a class="ms-news" href="${urls.article(a)}">${picture(articleThumb(a), "", "ms-news-pic")}
-    <span><small>${a.category} · ${fmtDate(a.published_at)}</small><strong>${a.title}</strong></span></a>`;
+  const newsPic = (a) => (a.image_url || a.circle_image_url ? html`<img src="${a.image_url || a.circle_image_url}" alt="" loading="lazy">` : html`<span class="hub-ph" aria-hidden="true"></span>`);
+  const miniFeature = (list) => html`<div class="feat-grid mini-feat ${list.length === 1 ? "solo" : ""}">
+    <a class="feat-main" href="${urls.article(list[0])}">${newsPic(list[0])}
+      <span class="feat-text"><strong>${list[0].title}</strong><small>${list[0].category} | ${fmtDate(list[0].published_at)}</small></span></a>
+    ${list.length > 1 ? html`<div class="feat-side">${list.slice(1).map((a) => html`<a class="feat-card" href="${urls.article(a)}">${newsPic(a)}
+      <span class="feat-text"><strong>${a.title}</strong><small><b>${a.category}</b> | ${fmtDate(a.published_at)}</small></span></a>`)}</div>` : ""}</div>`;
+  const miniCards = (list) => html`<div class="mini-cards">${list.map((a) => html`<a class="hub-card" href="${urls.article(a)}">
+    <div class="hub-pic">${newsPic(a)}</div>
+    <div class="hub-body">${a.category ? html`<span class="hub-cat">${a.category}</span>` : ""}<h3>${a.title}</h3>
+      <div class="hub-meta"><span>${fmtDate(a.published_at)}</span></div></div></a>`)}</div>`;
   // CueViews: followed players first, then the team's own.
   const cvPeople = [...new Map([...followed, ...squad].map((p) => [p.id, p])).values()].filter((p) => answered(p).length);
 
@@ -178,9 +186,11 @@ function view(user, { ctx, news, comps, site = {}, form: formData = null }, pref
         { label: "Match", cell: ({ b, m }) => html`<a href="/cup-match/${m.row.no ?? m.row.id}">${cupName(b, m.a)} v ${cupName(b, m.b)}</a>` },
         { label: "Score", cell: ({ m }) => (compScoreText(m.row) ? html`<span class="res-score done">${compScoreText(m.row)}</span>` : m.row.status === "postponed" ? "P - P" : "–"), cls: "num" },
       ], cup.slice(0, home ? 4 : 30)), { foot: { href: "/competitions", label: "All competitions" } }) : ""),
-    team_news: () => (teamNews.length ? panel("Team news", html`<div class="ms-news-list">${teamNews.slice(0, home ? 3 : 5).map(newsRow)}</div>`, { color: "blue" }) : ""),
-    news: () => (latest.length ? panel(prefs.cats.length ? "News you follow" : "Latest news", html`<div class="ms-news-list">${latest.slice(0, home ? 3 : 5).map(newsRow)}</div>`,
-      { color: "blue", foot: { href: "/news", label: "All the news" } }) : ""),
+    // Rich, round 43: the news as a small version of the news page — Team news: one big story on the left and up to three
+    // beside it; Latest news: a row of three cards with the picture on top (a different look, so the two don't blur together).
+    team_news: () => (teamNews.length ? panel("Team news", miniFeature(teamNews.slice(0, 4)), { cls: "ms-news-panel", foot: { href: "/news", label: "All the news" } }) : ""),
+    news: () => (latest.length ? panel(prefs.cats.length ? "News you follow" : "Latest news", miniCards(latest.slice(0, 3)),
+      { cls: "ms-news-panel", foot: { href: "/news", label: "All the news" } }) : ""),
     handicaps: () => (!team ? "" : panel(`${team.name}: team & handicaps`, dataTable([
         { label: "Player", cell: (p) => html`${playerLink(p)}${p.position && p.position !== "Player" ? html` <small class="muted">${p.position}</small>` : ""}` },
         { label: "Hcp", cell: (p) => handicapTag(p.handicap), cls: "num" },

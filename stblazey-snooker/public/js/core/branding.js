@@ -104,6 +104,9 @@ function brandOf(site) {
     vars, links, layouts,
     sidebar: site.sidebar_layout === "left" ? "left" : "right",
     sections: site.section_colors !== false,
+    // Round 43: the look of the whole site. "calm" (standard): white space, black and red, one quiet menu.
+    // "classic": the colourful menu and section colours from before (Admin → Branding → Look).
+    look: site.site_look === "classic" ? "classic" : "calm",
     loader: site.loading_logo_url || site.logo_url || "",
     loaderShow: site.loader_show !== false,
     loaderMs: Math.max(0, Math.min(10, Number(site.loader_seconds) || 0)) * 1000,
@@ -122,6 +125,7 @@ export function paint(brand) {
   for (const [name, value] of Object.entries(brand.vars ?? {})) root.style.setProperty(name, value);
   root.classList.toggle("sidebar-left", brand.sidebar === "left");
   root.classList.toggle("section-colors", brand.sections !== false);
+  root.classList.toggle("look-calm", brand.look !== "classic");
   // Font stylesheets: keep the ones still wanted, drop the rest.
   const wanted = brand.links ?? [];
   for (const link of document.querySelectorAll("link[data-brand-font]")) if (!wanted.includes(link.href)) link.remove();

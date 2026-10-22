@@ -4,8 +4,11 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.39.0";
+export const SITE_VERSION = "1.40.0";
 export const CHANGES = [
+  "New calm look (standard): white space, black and red, one quiet menu with the current page underlined; Classic look still available under Branding → Look (run schema.sql — version 30 to switch)",
+  "Latest Results box: competition results now show by standard alongside league results (new option for league only)",
+  "My Snooker: Team news and Latest news shown as small versions of the news page; Live & upcoming heading readable on the white banner; World Snooker wording removed",
   "Latest Results box (home page): newest date at the top — results go by the day they were played, so the latest competition results (e.g. Team Handicap) show first; a result with no date goes by the day it was entered",
   "Competition draws made on paper: a side can be a Bye or the Winner of another match (“St Neot or Mevagissey C”) — winners drop in by themselves (run schema.sql — version 29)",
   "Dashboard Overview: Tonight (every match of the night with Approve / Scorecard / Postpone), Needs you (everything waiting, grouped) and Your recent changes with Undo",

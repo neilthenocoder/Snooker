@@ -3988,3 +3988,183 @@ p.not-upd { margin: 0; }
 @media (max-width: 560px) { .wr-wide { grid-column: auto; } }
 .wr-red { background: var(--red); } .wr-green { background: #0b7a2b; } .wr-gold { background: #e3a20a; color: #111; }
 .wr-black { background: #151515; } .wr-blue { background: #0a6fc2; }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 43 — THE CALM LOOK (standard; Admin → Branding → Look)
+   Rich: "too many colours … make things a little more light and airy … like WST, blacks and reds and a less
+   colourful menu". One accent (the main colour, red), black and greys for everything else, white cards with
+   room around them, and one quiet menu where the page you are on is underlined. Colour is kept for meaning
+   only: live (green), cup results (gold), wins and relegation. Everything here is under html.look-calm, so
+   choosing "Classic" in Branding brings the colourful version back untouched.
+   ═════════════════════════════════════════════════════════════ */
+html.look-calm {
+  --cream: #f5f5f3 !important;          /* page background: a quiet light grey */
+  --blue: #141414 !important;           /* everything that was blue (News, buttons) becomes black */
+  --nav-news: #141414 !important; --nav-news-ink: #fff !important;
+  --yellow: #d9a514 !important;         /* a deeper gold, for trophies and cup results only */
+  --green: #1d7a35 !important;
+  --ink: #141414; --muted: #6b6b6b;
+  --line: #e7e5e0;
+  --row-alt: #fafaf8; --head-row: #fafaf8;
+  --highlight: #fbeef1;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(20,20,20,.04), 0 1px 1px rgba(20,20,20,.03);
+}
+html.look-calm body { background: var(--cream); }
+html.look-calm #view[data-section] { --accent: var(--red) !important; --accent-ink: #fff !important; }
+
+/* ── header: black, one row, no coloured blocks ── */
+html.look-calm .site-header { border-bottom: 3px solid var(--red); }
+html.look-calm .main-nav { gap: 2px; }
+html.look-calm .main-nav a, html.look-calm .main-nav button {
+  background: transparent !important; color: #fff !important; height: 44px; padding: 0 14px;
+  font-size: min(var(--fs-nav, 18px), 16px); letter-spacing: .04em; position: relative; filter: none !important;
+}
+html.look-calm .main-nav a::after { content: ""; position: absolute; left: 14px; right: 14px; bottom: 4px; height: 3px; border-radius: 2px; background: var(--red); transform: scaleX(0); transition: transform .18s; }
+html.look-calm .main-nav a:hover::after, html.look-calm .main-nav a:focus-visible::after { transform: scaleX(1); }
+html.look-calm .main-nav a:hover { color: #fff !important; }
+html.look-calm[data-section="home"] .main-nav .nav-home::after, html.look-calm[data-section="competitions"] .main-nav .nav-comps::after,
+html.look-calm[data-section="fixtures"] .main-nav .nav-fixtures::after, html.look-calm[data-section="league"] .main-nav .nav-league::after,
+html.look-calm[data-section="news"] .main-nav .nav-news::after { transform: scaleX(1); }
+/* LIVE keeps its meaning: grey dot when nothing is on, orange soon, green when live */
+html.look-calm .main-nav .nav-live-btn { border: 1px solid #3a3a3a; border-radius: 999px; height: 36px; margin: 4px 0 0 8px; padding: 0 14px; }
+html.look-calm .main-nav .nav-live-btn::after { display: none; }
+html.look-calm .main-nav .nav-live-btn.state-soon { background: var(--soon-orange) !important; border-color: transparent; }
+html.look-calm .main-nav .nav-live-btn.state-live { background: var(--live-green) !important; border-color: transparent; }
+html.look-calm .nav-icon { background: transparent !important; border: 1px solid #3a3a3a !important; }
+
+/* ── page rhythm: more room between things ── */
+html.look-calm main { padding: 44px 0 72px; }
+html.look-calm .layout { gap: 40px; }
+html.look-calm .stack > * + * { margin-top: 36px; }
+html.look-calm .sidebar > * + * { margin-top: 24px; }
+
+/* ── panels: white cards with a quiet heading instead of coloured bars ── */
+html.look-calm .panel { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+html.look-calm .panel-head, html.look-calm .panel-head.blue, html.look-calm .panel-head.yellow, html.look-calm .panel-head.green, html.look-calm .panel-head.red {
+  background: #fff !important; color: var(--ink) !important; text-align: left; box-shadow: none !important;
+  font-size: min(var(--fs-panel, 18px), 16px); letter-spacing: .05em; padding: 18px 20px 14px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 10px;
+}
+html.look-calm .panel-head::before { content: ""; width: 4px; height: 16px; border-radius: 2px; background: var(--red); flex: none; }
+html.look-calm a.panel-head::after { content: "→"; margin-left: auto; color: var(--muted); font-weight: 400; transition: transform .15s, color .15s; }
+html.look-calm a.panel-head:hover { filter: none; color: var(--ink) !important; }
+html.look-calm a.panel-head:hover::after { color: var(--red); transform: translateX(3px); }
+html.look-calm .panel-foot { background: #fff; color: var(--red); border-top: 1px solid var(--line); padding: 13px 20px; font-size: 13.5px; }
+html.look-calm .panel-foot:hover { background: var(--row-alt); }
+
+/* ── tables: lines instead of stripes, quiet column headings ── */
+html.look-calm table.data th { background: var(--head-row); color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; border-bottom: 1px solid var(--line); }
+html.look-calm table.data td { border-bottom: 1px solid #f0efeb; }
+html.look-calm table.data tbody tr:last-child td { border-bottom: 0; }
+html.look-calm table.data tbody tr:nth-child(even) td { background: transparent; }
+html.look-calm table.data tbody tr.hl td { background: #fafaf8; }
+html.look-calm .lt-pts { background: var(--ink); }
+
+/* ── home page tiles and bars ── */
+html.look-calm .quick-links { gap: 12px; }
+html.look-calm .quick-links a { background: #fff !important; color: var(--ink) !important; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+  font-size: 15px; letter-spacing: .04em; padding: 16px 8px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: border-color .15s, transform .15s; }
+html.look-calm .quick-links a:hover { border-color: var(--ink); transform: translateY(-1px); filter: none; }
+html.look-calm .quick-links a svg { fill: var(--red) !important; color: var(--red); }
+html.look-calm .feature-box { background: #fff !important; color: var(--ink) !important; border: 1px solid var(--line); border-radius: var(--radius); font-size: 15px; }
+html.look-calm .feature-new { background: var(--red) !important; color: #fff !important; }
+html.look-calm .feature-box .ticker-item::before { background: var(--red); opacity: 1; }
+html.look-calm .enter-bar { background: #fff; color: var(--ink); border: 1px solid var(--line); border-left: 4px solid var(--red); border-radius: var(--radius); }
+html.look-calm .enter-bar:hover { color: var(--ink); filter: none; border-color: var(--ink); border-left-color: var(--red); }
+html.look-calm .enter-bar b { color: var(--red); }
+html.look-calm .enter-bar span { background: var(--ink); color: #fff; border-radius: 6px; }
+html.look-calm .kd { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+html.look-calm .kd-label { background: #fff !important; color: var(--ink) !important; border-right: 1px solid var(--line); }
+html.look-calm .kd-label i { color: var(--red); }
+html.look-calm .kd-item time, html.look-calm .key-date time { background: var(--ink); border-radius: 8px; }
+html.look-calm .kd-item time span, html.look-calm .key-date time span { color: #fff; opacity: .75; }
+html.look-calm .ms-bar { border-radius: var(--radius); }
+html.look-calm .ms-bar b { color: #fff; }
+
+/* buttons */
+html.look-calm .btn-bar, html.look-calm .btn-bar.green { background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); font-size: 13.5px; letter-spacing: .05em; padding: 13px; }
+html.look-calm .btn-bar:hover { color: var(--ink); border-color: var(--ink); filter: none; }
+html.look-calm .btn.blue, html.look-calm .btn.green { background: var(--ink); }
+
+/* ── Latest Results: black scores, the winner in red; gold only marks a competition ── */
+html.look-calm .res-tag.league { background: #f0efeb; color: var(--muted); }
+html.look-calm .res-team.won { color: var(--ink); font-weight: 700; } html.look-calm .res-team.lost { color: #8a8a8a; }
+html.look-calm .res-pill i { background: #2a2a2a; } html.look-calm .res-pill i.w { background: var(--red); }
+html.look-calm .res-card.cup, html.look-calm .res-mini.cup { box-shadow: inset 3px 0 0 var(--yellow); }
+
+/* ── player / team of the week: plain black cards ── */
+html.look-calm .spotlight { background: #141414 !important; border-radius: var(--radius); overflow: hidden; }
+html.look-calm .spot-label { background: var(--red); color: #fff; }
+html.look-calm .spot-photo { border-color: #fff; }
+
+/* ── competitions list on the home page ── */
+html.look-calm .comp-cols { background: #fff !important; }
+html.look-calm .list-rows.comp-cols a { border-left: 0 !important; border-bottom: 1px solid #f0efeb; margin: 0; }
+html.look-calm .list-rows.comp-cols a > div { background: transparent; }
+
+/* ── the live & upcoming strip: always readable on its dark band (Rich: the heading was black) ── */
+html.look-calm .live-strip .strip-head h3, .hero.hero-l-white .live-strip .strip-head h3 { color: #fff; }
+.hero.hero-l-white .live-strip .strip-head a { color: #fff; }
+html.look-calm .hero.hero-l-white .live-strip-wrap { background: #141414; }
+html.look-calm .strip-card { border-radius: 10px; }
+
+/* ── footer: light partner boxes ── */
+html.look-calm .sponsors a { background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; }
+
+/* ── the hero (white banner) sits on the page colour with soft cards ── */
+html.look-calm .hero.hero-l-white .hero-text, html.look-calm .hero.hero-l-white .hero-pic-link { border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--line); }
+
+/* ── smaller things that were loud ── */
+html.look-calm .breadcrumb { background: transparent; padding: 0; color: var(--muted); }
+html.look-calm .title-band { border-radius: var(--radius); border: 1px solid var(--line); }
+html.look-calm .tag { border-radius: 6px; }
+html.look-calm .news-mini { border-radius: 10px; }
+@media (max-width: 900px) {
+  html.look-calm main { padding: 28px 0 56px; }
+  html.look-calm .stack > * + * { margin-top: 26px; }
+}
+/* calm: the break podium in greys, with gold kept for the record holder's label only */
+html.look-calm .bk-pod.p1, html.look-calm .bk-pod.p2, html.look-calm .bk-pod.p3 { background: #f7f6f3; }
+html.look-calm .bk-pod.p1 { background: #f1efea; }
+html.look-calm .bk-pod.p1 .avatar { box-shadow: 0 0 0 3px var(--yellow); }
+html.look-calm .bk-pod.p2 .bk-rank, html.look-calm .bk-pod.p3 .bk-rank { background: #8a8a85; }
+html.look-calm .bk-rest { border-top: 1px solid var(--line); }
+html.look-calm .tally.brk { background: #f1efea; color: var(--ink); }
+html.look-calm .tally.brk.prov { background: #fff; outline-color: #c9c5bb; }
+/* calm: page tiles (Our League, team lists) as cards; "Click here to view" becomes a quiet red link */
+html.look-calm .tile { border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); transition: border-color .15s, transform .15s; }
+html.look-calm .tile:hover { border-color: var(--ink); transform: translateY(-1px); color: var(--ink); }
+html.look-calm .tile.tall { min-height: 0; padding: 26px 20px; }
+html.look-calm .tile h4 { font-size: 17px; letter-spacing: .02em; }
+html.look-calm .tile-go { background: none; color: var(--red); padding: 0; font-size: 12px; letter-spacing: .06em; }
+html.look-calm .tile-go::after { content: " →"; }
+html.look-calm .tile:hover .tile-go { background: none; color: var(--red); }
+html.look-calm .tile.with-emblem .tile-go { padding: 0; }
+html.look-calm .tile p { color: var(--muted); }
+/* Round 43: My Snooker news — small versions of the news page (both looks) */
+.ms-news-panel .mini-feat, .ms-news-panel .mini-cards { padding: 16px; }
+.mini-feat { gap: 12px; }
+.mini-feat .feat-main { min-height: 300px; border-radius: 12px; }
+.mini-feat .feat-main strong { font-size: clamp(19px, 2vw, 24px); }
+.mini-feat .feat-side { gap: 12px; }
+.mini-feat .feat-card { grid-template-columns: 40% minmax(0, 1fr); min-height: 92px; border-radius: 10px; }
+.mini-feat .feat-card img, .mini-feat .feat-card .hub-ph { min-height: 92px; }
+.mini-feat .feat-card .feat-text { padding: 10px 12px; gap: 6px; }
+.mini-feat .feat-card strong { font-size: 14px; }
+.mini-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.mini-cards .hub-card { border-radius: 12px; }
+.mini-cards .hub-body { padding: 12px 14px 14px; }
+.mini-cards .hub-body h3 { font-size: 15px; line-height: 1.3; margin: 4px 0 8px; }
+@media (max-width: 760px) {
+  .mini-feat { grid-template-columns: 1fr; }
+  .mini-feat .feat-main { min-height: 220px; }
+  .mini-cards { grid-template-columns: 1fr; }
+  .mini-cards .hub-card { flex-direction: row; }
+  .mini-cards .hub-pic { width: 38%; flex: none; }
+}
+@media (max-width: 640px) {
+  html.look-calm .quick-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; gap: 8px; }
+  html.look-calm .quick-links a { font-size: 13px; padding: 13px 6px; min-width: 0; }
+  html.look-calm .tile.with-emblem { padding: 14px; }
+}
