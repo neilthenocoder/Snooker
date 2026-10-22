@@ -1313,7 +1313,7 @@ begin
   end if;
   n := to_jsonb(new);
   for k in select key from jsonb_each(n) loop
-    if (n->k) is distinct from (o->k) and k not in ('updated_at', 'postponed_at', 'code', 'slug', 'submitted_email_at') then
+    if (n->k) is distinct from (o->k) and k not in ('updated_at', 'postponed_at', 'code', 'slug', 'submitted_email_at', 'reminder_sent_at', 'result_at') then
       -- Short values are kept ("status: submitted → approved"); long ones (an article's text, a picture link) are just noted as changed.
       diff := diff || jsonb_build_object(k,
         case when length(coalesce((n->k)::text, '')) > 140 or length(coalesce((o->k)::text, '')) > 140
@@ -2561,13 +2561,49 @@ alter table settings add column if not exists strip_soon_color text;
 alter table settings add column if not exists strip_done_color text;
 alter table settings add column if not exists strip_pending_color text;
 
+-- ── Round 39: Postponed and Walkover labels on the strip ──────────
+alter table settings add column if not exists strip_postponed_color text;
+alter table settings add column if not exists strip_walkover_color text;
+
+-- ── Round 40: scorecard reminders ─────────────────────────────────
+-- The morning after a match night, netlify/functions/scorecard-reminders.mjs emails the captains of matches with no
+-- result yet (Site settings: reminders_on, reminders_both). reminder_sent_at: when that went (once per match);
+-- cleared when the match gets a new date, so a rearranged match can be reminded about again.
+alter table fixtures add column if not exists reminder_sent_at timestamptz;
+alter table settings add column if not exists reminders_on boolean not null default true;
+alter table settings add column if not exists reminders_both boolean not null default false;
+create or replace function public.clear_reminder() returns trigger language plpgsql as $$
+begin
+  if new.starts_at is distinct from old.starts_at then new.reminder_sent_at := null; end if;
+  return new;
+end $$;
+drop trigger if exists fixtures_clear_reminder on fixtures;
+create trigger fixtures_clear_reminder before update on fixtures for each row execute function public.clear_reminder();
+
+-- Season wrapped (/wrapped) in a menu that has been changed in Admin → Menu: added once after the Form guide
+-- (or at the end); taking it out again in Admin → Menu keeps it out.
+alter table settings add column if not exists wrapped_menu_added boolean not null default false;
+update settings s set
+  menu_more = case
+    when s.menu_more is null or jsonb_typeof(s.menu_more) <> 'array' then s.menu_more
+    when exists (select 1 from jsonb_array_elements(s.menu_more) e where e->>'href' = '/wrapped') then s.menu_more
+    when exists (select 1 from jsonb_array_elements(s.menu_more) e where e->>'href' = '/form') then
+      (select jsonb_agg(x order by n) from (
+         select e as x, n * 2 as n from jsonb_array_elements(s.menu_more) with ordinality t(e, n)
+         union all
+         select '{"label":"Season wrapped","href":"/wrapped"}'::jsonb, (select n * 2 + 1 from jsonb_array_elements(s.menu_more) with ordinality t(e, n) where e->>'href' = '/form' limit 1)
+       ) z)
+    else s.menu_more || '[{"label":"Season wrapped","href":"/wrapped"}]'::jsonb end,
+  wrapped_menu_added = true
+where s.id = 1 and not s.wrapped_menu_added;
+
 -- ── the version of this file ─────────────────────────────────────
 -- KEEP THIS AT THE VERY END. The website asks the database for this number (public/js/core/version.js holds
 -- the one it expects). Because it is the last thing in the file, the database only reports the new number
 -- when everything above it has run. If the website files are uploaded without this file being run, the admin
 -- dashboard says "The database needs updating" at the top of every page.
 -- When something is added to this file that the website needs: raise this number and the one in version.js.
-create or replace function public.schema_version() returns int language sql immutable as $$ select 26 $$;
+create or replace function public.schema_version() returns int language sql immutable as $$ select 28 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

@@ -3903,9 +3903,88 @@ p.not-upd { margin: 0; }
 .sc-label { display: inline-flex; align-items: center; padding: 3px 7px; border-radius: 4px; font: 700 11px var(--font-head); text-transform: uppercase; letter-spacing: .03em;
   background: var(--strip-done, #2f7d32); color: var(--strip-done-ink, #fff); }
 .sc-label.pending { background: var(--strip-pending, #f2b705); color: var(--strip-pending-ink, #111); }
-.sc-label.walkover { background: var(--strip-done, #2f7d32); color: var(--strip-done-ink, #fff); opacity: .85; }
+.sc-label.walkover { background: var(--strip-walkover, var(--strip-done, #2f7d32)); color: var(--strip-walkover-ink, var(--strip-done-ink, #fff)); }
+.sc-label.postponed { background: var(--strip-postponed, #6b6b6b); color: var(--strip-postponed-ink, #fff); }
 .live-strip .live-dot { background: var(--strip-live, var(--red)); color: var(--strip-live-ink, #fff); }
 .live-strip .live-dot::before { background: currentColor; }
 .live-strip .live-soon { background: var(--strip-soon, var(--soon-orange, #ff8a00)); color: var(--strip-soon-ink, #fff); }
 .live-strip .live-soon::before { background: currentColor; }
 .live-strip .strip-card.is-live { border-color: var(--strip-live, var(--live-green)); box-shadow: 0 0 0 1px var(--strip-live, var(--live-green)) inset; }
+/* Round 40: tabs on long forms (Site settings) and the strip label preview */
+.form-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 18px; padding-bottom: 10px; border-bottom: 2px solid var(--line); }
+.form-tabs button { border: 1px solid var(--line); background: #fff; padding: 8px 14px; border-radius: 999px; font: 700 13px var(--font-head); cursor: pointer; color: var(--ink); }
+.form-tabs button.on { background: var(--dark, #111); border-color: var(--dark, #111); color: #fff; }
+.form-pane[hidden] { display: none !important; }
+.strip-preview { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px; background: #1c1c1c; border-radius: 8px; }
+.strip-preview .muted { color: #aaa; margin-right: 4px; }
+.sp-tag { display: inline-flex; padding: 4px 8px; border-radius: 4px; font: 700 11px var(--font-head); text-transform: uppercase; letter-spacing: .03em; background: #555; color: #fff; }
+/* Round 40: dashboard Overview — Tonight, Needs you, Your recent changes */
+.ov-grid { display: grid; grid-template-columns: 1fr; gap: 22px; margin-bottom: 24px; align-items: start; }
+.tn-sum { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px 4px; }
+.tn-chip { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: #eee; }
+.tn-chip.tn-live { background: #dcf7e3; } .tn-chip.tn-submitted { background: #fff3c4; } .tn-chip.tn-late { background: #fde0e6; }
+.tn-chip.tn-postponed { background: #e8e8e8; } .tn-chip.tn-approved { background: #e3f0ff; }
+.tn-list { display: flex; flex-direction: column; }
+.tn-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) 62px 150px auto; gap: 10px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--row-alt); border-left: 4px solid transparent; }
+.tn-row.tn-live { border-left-color: var(--live-green); } .tn-row.tn-submitted { border-left-color: var(--yellow); }
+.tn-row.tn-late { border-left-color: var(--red); background: #fff6f8; } .tn-row.tn-postponed { opacity: .7; }
+.tn-time { font: 700 13px var(--font-head); color: var(--muted); }
+.tn-what { display: flex; flex-direction: column; min-width: 0; } .tn-what small { color: var(--muted); font-size: 11px; }
+.tn-what a { font-weight: 700; color: var(--ink); }
+.tn-score { font: 700 16px var(--font-head); text-align: center; }
+.tn-state { font-size: 12.5px; }
+.tn-late .tn-state { color: var(--red); font-weight: 700; } .tn-live .tn-state { color: #0c7a2c; font-weight: 700; }
+.tn-acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 640px) { .tn-row { grid-template-columns: 44px minmax(0, 1fr) 56px; } .tn-state { grid-column: 2 / -1; } .tn-acts { grid-column: 1 / -1; justify-content: flex-start; } }
+.ny-list { padding: 4px 0; }
+.ny-group { border-top: 1px solid var(--row-alt); }
+.ny-group:first-child { border-top: 0; }
+.ny-group summary { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 14px; cursor: pointer; list-style: none; font-weight: 700; font-size: 14px; }
+.ny-group summary::-webkit-details-marker { display: none; }
+.ny-group summary .ny-text::after { content: " ▾"; color: var(--muted); font-weight: 400; }
+.ny-group[open] summary .ny-text::after { content: " ▴"; }
+.ny-group ul { list-style: none; margin: 0 0 8px; padding: 0 14px 0 50px; font-size: 13.5px; }
+.ny-group li { padding: 4px 0; }
+.ny-group li a { color: var(--ink); }
+.ny-ico { font-size: 17px; text-align: center; }
+.ny-done { padding: 18px 14px; margin: 0; font-weight: 700; color: #0c7a2c; }
+.rc-list { list-style: none; margin: 0; padding: 4px 0; }
+.rc-list li { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 14px; border-top: 1px solid var(--row-alt); font-size: 13.5px; }
+.rc-list li:first-child { border-top: 0; }
+.rc-when { color: var(--muted); font-size: 12px; }
+.rc-what small { display: block; color: var(--muted); }
+.sug-list { list-style: none; margin: 0; padding: 4px 0; }
+.sug-list li { display: grid; grid-template-columns: 110px 50px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 14px; border-top: 1px solid var(--row-alt); }
+.sug-list li:first-child { border-top: 0; }
+.sug-list small { color: var(--muted); }
+/* Round 40: dashboard search — players, teams, matches… under the menu matches */
+.admin-records { margin: 6px 0 10px; border-top: 1px solid var(--line); padding-top: 6px; }
+.admin-records[hidden] { display: none; }
+.admin-records .ar-head { display: block; padding: 4px 10px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.admin-records a { display: flex; gap: 8px; align-items: baseline; padding: 7px 10px; border-radius: 6px; color: var(--ink); font-size: 13.5px; }
+.admin-records a:hover, .admin-records a:focus { background: var(--row-alt); }
+.admin-records i { font-style: normal; font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--red); min-width: 72px; }
+.admin-records small { color: var(--muted); }
+/* Round 40: the shareable result picture */
+.share-card-box { border: 0; border-radius: 14px; padding: 18px; max-width: min(560px, 94vw); width: 100%; }
+.share-card-box::backdrop { background: rgba(0,0,0,.7); }
+.share-card-box img { display: block; width: 100%; height: auto; border-radius: 8px; margin-bottom: 14px; }
+.share-card-box .muted { font-size: 13px; margin: 10px 0 0; }
+/* Round 40: Season wrapped */
+.wr-hero { background: linear-gradient(135deg, #0d0d0d, #2a0b14 60%, #0b3d1a); color: #fff; border-radius: 16px; padding: 28px 26px; }
+.wr-hero small { color: #fbb61a; font: 700 13px var(--font-head); text-transform: uppercase; letter-spacing: .08em; }
+.wr-hero h1 { margin: 8px 0 14px; font-size: clamp(30px, 5vw, 52px); line-height: 1.02; color: #fff; display: block; }
+.wr-hero h1 em { font-style: normal; color: #fbb61a; }
+.wr-hero h1 .badge { width: 46px; height: 46px; vertical-align: middle; }
+.wr-tools { display: flex; flex-wrap: wrap; gap: 14px; }
+.wr-tools .toolbar { color: #fff; margin: 0; }
+.wr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.wr-card { border-radius: 14px; padding: 22px 20px; color: #fff; display: flex; flex-direction: column; gap: 6px; min-height: 160px; justify-content: flex-end; }
+.wr-card b { font: 900 clamp(40px, 6vw, 64px)/1 var(--font-head); }
+.wr-card span { font: 700 15px var(--font-head); text-transform: uppercase; letter-spacing: .03em; }
+.wr-card small { font-size: 13.5px; opacity: .9; }
+.wr-card a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.wr-wide { grid-column: span 2; }
+@media (max-width: 560px) { .wr-wide { grid-column: auto; } }
+.wr-red { background: var(--red); } .wr-green { background: #0b7a2b; } .wr-gold { background: #e3a20a; color: #111; }
+.wr-black { background: #151515; } .wr-blue { background: #0a6fc2; }

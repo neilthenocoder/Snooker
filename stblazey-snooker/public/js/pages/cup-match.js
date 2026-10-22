@@ -1,5 +1,5 @@
 // Public page for one cup match: score, frames, breaks — updates live.
-import { html, mount, fmtDate, fmtTime } from "../core/dom.js";
+import { html, mount, fmtDate, fmtTime, fmtLongDate } from "../core/dom.js";
 import { loadCompMatch, loadCompetitions, subscribe, table } from "../core/api.js";
 import { buildBracket, roundName, winnerSide, walkoverSide } from "../core/bracket.js";
 import { canEditCompMatch } from "../core/auth.js";
@@ -8,6 +8,7 @@ import { handicapStarts, handicapMode } from "../core/rules.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
 import { matchChat } from "../core/comments.js";
+import { openShareCard } from "../core/share-card.js";
 
 export default async function cupMatch(view, { params, user }) {
   let chat = null;      // match night chat (Rich, round 24): a button near the top, kept across redraws
@@ -63,7 +64,8 @@ export default async function cupMatch(view, { params, user }) {
         ${wo ? html`<div class="mh-foot">Walkover to <b>${wo === "a" ? nameA : nameB}</b> — the match wasn't played.</div>` : ""}
         ${venue ? html`<div class="mh-foot"><a href="${urls.venue(venue)}">${venue.name}</a></div>` : ""}
       </div>
-      ${info.a && info.b && canEditCompMatch(user, match, [info.a, info.b], players) ? html`<div class="btn-row"><a class="btn" href="/cup-scorecard/${match.no ?? match.id}">${frames.length ? "Update scorecard" : "Start scoring"}</a></div>` : ""}
+      <div class="btn-row">${info.a && info.b && canEditCompMatch(user, match, [info.a, info.b], players) ? html`<a class="btn" href="/cup-scorecard/${match.no ?? match.id}">${frames.length ? "Update scorecard" : "Start scoring"}</a>` : ""}
+        ${match.status === "completed" && info.a && info.b ? html`<button type="button" class="btn blue" data-share-card>Share the result</button>` : ""}</div>
       ${wo ? "" : panel("Frame by frame", dataTable([
         { label: "Frame", cell: (f) => f.frame_no, cls: "num" },
         { label: nameA, cell: (f) => html`<span class="${f.a_points > f.b_points ? "strong" : ""}">${sidePlayers(f, "a")}</span>`, cls: "right" },
@@ -75,6 +77,20 @@ export default async function cupMatch(view, { params, user }) {
       ], scored, { empty: match.status === "completed" ? "Only the final score was entered for this match." : "No frames yet — check back on match night." }))}
     </div>`);
     if (chat) view.querySelector("[data-chat-slot]")?.replaceWith(chat.button);
+    // Round 40: the result as a square picture for social media.
+    view.querySelector("[data-share-card]")?.addEventListener("click", () => {
+      const best = [...breaks].sort((a, b) => b.value - a.value)[0];
+      const logo = (e) => teamOf(e)?.logo_url ?? players.find((p) => p.id === e?.player_id)?.avatar_url;
+      openShareCard({
+        title: c?.name ?? "Competition", sub: `${roundName(match.round, info.bracket.totalRounds)}${match.starts_at ? ` · ${fmtLongDate(match.starts_at)}` : ""}`,
+        home: { name: nameA, logo: logo(info.a) }, away: { name: nameB, logo: logo(info.b) },
+        score: wo ? [wo === "a" ? 1 : 0, wo === "b" ? 1 : 0] : [match.score_a, match.score_b], scoreText: wo ? "W/O" : undefined,
+        tag: wo ? "Walkover" : match.round === info.bracket.totalRounds ? "Final result" : "Result",
+        footer: [wo ? `${wo === "a" ? nameA : nameB} go through` : `${winnerSide(match) === "a" ? nameA : nameB} through to the ${match.round === info.bracket.totalRounds ? "title" : roundName(match.round + 1, info.bracket.totalRounds).toLowerCase()}`,
+          best ? `Highest break: ${best.value} — ${pname(best.player_id) ?? ""}` : ""].filter(Boolean),
+        file: `${nameA}-v-${nameB}`.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      });
+    });
     return match;
   };
   const m = await draw();

@@ -20,6 +20,7 @@
 //               formatted: true on a textarea = headings, bullets and tables can be typed (core/markup.js) — adds the help line and a Preview button.
 //  Section hooks: validate(row) → problem text, beforeSave(row, refs), afterSave(), onInput(form, changedElement).
 // ─────────────────────────────────────────────────────────────
+import { html } from "../core/dom.js";
 import { adminUsers } from "../core/db.js";
 import { STATUSES } from "../core/rules.js";
 import { CUEVIEW } from "../core/cueview.js";
@@ -497,39 +498,42 @@ export const RESOURCES = {
     ],
   },
   settings: {
-    label: "Site settings", table: "settings", order: "id", single: true, afterSave: () => refreshShell(),
+    label: "Site settings", table: "settings", order: "id", single: true, afterSave: () => refreshShell(), live: liveStripPreview,
     fields: [
-      { type: "heading", label: "Home page banner", help: "The logo, colours and fonts are under Website → Branding." },
+      { type: "heading", tab: "Home page", label: "Home page banner", help: "The logo, colours and fonts are under Website → Branding." },
       { name: "hero_image_url", label: "Home page banner background (leave blank for the standard photo)", type: "image", folder: "branding", maxSize: 2000 },
       { name: "hero_count", label: "How many news articles rotate in the banner", type: "number", default: 4 },
       { name: "hero_layout", label: "Banner layout", type: "select", options: ["side", "white", "big", "text"], default: "side",
         labels: { side: "Headline with the article's picture beside it", white: "White: headline on the left, big picture on the right (like the World Snooker home page)",
           big: "Big: the article's picture across the whole banner", text: "Headline only (the background photo above)" } },
-      { type: "heading", label: "Player of the week" },
+      { type: "heading", tab: "Home page", label: "Player of the week" },
       { name: "player_of_week_show", label: "Show on the home page", type: "checkbox" },
       { name: "player_of_week_id", label: "Player", type: "ref", ref: "players" },
       { name: "player_of_week_text", label: "Why (one or two sentences)", type: "textarea", rows: 2 },
-      { type: "heading", label: "Team of the week" },
+      { type: "heading", tab: "Home page", label: "Team of the week" },
       { name: "team_of_week_show", label: "Show on the home page", type: "checkbox" },
       { name: "team_of_week_id", label: "Team", type: "ref", ref: "teams" },
       { name: "team_of_week_text", label: "Why (one or two sentences)", type: "textarea", rows: 2 },
-      { type: "heading", label: "Player of the month", help: "Shown beside the player and team of the week, with their form (a mark out of 10 from their last 6 matches). The Form guide page (/form) shows who is in form, to help you choose." },
+      { type: "heading", tab: "Home page", label: "Player of the month", help: "Shown beside the player and team of the week, with their form (a mark out of 10 from their last 6 matches). The Form guide page (/form) shows who is in form, to help you choose." },
       { name: "player_of_month_show", label: "Show on the home page", type: "checkbox" },
       { name: "player_of_month_id", label: "Player", type: "ref", ref: "players" },
       { name: "player_of_month_text", label: "Why (one or two sentences)", type: "textarea", rows: 2 },
-      { type: "heading", label: "Team of the month" },
+      { type: "heading", tab: "Home page", label: "Team of the month" },
       { name: "team_of_month_show", label: "Show on the home page", type: "checkbox" },
       { name: "team_of_month_id", label: "Team", type: "ref", ref: "teams" },
       { name: "team_of_month_text", label: "Why (one or two sentences)", type: "textarea", rows: 2 },
-      { type: "heading", label: "Other home page boxes" },
+      { type: "heading", tab: "Home page", label: "Other home page boxes" },
       { name: "cueviews_show", label: "Show CueViews (pick which ones under Players → “Show this CueView on the home page”)", type: "checkbox" },
       { name: "shields_show", label: "Show who holds each league's shield", type: "checkbox" },
-      { type: "heading", label: "Captains: the Manage team box", help: "A box at the bottom of the home page that only captains and vice captains see, in the days before their team's next match. It takes them to My area → Manage team, where they pick who plays each frame (it is then on the scorecard on the night) and can add a new player. They can close the box; it comes back for the next match." },
+      { type: "heading", tab: "Captains & competitions", label: "Captains: the Manage team box", help: "A box at the bottom of the home page that only captains and vice captains see, in the days before their team's next match. It takes them to My area → Manage team, where they pick who plays each frame (it is then on the scorecard on the night) and can add a new player. They can close the box; it comes back for the next match." },
       { name: "squad_box_days", label: "Show it this many days before the match (0 = never show it)", type: "number", default: 3, min: 0, max: 14 },
-      { type: "heading", label: "Competitions: deadline warnings", help: "Players (and captains, for team competitions) are warned in their own area — and in a bar on the home page in the last week — about their cup matches as each round's deadline comes up: who is at home, and who must contact whom. The deadlines and the “contact by” dates are set for each round under Draws & results." },
+      { type: "heading", tab: "Captains & competitions", label: "Scorecard reminders", help: "The morning after a league match night, the captains (and vice captains) of the home team get an email if their match still has no result entered. One reminder per match. Needs the RESEND_API_KEY on Netlify, like the result emails." },
+      { name: "reminders_on", label: "Email captains when a scorecard hasn't been entered by the next morning", type: "checkbox", default: true },
+      { name: "reminders_both", label: "Email the away team's captains as well", type: "checkbox", default: false },
+      { type: "heading", tab: "Captains & competitions", label: "Competitions: deadline warnings", help: "Players (and captains, for team competitions) are warned in their own area — and in a bar on the home page in the last week — about their cup matches as each round's deadline comes up: who is at home, and who must contact whom. The deadlines and the “contact by” dates are set for each round under Draws & results." },
       { name: "comp_warn_days", label: "Start warning this many days before a round's deadline", type: "number", default: 14, min: 1, max: 60 },
       { name: "comp_contact_rule", label: "What the away player is told when the home player hasn't been in touch by the “contact by” date", type: "textarea", placeholder: CONTACT_RULE },
-      { type: "heading", label: "Home page: feature box", help: "A coloured strip under the Competitions / Calendar / Handicaps / Fixtures buttons — for announcing something new." },
+      { type: "heading", tab: "Home page", label: "Home page: feature box", help: "A coloured strip under the Competitions / Calendar / Handicaps / Fixtures buttons — for announcing something new." },
       { name: "feature_show", label: "Show the feature box", type: "checkbox" },
       { name: "feature_label", label: "Pulsing label (e.g. NEW)", type: "text", default: "NEW" },
       { name: "feature_text", label: "Text", type: "text", wide: true, placeholder: "Try our step-by-step scorecard — log in to find out more" },
@@ -538,62 +542,65 @@ export const RESOURCES = {
       { name: "feature_announcements", label: "Also show the announcements in this box, after the text above (each one can be left out under Website → Announcements)", type: "checkbox", default: true },
       { name: "feature_style", label: "When there is more than one message", type: "select", options: ["scroll", "rotate"], default: "scroll",
         labels: { scroll: "Scroll across, like the ticker", rotate: "Show one at a time, changing every few seconds" } },
-      { type: "heading", label: "Home page: key dates", help: "The box of dates coming up. Add the dates themselves under Website → Key dates." },
+      { type: "heading", tab: "Home page", label: "Home page: key dates", help: "The box of dates coming up. Add the dates themselves under Website → Key dates." },
       { name: "key_dates_show", label: "Show the Key dates box (when there is at least one date coming up)", type: "checkbox", default: true },
       { name: "key_dates_count", label: "How many dates to show", type: "number", default: 5, min: 1, max: 12 },
-      { type: "heading", label: "Home page: Latest News box", help: "Only used when “Side column: top box” (further down) is set to Latest news. Choose what it shows, so it doesn't repeat what's in the banner." },
+      { type: "heading", tab: "Home page", label: "Home page: Latest News box", help: "Only used when “Side column: top box” (further down) is set to Latest news. Choose what it shows, so it doesn't repeat what's in the banner." },
       { name: "latest_news_mode", label: "Show", type: "select", options: ["newest", "not_banner", "category", "picked"], default: "newest",
         labels: { newest: "The newest articles", not_banner: "The newest articles that aren't in the banner", category: "The newest articles from one category", picked: "The articles I choose below" } },
       { name: "latest_news_count", label: "How many articles", type: "number", default: 1 },
       { name: "latest_news_category", label: "Category (for “one category”)", type: "ref", ref: "categories", store: "name" },
       { name: "latest_news_ids", label: "Chosen articles (for “the articles I choose”)", type: "tags", ref: "articles" },
-      { type: "heading", label: "Home page: Live & upcoming strip", help: "The row of match cards under the banner. Results stay on it for a while after a match, with a label saying Completed (or Pending while a league result waits for approval). Choose how long, and the colours of its labels." },
+      { type: "heading", tab: "Strip & results", label: "Home page: Live & upcoming strip", help: "The row of match cards under the banner. Results stay on it for a while after a match, with a label: Completed, Pending (a league result waiting for approval) or Walkover. Postponed matches show too, labelled Postponed. Choose how long results stay, and the colours of the labels." },
       { name: "strip_result_hours", label: "How long a result stays on the strip, in hours (0 = don't show results; standard 48). A cup result typed in later counts from when it was typed in.", short: "Results stay (hours)", type: "number", default: 48, min: 0, max: 336 },
       { name: "strip_live_color", label: "“Live” label and the edge of a live card (standard: red label, green edge)", type: "color", optional: true, default: "#e8003d" },
       { name: "strip_soon_color", label: "“Live soon” label (standard: orange)", type: "color", optional: true, default: "#ff8a00" },
       { name: "strip_done_color", label: "“Completed” label (standard: green)", type: "color", optional: true, default: "#2f7d32" },
       { name: "strip_pending_color", label: "“Pending” label — a league result waiting for approval (standard: yellow)", type: "color", optional: true, default: "#f2b705" },
-      { type: "heading", label: "Side column: top box", help: "The blue box at the top of the side column on the home page and other pages with a sidebar. It has a button to the full results page (/results)." },
+      { name: "strip_walkover_color", label: "“Walkover” label (standard: the Completed colour)", type: "color", optional: true, default: "#2f7d32" },
+      { name: "strip_postponed_color", label: "“Postponed” label — shown from the match's date until a week ahead (standard: grey)", type: "color", optional: true, default: "#6b6b6b" },
+      { type: "custom", render: () => stripPreview() },
+      { type: "heading", tab: "Strip & results", label: "Side column: top box", help: "The blue box at the top of the side column on the home page and other pages with a sidebar. It has a button to the full results page (/results)." },
       { name: "side_box_mode", label: "Show", type: "select", options: ["results", "cup", "both", "news", "off"], default: "results",
         labels: { results: "Latest league results (standard)", cup: "Latest competition results", both: "Latest league and competition results together", news: "Latest news (as it used to be — set up in the Latest News box section above)", off: "Nothing" } },
       { name: "side_box_title", label: "Heading (leave empty for “Latest Results”)", type: "text", placeholder: "Latest Results" },
       { name: "side_box_count", label: "How many results", type: "number", default: 5, min: 1, max: 20 },
       { name: "side_box_league", label: "Only this league (leave empty for every league)", type: "ref", ref: "leagues" },
-      { type: "heading", label: "Announcements ticker", help: "The thin line of announcements that scrolls across the very top of the home page. Add the announcements themselves under Website → Announcements." },
+      { type: "heading", tab: "Strip & results", label: "Announcements ticker", help: "The thin line of announcements that scrolls across the very top of the home page. Add the announcements themselves under Website → Announcements." },
       { name: "ticker_show", label: "Show the ticker on the home page (when there is at least one announcement)", type: "checkbox", default: true },
       { name: "ticker_pace", label: "Speed (1 = very slow, 3 = standard, 10 = fast — it also sets the speed of the feature box when that scrolls)", short: "Speed", type: "range", min: 1, max: 10, step: 1, default: 3 },
-      { type: "heading", label: "Celebrations", help: "For the big moments — a new highest break, new league leaders, a new leader of the player rankings, the winner of a competition — everyone who is on the website at that moment sees a burst of confetti in the ball colours and a card saying what happened. It shows once, lasts a few seconds and can be closed. Each visitor can switch celebrations off for themselves (the bell in the menu)." },
+      { type: "heading", tab: "Celebrations", label: "Celebrations", help: "For the big moments — a new highest break, new league leaders, a new leader of the player rankings, the winner of a competition — everyone who is on the website at that moment sees a burst of confetti in the ball colours and a card saying what happened. It shows once, lasts a few seconds and can be closed. Each visitor can switch celebrations off for themselves (the bell in the menu)." },
       { name: "celebrate_breaks", label: "Celebrate a new highest break", type: "select", options: ["season", "week", "off"], default: "season",
         labels: { season: "When it is the highest of the season in its league or competition (standard)", week: "Also when it is the highest of the week", off: "Never" } },
       { name: "celebrate_leaders", label: "Celebrate new league leaders (a different team goes top of a league table)", type: "checkbox", default: true },
       { name: "celebrate_rankings", label: "Celebrate a new leader of the player rankings", type: "checkbox", default: true },
       { name: "celebrate_winners", label: "Celebrate the winner of a competition (when the final is finished)", type: "checkbox", default: true },
-      { type: "heading", label: "Competition entry form", help: "Shown to players at the end of the entry form (/enter). Which competitions are open is set on each competition." },
+      { type: "heading", tab: "Captains & competitions", label: "Competition entry form", help: "Shown to players at the end of the entry form (/enter). Which competitions are open is set on each competition." },
       { name: "entry_intro", label: "Introduction at the top of the form (optional)", type: "textarea", rows: 2 },
       { name: "bacs_details", label: "How to pay — the league's bank details (BACS)", type: "textarea", rows: 4,
         placeholder: "Account name: St Blazey & District Snooker League\nSort code: 00-00-00\nAccount number: 00000000\nReference: your name + competition" },
       { name: "entry_pay_days", label: "Days allowed to pay (unpaid entries are removed after this)", type: "number", default: 7 },
-      { type: "heading", label: "News", help: "Whose name goes on an article when its own “Written by” box is empty." },
+      { type: "heading", tab: "News & pages", label: "News", help: "Whose name goes on an article when its own “Written by” box is empty." },
       { name: "news_author", label: "Articles are by (standard name)", type: "text", placeholder: "St Blazey & District Snooker League" },
-      { type: "heading", label: "Merchandise page", help: "The words on /merchandise. The items themselves are under Website → Merchandise." },
+      { type: "heading", tab: "News & pages", label: "Merchandise page", help: "The words on /merchandise. The items themselves are under Website → Merchandise." },
       { name: "merch_intro", label: "Introduction at the top of the page (optional)", type: "textarea", rows: 2 },
       { name: "merch_how", label: "How to order (who to speak to, how to pay, when it arrives)", type: "textarea", rows: 4,
         placeholder: "To order, speak to a committee member on a match night or email …\nPay by bank transfer or cash. Orders go in at the end of each month." },
-      { type: "heading", label: "Maintenance mode", help: "While this is on, visitors see a holding page with your message instead of the website. Anyone who is logged in still sees the full site, so you can keep working — and captains can still log in to enter results." },
+      { type: "heading", tab: "Site", label: "Maintenance mode", help: "While this is on, visitors see a holding page with your message instead of the website. Anyone who is logged in still sees the full site, so you can keep working — and captains can still log in to enter results." },
       { name: "maintenance_on", label: "Switch the public website off for now", type: "checkbox" },
       { name: "maintenance_text", label: "Message for visitors", type: "textarea", rows: 2, placeholder: "We're making a few improvements to the website. Please check back shortly." },
-      { type: "heading", label: "Footer", help: "The very bottom of every page: the row of links (Privacy Policy, Contact Us…) and the copyright line under it. The partner logos come from Sponsors, and the social icons are set just below." },
+      { type: "heading", tab: "Site", label: "Footer", help: "The very bottom of every page: the row of links (Privacy Policy, Contact Us…) and the copyright line under it. The partner logos come from Sponsors, and the social icons are set just below." },
       { name: "footer_links", label: "Links in the bottom menu, in the order they should appear. Start typing and pick one of the website's pages — or type what the link should say, then | and where it goes (a web address, or an email address). Leave this empty to show every info page ticked “Show as a link in the footer”.",
         type: "list", add: "+ Add another link", placeholder: "Privacy Policy | /page/privacy-policy", suggest: "pages", suggestions: (refs) => footerSuggestions(refs.pages), max: 240, wide: true },
       { name: "footer_copyright", label: "Copyright line: whose website it is (the © and this year are added for you)", type: "text", placeholder: "St Blazey and District Snooker", wide: true },
       { name: "footer_credit_show", label: "Show a credit after the copyright line", type: "checkbox", default: true },
       { name: "footer_credit_text", label: "The credit", type: "text", placeholder: "Created by White River Design Studio" },
       { name: "footer_credit_url", label: "Where the credit links to (optional)", type: "text", placeholder: "https://…" },
-      { type: "heading", label: "Sharing on social media", help: "What a link to the website shows when it is shared on Facebook, WhatsApp, X and the rest: a title, a line of text and a picture. News articles have their own (News → the article → Social preview); every other page uses these. The services keep a copy of a preview for a while, so a change can take a few days to show on a link that was shared before." },
+      { type: "heading", tab: "Site", label: "Sharing on social media", help: "What a link to the website shows when it is shared on Facebook, WhatsApp, X and the rest: a title, a line of text and a picture. News articles have their own (News → the article → Social preview); every other page uses these. The services keep a copy of a preview for a while, so a change can take a few days to show on a link that was shared before." },
       { name: "social_title", label: "Title (leave empty to use the league's name)", type: "text", placeholder: "St Blazey and District Snooker League", wide: true },
       { name: "social_description", label: "Text (a sentence or two)", type: "textarea", rows: 2, placeholder: "Fixtures, results, league tables, breaks and rankings for the St Blazey and District Snooker League, established 1941." },
       { name: "social_image_url", label: "Picture (wide: 1200 × 630 is ideal — the logo on a coloured background, or a photo of the club)", type: "image", folder: "branding", maxSize: 1200, format: "jpeg" },
-      { type: "heading", label: "Social links (footer)", help: "Paste the full address of each page. Blank ones aren't shown." },
+      { type: "heading", tab: "Site", label: "Social links (footer)", help: "Paste the full address of each page. Blank ones aren't shown." },
       { name: "facebook_url", label: "Facebook", type: "text", placeholder: "https://www.facebook.com/…" },
       { name: "x_url", label: "X (Twitter)", type: "text", placeholder: "https://x.com/…" },
       { name: "instagram_url", label: "Instagram", type: "text", placeholder: "https://www.instagram.com/…" },
@@ -753,3 +760,22 @@ export const RESOURCES = {
     ],
   },
 };
+
+// ── Site settings: preview of the strip's labels (round 40) ──────
+/** The six labels of the home page strip, drawn in the colours chosen above (they change as you pick). */
+function stripPreview() {
+  const labels = [["live", "Live"], ["soon", "Live soon"], ["done", "Completed"], ["pending", "Pending"], ["walkover", "Walkover"], ["postponed", "Postponed"]];
+  return html`<div class="strip-preview" data-strip-preview><span class="muted">Preview:</span>${labels.map(([k, l]) => html`<span class="sp-tag" data-sp="${k}">${l}</span>`)}</div>`;
+}
+const STANDARD = { live: "#e8003d", soon: "#ff8a00", done: "#2f7d32", pending: "#f2b705", walkover: "#2f7d32", postponed: "#6b6b6b" };
+const inkFor = (c) => { const n = parseInt(c.slice(1), 16), [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255]; return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#111" : "#fff"; };
+function liveStripPreview(form) {
+  const box = form.querySelector("[data-strip-preview]");
+  if (!box) return;
+  for (const k of Object.keys(STANDARD)) {
+    const name = `strip_${k}_color`, own = form.querySelector(`[data-own-color="${name}"]`)?.checked;
+    const c = own ? form.elements[name]?.value : k === "walkover" && form.querySelector('[data-own-color="strip_done_color"]')?.checked ? form.elements.strip_done_color.value : STANDARD[k];
+    const tag = box.querySelector(`[data-sp="${k}"]`);
+    if (tag && /^#[0-9a-f]{6}$/i.test(c)) { tag.style.background = c; tag.style.color = inkFor(c); }
+  }
+}

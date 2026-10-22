@@ -258,7 +258,8 @@ function keyDates(site, dates, competitions, today) {
 
 // ── live & upcoming strip ─────────────────────────────────────
 async function liveStrip() {
-  // Round 38 (Rich): how long results stay on the strip, and the colours of its Live / Live soon / Completed / Pending
+  // Round 38 (Rich): how long results stay on the strip, and the colours of its Live / Live soon / Completed / Pending /
+  // Walkover / Postponed (round 39)
   // labels, are set under Admin → Site settings → "Home page: Live & upcoming strip".
   const site = await settings().catch(() => ({}));
   const hours = Number.isFinite(Number(site.strip_result_hours)) && site.strip_result_hours !== null && site.strip_result_hours !== "" ? Number(site.strip_result_hours) : 48;
@@ -273,7 +274,8 @@ async function liveStrip() {
   const all = [
     ...fixtures.map((fx) => ({
       when: fx.starts_at, status: fx.status, live: fx.status === "in_progress", done: ["submitted", "approved"].includes(fx.status), doneAt: fx.starts_at,
-      label: fx.status === "submitted" ? "pending" : fx.status === "approved" ? "completed" : null,
+      label: fx.status === "submitted" ? "pending" : fx.status === "approved" ? "completed" : fx.status === "postponed" ? "postponed" : null,
+      postponed: fx.status === "postponed",
       title: leagues.find((l) => l.id === fx.league_id)?.name ?? "League",
       a: { name: team.get(fx.home_team_id)?.name ?? "?", team: team.get(fx.home_team_id) },
       b: { name: team.get(fx.away_team_id)?.name ?? "?", team: team.get(fx.away_team_id) }, score: matchScore(framesBy.get(fx.id)),
@@ -291,7 +293,8 @@ async function liveStrip() {
       return {
         // A result typed in with no date goes by the time it went in (result_at); a match being scored, by now.
         when: m.starts_at ?? m.result_at ?? new Date().toISOString(), status: m.status, live: m.status === "in_progress", done: m.status === "completed", title: c.name, cup: true,
-        doneAt: m.result_at ?? m.starts_at, label: m.status === "completed" ? (walkoverSide(m) ? "walkover" : "completed") : null,
+        doneAt: m.result_at ?? m.starts_at, label: m.status === "completed" ? (walkoverSide(m) ? "walkover" : "completed") : m.status === "postponed" ? "postponed" : null,
+        postponed: m.status === "postponed",
         a: who(bm.a), b: who(bm.b),
         score: { home: m.score_a ?? 0, away: m.score_b ?? 0 }, hasFrames: m.score_a != null, href: `/cup-match/${m.no ?? m.id}`, venue: venues.find((v) => v.id === m.venue_id),
         // Round 37: a walkover has no score — the card says who went through.
@@ -352,8 +355,8 @@ async function liveStrip() {
       <div class="sc-foot">${c.foot}</div></a>` : html`<a class="strip-card ${c.live ? "is-live" : ""}" href="${c.href}">
       <div class="sc-top"><span>${ukDay(c.when) === todayUK() ? "Tonight" : fmtDate(c.when)}</span><span class="sc-comp">${c.title}</span></div>
       <div class="sc-body">${side(c.a)}
-        <div class="sc-mid">${c.walkover ? html`<b>W/O</b>` : c.hasFrames || c.done ? html`<b>${c.score.home} - ${c.score.away}</b>` : html`<b class="time">${fmtTime(c.when)}</b>`}
-          ${c.live ? html`<span class="live-dot">Live</span>` : c.done ? html`<span class="sc-label ${c.label ?? "completed"}">${{ pending: "Pending", walkover: "Walkover" }[c.label] ?? "Completed"}</span>` : c.hasFrames ? "" : liveSoonTag({ starts_at: c.when, status: c.status ?? "scheduled" })}</div>
+        <div class="sc-mid">${c.postponed ? html`<b>P - P</b>` : c.walkover ? html`<b>W/O</b>` : c.hasFrames || c.done ? html`<b>${c.score.home} - ${c.score.away}</b>` : html`<b class="time">${fmtTime(c.when)}</b>`}
+          ${c.postponed ? html`<span class="sc-label postponed">Postponed</span>` : c.live ? html`<span class="live-dot">Live</span>` : c.done ? html`<span class="sc-label ${c.label ?? "completed"}">${{ pending: "Pending", walkover: "Walkover" }[c.label] ?? "Completed"}</span>` : c.hasFrames ? "" : liveSoonTag({ starts_at: c.when, status: c.status ?? "scheduled" })}</div>
         ${side(c.b)}</div>
       <div class="sc-foot">${c.walkover ? `Walkover to ${c.walkover}` : c.venue?.name ?? ""}</div>
     </a>`))}</div>`;
@@ -366,7 +369,7 @@ async function liveStrip() {
 function stripColours(site) {
   const hex = (v) => (/^#[0-9a-f]{6}$/i.test(v ?? "") ? v : null);
   const ink = (c) => { const n = parseInt(c.slice(1), 16), [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255]; return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#111" : "#fff"; };
-  const vars = [["live", site.strip_live_color], ["soon", site.strip_soon_color], ["done", site.strip_done_color], ["pending", site.strip_pending_color]]
+  const vars = [["live", site.strip_live_color], ["soon", site.strip_soon_color], ["done", site.strip_done_color], ["pending", site.strip_pending_color], ["postponed", site.strip_postponed_color], ["walkover", site.strip_walkover_color]]
     .filter(([, c]) => hex(c)).map(([k, c]) => `--strip-${k}:${c};--strip-${k}-ink:${ink(c)}`).join(";");
   return vars ? html`<style>[data-strip]{${vars}}</style>` : "";
 }

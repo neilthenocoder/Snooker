@@ -4,8 +4,13 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.35.0";
+export const SITE_VERSION = "1.37.0";
 export const CHANGES = [
+  "Dashboard Overview: Tonight (every match of the night with Approve / Scorecard / Postpone), Needs you (everything waiting, grouped) and Your recent changes with Undo",
+  "Dashboard search finds players, teams, venues, leagues, competitions, news and matches; Site settings is split into tabs, with a preview of the strip's label colours",
+  "Captains get an email the morning after if their scorecard hasn't been entered (Site settings → Captains & competitions) — run schema.sql (version 28)",
+  "Postponed matches: Suggest dates finds free weeknights for both teams; match pages can make a result picture to share; new Season wrapped page (/wrapped)",
+  "Home page strip: postponed matches show with a Postponed label, and Walkover has its own colour (Site settings) — run schema.sql (version 27)",
   "Draws & results: Save all changes — change several matches, then save them at once (changed rows are highlighted)",
   "Cup matches can be postponed (Draws & results or the cup scorecard); they show as Postponed and leave the home page strip",
   "Home page strip: results show Completed or Pending; how long they stay and the label colours are in Site settings (run schema.sql — version 26)",

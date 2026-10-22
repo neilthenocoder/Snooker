@@ -1,4 +1,4 @@
-import { html, mount, $, toast, fmtDate, fmtTime, safeHref } from "../core/dom.js";
+import { html, mount, $, toast, fmtDate, fmtTime, safeHref, fmtLongDate } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { loadFixture, headToHead, subscribe, setMatchPhotos, fixtureBoards } from "../core/api.js";
 import { onTable } from "../core/live-score.js";
@@ -10,6 +10,7 @@ import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
 import { matchChat } from "../core/comments.js";
 import { headToHeadSummary } from "../core/h2h-summary.js";
+import { openShareCard } from "../core/share-card.js";
 
 export default async function match(view, { params, user }) {
   // Match night chat (Rich, round 24): a button near the top opens it from the bottom of the screen.
@@ -106,6 +107,7 @@ export default async function match(view, { params, user }) {
         <div class="btn-row">
           ${canEditFixture(user, fx) ? html`<a class="btn" href="${urls.scorecard(fx)}">${played ? "Edit scorecard" : "Enter scorecard"}</a>` : ""}
           ${safeHref(fx.scorecard_url) ? html`<a class="btn ghost" href="${safeHref(fx.scorecard_url)}" target="_blank" rel="noopener">Photo of the paper scorecard</a>` : ""}
+          ${played && !scoreOnly && fx.status !== "in_progress" ? html`<button type="button" class="btn blue" data-share-card>Share the result</button>` : ""}
         </div>
         ${panel("Results", dataTable([
           { label: "Team", cell: ([, t]) => teamLink(t) },
@@ -154,6 +156,24 @@ export default async function match(view, { params, user }) {
         ${panel("Past Meetings", resultsList(ctx, past, { scoreFn: (f) => { const s = matchScore(h2hFrames.get(f.id)); return `${s.home} - ${s.away}`; } }))}
       </div>`);
     if (chat) $("[data-chat-slot]", view)?.replaceWith(chat.button);
+    // Round 40: the result as a square picture for social media.
+    $("[data-share-card]", view)?.addEventListener("click", () => {
+      const best = [...breaks].sort((a, b) => b.value - a.value)[0];
+      const stars = sides.map(([s, t]) => [t, [...sideLines[s]].sort((a, b) => b.wins - a.wins || b.points - a.points)[0]]);
+      const top = stars.filter(([, r]) => r?.wins >= 2).sort((a, b) => b[1].wins - a[1].wins)[0];
+      // The winning team's frame winners ("Frames won by A. Smith, B. Jones and C. Brown").
+      const winSide = score.home > score.away ? "home" : score.away > score.home ? "away" : null;
+      const winners = winSide ? sideLines[winSide].filter((r) => r.wins > 0).map((r) => r.player?.full_name).filter(Boolean) : [];
+      const listText = (a) => (a.length > 1 ? `${a.slice(0, -1).join(", ")} and ${a.at(-1)}` : a[0] ?? "");
+      openShareCard({
+        title: league?.name ?? "League match", sub: `${fmtLongDate(fx.starts_at)}${ctx.venue.get(fx.venue_id) ? ` · ${ctx.venue.get(fx.venue_id).name}` : ""}`,
+        home: { name: home?.name ?? "Home", logo: home?.logo_url }, away: { name: away?.name ?? "Away", logo: away?.logo_url }, score: [score.home, score.away],
+        tag: fx.status === "approved" ? "Result" : "Result (to be approved)",
+        footer: [best ? `Highest break: ${best.value} — ${playerName(best.player_id)}` : "",
+          top ? `${top[1].player?.full_name} won ${top[1].wins} frames for ${top[0]?.name}` : winners.length && winners.length <= 4 ? `Frames won by ${listText(winners)}` : ""].filter(Boolean),
+        file: `${home?.name ?? "home"}-v-${away?.name ?? "away"}`.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      });
+    });
     // The photo controls live inside the panel, which is rebuilt on every draw — so nothing is left listening.
     const box = $("#match-photos", view);
     if (box && mayAddPhotos) {

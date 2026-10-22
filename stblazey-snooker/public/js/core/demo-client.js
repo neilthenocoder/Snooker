@@ -205,7 +205,7 @@ function audit(action, table, rows, patch = null, force = false) {
     changes = {};
     const short = (v) => v == null || JSON.stringify(v).length <= 140;
     for (const [k, v] of Object.entries(patch ?? {})) {
-      if (JSON.stringify(rows[0][k] ?? null) === JSON.stringify(v ?? null) || ["updated_at", "postponed_at", "code", "slug", "submitted_email_at"].includes(k)) continue;
+      if (JSON.stringify(rows[0][k] ?? null) === JSON.stringify(v ?? null) || ["updated_at", "postponed_at", "code", "slug", "submitted_email_at", "reminder_sent_at", "result_at"].includes(k)) continue;
       changes[k] = short(v) && short(rows[0][k]) ? [rows[0][k] ?? null, v ?? null] : null;
     }
     if (!Object.keys(changes).length) return;

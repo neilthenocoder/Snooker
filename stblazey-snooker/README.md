@@ -624,6 +624,26 @@ A cup result typed into Admin → Draws & results was saved as finished but with
 - A new best break in a competition now says **New highest break of the competition (its name)**.
 - Classic scorecard: when a player's handicap start ("starts on 5") shows under their name, the points box now stays level with the player box.
 
+## 3zd. Round 39: Postponed on the strip
+
+**Run `supabase/schema.sql` again** (database version 27). Round 38's notes above apply too if it wasn't uploaded on its own.
+
+The Live & upcoming strip now has four labels for matches that aren't live: **Completed**, **Pending** (a league result waiting for approval), **Walkover** and **Postponed**. A postponed match (league or cup) shows "P - P" with the Postponed label from its original date (counting back as far as results do) until a week ahead, so people can see that tonight's match is off. Colours for all of them — plus Live and Live soon — are in Site settings → Home page: Live & upcoming strip (`strip_postponed_color`, `strip_walkover_color` are new).
+
+## 3ze. Round 40: dashboard and new features
+
+**Run `supabase/schema.sql` again** (database version 28). Nothing to set up on Netlify: the reminders use the same keys as the result emails.
+
+- **Overview → Tonight**: every league and cup match of tonight (or of the next match night) with where it is up to — to come, live, nothing entered (3 hours after the start), waiting for approval, done, postponed — and buttons: Approve, Scorecard / Check card, Postpone, Walkover (cup). It updates by itself while captains score. Code: `admin/overview-plus.js`.
+- **Overview → Needs you**: everything waiting, one line per kind (results to approve, matches with no scorecard in the last six weeks, postponed matches to rearrange, new players, unpaid entries, news, CueViews, marketplace adverts, cup matches past their round deadline). Press a line to see them, oldest first. It replaces the yellow reminder boxes.
+- **Overview → Your recent changes** (Master Admin): the last eight things you changed this week, with **Undo** for plain changes (a name, a status, a date…). Undo is refused if the thing has been changed again since. Additions and deletions can't be undone here.
+- **Dashboard search**: the box at the top of the menu also finds players, teams, venues, leagues, competitions, news articles and this season's matches, and opens them ready to edit. Enter opens the first one.
+- **Site settings in tabs**: Home page · Captains & competitions · Strip & results · Celebrations · News & pages · Site. The last tab used is remembered. The strip's colour pickers have a live preview of the six labels. (A heading's `tab` in `admin/resources.js` decides where it goes; `type: "custom"` fields and `live` are new in `admin/crud.js`.)
+- **Scorecard reminders**: `netlify/functions/scorecard-reminders.mjs` runs every morning at 08:00 UTC (9:00 in summer). League matches from the last seven days that started at least ten hours ago and still have no result get one email to the home team's captains and vice captains (and the away team's too, if ticked). Switch it off in Site settings → Captains & competitions → Scorecard reminders. `fixtures.reminder_sent_at` remembers it was sent (a new date clears it). Its log: Netlify → Logs → Functions → scorecard-reminders. Captains need an email address on their login.
+- **Rearranging postponed matches**: Results to approve → Postponed → **Suggest dates** lists free weeknights before the rearrange-by date (or the next four weeks if it has passed) when neither team has a match, noting league nights, bye weeks, other matches at the venue and key dates. **Use this date** fills it in; press Rearrange to save. Code: `admin/rearrange.js`.
+- **Share the result**: a button on finished league and cup match pages makes a square picture of the result (emblems, score, highest break, who won the frames) to share from a phone or download. Emblems from another website that doesn't allow it show as initials. Code: `core/share-card.js`.
+- **Season wrapped** (`/wrapped`, in the menu after the Form guide — added to a changed menu once by schema.sql): the season in numbers for the whole league or one team (frames, the highest break, most frames won, best win rate, most breaks, longest winning run, close matches, clean sweeps, biggest win, league leaders). Any season. Code: `pages/wrapped.js`.
+
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
 | Rule | Current setting |

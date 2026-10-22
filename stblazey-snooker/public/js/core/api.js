@@ -364,6 +364,7 @@ export async function nearbyMatches(hours = 36) {
 export async function upcomingMatches(limit = 12, hours = 48) {
   const since = new Date(Date.now() - 12 * 3600e3).toISOString();
   const back = new Date(Date.now() - Math.max(0, hours) * 3600e3).toISOString(), now = new Date().toISOString();
+  const ahead = new Date(Date.now() + 7 * 864e5).toISOString();
   const [fixtures, live, recent, comps] = await Promise.all([
     selectAll(() => db.from("fixtures").select("*").gte("starts_at", since).neq("status", "postponed").order("starts_at").limit(limit)),
     selectAll(() => db.from("fixtures").select("*").eq("status", "in_progress")),
@@ -373,7 +374,10 @@ export async function upcomingMatches(limit = 12, hours = 48) {
     selectAll(() => db.from("competition_matches").select("*").eq("status", "in_progress")).catch(() => []),
     // Round 35: cup results that went in during the last `hours`, dated or not (result_at: schema.sql version 24).
     hours > 0 ? selectAll(() => db.from("competition_matches").select("*").gte("result_at", back).order("result_at", { ascending: false }).limit(30)).catch(() => []) : [],
-  ]).then(([f, l, r, c, cl, cr]) => [f, l, r, [...new Map([...cr, ...cl, ...c].map((m) => [m.id, m])).values()]]);
+    // Round 39 (Rich): postponed matches stay on the strip, labelled — from the results window up to a week ahead.
+    selectAll(() => db.from("fixtures").select("*").eq("status", "postponed").gte("starts_at", back).lte("starts_at", ahead).order("starts_at").limit(20)).catch(() => []),
+    selectAll(() => db.from("competition_matches").select("*").eq("status", "postponed").gte("starts_at", back).lte("starts_at", ahead).order("starts_at").limit(20)).catch(() => []),
+  ]).then(([f, l, r, c, cl, cr, pf, pc]) => [f, l, [...r, ...pf], [...new Map([...cr, ...cl, ...c, ...pc].map((m) => [m.id, m])).values()]]);
   const all = [...new Map([...live, ...fixtures, ...recent].map((f) => [f.id, f])).values()];
   const frames = await selectIn("frames", "fixture_id", all.map((f) => f.id));
   return { fixtures: all, comps, frames: withLegacyFrames(all, frames) };

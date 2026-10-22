@@ -1,6 +1,6 @@
-import { html, mount, $, toast, readForm, fmtDate, fmtTime, fromLocalInput, safeHref } from "../core/dom.js";
+import { html, mount, $, toast, readForm, fmtDate, fmtTime, fromLocalInput, toLocalInput, safeHref } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
-import { table, insertMany, setFixtureStatus, save, invalidate, signups, cueviewSubmissions } from "../core/api.js";
+import { table, insertMany, setFixtureStatus, save, invalidate, signups, cueviewSubmissions, articleList } from "../core/api.js";
 import { isStaff, isMaster, canOpenSection, isMember } from "../core/auth.js";
 import { rearrangeBy, POSTPONE_WEEKS } from "../core/rules.js";
 import { resetDemo, databaseVersion, SCHEMA_VERSION } from "../core/db.js";
@@ -38,6 +38,8 @@ import { performancePage } from "../admin/performance.js";
 import { securityPage } from "../admin/security.js";
 import { versionsPage } from "../admin/versions.js";
 import { SITE_VERSION } from "../core/release.js";
+import { tonightPanel, needsYouPanel, recentChangesPanel } from "../admin/overview-plus.js";
+import { freeDates } from "../admin/rearrange.js";
 import { handicapSuggestPage } from "../admin/handicap-suggest.js";
 
 
@@ -118,7 +120,7 @@ export default async function admin(view, { params, user, query }) {
     <div class="admin">
       <nav class="admin-nav" aria-label="Admin menu">
         <label class="admin-find">${ico("M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2Zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12Z")}
-          <input type="search" placeholder="Find in the menu…" data-admin-find aria-label="Find in the menu" autocomplete="off"></label>
+          <input type="search" placeholder="Find a page, player, team, match…" data-admin-find aria-label="Find in the dashboard" autocomplete="off"></label>
         ${[...nav, ...(isMember(user) ? [["My team", [["/my", "My Team area"]]]] : []), ...(DEMO_MODE ? [["Demo", [["#reset", "Reset sample data"]]]] : [])].map(([group, items]) => {
           const here = items.some(([key]) => key === section), shut = !here && closed.has(group);
           return html`<section class="nav-group ${here ? "has-active" : ""} ${shut ? "shut" : ""}" data-group="${group}">
@@ -128,6 +130,7 @@ export default async function admin(view, { params, user, query }) {
               : html`<a href="/admin/${key}" class="${key === section ? "active" : ""}" ${key === section ? html`aria-current="page"` : ""}>${label}${count(key)}</a>`))}</div>
           </section>`; })}
         <p class="admin-none" hidden>Nothing in the menu matches.</p>
+        <div class="admin-records" data-admin-records hidden></div>
         <button type="button" class="admin-logout" data-logout>${logoutIcon}<span>Log out</span></button>
         <p class="admin-version">Website version ${SITE_VERSION}</p>
       </nav>
@@ -179,11 +182,47 @@ export default async function admin(view, { params, user, query }) {
       group.classList.toggle("finding", !!q);
       any ||= shown > 0;
     }
-    $(".admin-none", view).hidden = any;
+    $(".admin-none", view).hidden = any || q.length >= 2;
+    findRecords(q);
   });
+  // Round 40: the search also finds players, teams, venues, leagues, competitions, news and this season's fixtures,
+  // and opens them ready to edit (only the parts of the dashboard this login has).
+  let index = null;
+  const buildIndex = async () => {
+    const [players, teams, venues, leagues, comps, news] = await Promise.all([
+      table("players", "full_name").catch(() => []), table("teams", "name").catch(() => []), table("venues", "name").catch(() => []),
+      table("leagues", "sort").catch(() => []), table("competitions", "sort").catch(() => []), articleList().catch(() => [])]);
+    const teamName = (id) => teams.find((t) => t.id === id)?.name ?? "?";
+    const ctx = await seasonContext().catch(() => null);
+    const out = [];
+    const push = (section, kind, label, sub, href) => { if (canOpenSection(user, section)) out.push({ kind, label, sub, href, key: `${label} ${sub}`.toLowerCase() }); };
+    for (const p of players) push("players", "Player", p.full_name, teamName(p.team_id), `/admin/players?edit=${p.id}`);
+    for (const t of teams) push("teams", "Team", t.name, "", `/admin/teams?edit=${t.id}`);
+    for (const v of venues) push("venues", "Venue", v.name, "", `/admin/venues?edit=${v.id}`);
+    for (const l of leagues) push("leagues", "League", l.name, "", `/admin/leagues?edit=${l.id}`);
+    for (const c of comps) push("draws", "Competition", c.name, "Draws & results", `/admin/draws?c=${c.id}`);
+    for (const a of news) push("articles", "News", a.title, a.published_at ? fmtDate(a.published_at) : "", `/admin/articles?edit=${a.id}`);
+    for (const f of ctx?.fixtures ?? []) push("fixtures", "Match", `${teamName(f.home_team_id)} v ${teamName(f.away_team_id)}`, `${fmtDate(f.starts_at)} · scorecard`, urls.scorecard(f));
+    return out;
+  };
+  const findRecords = async (q) => {
+    const box = $("[data-admin-records]", view);
+    if (q.length < 2) { box.hidden = true; return; }
+    index ??= await buildIndex();
+    if (find.value.trim().toLowerCase() !== q) return;   // typed on since
+    const words = q.split(/\s+/);
+    // Best first: a name that starts with what was typed, then a name that contains it, then the rest (a team's players…).
+    const KIND = ["Team", "League", "Competition", "Venue", "Player", "Match", "News"];
+    const rank = (r) => { const l = r.label.toLowerCase(); return l.startsWith(q) ? 0 : words.every((w) => l.includes(w)) ? 1 : 2; };
+    const hits = index.filter((r) => words.every((w) => r.key.includes(w)))
+      .sort((a, b) => rank(a) - rank(b) || KIND.indexOf(a.kind) - KIND.indexOf(b.kind) || a.label.localeCompare(b.label)).slice(0, 12);
+    box.hidden = false;
+    mount(box, hits.length ? html`<small class="ar-head">Players, teams, matches…</small>${hits.map((r) => html`<a href="${r.href}"><i>${r.kind}</i><span>${r.label}${r.sub ? html` <small>${r.sub}</small>` : ""}</span></a>`)}`
+      : html`<small class="ar-head">No players, teams or matches match “${q}”.</small>`);
+  };
   find.addEventListener("keydown", (e) => {
     if (e.key !== "Enter") return;
-    const first = menu.querySelector(".nav-group:not(.nav-hide) .nav-items a:not(.nav-hide)");
+    const first = menu.querySelector(".nav-group:not(.nav-hide) .nav-items a:not(.nav-hide)") ?? menu.querySelector("[data-admin-records]:not([hidden]) a");
     if (first && find.value.trim()) { e.preventDefault(); first.click(); }
   });
 
@@ -250,13 +289,10 @@ async function overview(el, { user }) {
   ];
   const fresh = ctx.players.filter((p) => p.needs_review);
   const news = canOpenSection(user, "approvals") ? await waitingNews().catch(() => []) : [];
-  const late = ctx.fixtures.filter((f) => f.status === "postponed" && Date.parse(rearrangeBy(f)) < Date.now());
+  // Round 40: Tonight (the match night), Needs you (everything waiting, in one list) and, for the Master Admin,
+  // the last things they changed with Undo. The old one-line reminders are all in Needs you now.
   mount(el, html`
-    ${fresh.length ? html`<div class="notice todo"><b>${fresh.length} player${fresh.length > 1 ? "s" : ""} added by captains ${fresh.length > 1 ? "are" : "is"} waiting for you to accept ${fresh.length > 1 ? "them" : "them"}.</b> Press a name to set the handicap (saving accepts them), or use “Accept” and “Reject” in the <a href="/admin/players" style="font-weight:700">Players list</a>. Captains can already pick them.
-      <div class="todo-list">${fresh.map((p) => html`<a href="/admin/players?edit=${p.id}">${p.full_name} <small>${ctx.team.get(p.team_id)?.name ?? "no team"}</small></a>`)}</div></div>` : ""}
-    ${news.length ? html`<div class="notice todo"><b>${news.length} news article${news.length > 1 ? "s are" : " is"} waiting for your approval.</b> <a href="/admin/approvals" style="font-weight:700">News to approve</a></div>` : ""}
-    ${unpaid.length ? html`<div class="notice todo"><b>${unpaid.length} competition entr${unpaid.length > 1 ? "ies are" : "y is"} waiting for payment to be confirmed.</b> <a href="/admin/entries" style="font-weight:700">Entries to approve</a></div>` : ""}
-    ${late.length ? html`<div class="notice error"><b>${late.length} postponed match${late.length > 1 ? "es have" : " has"} passed the ${POSTPONE_WEEKS}-week limit.</b> <a href="/admin/results" style="font-weight:700">Rearrange them</a></div>` : ""}
+    <div class="ov-grid"><div data-ov-tonight></div><div data-ov-needs></div></div>
     <div class="stats">${stats.map(([l, n, section, href]) => (canOpenSection(user, section)
       ? html`<a class="stat stat-link" href="${href}" title="Open ${l.toLowerCase()}"><b>${n}</b>${l}<i aria-hidden="true">→</i></a>` : html`<div class="stat"><b>${n}</b>${l}</div>`))}</div>
     <p>Season: <b>${ctx.season?.name ?? "none — add one under Seasons"}</b>. Match nights: captains enter frames on their phones,
@@ -264,8 +300,21 @@ async function overview(el, { user }) {
       Approved results are locked for captains; you can still edit them.</p>
     <div class="btn-row"><a class="btn" href="/admin/results">Results to approve</a>
       ${[["accounts", "secondary", "Manage logins"], ["generator", "blue", "Generate a season's fixtures"], ["leagues", "green", "Add a league"], ["draws", "ghost", "Competition draws"], ["roles", "ghost", "Roles & permissions"]]
-        .filter(([key]) => canOpenSection(user, key)).map(([key, cls, label]) => html`<a class="btn ${cls}" href="/admin/${key}">${label}</a>`)}</div>`);
+        .filter(([key]) => canOpenSection(user, key)).map(([key, cls, label]) => html`<a class="btn ${cls}" href="/admin/${key}">${label}</a>`)}</div>
+    <div data-ov-recent style="margin-top:26px"></div>`);
+  const waiting = {
+    players: fresh, entries: unpaid, news,
+    cueviews: canOpenSection(user, "cueviews") ? (await cueviewSubmissions().catch(() => [])).filter((r) => r.status === "pending") : [],
+    ads: canOpenSection(user, "market") ? (await waitingAds().catch(() => [])) : [],
+  };
+  await Promise.all([
+    tonightPanel($("[data-ov-tonight]", el), user).then((stop) => { overviewStop = stop; }).catch((err) => console.warn("Tonight:", err)),
+    needsYouPanel($("[data-ov-needs]", el), user, ctx, waiting).catch((err) => console.warn("Needs you:", err)),
+    recentChangesPanel($("[data-ov-recent]", el), user).catch(() => {}),
+  ]);
+  return () => overviewStop?.();
 }
+let overviewStop = null;   // the Tonight box's live updates, stopped when the Overview is left
 
 // ── Results awaiting approval ──────────────────────────────────
 async function results(el) {
@@ -287,17 +336,39 @@ async function results(el) {
     <div style="height:26px"></div>
     ${panel("Played but no result entered", dataTable(cols(false), overdue, { empty: "No overdue scorecards." }))}
     <div style="height:26px"></div>
+    <div id="postponed"></div>
     ${panel("Postponed — waiting for a new date", dataTable([
       { label: "Was due", cell: (f) => `${fmtDate(f.starts_at)} ${fmtTime(f.starts_at)}` },
       { label: "Match", cell: (f) => html`<a href="${urls.match(f)}">${ctx.team.get(f.home_team_id)?.name} vs ${ctx.team.get(f.away_team_id)?.name}</a>` },
       { label: "Rearrange by", cell: (f) => { const by = rearrangeBy(f); return html`<span class="${Date.parse(by) < Date.now() ? "overdue" : ""}">${fmtDate(by)}</span>`; } },
       { label: "New date & time", cell: (f) => html`<input type="datetime-local" data-new-date="${f.id}" style="margin:0;width:auto">` },
-      { label: "", cls: "right", cell: (f) => html`<button class="btn small green" data-reschedule="${f.id}">Rearrange</button>` },
+      { label: "", cls: "right", cell: (f) => html`<span class="btn-row" style="justify-content:flex-end;flex-wrap:nowrap"><button class="btn small ghost" data-suggest="${f.id}">Suggest dates</button><button class="btn small green" data-reschedule="${f.id}">Rearrange</button></span>` },
     ], postponed, { empty: "No postponed matches." }))}
+    <div data-suggestions></div>
     <p class="muted"><b>How to postpone a match:</b> a captain or vice captain presses <b>Postpone</b> next to the match under My Team → Fixtures (before it starts),
       or you open its scorecard and press <b>Mark postponed</b>. It shows as “P - P” on the site, is left out of the tables, and waits here.
       It should be re-arranged within ${POSTPONE_WEEKS} weeks: both captains see a reminder with the date on their My Team page. Give it a new date above and it goes back on the fixture list.</p></div>`);
   $("#results-root").addEventListener("click", async (e) => {
+    // Round 40: the free nights before the deadline (both teams free; bye weeks first; venue and key dates noted).
+    if (e.target.dataset.suggest) {
+      const f = ctx.fixtures.find((x) => x.id === e.target.dataset.suggest);
+      const keyDates = await table("key_dates", "starts_on").catch(() => []);
+      const list = freeDates(ctx, f, { keyDates });
+      const box = $("[data-suggestions]", el);
+      mount(box, panel(`Free dates: ${ctx.team.get(f.home_team_id)?.name} v ${ctx.team.get(f.away_team_id)?.name}`, list.length
+        ? html`<ul class="sug-list">${list.map((d) => html`<li><b>${new Date(`${d.day}T12:00:00Z`).toLocaleDateString("en-GB", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" })}</b> ${d.time}
+            <small>${d.notes.join(" · ")}</small><button type="button" class="btn small" data-use-date="${f.id}" data-day="${d.day}" data-time="${d.time}">Use this date</button></li>`)}</ul>
+          <p class="muted" style="padding:0 14px 10px;margin:0">Weeknights up to ${Date.parse(rearrangeBy(f)) < Date.now() ? "four weeks ahead (the rearrange-by date has passed)" : fmtDate(rearrangeBy(f))}, when neither team already has a match. Check with both captains before saving.</p>`
+        : html`<p style="padding:14px;margin:0">No free weeknight in the next four weeks or before the deadline (${fmtDate(rearrangeBy(f))}). Pick a date by hand.</p>`));
+      box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      return;
+    }
+    if (e.target.dataset.useDate) {
+      const input = $(`[data-new-date="${e.target.dataset.useDate}"]`);
+      input.value = toLocalInput(londonISO(e.target.dataset.day, e.target.dataset.time));
+      input.scrollIntoView({ behavior: "smooth", block: "center" }); input.focus();
+      return toast("Date filled in — press Rearrange to save it");
+    }
     const fid = e.target.dataset.reschedule;
     if (fid) {
       const when = fromLocalInput($(`[data-new-date="${fid}"]`).value);

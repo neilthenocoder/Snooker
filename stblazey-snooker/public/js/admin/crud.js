@@ -17,7 +17,7 @@ const shortLabel = (f) => f.short ?? f.label.split(" (")[0];
 /** "vice_captain" → "Vice Captain" (a field can give its own names with `labels`). */
 const pretty = (v) => String(v ?? "").replace(/_/g, " ").replace(/\b[a-z]/g, (c) => c.toUpperCase());
 const optionLabel = (f, v) => f.labels?.[v] ?? pretty(v);
-const isField = (f) => f.type !== "heading";
+const isField = (f) => f.type !== "heading" && f.type !== "custom";   // "custom": a piece of the form that isn't saved (a preview)
 /** A select's choices: a fixed list, or worked out from the row being edited (options: (row) => [...]). */
 const optionsOf = (f, row = {}) => (typeof f.options === "function" ? f.options(row) : f.options ?? []);
 
@@ -172,6 +172,7 @@ function collect(form, res, editing) {
 function formFields(res, editing, refs, rows) {
   return res.fields.map((f) => {
     if (f.type === "heading") return html`<h4 class="form-heading">${f.label}${f.help ? html`<small>${f.help}</small>` : ""}</h4>`;
+    if (f.type === "custom") return html`<div class="field-label" style="grid-column:1/-1">${f.render(editing)}</div>`;
     // "Photo (square works best)" → bold "Photo", then the hint in lighter text.
     const head = f.label.split(" (")[0];
     const caption = head === f.label ? f.label : html`${head} <span class="muted" style="font-weight:400">${f.label.slice(head.length + 1)}</span>`;
@@ -262,11 +263,38 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
     const box = $("[data-form]", el);
     if (!editing) return mount(box, "");
     const title = res.single ? res.label : editing.id ? `Edit ${res.label}` : `Add to ${res.label}`;
+    // Round 40: a long form (Site settings) is split into tabs — each heading says which tab it goes on.
+    const fieldsHtml = formFields(res, editing, refs, rows);
+    let body;
+    if (res.fields.some((f) => f.tab)) {
+      // Sections with the same tab go together, in the order the tabs first appear.
+      const groups = [];
+      let current = null;
+      res.fields.forEach((f, i) => {
+        if (f.type === "heading" && f.tab) current = groups.find((g) => g.tab === f.tab) ?? groups[groups.push({ tab: f.tab, items: [] }) - 1];
+        current ??= groups[groups.push({ tab: "General", items: [] }) - 1];
+        current.items.push(fieldsHtml[i]);
+      });
+      let open = 0;
+      try { open = Math.max(0, groups.findIndex((g) => g.tab === localStorage.getItem(`sbdsl-tab-${res.table}`))); } catch { /* first tab */ }
+      body = html`<div class="form-tabs" role="tablist">${groups.map((g, i) => html`<button type="button" role="tab" class="${i === open ? "on" : ""}" data-form-tab="${i}" aria-selected="${i === open}">${g.tab}</button>`)}</div>
+        ${groups.map((g, i) => html`<div class="grid-2 form-pane" data-form-pane="${i}" ${i === open ? "" : "hidden"}>${g.items}</div>`)}`;
+    } else body = html`<div class="grid-2">${fieldsHtml}</div>`;
     mount(box, panel(title, html`<form class="form" data-crud-form>
-      <div class="grid-2">${formFields(res, editing, refs, rows)}</div>
+      ${body}
       <div class="btn-row form-actions"><button class="btn">Save</button>${res.single ? "" : html`<button type="button" class="btn ghost" data-cancel>Cancel</button>`}</div>
     </form>`));
     if (!res.single) box.scrollIntoView({ behavior: "smooth", block: "start" });
+    const formEl = $("[data-crud-form]", box);
+    formEl.addEventListener("click", (e) => {
+      const tab = e.target.closest("[data-form-tab]");
+      if (!tab) return;
+      for (const b of formEl.querySelectorAll("[data-form-tab]")) { b.classList.toggle("on", b === tab); b.setAttribute("aria-selected", String(b === tab)); }
+      for (const p of formEl.querySelectorAll("[data-form-pane]")) p.hidden = p.dataset.formPane !== tab.dataset.formTab;
+      try { localStorage.setItem(`sbdsl-tab-${res.table}`, tab.textContent); } catch { /* not remembered */ }
+    });
+    // Live previews (res.live): called now and whenever something in the form changes.
+    if (res.live) { const go = () => res.live(formEl); formEl.addEventListener("input", go); formEl.addEventListener("change", go); go(); }
   }
 
   await load();

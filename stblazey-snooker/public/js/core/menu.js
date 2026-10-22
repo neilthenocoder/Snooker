@@ -21,7 +21,7 @@ export const STANDARD_MENU = [
 ];
 export const STANDARD_MORE = [
   { label: "Calendar", href: "/calendar" }, { label: "Results", href: "/results" }, { label: "Handicaps", href: "/handicaps" },
-  { label: "Our Players", href: "/players" }, { label: "Form guide", href: "/form" }, { label: "Seasons", href: "/seasons" }, { label: "Live scoreboard", href: "/scoreboard" },
+  { label: "Our Players", href: "/players" }, { label: "Form guide", href: "/form" }, { label: "Season wrapped", href: "/wrapped" }, { label: "Seasons", href: "/seasons" }, { label: "Live scoreboard", href: "/scoreboard" },
   { label: "Marketplace", href: "/marketplace" }, { label: "Hall of Fame", href: "/hall-of-fame" }, { label: "Downloads", href: "/downloads" },
 ];
 
