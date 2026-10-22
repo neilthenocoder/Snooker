@@ -4,8 +4,9 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.38.0";
+export const SITE_VERSION = "1.39.0";
 export const CHANGES = [
+  "Latest Results box (home page): newest date at the top — results go by the day they were played, so the latest competition results (e.g. Team Handicap) show first; a result with no date goes by the day it was entered",
   "Competition draws made on paper: a side can be a Bye or the Winner of another match (“St Neot or Mevagissey C”) — winners drop in by themselves (run schema.sql — version 29)",
   "Dashboard Overview: Tonight (every match of the night with Approve / Scorecard / Postpone), Needs you (everything waiting, grouped) and Your recent changes with Undo",
   "Dashboard search finds players, teams, venues, leagues, competitions, news and matches; Site settings is split into tabs, with a preview of the strip's label colours",

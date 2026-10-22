@@ -1,6 +1,6 @@
 // Reusable building blocks. Every table, panel and card on the site
 // is drawn by one of these functions — change it here, it changes everywhere.
-import { html, fmtDate, fmtTime } from "./dom.js";
+import { html, fmtDate, fmtTime, ukDay } from "./dom.js";
 import { isProvisional, PROVISIONAL_NOTE, frameWinner, NOT_UPDATED, isLiveSoon } from "./rules.js";
 import { formBadge as formBadgeFn, formChips as formChipsFn } from "./form.js";
 
@@ -402,10 +402,16 @@ function sideBox(ctx, news, count, box) {
   // Rich, round 30: each result says what it was — the league (green tag) or the competition (gold tag, gold edge).
   const tag = (r) => html`<span class="res-tag ${r.kind}">${r.kind === "cup" ? html`<i aria-hidden="true">🏆</i>` : ""}${r.tag}</span>`;
   const chevron = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.7 8.6 12 13.9l5.3-5.3 1.4 1.4-6.7 6.7-6.7-6.7Z"/></svg>`;
-  // Rich, round 38: cup results typed in later than the match was played (catching up) go by when they were entered,
-  // so they show as the latest results rather than sinking below the league results of the weeks since.
-  const key = (r) => String(r.entered ?? r.when ?? "");
-  const rows = [...league, ...cups].sort((a, b) => key(b).localeCompare(key(a))).slice(0, Math.max(1, site.side_box_count || 5));
+  // Rich, round 42: newest date at the top — "should that not show the gold competition results from team handicap at
+  // the top (or the newest date)". Results go by the day they were PLAYED, newest first. (Round 38 sorted cup results by
+  // when they were typed in, so an older result entered late — e.g. September's Shootout — jumped above newer ones.)
+  // A cup result with no date goes by the day it went in. On the same day, the one entered last comes first, so a
+  // night's cup results (typed in afterwards) sit above that night's league results.
+  const day = (r) => (r.when ? ukDay(r.when) : r.entered ? ukDay(r.entered) : "");
+  const stamp = (r) => String(r.entered ?? r.when ?? "");
+  const rows = [...league, ...cups].sort((a, b) => day(b).localeCompare(day(a)) || stamp(b).localeCompare(stamp(a)))
+    .slice(0, Math.max(1, site.side_box_count || 5));
+  const shownDate = (r) => r.when ?? r.entered;
   // Rich, round 23: more visual — emblems and a score pill — and point at (or tap) a result to see more:
   // every frame, the best break, the venue and a link to the full scorecard.
   // Rich, round 24: a press on a result (the ⌄ or anywhere on the row) opens a short summary under it — who won the most
@@ -428,13 +434,13 @@ function sideBox(ctx, news, count, box) {
   };
   return html`${panel(site.side_box_title || "Latest Results", rows.length
       ? html`<div class="res-list res-rich">${rows.map((r) => (r.fx ? html`<div class="res-card ${r.kind}">
-          <button type="button" class="res-mini res-head" data-res-more aria-expanded="false" aria-controls="res-${r.fx.id}"><small class="res-top">${r.when ? fmtDate(r.when) : ""}${tag(r)}</small>
+          <button type="button" class="res-mini res-head" data-res-more aria-expanded="false" aria-controls="res-${r.fx.id}"><small class="res-top">${shownDate(r) ? fmtDate(shownDate(r)) : ""}${tag(r)}</small>
             <span class="res-team ${r.won === "h" ? "won" : r.won ? "lost" : ""}">${badge(r.homeTeam ?? { name: r.home })}<em>${r.home}</em></span>
             <b class="res-pill"><i class="${r.won === "h" ? "w" : ""}">${r.hs}</i><i class="${r.won === "a" ? "w" : ""}">${r.as}</i></b>
             <span class="res-team ${r.won === "a" ? "won" : r.won ? "lost" : ""}"><em>${r.away}</em>${badge(r.awayTeam ?? { name: r.away })}</span>
             <span class="res-toggle" aria-hidden="true">${chevron}</span></button>${more(r)}</div>`
         : html`<a class="res-mini res-cupline ${r.kind}" href="${r.href}">
-          <small class="res-top">${r.when ? fmtDate(r.when) : ""}${tag(r)}</small>
+          <small class="res-top">${shownDate(r) ? fmtDate(shownDate(r)) : ""}${tag(r)}</small>
           <span class="${r.won === "h" ? "won" : r.won ? "lost" : ""}">${r.home}</span><b>${r.score}</b><span class="${r.won === "a" ? "won" : r.won ? "lost" : ""}">${r.away}</span></a>`))}</div>`
       : html`<div class="empty">No results yet.</div>`, { color: "green", href: "/results" })}
     <a class="btn-bar green" href="/results">See all results</a>`;

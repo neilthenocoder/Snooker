@@ -1,4 +1,4 @@
-# St Blazey & District Snooker League — website 
+# St Blazey & District Snooker League — website
 
 A fast, plain HTML/CSS/JavaScript website (no build step) with:
 
