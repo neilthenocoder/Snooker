@@ -1,7 +1,7 @@
 // HTML for knockout competitions: the bracket "roadmap", round cards and
 // standings. The logic (who plays whom, who won) lives in bracket.js.
 import { html, fmtDate, fmtTime } from "./dom.js";
-import { roundName, isEntry, EMPTY, competitionStandings, walkoverSide, sideScore } from "./bracket.js";
+import { roundName, isEntry, EMPTY, competitionStandings, walkoverSide, sideScore, placeLabel } from "./bracket.js";
 import { dataTable, urls } from "./components.js";
 
 const MATCH_HEIGHT = 102; // px per first-round match; later rounds share the same height
@@ -11,7 +11,10 @@ function sideLabel(b, match, side) {
   const id = match[side];
   if (isEntry(id)) return b.entryById.get(id).name;
   if (id === EMPTY) return "Bye";
+  const placed = placeLabel(b, match, side);      // "St Neot or Mevagissey C" (round 41)
+  if (placed) return placed;
   if (match.round === 1) return "TBC";
+  if (b.drawMode === "redraw") return "To be drawn";   // drawn round by round: nobody knows who meets whom yet
   const from = b.rounds[match.round - 2][match.slot * 2 + (side === "a" ? 0 : 1)];
   const short = { "Quarter-finals": "QF", "Semi-finals": "SF" }[roundName(from.round, b.totalRounds)] ?? `R${from.round}-`;
   return `Winner ${short}${from.slot + 1}`;

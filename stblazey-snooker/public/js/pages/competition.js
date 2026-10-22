@@ -18,7 +18,7 @@ export default async function competition(view, { params }) {
     const plate = data.competitions.find((x) => x.parent_id === c.id);
     const openTo = (c.league_ids ?? []).length ? leagues.filter((l) => c.league_ids.includes(l.id)).map(shortName).join(" and ") : "";
     const entries = data.entries.filter((e) => e.competition_id === c.id);
-    const b = buildBracket(entries, data.matches.filter((m) => m.competition_id === c.id));
+    const b = Object.assign(buildBracket(entries, data.matches.filter((m) => m.competition_id === c.id)), { drawMode: c.draw_mode });
     const venueById = new Map(venues.map((v) => [v.id, v]));
     const season = seasons.find((s) => s.id === c.season_id);
     const champ = b.champion ? b.entryById.get(b.champion) : null;

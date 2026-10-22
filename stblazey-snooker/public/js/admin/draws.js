@@ -1,7 +1,7 @@
 // Admin: entrants, the draw and results for one knockout competition.
 import { html, mount, $, toast, readForm, toLocalInput, fromLocalInput, fmtDate, fmtTime, confirmBox } from "../core/dom.js";
 import { table, save, remove, insertMany, loadCompetitions, replaceDraw, setWalkover } from "../core/api.js";
-import { buildBracket, makeDraw, shuffle, roundName, isEntry, walkoverSide, redrawNextRound, winnerAdvance, firstMatchLosers, drawPlan, drawNextTie, PENDING } from "../core/bracket.js";
+import { buildBracket, makeDraw, shuffle, roundName, isEntry, walkoverSide, placeLabel, EMPTY, redrawNextRound, winnerAdvance, firstMatchLosers, drawPlan, drawNextTie, PENDING } from "../core/bracket.js";
 import { slugify } from "../core/schedule.js";
 import { panel, dataTable, urls, shortName, isActivePlayer } from "../core/components.js";
 import { navigate } from "../core/router.js";
@@ -129,11 +129,21 @@ export async function draws(el, { user } = {}) {
       <thead><tr><th>Round</th><th class="right">Home / first named</th><th class="num">Score</th><th>Away / second named</th><th>Date & time</th><th>Venue</th><th></th></tr></thead>
       <tbody>${b.rounds.flat().map((m) => {
         // Who's in each slot: round 1 can be anyone or a bye; later rounds default to "the winner".
+        // Each side: a team / player, a bye, or (round 41) "the winner of that match" — for draws made on paper
+        // before the round before has finished ("St Neot or Mevagissey C").
+        const sources = b.rounds.slice(0, m.round - 1).flat().filter((x) => x.row.id && !(x.a === EMPTY && x.b === EMPTY) && !(x.isBye && isEntry(x.winner) && !x.row.from_a && !x.row.from_b));
+        const sideName = (x, sd) => (isEntry(x[sd]) ? b.entryById.get(x[sd]).name : x[sd] === EMPTY ? null : placeLabel(b, x, sd) ?? "TBC");
+        const sourceLabel = (x) => (x.isBye ? `${[sideName(x, "a"), sideName(x, "b")].filter(Boolean).join("")} (through from ${roundName(x.round, b.totalRounds).toLowerCase()})`
+          : `Winner of ${sideName(x, "a")} v ${sideName(x, "b")} (${roundName(x.round, b.totalRounds).toLowerCase()})`);
         const pickSide = (side) => {
           const key = side === "a" ? "entry_a" : "entry_b";
-          const auto = m.round === 1 ? "Bye" : "Winner (automatic)";
-          return html`<select name="${key}" class="pair-pick"><option value="">${auto}</option>${entries.map((e) => html`<option value="${e.id}" ${m.row[key] === e.id ? "selected" : ""}>${e.name}</option>`)}</select>
-            ${m.round > 1 && !m.row[key] ? html`<small class="muted">${isEntry(m[side]) ? b.entryById.get(m[side]).name : "to be decided"}</small>` : ""}`;
+          const cur = m.row[`bye_${side}`] ? "bye" : m.row[`from_${side}`] ? `w:${m.row[`from_${side}`]}` : (m.row[key] ?? "");
+          const auto = m.round === 1 ? "Bye" : c.draw_mode === "redraw" ? "Not drawn yet" : "Winner (automatic)";
+          return html`<select name="${key}" class="pair-pick"><option value="">${auto}</option>
+            ${m.round > 1 ? html`<option value="bye" ${cur === "bye" ? "selected" : ""}>Bye</option>` : ""}
+            ${sources.length ? html`<optgroup label="Winner of a match">${sources.map((x) => html`<option value="w:${x.row.id}" ${cur === `w:${x.row.id}` ? "selected" : ""}>${sourceLabel(x)}</option>`)}</optgroup>` : ""}
+            <optgroup label="${m.round > 1 ? "Team / player" : "Entrants"}">${entries.map((e) => html`<option value="${e.id}" ${cur === e.id ? "selected" : ""}>${e.name}</option>`)}</optgroup></select>
+            ${m.round > 1 && !m.row[key] && !m.row[`bye_${side}`] ? html`<small class="muted">${isEntry(m[side]) ? b.entryById.get(m[side]).name : placeLabel(b, m, side) ?? "to be decided"}</small>` : ""}`;
         };
         const ready = isEntry(m.a) && isEntry(m.b);
         return html`<tr data-row="${m.row.id ?? ""}" data-round="${m.round}" data-slot="${m.slot}">
@@ -157,6 +167,8 @@ export async function draws(el, { user } = {}) {
       <div class="btn-row save-all-row"><button type="button" class="btn green" data-save-all>Save all changes</button><small class="muted" data-dirty-count>Change as many matches as you like, then save them all at once.</small></div>
       <p class="muted" style="padding:0 14px">Type a final score and press Save (or <b>Save all changes</b> under the table), or use <b>Scorecard</b> to score it frame by frame live (with breaks).
         Not played? Choose <b>Walkover to …</b> under the score, or tick <b>postponed</b> under the date — then save.
+        <br><b>Drawing a round on paper before the one before it has finished?</b> Set each side to a team, <b>Bye</b>, or <b>Winner of …</b> a match
+        (it shows as “St Neot or Mevagissey C” and the winner drops in by itself when that result goes in).
         Winners move into the next round automatically. Changing a pairing by hand overrides the bracket for that match.</p>`) : ""}
   </div>`);
 
@@ -188,9 +200,15 @@ export async function draws(el, { user } = {}) {
     const row = { id: tr.dataset.row };
     // A pairing is only written when it was changed here — so Save all never undoes a winner that the
     // database has just moved into this match from the round before.
-    const pickA = get("entry_a").value || null, pickB = get("entry_b").value || null;
-    if (pickA !== (before?.entry_a ?? null)) row.entry_a = pickA;
-    if (pickB !== (before?.entry_b ?? null)) row.entry_b = pickB;
+    // "bye", "w:<match id>" (the winner of that match) or a team / player id. Round 41.
+    const parse = (v) => (v === "bye" ? { entry: null, from: null, bye: true } : v.startsWith("w:") ? { entry: null, from: v.slice(2), bye: false } : { entry: v || null, from: null, bye: false });
+    const A = parse(get("entry_a").value), B = parse(get("entry_b").value);
+    const changed = (P, sd) => (P.from ?? null) !== (before?.[`from_${sd}`] ?? null) || P.bye !== !!before?.[`bye_${sd}`] || (!P.from && P.entry !== (before?.[`entry_${sd}`] ?? null));
+    if (changed(A, "a")) Object.assign(row, { entry_a: A.entry, from_a: A.from, bye_a: A.bye });
+    if (changed(B, "b")) Object.assign(row, { entry_b: B.entry, from_b: B.from, bye_b: B.bye });
+    if (A.from && A.from === B.from) throw new Error("Both sides can't be the winner of the same match");
+    if (A.bye && B.bye) throw new Error("Both sides can't be a bye");
+    const pickA = A.entry, pickB = B.entry;
     if (get("score_a")) Object.assign(row, { score_a: num("score_a"), score_b: num("score_b") });
     if (get("starts_at")) Object.assign(row, { starts_at: fromLocalInput(get("starts_at").value), venue_id: get("venue_id").value || null });
     if (get("home_switched")) row.home_switched = get("home_switched").checked;
@@ -329,7 +347,7 @@ export async function draws(el, { user } = {}) {
       if (!confirm(`Make a random draw for the ${roundName(round + 1, b.totalRounds).toLowerCase()}?`)) return;
       for (const n of next) {
         const row = rows.find((r) => r.round === round + 1 && r.slot === n.slot);
-        await save("competition_matches", { id: row.id, entry_a: n.entry_a, entry_b: n.entry_b, score_a: null, score_b: null, walkover: null, status: "scheduled" });
+        await save("competition_matches", { id: row.id, entry_a: n.entry_a, entry_b: n.entry_b, from_a: null, from_b: null, bye_a: false, bye_b: false, score_a: null, score_b: null, walkover: null, status: "scheduled" });
       }
       toast("Next round drawn"); redraw();
     }

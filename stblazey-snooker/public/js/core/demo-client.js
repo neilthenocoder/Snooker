@@ -112,6 +112,7 @@ class Query {
     if (this.table === "fixtures" && ["insert", "update", "upsert"].includes(this.action))
       for (const f of data) f.postponed_at = f.status === "postponed" ? (f.postponed_at ?? new Date().toISOString()) : null;
     if (this.table === "live_matches" && this.action !== "select" && this.action !== "delete") for (const m of data) m.updated_at = new Date().toISOString();
+    if (this.table === "competition_matches" && this.action !== "select") settleFrom();
     if (this.action !== "select") { persist(); emit(this.table, data, { insert: "INSERT", delete: "DELETE" }[this.action] ?? "UPDATE"); }
     data = clone(data);
     if (this.one) {
@@ -212,6 +213,32 @@ function audit(action, table, rows, patch = null, force = false) {
   }
   (state.tables.audit_log ??= []).push({ id: (state.tables.audit_log.length || 0) + 1, at: new Date().toISOString(), actor_id: who?.id ?? null, actor: who?.full_name || who?.email || "System",
     action, table_name: table, row_id: rows.length === 1 ? rows[0].id : null, label, changes });
+}
+// Mirrors comp_from_resolve / comp_from_winner in supabase/schema.sql (round 41): byes are empty, and a
+// "Winner of …" place holds the winner of that match while the match it is in hasn't started.
+function compWinner(m) {
+  if (m.walkover === "a") return m.entry_a ?? null;
+  if (m.walkover === "b") return m.entry_b ?? null;
+  if (m.bye_b && m.entry_a && !m.entry_b) return m.entry_a;
+  if (m.bye_a && m.entry_b && !m.entry_a) return m.entry_b;
+  if (m.status !== "completed" || m.score_a == null || m.score_b == null) return null;
+  if (m.score_a !== m.score_b) return m.score_a > m.score_b ? m.entry_a : m.entry_b;
+  if ((m.points_a ?? 0) !== (m.points_b ?? 0)) return (m.points_a ?? 0) > (m.points_b ?? 0) ? m.entry_a : m.entry_b;
+  return null;
+}
+function settleFrom() {
+  const rows = state.tables.competition_matches ?? [];
+  const byId = new Map(rows.map((m) => [m.id, m]));
+  for (let pass = 0, moved = true; moved && pass < 12; pass++) {
+    moved = false;
+    for (const m of rows) for (const sd of ["a", "b"]) {
+      if (m[`bye_${sd}`]) { if (m[`entry_${sd}`] != null || m[`from_${sd}`] != null) { m[`entry_${sd}`] = null; m[`from_${sd}`] = null; moved = true; } continue; }
+      const from = m[`from_${sd}`];
+      if (!from || m[`score_${sd}`] != null || m.walkover || !["scheduled", "postponed", undefined, null].includes(m.status)) continue;
+      const src = byId.get(from), w = src ? compWinner(src) : null;
+      if ((m[`entry_${sd}`] ?? null) !== w) { m[`entry_${sd}`] = w; moved = true; }
+    }
+  }
 }
 function logHandicap(player, value, note) {
   (state.tables.handicap_changes ??= []).push({ id: newId(), player_id: player.id, old_handicap: player.handicap, new_handicap: value,
@@ -475,7 +502,7 @@ export const demoClient = {
         const next = state.tables.competition_matches.find((x) => x.competition_id === m.competition_id && x.round === m.round + 1 && x.slot === Math.floor(m.slot / 2));
         if (next) { next[m.slot % 2 ? "entry_b" : "entry_a"] = w; changed.push(next); }
       }
-      persist(); emit("competition_matches", changed);
+      settleFrom(); persist(); emit("competition_matches", changed);
       return { data: null, error: null };
     }
     if (name === "set_walkover") {
@@ -500,7 +527,7 @@ export const demoClient = {
         Object.assign(m, { walkover: args.side, score_a: null, score_b: null, points_a: null, points_b: null, status: "completed", result_at: new Date().toISOString() });
         if (next) next[key] = side(args.side);
       }
-      persist(); emit("competition_matches", [m, ...(next ? [next] : [])]);
+      settleFrom(); persist(); emit("competition_matches", [m, ...(next ? [next] : [])]);
       return { data: null, error: null };
     }
     if (name === "set_my_prefs") {
@@ -567,7 +594,7 @@ export const demoClient = {
         const w = m.score_a > m.score_b ? m.entry_a : m.score_b > m.score_a ? m.entry_b : null, n = next();
         if (n && w) { n[m.slot % 2 ? "entry_b" : "entry_a"] = w; changed.push(n); }
       }
-      persist(); emit("competition_matches", changed);
+      settleFrom(); persist(); emit("competition_matches", changed);
       return { data: l.status === "finished" ? "finished" : "updated", error: null };
     }
     // ── Round 22 ──

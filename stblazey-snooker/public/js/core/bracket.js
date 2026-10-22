@@ -66,6 +66,7 @@ export function buildBracket(entries, matchRows) {
   const totalRounds = matchRows.reduce((n, m) => Math.max(n, m.round), 0);
   const rounds = [];
 
+  const byRowId = new Map();   // match id → the worked-out match (for "Winner of …" places)
   for (let round = 1; round <= totalRounds; round++) {
     const count = 2 ** (totalRounds - round);
     const list = [];
@@ -73,22 +74,31 @@ export function buildBracket(entries, matchRows) {
       const row = rowAt.get(`${round}:${slot}`) ?? { round, slot };
       let a, b;
       const pick = (id) => (id && entryById.has(id) ? id : null);
+      // Round 41: a place set by hand to a bye, or to "the winner of that match" (a draw made on paper).
+      const set = (side) => {
+        if (row[`bye_${side}`]) return EMPTY;
+        const from = row[`from_${side}`];
+        if (from) { const src = byRowId.get(from); return pick(row[`entry_${side}`]) ?? (src && isEntry(src.winner) ? src.winner : PENDING); }
+        return null;
+      };
       if (round === 1) {
-        a = pick(row.entry_a) ?? EMPTY;
-        b = pick(row.entry_b) ?? EMPTY;
+        a = set("a") ?? pick(row.entry_a) ?? EMPTY;
+        b = set("b") ?? pick(row.entry_b) ?? EMPTY;
       } else {
         // Later rounds follow the bracket, unless the admin set the pairing
-        // (a manual change, or a fresh random draw for this round).
-        a = pick(row.entry_a) ?? rounds[round - 2][slot * 2].winner;
-        b = pick(row.entry_b) ?? rounds[round - 2][slot * 2 + 1].winner;
+        // (a manual change, a fresh random draw for this round, a bye or "Winner of …").
+        a = set("a") ?? pick(row.entry_a) ?? rounds[round - 2][slot * 2].winner;
+        b = set("b") ?? pick(row.entry_b) ?? rounds[round - 2][slot * 2 + 1].winner;
       }
-      list.push({ round, slot, row, a, b, ...decide(a, b, row) });
+      const m = { round, slot, row, a, b, ...decide(a, b, row) };
+      list.push(m);
+      if (row.id) byRowId.set(row.id, m);
     }
     rounds.push(list);
   }
   const final = rounds.at(-1)?.[0];
   const champion = final && isEntry(final.winner) ? final.winner : null;
-  return { rounds, totalRounds, champion, entryById };
+  return { rounds, totalRounds, champion, entryById, byRowId };
 }
 
 export const isEntry = (x) => x !== EMPTY && x !== PENDING && x != null;
@@ -201,6 +211,9 @@ export function winnerAdvance(bracket, round, slot) {
   const m = bracket.rounds[round - 1]?.[slot];
   const next = bracket.rounds[round]?.[Math.floor(slot / 2)];
   if (!m || !next?.row?.id || !isEntry(m.winner)) return null;
+  // A place set by hand to a bye or "Winner of …" is left alone (the database fills "Winner of …" itself).
+  const side = slot % 2 ? "b" : "a";
+  if (next.row[`bye_${side}`] || next.row[`from_${side}`]) return null;
   return { id: next.row.id, [slot % 2 ? "entry_b" : "entry_a"]: m.winner };
 }
 
@@ -261,4 +274,18 @@ export function drawNextTie(entryIds, live) {
   const tie = { slot: next.slot, a: null, b: null, at: new Date().toISOString() };
   next.sides.forEach((side, i) => { tie[side] = names[i]; });
   return { tie, done: made.length + 1 >= plan.length };
+}
+
+/**
+ * What a not-yet-known place says: "St Neot or Mevagissey C" for the winner of a match whose two sides are known,
+ * "Winner of …" further back. Round 41 (paper draws).
+ */
+export function placeLabel(bracket, m, side) {
+  const from = m.row?.[`from_${side}`];
+  if (!from) return null;
+  const src = bracket.byRowId?.get(from);
+  if (!src) return "Winner of another match";
+  // A bye leads to just the other side ("Mevagissey A or Tregonissey C", not "… or Bye").
+  const name = (x, s) => (isEntry(x) ? bracket.entryById.get(x)?.name : x === EMPTY ? null : placeLabel(bracket, src, s) ?? "TBC");
+  return [name(src.a, "a"), name(src.b, "b")].filter(Boolean).join(" or ") || "TBC";
 }

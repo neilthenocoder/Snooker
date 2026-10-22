@@ -1,7 +1,7 @@
 // Public page for one cup match: score, frames, breaks — updates live.
 import { html, mount, fmtDate, fmtTime, fmtLongDate } from "../core/dom.js";
 import { loadCompMatch, loadCompetitions, subscribe, table } from "../core/api.js";
-import { buildBracket, roundName, winnerSide, walkoverSide } from "../core/bracket.js";
+import { buildBracket, roundName, winnerSide, walkoverSide, placeLabel } from "../core/bracket.js";
 import { canEditCompMatch } from "../core/auth.js";
 import { breadcrumb, panel, dataTable, cupMatchInfo, urls, badge, handicapText, breakList } from "../core/components.js";
 import { handicapStarts, handicapMode } from "../core/rules.js";
@@ -20,7 +20,7 @@ export default async function cupMatch(view, { params, user }) {
     const { match, frames, breaks } = bundle;
     const info = cupMatchInfo(compData, match, buildBracket);
     const { c } = info;
-    const nameA = info.a?.name ?? "To be decided", nameB = info.b?.name ?? "To be decided";
+    const nameA = info.a?.name ?? (info.bm && placeLabel(info.bracket, info.bm, "a")) ?? "To be decided", nameB = info.b?.name ?? (info.bm && placeLabel(info.bracket, info.bm, "b")) ?? "To be decided";
     setTitle(`${nameA} vs ${nameB}`);
     sideContext({ competition: c });
     if (info.a && info.b) adminEdit("draws", null, { href: `/cup-scorecard/${match.no ?? match.id}`, label: "Edit scorecard" });

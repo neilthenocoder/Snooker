@@ -891,10 +891,13 @@ begin
             when coalesce(m.points_a, 0) > coalesce(m.points_b, 0) then m.entry_a
             when coalesce(m.points_b, 0) > coalesce(m.points_a, 0) then m.entry_b end;
   if w is null then return; end if;
+  -- A side set by hand to "Winner of …" or "Bye" (round 41) is left alone: comp_from_winner() looks after those.
   if m.slot % 2 = 0 then
-    update competition_matches set entry_a = w where competition_id = m.competition_id and round = m.round + 1 and slot = m.slot / 2;
+    update competition_matches set entry_a = w where competition_id = m.competition_id and round = m.round + 1 and slot = m.slot / 2
+      and from_a is null and not coalesce(bye_a, false);
   else
-    update competition_matches set entry_b = w where competition_id = m.competition_id and round = m.round + 1 and slot = m.slot / 2;
+    update competition_matches set entry_b = w where competition_id = m.competition_id and round = m.round + 1 and slot = m.slot / 2
+      and from_b is null and not coalesce(bye_b, false);
   end if;
 end;
 $$;
@@ -2597,13 +2600,82 @@ update settings s set
   wrapped_menu_added = true
 where s.id = 1 and not s.wrapped_menu_added;
 
+-- ── Round 41: draws made on paper, round by round ────────────────
+-- Rich: "I have no idea what to do re adding these prelim results to the draw." A round drawn before the one
+-- before it has finished has places like "St Neot or Mevagissey C". Each side of a match can now be:
+--   a team / player (entry_a), a bye (bye_a), or "the winner of that match" (from_a = the other match's id).
+-- The winner is written in by itself the moment that match is decided (a score, a walkover, or a bye, when the
+-- match it comes from is a bye too), and taken out again if that result is removed — while the match it goes into
+-- hasn't started. Works in both draw modes. Set in Admin → Draws & results → the pairing boxes.
+alter table competition_matches add column if not exists from_a uuid references competition_matches on delete set null;
+alter table competition_matches add column if not exists from_b uuid references competition_matches on delete set null;
+alter table competition_matches add column if not exists bye_a boolean not null default false;
+alter table competition_matches add column if not exists bye_b boolean not null default false;
+
+-- Who has come through a match: a walkover, a bye (one side marked bye, the other known), or the result.
+create or replace function public.comp_match_winner(m competition_matches) returns uuid language sql stable as $$
+  select case
+    when m.walkover = 'a' then m.entry_a
+    when m.walkover = 'b' then m.entry_b
+    when m.bye_b and m.entry_a is not null and m.entry_b is null then m.entry_a
+    when m.bye_a and m.entry_b is not null and m.entry_a is null then m.entry_b
+    when m.status <> 'completed' or m.score_a is null or m.score_b is null then null
+    when m.score_a > m.score_b then m.entry_a
+    when m.score_b > m.score_a then m.entry_b
+    when coalesce(m.points_a, 0) > coalesce(m.points_b, 0) then m.entry_a
+    when coalesce(m.points_b, 0) > coalesce(m.points_a, 0) then m.entry_b end;
+$$;
+
+-- After a match changes: fill (or empty) the "Winner of this match" places of the matches it leads to.
+create or replace function public.comp_from_winner() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare w uuid := public.comp_match_winner(new);
+begin
+  update competition_matches set entry_a = w
+   where from_a = new.id and entry_a is distinct from w and score_a is null and walkover is null and status in ('scheduled', 'postponed');
+  update competition_matches set entry_b = w
+   where from_b = new.id and entry_b is distinct from w and score_b is null and walkover is null and status in ('scheduled', 'postponed');
+  return null;
+end $$;
+drop trigger if exists competition_matches_from_winner on competition_matches;
+create trigger competition_matches_from_winner after update on competition_matches for each row
+  when (old.score_a is distinct from new.score_a or old.score_b is distinct from new.score_b or old.status is distinct from new.status
+     or old.walkover is distinct from new.walkover or old.points_a is distinct from new.points_a or old.points_b is distinct from new.points_b
+     or old.entry_a is distinct from new.entry_a or old.entry_b is distinct from new.entry_b
+     or old.bye_a is distinct from new.bye_a or old.bye_b is distinct from new.bye_b)
+  execute function public.comp_from_winner();
+
+-- When a place is set to "Winner of …" (or changed), it is filled straight away if that match is already decided.
+create or replace function public.comp_from_resolve() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare src competition_matches;
+begin
+  if new.from_a is not null and (tg_op = 'INSERT' or new.from_a is distinct from old.from_a) then
+    select * into src from competition_matches where id = new.from_a;
+    new.entry_a := public.comp_match_winner(src); new.bye_a := false;
+  elsif new.from_a is null and tg_op = 'UPDATE' and old.from_a is not null and new.entry_a is not distinct from old.entry_a then
+    new.entry_a := null;
+  end if;
+  if new.from_b is not null and (tg_op = 'INSERT' or new.from_b is distinct from old.from_b) then
+    select * into src from competition_matches where id = new.from_b;
+    new.entry_b := public.comp_match_winner(src); new.bye_b := false;
+  elsif new.from_b is null and tg_op = 'UPDATE' and old.from_b is not null and new.entry_b is not distinct from old.entry_b then
+    new.entry_b := null;
+  end if;
+  if new.bye_a then new.entry_a := null; new.from_a := null; end if;
+  if new.bye_b then new.entry_b := null; new.from_b := null; end if;
+  return new;
+end $$;
+drop trigger if exists competition_matches_from_resolve on competition_matches;
+create trigger competition_matches_from_resolve before insert or update on competition_matches for each row execute function public.comp_from_resolve();
+
 -- ── the version of this file ─────────────────────────────────────
 -- KEEP THIS AT THE VERY END. The website asks the database for this number (public/js/core/version.js holds
 -- the one it expects). Because it is the last thing in the file, the database only reports the new number
 -- when everything above it has run. If the website files are uploaded without this file being run, the admin
 -- dashboard says "The database needs updating" at the top of every page.
 -- When something is added to this file that the website needs: raise this number and the one in version.js.
-create or replace function public.schema_version() returns int language sql immutable as $$ select 28 $$;
+create or replace function public.schema_version() returns int language sql immutable as $$ select 29 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

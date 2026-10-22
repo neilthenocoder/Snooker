@@ -644,6 +644,18 @@ The Live & upcoming strip now has four labels for matches that aren't live: **Co
 - **Share the result**: a button on finished league and cup match pages makes a square picture of the result (emblems, score, highest break, who won the frames) to share from a phone or download. Emblems from another website that doesn't allow it show as initials. Code: `core/share-card.js`.
 - **Season wrapped** (`/wrapped`, in the menu after the Form guide — added to a changed menu once by schema.sql): the season in numbers for the whole league or one team (frames, the highest break, most frames won, best win rate, most breaks, longest winning run, close matches, clean sweeps, biggest win, league leaders). Any season. Code: `pages/wrapped.js`.
 
+## 3zf. Round 41: draws made on paper, round by round
+
+**Run `supabase/schema.sql` again** (database version 29). Then, once, **`supabase/fixes/team-handicap-2026-draw.sql`** (Supabase → SQL Editor → paste → Run): it sets this season's Team Handicap up as on Rich's sheet — round 2 is the two preliminaries (St Neot v Mevagissey C, St Blazey B v Bethel A) with everyone else through, Mevagissey A v Tregonissey C (round 1) is marked postponed and its winner goes straight into the quarter-finals, and the quarter-finals are on Tuesday 8 December 2026 at 7.30pm. It refuses to change anything if a match after round 1 already has a result.
+
+In Admin → Draws & results, each side of a match in round 2 or later can be:
+- **a team / player** (as before),
+- **Bye** — the other side goes straight through,
+- **Winner of …** any match in an earlier round — the site shows "St Neot or Mevagissey C" (bracket, round cards, match page, calendar) and writes the winner in by itself the moment that match is decided (a score, a walkover, or coming through a bye). If that result is taken away again, the place empties again, as long as the match it leads to hasn't started.
+- **Winner (automatic)** / **Not drawn yet** — as before (the bracket's own winner, or nobody yet in a round-by-round competition).
+
+Typical use (a round drawn before the round before has finished): set the round's pairings, press Save all changes, and set the date for each. Database: `competition_matches.from_a / from_b / bye_a / bye_b`, the functions `comp_match_winner`, `comp_from_winner` and `comp_from_resolve` (triggers). Code: `buildBracket()` and `placeLabel()` in `core/bracket.js`. In a round-by-round competition, rounds not drawn yet say "To be drawn".
+
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
 | Rule | Current setting |
