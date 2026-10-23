@@ -4252,3 +4252,61 @@ html.look-calm .rk-panel tr.hl .lt-pts, html.look-calm .rk-panel tr.hl td.strong
 .share-page { display: inline-flex; align-items: center; gap: 6px; border: 0; background: #fff; color: var(--ink); padding: 8px 14px; border-radius: 999px; font: 700 13px var(--font-body); cursor: pointer; }
 .share-page svg { width: 16px; height: 16px; fill: var(--red); }
 .share-page:hover { color: var(--red); }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 45 — Rich: "a little too white", shading back in the tables, breaks in green,
+   alerts in a soft yellow, and the black strip / grey header options (Admin → Branding → Look)
+   ═════════════════════════════════════════════════════════════ */
+/* softer: a warm grey page and off-white boxes instead of pure white */
+html.look-calm { --cream: #ecebe6 !important; --card: #fbfaf7; --row-alt: #f4f3ef; --head-row: #f4f3ef; }
+html.look-calm .panel, html.look-calm .panel-head, html.look-calm .panel-foot, html.look-calm .quick-links a, html.look-calm .tile,
+html.look-calm .enter-bar, html.look-calm .kd, html.look-calm .kd-label, html.look-calm .btn-bar, html.look-calm .sponsors a,
+html.look-calm .hub-card, html.look-calm .feat-card, html.look-calm .hero.hero-l-white .hero-text, html.look-calm .back-link,
+html.look-calm .share-page, html.look-calm .stat, html.look-calm .comp-cols, html.look-calm .bk-podium, html.look-calm .title-band,
+html.look-calm .hub-tabs a:not(.on) { background-color: var(--card) !important; }
+html.look-calm .quick-links a:hover, html.look-calm .tile:hover, html.look-calm .btn-bar:hover { background: var(--card) !important; }
+html.look-calm .panel-foot:hover { background: var(--row-alt) !important; }
+
+/* alerts (the scrolling feature box, notices): a soft yellow */
+html.look-calm .feature-box { background: #fdf3cf !important; color: #3b2f05 !important; }
+html.look-calm .feature-box .ticker-item::before { background: #c99400; }
+html.look-calm .notice { background: #fdf3cf; border-radius: 10px; }
+
+/* tables: the light stripes back, the leader a little bigger on a soft yellow, the bottom places on a soft red */
+html.look-calm table.data tbody tr:nth-child(even) td { background: var(--row-alt) !important; }
+html.look-calm table.data tbody tr.lt-top td, html.look-calm table.data tbody tr.hl td { background: #fbf1cc !important; font-weight: 700; }
+html.look-calm .lt-panel table.data tbody tr.lt-top td, html.look-calm table.data tbody tr.lt-top td { font-size: calc(var(--fs-table, 14px) + 2px); padding-top: 14px; padding-bottom: 14px; }
+html.look-calm table.data tbody tr.lt-top .badge { width: 38px; height: 38px; font-size: 12px; }
+html.look-calm table.data tbody tr.lt-down td, html.look-calm table.data tbody tr.lt-down.lt-alt td { background: #f9e4e7 !important; }
+html.look-calm table.data tbody tr.lt-mine td { background: #ecebe6 !important; }
+/* the rankings' pinned leader stays black */
+html.look-calm .rk-scroll tr.hl td, html.look-calm .rk-panel table.data tbody tr.hl td { background: #141414 !important; }
+
+/* breaks in green (red reads as a minus); the top three on the podium in black */
+html.look-calm .tally.brk, html.look-calm .break-tag { background: var(--green); color: #fff; }
+html.look-calm .tally.brk.prov { background: var(--card); color: var(--green); outline: 1px dashed var(--green); }
+html.look-calm .bk-pod b { color: var(--ink); }
+html.look-calm .bk-pod.p1, html.look-calm .bk-pod.p2, html.look-calm .bk-pod.p3 { background: #f1f0eb; }
+
+/* option: the Live & upcoming strip in black, like WST */
+html.look-calm.strip-dark .live-strip-wrap, html.look-calm.strip-dark .hero.hero-l-white .live-strip-wrap { background: #0f0f0f !important; }
+html.look-calm.strip-dark .live-strip .strip-head h3, html.look-calm.strip-dark .hero .live-strip .strip-head h3 { color: #fff !important; }
+html.look-calm.strip-dark .strip-card { background: #1e1e1e; color: #fff; }
+html.look-calm.strip-dark .strip-card:hover { color: #fff; background: #262626; }
+html.look-calm.strip-dark .sc-top, html.look-calm.strip-dark .sc-mid small { color: #9a9a9a; }
+html.look-calm.strip-dark .sc-foot { color: #8a8a8a; }
+html.look-calm.strip-dark .sc-mid b.time { border-color: #444; }
+html.look-calm.strip-dark .strip-ctrl button, html.look-calm.strip-dark [data-strip] button { background: #262626; color: #fff; border-color: #262626; }
+
+/* option: a dark grey header (the menu words stay red) */
+html.look-calm.head-grey .site-bar { background: #2d2d30 !important; }
+html.look-calm.head-grey .nav-icon, html.look-calm.head-grey .main-nav .nav-live-btn:not(.state-soon):not(.state-live) { background: #3c3c40 !important; }
+html.look-calm.head-grey .main-nav a, html.look-calm.head-grey .main-nav button { color: #ff4d6d !important; }
+html.look-calm.head-grey[data-section="home"] .main-nav .nav-home, html.look-calm.head-grey[data-section="competitions"] .main-nav .nav-comps,
+html.look-calm.head-grey[data-section="fixtures"] .main-nav .nav-fixtures, html.look-calm.head-grey[data-section="league"] .main-nav .nav-league,
+html.look-calm.head-grey[data-section="news"] .main-nav .nav-news, html.look-calm.head-grey .main-nav a:hover { color: #fff !important; }
+html.look-calm.head-grey .main-nav .nav-live-btn { color: #fff !important; }
+html.look-calm:not(.strip-dark) .live-strip-wrap, html.look-calm:not(.strip-dark) .hero.hero-l-white .live-strip-wrap { background: #dfddd6 !important; }
+html.look-calm .rk-panel td.num:first-child { color: var(--ink); }
+html.look-calm .rk-panel tr.hl td.num:first-child { color: #fff; }
+html.look-calm.strip-dark .strip-card .badge:not(.logo) { background: #3a3a3a; }

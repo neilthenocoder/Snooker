@@ -4,8 +4,10 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.41.0";
+export const SITE_VERSION = "1.42.0";
 export const CHANGES = [
+  "Softer page and box colours; alerts in soft yellow; table stripes back, the leader bigger on soft yellow and the bottom places on soft red; breaks in green, podium in black",
+  "Branding → Look: the Live & upcoming strip light or black, and the header black or dark grey (run schema.sql — version 31)",
   "Flatter look like WST: no outlines or shadows on boxes, menu words in red, the Live & upcoming strip light with white cards, nothing pulses",
   "League tables no longer shade the top and bottom rows; breaks shown in red; side-column rankings show the top ten with the leader pinned in a black row",
   "Rounds that are mostly byes are called Pre-qualifier; match previews count down to the start (days, hours, minutes, seconds); a Share button on every page; the Rules page back button fixed",

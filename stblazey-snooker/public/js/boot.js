@@ -8,6 +8,8 @@ try {
   if (b.sidebar === "left") r.classList.add("sidebar-left");
   if (b.sections !== false) r.classList.add("section-colors");
   if (b.look !== "classic") r.classList.add("look-calm");
+  if (b.strip === "dark") r.classList.add("strip-dark");
+  if (b.header === "grey") r.classList.add("head-grey");
   if (b.loaderShow === false) boot.classList.add("off");
   // Only the logo uploaded under Admin → Branding — there is no stand-in picture.
   if (b.loader) { var img = boot.querySelector("img"); img.src = b.loader; img.hidden = false; }

@@ -107,6 +107,9 @@ function brandOf(site) {
     // Round 43: the look of the whole site. "calm" (standard): white space, black and red, one quiet menu.
     // "classic": the colourful menu and section colours from before (Admin → Branding → Look).
     look: site.site_look === "classic" ? "classic" : "calm",
+    // Round 45 (Rich): the Live & upcoming strip light or black, and the header black or grey (calm look only).
+    strip: site.strip_style === "dark" ? "dark" : "light",
+    header: site.header_style === "grey" ? "grey" : "black",
     loader: site.loading_logo_url || site.logo_url || "",
     loaderShow: site.loader_show !== false,
     loaderMs: Math.max(0, Math.min(10, Number(site.loader_seconds) || 0)) * 1000,
@@ -126,6 +129,8 @@ export function paint(brand) {
   root.classList.toggle("sidebar-left", brand.sidebar === "left");
   root.classList.toggle("section-colors", brand.sections !== false);
   root.classList.toggle("look-calm", brand.look !== "classic");
+  root.classList.toggle("strip-dark", brand.strip === "dark");
+  root.classList.toggle("head-grey", brand.header === "grey");
   // Font stylesheets: keep the ones still wanted, drop the rest.
   const wanted = brand.links ?? [];
   for (const link of document.querySelectorAll("link[data-brand-font]")) if (!wanted.includes(link.href)) link.remove();

@@ -2680,7 +2680,11 @@ create trigger competition_matches_from_resolve before insert or update on compe
 -- 'classic': the colourful menu and section colours from before. Admin → Branding → Look.
 alter table settings add column if not exists site_look text not null default 'calm';
 
-create or replace function public.schema_version() returns int language sql immutable as $$ select 30 $$;
+-- ── Round 45: the strip and the header, light or dark (Admin → Branding → Look) ──
+alter table settings add column if not exists strip_style text not null default 'light';
+alter table settings add column if not exists header_style text not null default 'black';
+
+create or replace function public.schema_version() returns int language sql immutable as $$ select 31 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.
