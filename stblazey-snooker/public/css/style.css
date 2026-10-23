@@ -4310,3 +4310,8 @@ html.look-calm:not(.strip-dark) .live-strip-wrap, html.look-calm:not(.strip-dark
 html.look-calm .rk-panel td.num:first-child { color: var(--ink); }
 html.look-calm .rk-panel tr.hl td.num:first-child { color: #fff; }
 html.look-calm.strip-dark .strip-card .badge:not(.logo) { background: #3a3a3a; }
+/* Round 45b (Rich): the page background a neutral light grey like WST, so the white blocks stand out */
+html.look-calm { --cream: #ececec !important; --card: #ffffff; --row-alt: #f6f6f6; --head-row: #f6f6f6; }
+html.look-calm:not(.strip-dark) .live-strip-wrap, html.look-calm:not(.strip-dark) .hero.hero-l-white .live-strip-wrap { background: #dedede !important; }
+html.look-calm .bk-pod.p1, html.look-calm .bk-pod.p2, html.look-calm .bk-pod.p3 { background: #f3f3f3; }
+html.look-calm table.data tbody tr.lt-mine td { background: #ececec !important; }
