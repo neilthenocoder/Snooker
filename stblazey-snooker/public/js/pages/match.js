@@ -1,4 +1,5 @@
 import { html, mount, $, toast, fmtDate, fmtTime, safeHref, fmtLongDate } from "../core/dom.js";
+import { countdown, startCountdowns } from "../core/countdown.js";
 import { seasonContext } from "../core/context.js";
 import { loadFixture, headToHead, subscribe, setMatchPhotos, fixtureBoards } from "../core/api.js";
 import { onTable } from "../core/live-score.js";
@@ -100,6 +101,7 @@ export default async function match(view, { params, user }) {
             ${fx.status === "in_progress" ? html`<span class="live-dot">Live</span>` : played ? html`<small>${fx.status === "approved" ? "Final" : fx.status.replace("_", " ")}</small>` : ctx.notUpdated?.(fx) ? html`<small class="not-upd">Not updated yet</small>` : html`<small>${fmtTime(fx.starts_at)}</small>${liveSoonTag(fx)}`}</div>
           <a class="mh-side ${won("away") ? "won" : lost("away") ? "lost" : ""}" href="${away ? urls.team(away) : "#"}">${badge(away)}<span>${away?.name}</span></a>
         </div>
+        ${!played && !["in_progress", "postponed"].includes(fx.status) && !ctx.notUpdated?.(fx) ? countdown(fx.starts_at) : ""}
         ${shield.isShield ? html`<div class="mh-foot">🛡 <a href="${urls.shield(league)}">${league.shield_name || "Shield"}</a> match — ${ctx.team.get(shield.holderId)?.name} defending</div>` : ""}
       </div></div>
       <div class="wrap stack" style="margin-top:24px">
@@ -157,6 +159,7 @@ export default async function match(view, { params, user }) {
       </div>`);
     if (chat) $("[data-chat-slot]", view)?.replaceWith(chat.button);
     // Round 40: the result as a square picture for social media.
+    startCountdowns(view);
     $("[data-share-card]", view)?.addEventListener("click", () => {
       const best = [...breaks].sort((a, b) => b.value - a.value)[0];
       const stars = sides.map(([s, t]) => [t, [...sideLines[s]].sort((a, b) => b.wins - a.wins || b.points - a.points)[0]]);

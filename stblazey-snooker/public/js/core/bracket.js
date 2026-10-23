@@ -10,9 +10,15 @@ export const PENDING = "pending"; // not decided yet
 /** Number of rounds needed for n entrants (2 → 1, 3–4 → 2, 5–8 → 3 …). */
 export const roundsFor = (n) => Math.max(1, Math.ceil(Math.log2(Math.max(2, n))));
 
-export function roundName(round, totalRounds) {
+export function roundName(round, totalRounds, bracket = null) {
   const fromEnd = totalRounds - round;
-  return ["Final", "Semi-finals", "Quarter-finals"][fromEnd] ?? `Round ${round}`;
+  const named = ["Final", "Semi-finals", "Quarter-finals"][fromEnd];
+  if (named) return named;
+  // Rich, round 44: a round that is mostly byes (only a few sides have to play to get through, like this season's
+  // Team Handicap round 2) is a "Pre-qualifier".
+  const list = bracket?.rounds?.[round - 1];
+  if (list?.length) { const byes = list.filter((m) => m.isBye).length; if (byes > list.length - byes && byes < list.length) return "Pre-qualifier"; }
+  return `Round ${round}`;
 }
 
 /** Standard tournament seeding positions: 8 → [1,8,4,5,2,7,3,6], so seeds 1 and 2 can only meet in the final. */
@@ -165,7 +171,7 @@ export function competitionStandings(bracket) {
   const status = (r) => {
     if (r.entry.id === champion) return "Winner";
     if (r.out && r.reached === totalRounds) return "Runner-up";
-    const name = (round) => roundName(round, totalRounds).replace(/^Round/, "round").replace(/^(Q|S|F)/, (c) => c.toLowerCase());
+    const name = (round) => roundName(round, totalRounds, bracket).replace(/^Round/, "round").replace(/^Pre-q/, "pre-q").replace(/^(Q|S|F)/, (c) => c.toLowerCase());
     if (r.out) return `Out in the ${name(r.reached)}`;
     if (!r.reached) return "Waiting for the draw";
     if (r.lastWon && r.lastWon === r.reached) return `Through to the ${name(r.reached + 1)}`;
@@ -182,7 +188,7 @@ export function progressText(bracket) {
   if (bracket.champion) return `Winner: ${bracket.entryById.get(bracket.champion).name}`;
   const current = bracket.rounds.find((list) => list.some((m) => !m.isBye && !m.played)) ?? bracket.rounds.at(-1);
   const real = current.filter((m) => !m.isBye);
-  return `${roundName(current[0].round, bracket.totalRounds)} · ${real.filter((m) => m.played).length} of ${real.length} played`;
+  return `${roundName(current[0].round, bracket.totalRounds, bracket)} · ${real.filter((m) => m.played).length} of ${real.length} played`;
 }
 
 /**
@@ -194,7 +200,7 @@ export function redrawNextRound(bracket, round) {
   const list = bracket.rounds[round - 1];
   if (!list || round >= bracket.totalRounds) throw new Error("There's no next round to draw.");
   const winners = list.map((m) => m.winner);
-  if (winners.some((w) => w === PENDING)) throw new Error(`Finish every ${roundName(round, bracket.totalRounds).toLowerCase()} match first.`);
+  if (winners.some((w) => w === PENDING)) throw new Error(`Finish every ${roundName(round, bracket.totalRounds, bracket).toLowerCase()} match first.`);
   const real = shuffle(winners.filter(isEntry));
   const byes = winners.length - real.length;
   // Any byes left over (from empty slots) are spread across different matches.

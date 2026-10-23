@@ -84,7 +84,7 @@ export async function tonightPanel(el, user) {
       const { c, b, m } = x, r = m.row, name = (id) => b.entryById.get(id)?.name ?? "?";
       return html`<div class="tn-row tn-${cls} tn-cup">
         <span class="tn-time">${fmtTime(r.starts_at)}</span>
-        <span class="tn-what"><small>🏆 ${c.name} · ${roundName(m.round, b.totalRounds)}</small><a href="/cup-match/${r.no ?? r.id}">${name(m.a)} v ${name(m.b)}</a></span>
+        <span class="tn-what"><small>🏆 ${c.name} · ${roundName(m.round, b.totalRounds, b)}</small><a href="/cup-match/${r.no ?? r.id}">${name(m.a)} v ${name(m.b)}</a></span>
         <span class="tn-score">${compScoreText(r, " – ") || (r.status === "postponed" ? "P – P" : "–")}</span>
         <span class="tn-state">${words}</span>
         <span class="tn-acts">

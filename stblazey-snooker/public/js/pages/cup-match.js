@@ -1,5 +1,6 @@
 // Public page for one cup match: score, frames, breaks — updates live.
 import { html, mount, fmtDate, fmtTime, fmtLongDate } from "../core/dom.js";
+import { countdown, startCountdowns } from "../core/countdown.js";
 import { loadCompMatch, loadCompetitions, subscribe, table } from "../core/api.js";
 import { buildBracket, roundName, winnerSide, walkoverSide, placeLabel } from "../core/bracket.js";
 import { canEditCompMatch } from "../core/auth.js";
@@ -52,13 +53,14 @@ export default async function cupMatch(view, { params, user }) {
     mount(view, html`<div class="wrap stack">
       <div class="cm-row">${breadcrumb([["Home", "/"], ["Competitions", "/competitions"], [c?.name ?? "Competition", c ? urls.competition(c) : null], [`${nameA} vs ${nameB}`]])}<span data-chat-slot></span></div>
       <div class="match-hero">
-        <div class="mh-band">${c?.name} · ${roundName(match.round, info.bracket.totalRounds)}${match.starts_at ? ` · ${fmtDate(match.starts_at)} ${fmtTime(match.starts_at)}` : ""}</div>
+        <div class="mh-band">${c?.name} · ${roundName(match.round, info.bracket.totalRounds, info.bracket)}${match.starts_at ? ` · ${fmtDate(match.starts_at)} ${fmtTime(match.starts_at)}` : ""}</div>
         <div class="mh-body">
           <div class="mh-side ${won("a") ? "won" : won("b") ? "lost" : ""}">${teamOf(info.a) ? badge(teamOf(info.a)) : ""}<span>${nameA}</span></div>
           <div class="mh-score">${wo ? html`<b>W/O</b>` : html`<b>${match.score_a ?? "–"}</b><i>:</i><b>${match.score_b ?? "–"}</b>`}
             ${wo ? html`<small>Walkover</small>` : match.status === "postponed" ? html`<small class="pp-tag">Postponed</small>` : live ? html`<span class="live-dot">Live</span>` : match.status === "completed" ? html`<small>Final</small>` : ""}</div>
           <div class="mh-side ${won("b") ? "won" : won("a") ? "lost" : ""}">${teamOf(info.b) ? badge(teamOf(info.b)) : ""}<span>${nameB}</span></div>
         </div>
+        ${!wo && !live && !["completed", "postponed"].includes(match.status) && match.score_a == null ? countdown(match.starts_at) : ""}
         ${c?.handicap && scored.length ? html`<div class="mh-foot">Total points: <b>${total.a}</b> to <b>${total.b}</b>${level && match.status === "completed" && winnerSide(match)
           ? html` · level on frames, so <b>${winnerSide(match) === "a" ? nameA : nameB}</b> go through on total points` : level ? " · level on frames — the higher total wins" : ""}</div>` : ""}
         ${wo ? html`<div class="mh-foot">Walkover to <b>${wo === "a" ? nameA : nameB}</b> — the match wasn't played.</div>` : ""}
@@ -76,17 +78,18 @@ export default async function cupMatch(view, { params, user }) {
         { label: "Breaks", cell: (f) => breakList(breaks.filter((b) => b.frame_no === f.frame_no).map((b) => ({ name: pname(b.player_id), value: b.value }))), cls: "hide-sm" },
       ], scored, { empty: match.status === "completed" ? "Only the final score was entered for this match." : "No frames yet — check back on match night." }))}
     </div>`);
+    startCountdowns(view);
     if (chat) view.querySelector("[data-chat-slot]")?.replaceWith(chat.button);
     // Round 40: the result as a square picture for social media.
     view.querySelector("[data-share-card]")?.addEventListener("click", () => {
       const best = [...breaks].sort((a, b) => b.value - a.value)[0];
       const logo = (e) => teamOf(e)?.logo_url ?? players.find((p) => p.id === e?.player_id)?.avatar_url;
       openShareCard({
-        title: c?.name ?? "Competition", sub: `${roundName(match.round, info.bracket.totalRounds)}${match.starts_at ? ` · ${fmtLongDate(match.starts_at)}` : ""}`,
+        title: c?.name ?? "Competition", sub: `${roundName(match.round, info.bracket.totalRounds, info.bracket)}${match.starts_at ? ` · ${fmtLongDate(match.starts_at)}` : ""}`,
         home: { name: nameA, logo: logo(info.a) }, away: { name: nameB, logo: logo(info.b) },
         score: wo ? [wo === "a" ? 1 : 0, wo === "b" ? 1 : 0] : [match.score_a, match.score_b], scoreText: wo ? "W/O" : undefined,
         tag: wo ? "Walkover" : match.round === info.bracket.totalRounds ? "Final result" : "Result",
-        footer: [wo ? `${wo === "a" ? nameA : nameB} go through` : `${winnerSide(match) === "a" ? nameA : nameB} through to the ${match.round === info.bracket.totalRounds ? "title" : roundName(match.round + 1, info.bracket.totalRounds).toLowerCase()}`,
+        footer: [wo ? `${wo === "a" ? nameA : nameB} go through` : `${winnerSide(match) === "a" ? nameA : nameB} through to the ${match.round === info.bracket.totalRounds ? "title" : roundName(match.round + 1, info.bracket.totalRounds, info.bracket).toLowerCase()}`,
           best ? `Highest break: ${best.value} — ${pname(best.player_id) ?? ""}` : ""].filter(Boolean),
         file: `${nameA}-v-${nameB}`.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       });

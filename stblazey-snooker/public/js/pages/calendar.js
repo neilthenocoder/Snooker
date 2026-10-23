@@ -36,7 +36,7 @@ export default async function calendar(view, { query }) {
         return {
           id: m.row.id, when: m.row.starts_at, href: `/cup-match/${m.row.no ?? m.row.id}`, kind: "cup", status: m.row.status,
           score: compScoreText(m.row), more: ["The competition", urls.competition(c)],
-          title: `${e(m.a)?.name ?? placeLabel(b, m, "a") ?? "TBC"} v ${e(m.b)?.name ?? placeLabel(b, m, "b") ?? "TBC"}`, sub: `${c.name} · ${roundName(m.round, b.totalRounds)}`,
+          title: `${e(m.a)?.name ?? placeLabel(b, m, "a") ?? "TBC"} v ${e(m.b)?.name ?? placeLabel(b, m, "b") ?? "TBC"}`, sub: `${c.name} · ${roundName(m.round, b.totalRounds, b)}`,
           teams: [team(e(m.a)), team(e(m.b))].filter(Boolean), venue: venues.find((v) => v.id === m.row.venue_id)?.name,
         };
       });

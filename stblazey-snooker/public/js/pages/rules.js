@@ -23,7 +23,7 @@ export default async function rules(view, { query }) {
   const { html: body, headings } = renderMarkup(page.body);
   const contents = headings.filter((h) => h.level <= 2);
   mount(view, html`<div class="wrap">
-    ${breadcrumb([["Home", "/"], ["Our League", "/league"], ["Rules", "/rules"], [page.title]])}
+    ${breadcrumb([["Home", "/"], ["Our League", "/league"], ...(pages.length > 1 ? [["Rules", "/rules"]] : []), [page.title]])}
     <h1>${page.title}</h1>
     ${pages.length > 1 ? html`<div class="rule-tabs" role="tablist">${pages.map((p) => html`<a class="${p.id === page.id ? "on" : ""}" href="/rules?p=${p.slug}" role="tab" aria-selected="${p.id === page.id}">${p.title}</a>`)}</div>` : ""}
     <div class="rules-layout ${contents.length > 2 ? "" : "plain"}">

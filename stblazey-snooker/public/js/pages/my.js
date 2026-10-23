@@ -479,7 +479,7 @@ async function competitionsTab(el, { ctx, user, team, me }) {
   // On a phone each match is a block, like the fixture list (".fx-list" in style.css), so the button is never off the edge of the screen.
   mount(el, html`${deadlines}${panel(`Cup matches for ${team?.name ?? "you"}`, html`<div class="fx-list">${dataTable([
       { label: "Date", cell: ({ m }) => (m.row.starts_at ? `${fmtDate(m.row.starts_at)} ${fmtTime(m.row.starts_at)}` : "TBC"), cls: "fx-date" },
-      { label: "Competition", cell: ({ c, b, m }) => html`<a href="${urls.competition(c)}">${c.name}</a> <small class="muted">${roundName(m.round, b.totalRounds)}</small>`, cls: "fx-comp" },
+      { label: "Competition", cell: ({ c, b, m }) => html`<a href="${urls.competition(c)}">${c.name}</a> <small class="muted">${roundName(m.round, b.totalRounds, b)}</small>`, cls: "fx-comp" },
       { label: "Match", cell: ({ b, m }) => html`<a href="/cup-match/${m.row.no ?? m.row.id}">${name(b, m.a)} v ${name(b, m.b)}</a>`, cls: "fx-name" },
       { label: "Score", cell: ({ m }) => (compScoreText(m.row) || (m.row.status === "postponed" ? "P - P" : html`<span class="fx-none">–</span>`)), cls: "num fx-res" },
       { label: "", cls: "fx-act", cell: ({ b, m }) => (isEntry(m.a) && isEntry(m.b) && canEditCompMatch(user, m.row, [b.entryById.get(m.a), b.entryById.get(m.b)], ctx.players)

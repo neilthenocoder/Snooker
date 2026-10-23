@@ -16,7 +16,7 @@ function sideLabel(b, match, side) {
   if (match.round === 1) return "TBC";
   if (b.drawMode === "redraw") return "To be drawn";   // drawn round by round: nobody knows who meets whom yet
   const from = b.rounds[match.round - 2][match.slot * 2 + (side === "a" ? 0 : 1)];
-  const short = { "Quarter-finals": "QF", "Semi-finals": "SF" }[roundName(from.round, b.totalRounds)] ?? `R${from.round}-`;
+  const short = { "Quarter-finals": "QF", "Semi-finals": "SF" }[roundName(from.round, b.totalRounds, b)] ?? `R${from.round}-`;
   return `Winner ${short}${from.slot + 1}`;
 }
 
@@ -62,7 +62,7 @@ export function bracketView(b, deadlines = {}) {
     const slots = list.map((m) => html`<div class="br-slot">${matchBox(b, m)}</div>`);
     const body = isLast ? slots : list.filter((_, j) => j % 2 === 0).map((_, p) => html`<div class="br-pair">${slots[p * 2]}${slots[p * 2 + 1]}</div>`);
     const by = deadlineOf(deadlines, i + 1);
-    return html`<div class="br-col" style="--i:${i}"><div class="br-title">${roundName(i + 1, b.totalRounds)}${by ? html`<small>Play by ${fmtDate(by)}</small>` : ""}</div>
+    return html`<div class="br-col" style="--i:${i}"><div class="br-title">${roundName(i + 1, b.totalRounds, b)}${by ? html`<small>Play by ${fmtDate(by)}</small>` : ""}</div>
       <div class="br-matches" style="height:${firstRound * MATCH_HEIGHT}px">${body}</div></div>`;
   });
   return html`<div class="bracket-wrap" data-bracket><div class="bracket">
@@ -93,7 +93,7 @@ export function roundCards(b, venueById, deadlines = {}) {
     if (!real.length) return "";
     const by = deadlineOf(deadlines, i + 1);
     const late = by && Date.parse(by) < Date.now() - 864e5 && real.some((m) => !m.played);
-    return html`<h3 class="round-h">${roundName(i + 1, b.totalRounds)}${by ? html`<span class="deadline ${late ? "late" : ""}">Play by ${fmtDate(by)}</span>` : ""}</h3>
+    return html`<h3 class="round-h">${roundName(i + 1, b.totalRounds, b)}${by ? html`<span class="deadline ${late ? "late" : ""}">Play by ${fmtDate(by)}</span>` : ""}</h3>
       <div class="fx-cards">${real.map((m) => {
         const v = venueById.get(m.row.venue_id);
         const cell = (side) => {

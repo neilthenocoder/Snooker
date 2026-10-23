@@ -94,7 +94,7 @@ export default async function cupScorecard(view, { params, user }) {
   return scorecardEditor({
     person: (id) => { const p = players.find((x) => x.id === id); return { name: p?.full_name ?? "A player", avatar_url: p?.avatar_url, club: team(p?.team_id)?.name }; },
     el: $("[data-editor]", view),
-    subtitle: `${c.name} · ${roundName(match.round, info.bracket.totalRounds)}`, when: match.starts_at, venue: venues.find((v) => v.id === match.venue_id)?.name,
+    subtitle: `${c.name} · ${roundName(match.round, info.bracket.totalRounds, info.bracket)}`, when: match.starts_at, venue: venues.find((v) => v.id === match.venue_id)?.name,
     sides: { a: { name: info.a.name, team: playerTeam(info.a), options: options(info.a) }, b: { name: info.b.name, team: playerTeam(info.b), options: options(info.b) } },
     slots, preset, minFrames: Math.max(1, Math.ceil((c.best_of || 5) / 2)),
     // Team cups: each player plays one frame. Singles and doubles: the same players all match.

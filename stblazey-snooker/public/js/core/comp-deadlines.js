@@ -79,7 +79,7 @@ export function deadlineWarnings(user, ctx, comps, site = {}) {
         else lines.push(`You are away: ${opp} should contact you to arrange it.`);
       }
       const level = left < 0 ? "late" : left <= 7 || (!arranged && contactLeft !== null && contactLeft <= 3) ? "soon" : "info";
-      out.push({ level, c, m, left, title: `${c.name} · ${roundName(m.round, b.totalRounds)}: ${(side === "a" ? ea : eb).name} v ${opp}`, lines, href: urls.cupMatch(m.row) });
+      out.push({ level, c, m, left, title: `${c.name} · ${roundName(m.round, b.totalRounds, b)}: ${(side === "a" ? ea : eb).name} v ${opp}`, lines, href: urls.cupMatch(m.row) });
     }
   }
   const rank = { late: 0, soon: 1, info: 2 };

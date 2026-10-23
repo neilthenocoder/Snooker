@@ -31,7 +31,7 @@ export async function scoreboardPage(el, { user } = {}) {
     const entries = data.entries.filter((e) => e.competition_id === comp.id);
     const b = buildBracket(entries, data.matches.filter((x) => x.competition_id === comp.id));
     return b.rounds.flat().filter((x) => x.row.id && !x.isBye && isEntry(x.a) && isEntry(x.b) && (x.row.status !== "completed" || x.row.id === keep))
-      .map((x) => ({ id: x.row.id, round: roundName(x.round, b.totalRounds), a: b.entryById.get(x.a), b: b.entryById.get(x.b), best_of: comp.best_of, done: x.row.status === "completed" }));
+      .map((x) => ({ id: x.row.id, round: roundName(x.round, b.totalRounds, b), a: b.entryById.get(x.a), b: b.entryById.get(x.b), best_of: comp.best_of, done: x.row.status === "completed" }));
   }
   /** What to put in a player box for a draw entry: the player's own name if the entry is one player. */
   const entryText = (entry) => players.find((p) => p.id === entry?.player_id)?.full_name ?? entry?.name ?? "";

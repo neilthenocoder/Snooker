@@ -182,7 +182,7 @@ function view(user, { ctx, news, comps, site = {}, form: formData = null }, pref
       { foot: more && upcoming.length > limit ? more : { href: `/calendar?team=${team.id}`, label: "See these on the calendar" } })),
     comps: () => (cup.length ? panel(team ? `${team.name}: competitions` : "Competitions", dataTable([
         { label: "Date", cell: ({ m }) => (m.row.starts_at ? fmtDate(m.row.starts_at) : "TBC") },
-        { label: "Competition", cell: ({ c, b, m }) => html`<a href="${urls.competition(c)}">${c.name}</a> <small class="muted">${roundName(m.round, b.totalRounds)}</small>` },
+        { label: "Competition", cell: ({ c, b, m }) => html`<a href="${urls.competition(c)}">${c.name}</a> <small class="muted">${roundName(m.round, b.totalRounds, b)}</small>` },
         { label: "Match", cell: ({ b, m }) => html`<a href="/cup-match/${m.row.no ?? m.row.id}">${cupName(b, m.a)} v ${cupName(b, m.b)}</a>` },
         { label: "Score", cell: ({ m }) => (compScoreText(m.row) ? html`<span class="res-score done">${compScoreText(m.row)}</span>` : m.row.status === "postponed" ? "P - P" : "–"), cls: "num" },
       ], cup.slice(0, home ? 4 : 30)), { foot: { href: "/competitions", label: "All competitions" } }) : ""),

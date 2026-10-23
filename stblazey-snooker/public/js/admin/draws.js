@@ -114,13 +114,13 @@ export async function draws(el, { user } = {}) {
       const done = list.every((m) => m.winner !== PENDING);
       const nextSet = b.rounds[i + 1].some((m) => m.row.entry_a || m.row.entry_b);
       return html`<button class="btn ${done && !nextSet ? "blue" : "ghost"}" data-redraw="${i + 1}" ${done ? "" : "disabled"}>
-        Draw ${roundName(i + 2, b.totalRounds).toLowerCase()}${nextSet ? " again" : ""}</button>`;
+        Draw ${roundName(i + 2, b.totalRounds, b).toLowerCase()}${nextSet ? " again" : ""}</button>`;
     })}</div>` : ""}
 
     ${b.totalRounds ? panel("3. Round deadlines", html`<form class="form" data-deadlines>
       <p style="margin-top:0">The date each round must be played by — shown on the competition page next to the round. Players (and captains, in a team competition) get a warning in their own area as it comes up.
         <b>Contact by</b> (optional) is the day the home player must have contacted their opponent: until then the away player is told to wait for the call; after it, they are told the rule for when nobody has been in touch (Site settings → Competitions).</p>
-      <div class="deadline-grid">${b.rounds.map((_, i) => html`<fieldset class="deadline-round"><legend>${roundName(i + 1, b.totalRounds)}</legend>
+      <div class="deadline-grid">${b.rounds.map((_, i) => html`<fieldset class="deadline-round"><legend>${roundName(i + 1, b.totalRounds, b)}</legend>
         <label>Play by <input type="date" name="round_${i + 1}" value="${c.round_deadlines?.[i + 1] ?? ""}"></label>
         <label>Contact by <input type="date" name="contact_${i + 1}" value="${c.round_contact?.[i + 1] ?? ""}"></label></fieldset>`)}</div>
       <div class="btn-row"><button class="btn green">Save deadlines</button></div></form>`) : ""}
@@ -133,8 +133,8 @@ export async function draws(el, { user } = {}) {
         // before the round before has finished ("St Neot or Mevagissey C").
         const sources = b.rounds.slice(0, m.round - 1).flat().filter((x) => x.row.id && !(x.a === EMPTY && x.b === EMPTY) && !(x.isBye && isEntry(x.winner) && !x.row.from_a && !x.row.from_b));
         const sideName = (x, sd) => (isEntry(x[sd]) ? b.entryById.get(x[sd]).name : x[sd] === EMPTY ? null : placeLabel(b, x, sd) ?? "TBC");
-        const sourceLabel = (x) => (x.isBye ? `${[sideName(x, "a"), sideName(x, "b")].filter(Boolean).join("")} (through from ${roundName(x.round, b.totalRounds).toLowerCase()})`
-          : `Winner of ${sideName(x, "a")} v ${sideName(x, "b")} (${roundName(x.round, b.totalRounds).toLowerCase()})`);
+        const sourceLabel = (x) => (x.isBye ? `${[sideName(x, "a"), sideName(x, "b")].filter(Boolean).join("")} (through from ${roundName(x.round, b.totalRounds, b).toLowerCase()})`
+          : `Winner of ${sideName(x, "a")} v ${sideName(x, "b")} (${roundName(x.round, b.totalRounds, b).toLowerCase()})`);
         const pickSide = (side) => {
           const key = side === "a" ? "entry_a" : "entry_b";
           const cur = m.row[`bye_${side}`] ? "bye" : m.row[`from_${side}`] ? `w:${m.row[`from_${side}`]}` : (m.row[key] ?? "");
@@ -147,7 +147,7 @@ export async function draws(el, { user } = {}) {
         };
         const ready = isEntry(m.a) && isEntry(m.b);
         return html`<tr data-row="${m.row.id ?? ""}" data-round="${m.round}" data-slot="${m.slot}">
-          <td class="strong">${roundName(m.round, b.totalRounds)}${m.row.status === "in_progress" ? html` <span class="live-dot">Live</span>` : m.row.status === "postponed" ? html` <span class="status postponed">postponed</span>` : ""}</td>
+          <td class="strong">${roundName(m.round, b.totalRounds, b)}${m.row.status === "in_progress" ? html` <span class="live-dot">Live</span>` : m.row.status === "postponed" ? html` <span class="status postponed">postponed</span>` : ""}</td>
           <td class="right">${pickSide("a")}</td>
           <td class="num" style="white-space:nowrap">${m.isBye ? html`<span class="muted">bye</span>` : html`
             <input type="number" min="0" max="99" name="score_a" value="${m.row.score_a ?? ""}" style="width:58px" ${ready && !walkoverSide(m.row) ? "" : "disabled"}> –
@@ -260,7 +260,7 @@ export async function draws(el, { user } = {}) {
     const round_deadlines = Object.fromEntries(b.rounds.map((_, i) => [i + 1, v[`round_${i + 1}`]]).filter(([, d]) => d));
     const round_contact = Object.fromEntries(b.rounds.map((_, i) => [i + 1, v[`contact_${i + 1}`]]).filter(([, d]) => d));
     const late = b.rounds.map((_, i) => i + 1).find((r) => round_contact[r] && round_deadlines[r] && round_contact[r] > round_deadlines[r]);
-    if (late) return toast(`${roundName(late, b.totalRounds)}: the contact date must be before the play-by date`, "error");
+    if (late) return toast(`${roundName(late, b.totalRounds, b)}: the contact date must be before the play-by date`, "error");
     await save("competitions", { id: c.id, round_deadlines, round_contact });
     toast("Deadlines saved"); redraw();
   }));
@@ -344,7 +344,7 @@ export async function draws(el, { user } = {}) {
     if (t.matches("[data-redraw]")) {
       const round = Number(t.dataset.redraw);
       const next = redrawNextRound(b, round);
-      if (!confirm(`Make a random draw for the ${roundName(round + 1, b.totalRounds).toLowerCase()}?`)) return;
+      if (!confirm(`Make a random draw for the ${roundName(round + 1, b.totalRounds, b).toLowerCase()}?`)) return;
       for (const n of next) {
         const row = rows.find((r) => r.round === round + 1 && r.slot === n.slot);
         await save("competition_matches", { id: row.id, entry_a: n.entry_a, entry_b: n.entry_b, from_a: null, from_b: null, bye_a: false, bye_b: false, score_a: null, score_b: null, walkover: null, status: "scheduled" });

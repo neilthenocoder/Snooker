@@ -516,3 +516,17 @@ document.addEventListener("click", (e) => {
   b.textContent = open ? b.dataset.less : b.dataset.more;
   if (!open) box.scrollIntoView({ block: "nearest" });
 });
+
+// Rich, round 44: the Share button next to the back arrow on every public page.
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-share-page]");
+  if (!btn) return;
+  const url = location.href.split("#")[0], title = document.title;
+  try {
+    if (navigator.share && matchMedia("(pointer: coarse)").matches) return await navigator.share({ title, url });
+    await navigator.clipboard.writeText(url);
+    toast("Link copied — paste it anywhere to share this page");
+  } catch (err) {
+    if (err?.name !== "AbortError") prompt("Copy this link to share the page:", url);
+  }
+});

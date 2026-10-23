@@ -122,11 +122,16 @@ export const outcomeTag = (what, text = null) => (["won", "lost", "drawn"].inclu
  */
 export const crumbs = { trail: false };
 const backArrow = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 5.3 8 12l6.7 6.7 1.4-1.4L10.8 12l5.3-5.3Z"/></svg>`;
+const sharePageIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16a3 3 0 0 0-2.4 1.2l-6.7-3.4a3 3 0 0 0 0-1.6l6.7-3.4A3 3 0 1 0 15 7l-6.7 3.4a3 3 0 1 0 0 3.2L15 17a3 3 0 1 0 3-1Z"/></svg>`;
 export function breadcrumb(items) {
   if (!crumbs.trail) {
-    const up = [...items].slice(0, -1).reverse().find(([, href]) => href);
-    if (!up) return "";
-    return html`<nav class="back-nav" aria-label="Back"><a class="back-link" href="${up[1]}">${backArrow}<span>${up[0]}</span></a></nav>`;
+    // Round 44 (Rich: "back button on some league pages not working"): never point back at the page you are on.
+    const here = (h) => { try { const u = new URL(h, location.href); return u.pathname === location.pathname && (!u.search || u.search === location.search); } catch { return false; } };
+    const up = [...items].slice(0, -1).reverse().find(([, href]) => href && !here(href));
+    // Rich, round 44: every page can be shared — the phone's share sheet, or the link copied on a computer (main.js).
+    const share = html`<button type="button" class="share-page" data-share-page>${sharePageIcon}<span>Share</span></button>`;
+    if (!up) return html`<nav class="back-nav only-share" aria-label="Share">${share}</nav>`;
+    return html`<nav class="back-nav" aria-label="Back"><a class="back-link" href="${up[1]}">${backArrow}<span>${up[0]}</span></a>${share}</nav>`;
   }
   return trail(items);
 }
@@ -270,7 +275,7 @@ export function leagueTablePanel(ctx, league, { limit = Infinity, highlightTeamI
   });
 }
 
-export function rankingsPanel(ctx, league, { limit = Infinity } = {}) {
+export function rankingsPanel(ctx, league, { limit = Infinity, scroll = false } = {}) {
   const rows = ctx.rankings(league.id).slice(0, limit);
   const table = dataTable([
     { label: "", cell: (r) => r.pos, cls: "num" },
@@ -284,7 +289,9 @@ export function rankingsPanel(ctx, league, { limit = Infinity } = {}) {
     ]),
     { label: "Pts", cell: (r) => topPoints(r, rows[0]), cls: "num strong" },
   ], rows, { highlight: (r) => r === rows[0], empty: "No frames played yet.", phoneLimit: Number.isFinite(limit) ? 0 : 10, more: "players" });
-  return panel(`${shortName(league)} Rankings`, html`${noHead(table, limit)}${provisionalNote(ctx, league)}`, {
+  // Rich, round 44 ("like WST"): in the side column the top ten scroll in a short box and the leader stays pinned at the top.
+  const body = scroll ? html`<div class="rk-scroll">${noHead(table, limit)}</div>` : noHead(table, limit);
+  return panel(`${shortName(league)} Rankings`, html`${body}${provisionalNote(ctx, league)}`, { cls: scroll ? "rk-panel" : "",
     foot: Number.isFinite(limit) ? { href: `${urls.standings(league)}#players`, label: "View all players" } : null,
   });
 }
@@ -377,7 +384,7 @@ export function sidebar(ctx, news = [], { leagues = ctx.leagues, top = "", count
   return html`<aside class="sidebar">
     ${top}
     ${sideBox(ctx, news, count, box)}
-    ${leagues.map((l) => html`${leagueBreaksBox(ctx, l)}${rankingsPanel(ctx, l, { limit: 4 })}`)}
+    ${leagues.map((l) => html`${leagueBreaksBox(ctx, l)}${rankingsPanel(ctx, l, { limit: 10, scroll: true })}`)}
   </aside>`;
 }
 

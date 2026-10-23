@@ -4168,3 +4168,87 @@ html.look-calm .tile p { color: var(--muted); }
   html.look-calm .quick-links a { font-size: 13px; padding: 13px 6px; min-width: 0; }
   html.look-calm .tile.with-emblem { padding: 14px; }
 }
+/* Round 44: countdown to a match that hasn't started (match and cup match previews) */
+.countdown { display: flex; justify-content: center; gap: 10px; padding: 4px 16px 22px; }
+.countdown span { display: grid; justify-items: center; min-width: 64px; padding: 10px 6px 8px; background: rgba(255,255,255,.08); border-radius: 8px; }
+.countdown b { font: 700 30px/1 var(--font-head); color: #fff; font-variant-numeric: tabular-nums; }
+.countdown small { margin-top: 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #bbb; }
+.countdown-now { margin: 0; font: 700 18px var(--font-head); text-transform: uppercase; color: #fff; }
+@media (max-width: 480px) { .countdown span { min-width: 54px; } .countdown b { font-size: 24px; } }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 44 — FLATTER, LIKE WST (Rich's list)
+   No hairline borders or shadows on cards: white blocks on the light grey page do the separating.
+   ═════════════════════════════════════════════════════════════ */
+/* 11 + 13: flat — no borders or shadows round cards, tiles and the four quick links */
+html.look-calm .panel, html.look-calm .quick-links a, html.look-calm .tile, html.look-calm .feature-box, html.look-calm .enter-bar,
+html.look-calm .kd, html.look-calm .btn-bar, html.look-calm .sponsors a, html.look-calm .hub-card, html.look-calm .feat-card,
+html.look-calm .hero.hero-l-white .hero-text, html.look-calm .hero.hero-l-white .hero-pic-link, html.look-calm .title-band,
+html.look-calm .back-link, html.look-calm .hub-tabs a, html.look-calm .stat, html.look-calm .ms-card {
+  border: 0 !important; box-shadow: none !important;
+}
+html.look-calm .enter-bar { border-left: 4px solid var(--red) !important; }
+html.look-calm .quick-links a:hover, html.look-calm .tile:hover, html.look-calm .btn-bar:hover { background: #fff !important; color: var(--red) !important; transform: none; }
+html.look-calm .hub-card:hover, html.look-calm .feat-card:hover { box-shadow: none; transform: none; }
+html.look-calm .hub-card:hover h3, html.look-calm .feat-card:hover strong { color: var(--red); }
+html.look-calm .kd-label { border-right: 0; }
+html.look-calm .panel-head { border-bottom: 0; padding-bottom: 8px; }
+html.look-calm .panel-foot { border-top: 0; }
+html.look-calm .stat { border-radius: var(--radius); }
+
+/* 10: the menu — plain text, no boxes, the words in red; the page you are on in white with a red line */
+html.look-calm .main-nav a, html.look-calm .main-nav button { color: var(--red) !important; }
+html.look-calm .main-nav a:hover { color: #fff !important; }
+html.look-calm[data-section="home"] .main-nav .nav-home, html.look-calm[data-section="competitions"] .main-nav .nav-comps,
+html.look-calm[data-section="fixtures"] .main-nav .nav-fixtures, html.look-calm[data-section="league"] .main-nav .nav-league,
+html.look-calm[data-section="news"] .main-nav .nav-news { color: #fff !important; }
+html.look-calm .main-nav .nav-live-btn { color: #fff !important; border: 0; background: #262626 !important; }
+html.look-calm .nav-icon { border: 0 !important; background: #1f1f1f !important; }
+
+/* 12: nothing pulses — live and live soon are shown by their colour and a steady dot */
+html.look-calm .nav-live-btn, html.look-calm .nav-live-btn::before, html.look-calm .live-dot::before,
+html.look-calm .live-soon, html.look-calm .live-soon::before, html.look-calm .strip-card.is-live { animation: none !important; }
+
+/* 1: the live & upcoming strip the other way round — light band, white cards, dark writing, no outline */
+html.look-calm .live-strip-wrap, html.look-calm .hero.hero-l-white .live-strip-wrap { background: #ebeae6 !important; padding: 20px 0 18px; }
+html.look-calm .live-strip .strip-head h3, html.look-calm .hero .live-strip .strip-head h3 { color: var(--ink) !important; }
+html.look-calm .live-strip .strip-head a, html.look-calm .hero .live-strip .strip-head a { color: var(--red) !important; }
+html.look-calm .strip-card { background: #fff; border: 0 !important; box-shadow: none !important; color: var(--ink); border-radius: 10px; }
+html.look-calm .strip-card:hover { color: var(--ink); transform: none; }
+html.look-calm .strip-card.is-live { box-shadow: inset 0 -3px 0 var(--strip-live, var(--live-green)) !important; }
+html.look-calm .strip-card.is-draw { box-shadow: inset 0 -3px 0 var(--yellow) !important; }
+html.look-calm .sc-top, html.look-calm .sc-mid small { color: var(--muted); }
+html.look-calm .sc-foot { color: #8a8a8a; }
+html.look-calm .sc-mid b.time { border-color: #d6d4cf; }
+html.look-calm .strip-empty { color: var(--muted); } html.look-calm .strip-empty a { color: var(--red); }
+html.look-calm .strip-ctrl button, html.look-calm [data-strip] button { background: #fff; color: var(--ink); border-color: #fff; }
+html.look-calm .strip-card .badge.logo { background: transparent; }
+
+/* 2: league tables — no shaded top and bottom rows (the P and R markers still say who goes up and down) */
+html.look-calm table.data tbody tr.hl td, html.look-calm table.data tbody tr.lt-top td, html.look-calm table.data tbody tr.lt-up td,
+html.look-calm table.data tbody tr.lt-down td, html.look-calm table.data tbody tr.lt-up.lt-alt td, html.look-calm table.data tbody tr.lt-down.lt-alt td {
+  background: transparent !important; font-weight: inherit;
+}
+html.look-calm .lt-panel table.data tbody tr.hl td, html.look-calm table.data tbody tr.hl td { font-size: inherit; padding-top: 11px; padding-bottom: 11px; }
+html.look-calm table.data tbody tr.hl .badge { width: 30px; height: 30px; font-size: 10px; }
+html.look-calm .lt-pts { background: transparent; color: var(--ink); padding: 0; }
+
+/* 5: breaks stand out — every break in red */
+html.look-calm .tally.brk, html.look-calm .break-tag { background: var(--red); color: #fff; }
+html.look-calm .tally.brk.prov { background: #fff; color: var(--red); outline: 1px dashed var(--red); }
+html.look-calm .bk-pod b { color: var(--red); }
+html.look-calm .bk-pod.p1, html.look-calm .bk-pod.p2, html.look-calm .bk-pod.p3 { background: #f6f5f2; }
+
+/* 6: rankings like WST — the leader in a black row that stays at the top while the list scrolls */
+html.look-calm .rk-scroll { max-height: 312px; overflow-y: auto; scrollbar-width: thin; }
+.rk-scroll tr.hl td { position: sticky; top: 0; z-index: 1; }
+html.look-calm .rk-scroll tr.hl td, html.look-calm .rk-panel table.data tbody tr.hl td { background: #141414 !important; color: #fff; font-weight: 700; }
+html.look-calm .rk-panel tr.hl a { color: #fff; }
+html.look-calm .rk-panel td.num:first-child { color: var(--red); font-weight: 700; }
+html.look-calm .rk-panel tr.hl .lt-pts, html.look-calm .rk-panel tr.hl td.strong { color: #fff; }
+/* Round 44: Share button beside the back arrow */
+.back-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.back-nav.only-share { justify-content: flex-end; margin-bottom: 8px; }
+.share-page { display: inline-flex; align-items: center; gap: 6px; border: 0; background: #fff; color: var(--ink); padding: 8px 14px; border-radius: 999px; font: 700 13px var(--font-body); cursor: pointer; }
+.share-page svg { width: 16px; height: 16px; fill: var(--red); }
+.share-page:hover { color: var(--red); }
