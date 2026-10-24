@@ -4315,3 +4315,54 @@ html.look-calm { --cream: #ececec !important; --card: #ffffff; --row-alt: #f6f6f
 html.look-calm:not(.strip-dark) .live-strip-wrap, html.look-calm:not(.strip-dark) .hero.hero-l-white .live-strip-wrap { background: #dedede !important; }
 html.look-calm .bk-pod.p1, html.look-calm .bk-pod.p2, html.look-calm .bk-pod.p3 { background: #f3f3f3; }
 html.look-calm table.data tbody tr.lt-mine td { background: #ececec !important; }
+/* Round 46: player trophy cabinet */
+.cabinet { background: var(--card, #fff); border-radius: var(--radius, 12px); padding: 18px 20px; margin: 22px 0; }
+.cabinet h3 { margin: 0 0 12px; }
+.cabinet ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.cabinet li { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 14px; background: #141414; color: #fff; border-radius: 10px; }
+.cab-trophy { width: 52px; height: 52px; object-fit: contain; }
+.cab-name { font: 700 17px/1.15 var(--font-head); text-transform: uppercase; letter-spacing: .02em; }
+.cab-count { font: 700 26px/1 var(--font-head); color: var(--yellow, #ffd237); }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 46 — Rich's feedback 58
+   ═════════════════════════════════════════════════════════════ */
+/* the two logos: the main one, and the one for a light header */
+.logo .logo-light { display: none; }
+html.look-calm.head-light .logo .logo-main { display: none; }
+html.look-calm.head-light .logo .logo-light { display: block; }
+html.look-calm.head-light .logo .logo-light.auto { filter: invert(1) hue-rotate(180deg); }   /* no light-header logo uploaded yet */
+
+/* the page background chosen in Branding now shows in the calm look too */
+html.look-calm body { background: var(--page-bg, var(--cream)); }
+
+/* Rich's yellow (#ffd237): trophies, cup results, the 1st place badge; alerts get a soft tint of it */
+html.look-calm { --yellow: #ffd237 !important; }
+html.look-calm .feature-box { background: #ffefb0 !important; color: #2b2200 !important; }
+html.look-calm .notice { background: #ffefb0; }
+html.look-calm .res-tag.cup { background: #fff3c4; color: #6b5200; border-color: #ffd237; }
+
+/* the top of each league table in a faint green (it was yellow) */
+html.look-calm table.data tbody tr.lt-top td, html.look-calm table.data tbody tr.hl td { background: #e3f2e3 !important; }
+html.look-calm .rk-scroll tr.hl td, html.look-calm .rk-panel table.data tbody tr.hl td { background: #141414 !important; }
+
+/* the black strip the other way round: dark grey band, black cards */
+html.look-calm.strip-dark .live-strip-wrap, html.look-calm.strip-dark .hero.hero-l-white .live-strip-wrap { background: #2b2b2b !important; }
+html.look-calm.strip-dark .strip-card { background: #0d0d0d; }
+html.look-calm.strip-dark .strip-card:hover { background: #161616; }
+html.look-calm.strip-dark .strip-ctrl button, html.look-calm.strip-dark [data-strip] button { background: #0d0d0d; border-color: #0d0d0d; }
+html.look-calm.strip-dark .strip-card .badge:not(.logo) { background: #333; }
+
+/* grey header: the menu follows the main colour (made a little lighter so it reads on grey) */
+html.look-calm.head-grey .main-nav a, html.look-calm.head-grey .main-nav button { color: color-mix(in srgb, var(--red) 78%, #fff) !important; }
+
+/* option: a light cream header (#fbfaef) with red menu words */
+html.look-calm.head-light .site-bar { background: #fbfaef !important; }
+html.look-calm.head-light .main-nav a, html.look-calm.head-light .main-nav button { color: var(--red) !important; }
+html.look-calm.head-light[data-section="home"] .main-nav .nav-home, html.look-calm.head-light[data-section="competitions"] .main-nav .nav-comps,
+html.look-calm.head-light[data-section="fixtures"] .main-nav .nav-fixtures, html.look-calm.head-light[data-section="league"] .main-nav .nav-league,
+html.look-calm.head-light[data-section="news"] .main-nav .nav-news, html.look-calm.head-light .main-nav a:hover { color: var(--ink) !important; }
+html.look-calm.head-light .nav-icon { background: #ecebdf !important; color: var(--ink); }
+html.look-calm.head-light .nav-icon svg { fill: var(--ink) !important; }
+html.look-calm.head-light .main-nav .nav-live-btn:not(.state-soon):not(.state-live) { background: #ecebdf !important; color: var(--ink) !important; }
+html.look-calm.head-light .main-nav .nav-live-btn.state-soon, html.look-calm.head-light .main-nav .nav-live-btn.state-live { color: #fff !important; }

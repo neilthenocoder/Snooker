@@ -81,6 +81,8 @@ function brandOf(site) {
     vars[main] = v;
     if (ink) vars[ink] = inkOn(v);
     if (key === "color_primary") vars["--red-dark"] = darker(v);
+    // Round 46 (Rich: "page background colour doesn't change"): the calm look has its own grey, so the chosen colour goes here too.
+    if (key === "color_background") vars["--page-bg"] = v;
   }
   // Fonts: one of the built-in list, or one from the pasted Google Fonts embed link.
   const embed = parseFontEmbed(site.font_embed);
@@ -109,7 +111,7 @@ function brandOf(site) {
     look: site.site_look === "classic" ? "classic" : "calm",
     // Round 45 (Rich): the Live & upcoming strip light or black, and the header black or grey (calm look only).
     strip: site.strip_style === "dark" ? "dark" : "light",
-    header: site.header_style === "grey" ? "grey" : "black",
+    header: ["grey", "light"].includes(site.header_style) ? site.header_style : "black",
     loader: site.loading_logo_url || site.logo_url || "",
     loaderShow: site.loader_show !== false,
     loaderMs: Math.max(0, Math.min(10, Number(site.loader_seconds) || 0)) * 1000,
@@ -124,13 +126,14 @@ export const layoutFor = (group) => current.layouts?.[group] ?? "auto";
 export function paint(brand) {
   current = brand;
   const root = document.documentElement;
-  for (const name of [...Object.values(COLOURS).flat(), "--red-dark", "--font-head", "--font-body", "--fs-h1-fluid", ...TEXT_SIZES.map((t) => t[3])]) root.style.removeProperty(name);
+  for (const name of [...Object.values(COLOURS).flat(), "--red-dark", "--page-bg", "--font-head", "--font-body", "--fs-h1-fluid", ...TEXT_SIZES.map((t) => t[3])]) root.style.removeProperty(name);
   for (const [name, value] of Object.entries(brand.vars ?? {})) root.style.setProperty(name, value);
   root.classList.toggle("sidebar-left", brand.sidebar === "left");
   root.classList.toggle("section-colors", brand.sections !== false);
   root.classList.toggle("look-calm", brand.look !== "classic");
   root.classList.toggle("strip-dark", brand.strip === "dark");
   root.classList.toggle("head-grey", brand.header === "grey");
+  root.classList.toggle("head-light", brand.header === "light");
   // Font stylesheets: keep the ones still wanted, drop the rest.
   const wanted = brand.links ?? [];
   for (const link of document.querySelectorAll("link[data-brand-font]")) if (!wanted.includes(link.href)) link.remove();

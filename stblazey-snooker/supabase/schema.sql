@@ -2684,7 +2684,10 @@ alter table settings add column if not exists site_look text not null default 'c
 alter table settings add column if not exists strip_style text not null default 'light';
 alter table settings add column if not exists header_style text not null default 'black';
 
-create or replace function public.schema_version() returns int language sql immutable as $$ select 31 $$;
+-- ── Round 46: a second logo for the light cream header (Admin → Branding → Logos) ──
+alter table settings add column if not exists logo_light_url text;
+
+create or replace function public.schema_version() returns int language sql immutable as $$ select 32 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

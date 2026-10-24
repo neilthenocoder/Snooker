@@ -10,6 +10,7 @@ try {
   if (b.look !== "classic") r.classList.add("look-calm");
   if (b.strip === "dark") r.classList.add("strip-dark");
   if (b.header === "grey") r.classList.add("head-grey");
+  if (b.header === "light") r.classList.add("head-light");
   if (b.loaderShow === false) boot.classList.add("off");
   // Only the logo uploaded under Admin → Branding — there is no stand-in picture.
   if (b.loader) { var img = boot.querySelector("img"); img.src = b.loader; img.hidden = false; }

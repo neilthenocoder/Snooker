@@ -5,7 +5,7 @@ import { playerRankings, frameWinner, breakPoints, EXT_PER_SEASON } from "../cor
 import { answered } from "../core/cueview.js";
 import { buildBracket, competitionStandings } from "../core/bracket.js";
 import { listItems } from "../core/list-field.js";
-import { breadcrumb, panel, dataTable, avatar, teamLink, urls, gallery, articleCard, cueviewSection, handicapText, handicapMove, breakTag, notUpdatedTag } from "../core/components.js";
+import { breadcrumb, panel, dataTable, avatar, teamLink, urls, gallery, articleCard, cueviewSection, handicapText, handicapMove, breakTag, notUpdatedTag, trophy } from "../core/components.js";
 import { followButton } from "../core/my-snooker.js";
 import { setTitle, navigate, adminEdit, sideContext } from "../core/router.js";
 import { PLAYER_TAG } from "../core/terms.js";
@@ -19,9 +19,9 @@ export default async function player(view, { params, user }) {
   const p = allPlayers.find((x) => x.slug === params.id) ?? allPlayers.find((x) => x.id === params.id);
   if (!p) return notFound(view);
   if (p.slug && params.id !== p.slug) history.replaceState(null, "", `${urls.player(p)}${location.search}${location.hash}`);
-  const [ctx, seasons, leagues, playerPast, comps, news] = await Promise.all([
+  const [ctx, seasons, leagues, playerPast, comps, news, awards] = await Promise.all([
     seasonContext(), table("seasons", "name"), table("leagues", "sort"),
-    playerHistory(p.id), loadCompetitions(), articles(),
+    playerHistory(p.id), loadCompetitions(), articles(), table("awards", "sort").catch(() => []),
   ]);
   // Form (Rich, round 25): a mark out of 10 from the last 6 matches this season.
   const form = await loadForm(ctx).then((f) => f.player(p.id)).catch(() => null);
@@ -70,6 +70,26 @@ export default async function player(view, { params, user }) {
     const b = buildBracket(comps.entries.filter((x) => x.competition_id === c.id), comps.matches.filter((m) => m.competition_id === c.id));
     return { c, standing: competitionStandings(b).find((r) => r.entry.id === e.id) };
   }).filter((x) => x.c);
+
+  // Rich, round 46: the trophy cabinet — each competition this player has won, with its trophy and how many times
+  // ("Singles ×5"). Wins come from the knockout draws on the website and from Presentation night (awards), so the
+  // years before the website count too; the same competition in the same season is only counted once.
+  const cabinet = new Map();
+  const cleanName = (n) => String(n ?? "").replace(/\s*\b(19|20)\d{2}(\s*[-–\/]\s*(19|20)?\d{2})?\b/g, "").trim();
+  const addWin = (name, seasonId, thing) => {
+    const key = cleanName(name).toLowerCase(); if (!key) return;
+    const row = cabinet.get(key) ?? cabinet.set(key, { name: cleanName(name), seasons: new Set(), thing: null }).get(key);
+    row.seasons.add(seasonId ?? `${name}-${row.seasons.size}`);
+    if (!row.thing?.trophy_url && thing?.trophy_url) row.thing = thing; else row.thing ??= thing;
+  };
+  for (const c of comps.competitions) {
+    const mine = comps.entries.filter((x) => x.competition_id === c.id);
+    if (!mine.some((e) => e.player_id === p.id)) continue;
+    const b = buildBracket(mine, comps.matches.filter((m) => m.competition_id === c.id));
+    if (b.champion && b.entryById.get(b.champion)?.player_id === p.id) addWin(c.name, c.season_id, c);
+  }
+  for (const a of awards) if (a.winner_player_id === p.id) addWin(a.name, a.season_id, a.trophy_url ? a : comps.competitions.find((c) => c.id === a.competition_id) ?? a);
+  const trophies = [...cabinet.values()].sort((x, y) => y.seasons.size - x.seasons.size || x.name.localeCompare(y.name));
 
   const age = p.birth_date ? Math.floor((Date.now() - new Date(p.birth_date)) / 3.15576e10) : null;
   const teammates = allPlayers.filter((x) => x.team_id === p.team_id);
@@ -121,6 +141,8 @@ export default async function player(view, { params, user }) {
 
     ${!gone && form?.n ? formPanel(form, { name: p.full_name.split(" ")[0] }) : ""}
 
+    ${trophies.length ? html`<section class="cabinet" aria-label="Trophies won"><h3>Trophy cabinet</h3>
+      <ul>${trophies.map((t) => html`<li>${trophy(t.thing, "cab-trophy")}<span class="cab-name">${t.name}</span><b class="cab-count">×${t.seasons.size}</b></li>`)}</ul></section>` : ""}
     ${html`<div class="profile-grid">
       <section class="profile-box wide"><h3>Bio</h3>${bio ? html`<div class="prose">${paragraphs(bio)}</div>` : html`<p class="not-upd">Not updated yet</p>`}</section>
       ${career.length ? html`<section class="profile-box"><h3>Career history</h3><ul class="timeline">${career.map((line) => {

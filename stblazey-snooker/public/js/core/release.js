@@ -4,12 +4,15 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.42.1";
+export const SITE_VERSION = "1.43.0";
 export const CHANGES = [
-  "Page background a neutral light grey like WST, with white boxes",
+  "Player pages: a trophy cabinet — each competition won, with its trophy and how many times (from the draws and Presentation night)",
+  "Branding: Light cream header option with its own logo upload (run schema.sql — version 32); the page background colour now works in the calm look; the black strip is now a dark grey band with black cards",
+  "League tables: the top row in faint green; the new yellow (#ffd237) for trophies, cup results and alerts",
+  "Page background a neutral light grey, with white boxes",
   "Softer page and box colours; alerts in soft yellow; table stripes back, the leader bigger on soft yellow and the bottom places on soft red; breaks in green, podium in black",
   "Branding → Look: the Live & upcoming strip light or black, and the header black or dark grey (run schema.sql — version 31)",
-  "Flatter look like WST: no outlines or shadows on boxes, menu words in red, the Live & upcoming strip light with white cards, nothing pulses",
+  "Flatter look: no outlines or shadows on boxes, menu words in red, the Live & upcoming strip light with white cards, nothing pulses",
   "League tables no longer shade the top and bottom rows; breaks shown in red; side-column rankings show the top ten with the leader pinned in a black row",
   "Rounds that are mostly byes are called Pre-qualifier; match previews count down to the start (days, hours, minutes, seconds); a Share button on every page; the Rules page back button fixed",
   "New calm look (standard): white space, black and red, one quiet menu with the current page underlined; Classic look still available under Branding → Look (run schema.sql — version 30 to switch)",

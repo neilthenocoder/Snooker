@@ -128,7 +128,7 @@ async function drawHeader() {
   mount($("#site-header"), html`
     ${DEMO_MODE ? html`<div class="demo-banner">Demo mode — sample data saved in this browser only. Add your Supabase keys in js/config.js to go live.</div>` : ""}
     <header class="site-header"><div class="site-bar"><div class="wrap">
-      <a class="logo" href="/" aria-label="${SITE.name} home"><img src="${site.logo_url || "/assets/logo.svg"}" alt="${SITE.name}"></a>
+      <a class="logo" href="/" aria-label="${SITE.name} home"><img class="logo-main" src="${site.logo_url || "/assets/logo.svg"}" alt="${SITE.name}"><img class="logo-light ${site.logo_light_url ? "" : "auto"}" src="${site.logo_light_url || site.logo_url || "/assets/logo.svg"}" alt="${SITE.name}"></a>
       <nav class="main-nav" aria-label="Main menu">
         ${MENU.map((item) => navLink(item, item.color === "live" ? html`<span>${item.label}</span>` : item.label))}
       </nav>
