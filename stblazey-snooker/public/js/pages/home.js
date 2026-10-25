@@ -16,6 +16,7 @@ import { setTitle, adminEdit } from "../core/router.js";
 import { competitionSummaries } from "./competitions.js";
 import { loadForm, formBadge, formChips } from "../core/form.js";
 import { liveSoonTag, compBoxStyle } from "../core/components.js";
+import { homeSections, isOffSeason, promoBlock, mySnookerPrompt, newsBlock, compsBlock, teamsBlock } from "../core/home-blocks.js";
 
 const ROTATE_MS = 7000;      // banner: time each article is shown
 const CAROUSEL_MS = 4500;    // live strip: time before it moves on one card
@@ -43,10 +44,28 @@ export default async function home(view, { user } = {}) {
   // This season's competitions (ones with no season set count as current).
   const comps = allComps.filter(({ c }) => !c.season_id || c.season_id === ctx.season?.id);
   view.classList.add("flush");
+  // Round 47 (Rich): the standard home page — news and promotion first, the blocks and their order chosen in Site settings.
+  // "Everything" is the earlier home page with all the tables (Site settings → Home page → Home page style).
+  const standard = site.home_style !== "full";
+  const sections = homeSections(site);
+  const on = (key) => sections.find((x) => x.key === key)?.on;
+  const promoWanted = site.promo_mode === "always" || (site.promo_mode !== "never" && isOffSeason(ctx, allComps));
+  const compData = standard && on("competitions") ? await currentCompetitions().catch(() => null) : null;
+  const block = {
+    promo: () => (promoWanted ? promoBlock(site, ctx, dates, today) : ""),
+    mysnooker: () => mySnookerPrompt(user, ctx),
+    news: () => newsBlock(news, slides.map((a) => a.id)),
+    competitions: () => (compData ? compsBlock(comps, compData) : ""),
+    spotlights: () => spotlights(ctx, site),
+    teams: () => teamsBlock(ctx),
+    cueviews: () => (site.cueviews_show !== false ? cueviewBox(ctx, news) : ""),
+    tables: () => html`${ctx.leagues.map((l) => leagueTablePanel(ctx, l, { limit: 10 }))}`,
+    shields: () => (site.shields_show !== false ? shieldsBox(ctx) : ""),
+  };
   // The home page is the same for everyone (My Snooker is a page of its own, in the menu).
 
   mount(view, html`
-    <section class="hero hero-l-${heroLayout(site)}" style="${site.hero_image_url && heroLayout(site) !== "white" ? `--hero-img:${cssUrl(site.hero_image_url)}` : ""}">
+    <section class="hero hero-l-${heroLayout(site)}" style="${site.hero_image_url && heroLayout(site) !== "white" ? `--hero-img:${cssUrl(site.hero_image_url)};` : ""}${/^#[0-9a-f]{6}$/i.test(site.hero_bg ?? "") ? `--hero-bg:${site.hero_bg}` : ""}">
       ${heroLayout(site) === "big" ? html`<div class="hero-bgs" aria-hidden="true">${slides.map((a, i) => html`<div class="hero-bg ${i ? "" : "on"}" style="${a.image_url || a.circle_image_url ? `background-image:${cssUrl(a.image_url || a.circle_image_url)}` : ""}"></div>`)}</div>` : ""}
       <div class="wrap hero-inner">
         <div class="hero-slides" data-slides>
@@ -54,7 +73,7 @@ export default async function home(view, { user } = {}) {
         </div>
         ${slides.length > 1 ? html`<div class="hero-dots">${slides.map((_, i) => html`<button class="${i ? "" : "on"}" data-dot="${i}" aria-label="Show article ${i + 1}"></button>`)}</div>` : ""}
       </div>
-      <div class="live-strip-wrap"><div class="wrap"><div class="live-strip" data-strip></div></div></div>
+      <div class="live-strip-wrap ${["red", "yellow", "grey"].includes(site.strip_line) ? `strip-line-${site.strip_line}` : ""}"><div class="wrap"><div class="live-strip" data-strip></div></div></div>
     </section>
     <div class="wrap layout" style="margin-top:30px">
       <div class="stack">
@@ -73,6 +92,7 @@ export default async function home(view, { user } = {}) {
         ${entering.length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${entering.map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
         ${keyDates(site, dates, allComps.map((x) => x.c), today)}
         </div>
+        ${standard ? html`${sections.filter((x) => x.on).map((x) => block[x.key]?.() ?? "")}` : html`
         ${ctx.leagues.map((l) => leagueTablePanel(ctx, l, { limit: 10 }))}
         ${site.shields_show !== false ? shieldsBox(ctx) : ""}
         ${spotlights(ctx, site)}
@@ -80,9 +100,10 @@ export default async function home(view, { user } = {}) {
         ${panel("Latest Competitions", html`<div class="list-rows comp-cols" style="background:var(--cream)">
           ${comps.length ? comps.map(({ c, season, progress }) => html`<a href="${urls.competition(c)}">${compBoxStyle(c) !== "trophy" ? html`<span class="cc-pic">${picture(c.image_url)}</span>` : html`<div class="ph trophy-ph">${trophy(c)}</div>`}<div><strong>${c.name}</strong><small>${c.kind}${season ? ` · ${season.name}` : ""}</small><span class="cc-prog">${progress}</span></div></a>`)
             : html`<div class="empty">No competitions yet.</div>`}
-        </div>`, { color: "yellow", href: "/competitions" })}
+        </div>`, { color: "yellow", href: "/competitions" })}`}
       </div>
-      ${sidebar(ctx, latestNews(news, site, slides.map((a) => a.id)), { count: site.latest_news_count || 1, box })}
+      ${sidebar(ctx, latestNews(news, site, slides.map((a) => a.id)), { count: site.latest_news_count || 1, box,
+        breaks: !standard || on("side_breaks"), rankings: !standard || on("side_rankings") })}
     </div>`);
 
   // Captains and vice captains: the "Manage team" box at the bottom of the screen in the days before a match.

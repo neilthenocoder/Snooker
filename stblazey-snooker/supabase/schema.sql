@@ -2687,7 +2687,18 @@ alter table settings add column if not exists header_style text not null default
 -- ── Round 46: a second logo for the light cream header (Admin → Branding → Logos) ──
 alter table settings add column if not exists logo_light_url text;
 
-create or replace function public.schema_version() returns int language sql immutable as $$ select 32 $$;
+-- ── Round 47: the standard home page (Site settings → Home page) ──
+alter table settings add column if not exists home_style text not null default 'standard';
+alter table settings add column if not exists home_sections jsonb not null default '{}'::jsonb;
+alter table settings add column if not exists promo_mode text not null default 'auto';
+alter table settings add column if not exists promo_title text;
+alter table settings add column if not exists promo_text text;
+alter table settings add column if not exists promo_button text;
+alter table settings add column if not exists promo_url text;
+alter table settings add column if not exists hero_bg text;
+alter table settings add column if not exists strip_line text not null default 'none';
+
+create or replace function public.schema_version() returns int language sql immutable as $$ select 33 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

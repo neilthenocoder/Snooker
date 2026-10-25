@@ -4366,3 +4366,97 @@ html.look-calm.head-light .nav-icon { background: #ecebdf !important; color: var
 html.look-calm.head-light .nav-icon svg { fill: var(--ink) !important; }
 html.look-calm.head-light .main-nav .nav-live-btn:not(.state-soon):not(.state-live) { background: #ecebdf !important; color: var(--ink) !important; }
 html.look-calm.head-light .main-nav .nav-live-btn.state-soon, html.look-calm.head-light .main-nav .nav-live-btn.state-live { color: #fff !important; }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 47 — the standard home page, and Rich's smaller requests
+   ═════════════════════════════════════════════════════════════ */
+/* a thinner red line under the menu */
+.site-bar { border-bottom-width: 3px !important; }
+/* the banner's background colour (Site settings → Home page) */
+html.look-calm .hero.hero-l-white { background: var(--hero-bg, var(--page-bg, var(--cream))); }
+/* a thin line along the top of the strip */
+.live-strip-wrap.strip-line-red { border-top: 3px solid var(--red); }
+.live-strip-wrap.strip-line-yellow { border-top: 3px solid var(--yellow, #ffd237); }
+.live-strip-wrap.strip-line-grey { border-top: 3px solid #b9b9b9; }
+
+/* block headings on the standard home page */
+.home-block { min-width: 0; }
+.hb-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 14px; }
+.hb-head h2 { font-size: 22px; display: flex; align-items: center; gap: 10px; }
+.hb-head h2::before { content: ""; width: 4px; height: 20px; border-radius: 2px; background: var(--red); }
+.hb-head a { font-weight: 700; font-size: 14px; color: var(--red); white-space: nowrap; }
+.hb-sub { margin: 16px 0 8px; font-size: 14px; color: var(--muted); letter-spacing: .06em; }
+
+/* latest news: six cards, three across */
+.home-news { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.home-news .hub-card { background: var(--card, #fff); }
+
+/* season promotion */
+.promo { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 0; background: #141414; color: #fff; border-radius: var(--radius, 12px); overflow: hidden; }
+.promo-main { padding: clamp(22px, 3vw, 36px); border-left: 5px solid var(--red); }
+.promo-kicker { display: inline-block; font: 700 12px var(--font-head); letter-spacing: .1em; text-transform: uppercase; color: var(--yellow, #ffd237); margin-bottom: 10px; }
+.promo h2 { font-size: clamp(24px, 3vw, 36px); line-height: 1.08; color: #fff; }
+.promo h2 span { color: var(--yellow, #ffd237); }
+.promo p { margin: 14px 0 0; color: #d6d6d6; line-height: 1.55; max-width: 52ch; }
+.promo-btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.promo .promo-go { background: var(--red); color: #fff; border-radius: 6px; }
+.promo .promo-more { background: transparent; color: #fff; border: 1px solid #555; border-radius: 6px; }
+.promo-dates { list-style: none; margin: 0; padding: 18px; display: grid; gap: 8px; align-content: center; background: #1d1d1d; }
+.promo-dates a { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 12px; align-items: center; padding: 8px; border-radius: 8px; color: #fff; }
+.promo-dates a:hover { background: #262626; color: #fff; }
+.promo-dates time { display: grid; justify-items: center; background: #fff; color: var(--ink); border-radius: 8px; padding: 6px 0 5px; }
+.promo-dates time b { font: 700 20px/1 var(--font-head); }
+.promo-dates time small { font: 700 11px var(--font-head); text-transform: uppercase; color: var(--red); }
+.promo-dates span { font-weight: 700; line-height: 1.3; }
+
+/* the My Snooker invitation */
+.ms-invite { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 18px; background: var(--card, #fff); border-radius: var(--radius, 12px); border-left: 4px solid var(--yellow, #ffd237); }
+.ms-invite-star { font-size: 24px; color: var(--yellow, #ffd237); }
+.ms-invite b { display: block; font: 700 16px var(--font-head); text-transform: uppercase; letter-spacing: .03em; }
+.ms-invite small { display: block; color: var(--muted); margin-top: 2px; }
+.ms-invite i { font-style: normal; font-weight: 700; background: var(--ink); color: #fff; padding: 8px 14px; border-radius: 6px; white-space: nowrap; }
+.ms-invite:hover { color: var(--ink); } .ms-invite:hover i { background: var(--red); }
+
+/* competitions like the news: the one being played as the big feature */
+.comp-feature { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 12px; }
+.comp-feature.solo { grid-template-columns: 1fr; }
+.cf-main { position: relative; display: grid; grid-template-rows: 1fr auto; min-height: 330px; background: #141414; color: #fff; border-radius: var(--radius, 12px); overflow: hidden; }
+.cf-main:hover { color: #fff; }
+.cf-trophy { display: grid; place-items: center; padding: 26px 0 0; background: radial-gradient(circle at 50% 60%, rgba(255,210,55,.18), transparent 60%); }
+.cf-trophy .trophy { width: 120px; height: 150px; object-fit: contain; }
+.cf-pic { width: 100%; height: 190px; object-fit: cover; }
+.cf-text { padding: 18px 22px 20px; display: grid; gap: 6px; }
+.cf-kicker { font: 700 12px var(--font-head); letter-spacing: .1em; text-transform: uppercase; color: var(--yellow, #ffd237); }
+.cf-live { color: var(--live-green); }
+.cf-text strong { font: 700 clamp(22px, 2.4vw, 30px)/1.1 var(--font-head); text-transform: uppercase; }
+.cf-text small { color: #bdbdbd; font-weight: 600; }
+.cf-match { margin: 4px 0 0; font-size: 14px; color: #e6e6e6; } .cf-match b { color: #fff; padding: 0 4px; } .cf-match em { font-style: normal; color: #bdbdbd; }
+.cf-go { margin-top: 6px; font-weight: 700; color: var(--red); }
+.cf-side { display: grid; gap: 10px; grid-auto-rows: 1fr; }
+.cf-card { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px 14px; background: var(--card, #fff); border-radius: 10px; }
+.cf-card:hover strong { color: var(--red); }
+.cf-mini .trophy { width: 44px; height: 50px; object-fit: contain; }
+.cf-card strong { display: block; font: 700 15px/1.2 var(--font-head); text-transform: uppercase; }
+.cf-card small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+
+/* our teams */
+.team-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.team-tile { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--card, #fff); border-radius: 10px; font-weight: 700; font-size: 14px; min-width: 0; }
+.team-tile span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.team-tile .badge { width: 32px; height: 32px; font-size: 10px; flex: none; }
+.team-tile:hover { color: var(--red); }
+
+@media (max-width: 900px) {
+  .promo, .comp-feature { grid-template-columns: 1fr; }
+  .home-news { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .home-news { grid-template-columns: 1fr; }
+  .home-news .hub-card { flex-direction: row; } .home-news .hub-pic { width: 38%; flex: none; aspect-ratio: auto; }
+  .ms-invite { grid-template-columns: auto minmax(0, 1fr); } .ms-invite i { grid-column: 1 / -1; text-align: center; }
+  .cf-main { min-height: 0; }
+  .team-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+html.look-calm main.flush { padding-top: 0; }
+html.look-calm .hero { margin-top: -3px; }
+@media (max-width: 560px) { .home-news .hub-card:nth-child(n+5) { display: none; } }

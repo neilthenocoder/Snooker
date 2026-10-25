@@ -380,11 +380,11 @@ export const newsMini = (a) => html`<a class="news-mini" href="${urls.article(a)
  * to show only the relevant one(s), and `top` for page-specific panels
  * (e.g. a competition's own highest breaks).
  */
-export function sidebar(ctx, news = [], { leagues = ctx.leagues, top = "", count = 1, box = null } = {}) {
+export function sidebar(ctx, news = [], { leagues = ctx.leagues, top = "", count = 1, box = null, breaks = true, rankings = true } = {}) {
   return html`<aside class="sidebar">
     ${top}
     ${sideBox(ctx, news, count, box)}
-    ${leagues.map((l) => html`${leagueBreaksBox(ctx, l)}${rankingsPanel(ctx, l, { limit: 10, scroll: true })}`)}
+    ${leagues.map((l) => html`${breaks ? leagueBreaksBox(ctx, l) : ""}${rankings ? rankingsPanel(ctx, l, { limit: 10, scroll: true }) : ""}`)}
   </aside>`;
 }
 

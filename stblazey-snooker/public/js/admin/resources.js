@@ -20,6 +20,7 @@
 //               formatted: true on a textarea = headings, bullets and tables can be typed (core/markup.js) — adds the help line and a Preview button.
 //  Section hooks: validate(row) → problem text, beforeSave(row, refs), afterSave(), onInput(form, changedElement).
 // ─────────────────────────────────────────────────────────────
+import { HOME_SECTIONS } from "../core/home-blocks.js";
 import { html } from "../core/dom.js";
 import { adminUsers } from "../core/db.js";
 import { STATUSES } from "../core/rules.js";
@@ -508,12 +509,28 @@ export const RESOURCES = {
   settings: {
     label: "Site settings", table: "settings", order: "id", single: true, afterSave: () => refreshShell(), live: liveStripPreview,
     fields: [
+      { type: "heading", tab: "Home page", label: "Home page style and sections", help: "Standard: the home page is about news and promotion — the latest news, competitions, players and teams — and the tables and rankings live in each visitor's My Snooker page. Tick the blocks to show and number them to set their order (1 = first). The Competitions / Calendar / Handicaps / Fixtures links, the feature box and the key dates always sit at the top. Everything: the earlier home page, with every league table, the breaks and the rankings." },
+      { name: "home_style", label: "Home page style", type: "select", options: ["standard", "full"], default: "standard",
+        labels: { standard: "Standard — news and promotion, the blocks below (standard)", full: "Everything — every table, the breaks and the rankings (as before)" } },
+      { type: "heading", tab: "Home page", label: "Home page sections", help: "For the Standard style. Tick a block to show it; the number beside it sets the order (1 = first, empty = the order listed here)." },
+      ...HOME_SECTIONS.flatMap(([key, label, std], i) => [
+        { name: key, in: "home_sections", label: `Show: ${label}`, type: "checkbox", default: std },
+        { name: `${key}_pos`, in: "home_sections", label: "Order on the page", type: "number", min: 1, max: 30, placeholder: String(i + 1) },
+      ]),
+      { type: "heading", tab: "Home page", label: "Season promotion", help: "A big block for the months with no snooker (about April to September): when the new season starts (the first league match on the calendar, or a key date with “season” in its name), the next key dates — AGM, presentation night, entries closing — and a button inviting new players and teams. Leave the words empty to use the standard ones." },
+      { name: "promo_mode", label: "When to show it", type: "select", options: ["auto", "always", "never"], default: "auto",
+        labels: { auto: "By itself between seasons — no league match in the last 2 weeks or the next 3 (standard)", always: "All the time", never: "Never" } },
+      { name: "promo_title", label: "Headline (empty: “The new season starts …” with the date)", type: "text", placeholder: "The new season starts Tuesday 15 September 2027" },
+      { name: "promo_text", label: "Words under the headline (empty: free to join for players and teams…)", type: "textarea" },
+      { name: "promo_button", label: "Button words", type: "text", placeholder: "Join the league" },
+      { name: "promo_url", label: "Button link (a page on this site such as /page/contact-us, or a full web address)", type: "text", placeholder: "/page/contact-us" },
       { type: "heading", tab: "Home page", label: "Home page banner", help: "The logo, colours and fonts are under Website → Branding." },
       { name: "hero_image_url", label: "Home page banner background (leave blank for the standard photo)", type: "image", folder: "branding", maxSize: 2000 },
       { name: "hero_count", label: "How many news articles rotate in the banner", type: "number", default: 4 },
       { name: "hero_layout", label: "Banner layout", type: "select", options: ["side", "white", "big", "text"], default: "side",
         labels: { side: "Headline with the article's picture beside it", white: "White: headline on the left, big picture on the right",
           big: "Big: the article's picture across the whole banner", text: "Headline only (the background photo above)" } },
+      { name: "hero_bg", label: "Banner background colour (behind the headline and picture — empty for the standard grey)", type: "color", optional: true, default: "#ececec" },
       { type: "heading", tab: "Home page", label: "Player of the week" },
       { name: "player_of_week_show", label: "Show on the home page", type: "checkbox" },
       { name: "player_of_week_id", label: "Player", type: "ref", ref: "players" },
@@ -568,6 +585,8 @@ export const RESOURCES = {
       { name: "strip_walkover_color", label: "“Walkover” label (standard: the Completed colour)", type: "color", optional: true, default: "#2f7d32" },
       { name: "strip_postponed_color", label: "“Postponed” label — shown from the match's date until a week ahead (standard: grey)", type: "color", optional: true, default: "#6b6b6b" },
       { type: "custom", render: () => stripPreview() },
+      { name: "strip_line", label: "A thin line along the top of the strip", type: "select", options: ["none", "red", "yellow", "grey"], default: "none",
+        labels: { none: "None (standard)", red: "Red (the main colour)", yellow: "Yellow", grey: "Grey" } },
       { type: "heading", tab: "Strip & results", label: "Side column: top box", help: "The box at the top of the side column on the home page and other pages with a sidebar. It has a button to the full results page (/results)." },
       { name: "side_box_mode", label: "Show", type: "select", options: ["results", "league", "cup", "news", "off"], default: "results",
         labels: { results: "Latest league and competition results together (standard)", league: "Latest league results only", cup: "Latest competition results only", news: "Latest news (as it used to be — set up in the Latest News box section above)", off: "Nothing" } },
