@@ -4486,3 +4486,10 @@ html.look-calm .hero { margin-top: -3px; }
 /* Panels clip their content for the rounded corners. "hidden" quietly stops a sticky bar from sticking;
    "clip" trims the corners just the same but lets the Save bar stay in view. */
 html.look-calm #admin-body .panel { overflow: clip; }
+
+/* Back button fix: the calm look forces every back button's background to off-white, but the hover
+   (and the buttons over dark hero pictures) still used white text, so the words vanished.
+   Normal pages: dark pill on hover. Over a hero picture: dark see-through pill, white pill on hover. */
+html.look-calm .back-link:hover { background-color: var(--ink) !important; color: #fff; }
+html.look-calm :is(.comp-hero, .art-hero, .sb, .draw-hero, .pres-hero) .back-link { background-color: rgba(0, 0, 0, .55) !important; color: #fff; }
+html.look-calm :is(.comp-hero, .art-hero, .sb, .draw-hero, .pres-hero) .back-link:hover { background-color: #fff !important; color: #111; }
