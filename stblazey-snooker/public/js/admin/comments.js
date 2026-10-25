@@ -20,7 +20,7 @@ export async function commentsPage(el) {
     mount(el, html`
       ${panel("Match night chat", html`<form class="form" data-cm-settings>
         <label class="check"><input type="checkbox" name="comments_on" ${site.comments_on !== false ? "checked" : ""}> Show the chat under each match (league and cup), so people with a login can comment</label>
-        <div class="btn-row"><button class="btn">Save</button></div></form>`, { color: "yellow" })}
+        <div class="btn-row form-actions"><button class="btn">Save</button></div></form>`, { color: "yellow" })}
       <div class="notice">Anyone logged in can comment (500 letters at most, one every 10 seconds). <b>Hide</b> takes a comment off the page for everyone except officers; <b>Remove</b> deletes it. You can do the same on the match page itself.</div>
       ${panel(`Comments (${rows.length})`, dataTable([
         { label: "When", cell: (c) => `${fmtDate(c.created_at)} ${fmtTime(c.created_at)}`, cls: "hide-sm" },

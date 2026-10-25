@@ -4460,3 +4460,29 @@ html.look-calm .hero.hero-l-white { background: var(--hero-bg, var(--page-bg, va
 html.look-calm main.flush { padding-top: 0; }
 html.look-calm .hero { margin-top: -3px; }
 @media (max-width: 560px) { .home-news .hub-card:nth-child(n+5) { display: none; } }
+
+/* Round 45: every Save button in the admin dashboard stays in view at the bottom of the screen,
+   so a long form never needs scrolling to the end to save it. (Each form keeps its own bar,
+   and the bar settles back into place when the end of its form is reached.) */
+#admin-body .form-actions,
+#admin-body .nw-buttons {
+  position: sticky; bottom: 0; z-index: 25;
+  margin: 18px 0 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, .97);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  border: 1px solid #e6e5da; border-radius: 12px;
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, .08);
+}
+/* Inside a white form card, the bar runs edge to edge along the card's bottom */
+#admin-body .form > .form-actions:last-child { margin: 18px -22px -22px; padding-left: 22px; padding-right: 22px; border-width: 1px 0 0; border-radius: 0; }
+#admin-body .nw-card > .nw-buttons:last-child { margin: 6px -22px -22px; padding-left: 22px; padding-right: 22px; border-width: 1px 0 0; border-radius: 0; }
+@media (max-width: 1000px) {
+  #admin-body .form > .form-actions:last-child { margin: 14px -14px -14px; padding-left: 14px; padding-right: 72px; }
+  #admin-body .form-actions { padding-right: 72px; }   /* room for the round "back to top" button */
+}
+@media (max-width: 639px) {
+  #admin-body .nw-card > .nw-buttons:last-child { margin: 6px -16px -16px; padding-left: 16px; padding-right: 16px; }
+}
+/* Panels clip their content for the rounded corners. "hidden" quietly stops a sticky bar from sticking;
+   "clip" trims the corners just the same but lets the Save bar stay in view. */
+html.look-calm #admin-body .panel { overflow: clip; }

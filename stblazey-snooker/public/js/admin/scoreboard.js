@@ -73,7 +73,7 @@ export async function scoreboardPage(el, { user } = {}) {
         </div>
         <datalist id="sb-players">${players.filter((p) => p.status !== "deceased").map((p) => html`<option value="${p.full_name}">`)}</datalist>
         <datalist id="sb-venues">${venues.map((v) => html`<option value="${v.name}">`)}</datalist>
-        <div class="btn-row"><button class="btn green">${editing ? "Save the changes" : "Create the match"}</button>${editing ? html`<button type="button" class="btn ghost" data-sb-cancel>Cancel</button>` : ""}</div>
+        <div class="btn-row form-actions"><button class="btn green">${editing ? "Save the changes" : "Create the match"}</button>${editing ? html`<button type="button" class="btn ghost" data-sb-cancel>Cancel</button>` : ""}</div>
       </form>`)}
       <div style="height:22px"></div>
       ${panel("Matches", dataTable([

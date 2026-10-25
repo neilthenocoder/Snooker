@@ -23,7 +23,7 @@ export async function emailsPage(el) {
         <textarea name="to" style="min-height:96px" placeholder="results.secretary@example.com">${row.results_email_to ?? ""}</textarea></label>
       <label class="check"><input type="checkbox" name="master" ${on(row.results_copy_master, true) ? "checked" : ""}> Always send a copy to the Master Admin (every result)</label>
       <label class="check"><input type="checkbox" name="captains" ${on(row.results_copy_captains, true) ? "checked" : ""}> Send the captains and vice captains of both teams a copy of their card (to the email address they log in with)</label>
-      <div class="btn-row"><button class="btn">Save</button>
+      <div class="btn-row form-actions"><button class="btn">Save</button>
         <button type="button" class="btn secondary" data-email-test="results">Send a test email</button></div>
       <p class="muted" data-email-result="results" style="margin:14px 0 0"></p>
     </form>`)}
@@ -31,7 +31,7 @@ export async function emailsPage(el) {
       <label class="check"><input type="checkbox" name="on" ${row.entries_email_on ? "checked" : ""}> Email the competition secretary when someone enters on the entry form</label>
       <label>Send to <span class="muted" style="font-weight:400">(one email address per line — the competition secretary; up to 10)</span>
         <textarea name="to" style="min-height:76px" placeholder="competition.secretary@example.com">${row.entries_email_to ?? ""}</textarea></label>
-      <div class="btn-row"><button class="btn">Save</button>
+      <div class="btn-row form-actions"><button class="btn">Save</button>
         <button type="button" class="btn secondary" data-email-test="entries">Send a test email</button></div>
       <p class="muted" data-email-result="entries" style="margin:14px 0 0"></p>
     </form>`, { color: "yellow" })}

@@ -101,12 +101,12 @@ export function openAccount(user, { message = "" } = {}) {
   const el = drawer("account", "My account", html`
     <div class="drawer-who"><span class="drawer-initials">${initials(name)}</span><div><strong>${name}</strong><small>${roleText(p)}</small></div></div>
     <nav class="drawer-links" aria-label="My account">
-      ${link(mySnookerOn(user) ? "/myteam" : "/my/snooker", ICON.star, "My Snooker", mySnookerOn(user) ? "Your own page: the teams and players you follow" : "Switched off — press to switch it on")}
-      ${isMember(user) && !isPlainPlayer(user) ? link("/my", ICON.team, "My Team", "Scorecards, fixtures and your team") : ""}
       ${isStaff(user) ? link("/admin", ICON.admin, "Admin dashboard", "Everything your role looks after") : ""}
+      ${link(mySnookerOn(user) ? "/myteam" : "/my/snooker", ICON.star, "My Snooker", mySnookerOn(user) ? "Your own page: the teams and players you follow" : "Switched off — press to switch it on")}
+      ${link("/my/snooker", ICON.cog, "My Snooker settings", "Who you follow and what you see on your page")}
+      ${isMember(user) && !isPlainPlayer(user) ? link("/my", ICON.team, "My Team", "Scorecards, fixtures and your team") : ""}
       ${canWriteNews(user) && !isStaff(user) ? link("/my/news", ICON.pen, "Write news", "Step by step: headline, story, pictures, this week's tables") : ""}
       ${p.player_id ? link(`/player/${p.player_id}#form`, ICON.form, "My form", "Your mark out of 10 from your last 6 matches") : ""}
-      ${link("/my/snooker", ICON.cog, "My Snooker settings", "Who you follow and what you see on your page")}
       ${p.player_id ? link("/my/profile", ICON.team, "My profile", "Your photo, bio and CueView") : ""}
       ${!p.player_id && isMaster(user) ? link("/admin/accounts", ICON.team, "Do you play? Link your player profile", "Logins → your own login → Player profile: then My profile and My form appear here") : ""}
       ${link("/my/details", ICON.key, "Password & details")}

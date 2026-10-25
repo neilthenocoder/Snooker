@@ -123,7 +123,7 @@ export async function draws(el, { user } = {}) {
       <div class="deadline-grid">${b.rounds.map((_, i) => html`<fieldset class="deadline-round"><legend>${roundName(i + 1, b.totalRounds, b)}</legend>
         <label>Play by <input type="date" name="round_${i + 1}" value="${c.round_deadlines?.[i + 1] ?? ""}"></label>
         <label>Contact by <input type="date" name="contact_${i + 1}" value="${c.round_contact?.[i + 1] ?? ""}"></label></fieldset>`)}</div>
-      <div class="btn-row"><button class="btn green">Save deadlines</button></div></form>`) : ""}
+      <div class="btn-row form-actions"><button class="btn green">Save deadlines</button></div></form>`) : ""}
 
     ${b.totalRounds ? panel("4. Pairings, dates & results", html`<div class="table-scroll"><table class="data results-edit">
       <thead><tr><th>Round</th><th class="right">Home / first named</th><th class="num">Score</th><th>Away / second named</th><th>Date & time</th><th>Venue</th><th></th></tr></thead>

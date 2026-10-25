@@ -66,7 +66,7 @@ export async function versionsPage(el) {
         <div class="grid-2"><label>Version<input name="version" maxlength="40" value="${n.version ?? ""}" placeholder="1.22.0"></label>
           <label>Published by<input name="published_by" maxlength="120" value="${n.published_by ?? ""}" placeholder="${me?.profile?.full_name ?? ""}"></label></div>
         <label>Changes (one per line)<textarea name="changes" rows="5" maxlength="4000">${n.changes ?? d.title ?? ""}</textarea></label>
-        <div class="btn-row"><button class="btn">Save notes</button><button type="button" class="btn ghost" data-ver-cancel>Cancel</button></div></form>`, { color: "yellow" }));
+        <div class="btn-row form-actions"><button class="btn">Save notes</button><button type="button" class="btn ghost" data-ver-cancel>Cancel</button></div></form>`, { color: "yellow" }));
       return $("[data-ver-form]", el).scrollIntoView({ behavior: "smooth" });
     }
     if (t.dataset.verCancel !== undefined) return mount($("[data-ver-form]", el), "");

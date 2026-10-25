@@ -68,7 +68,7 @@ export async function handicapSuggestPage(el) {
         { label: "Now", cell: (r) => handicapText(r.now), cls: "num" },
         { label: "Suggested", cell: (r) => html`<input class="hs-new ${r.change < 0 ? "down" : r.change > 0 ? "up" : ""}" type="number" min="-200" max="200" value="${r.next}" data-new="${r.player.id}" aria-label="New handicap for ${r.name}">`, cls: "num" },
       ], shown, { empty: "No suggestions — nobody is far enough from the middle, or there are no results for this season yet." })}
-      <div class="btn-row" style="margin-top:12px"><button type="button" class="btn green" data-apply>Apply the ticked changes</button></div>`)}`);
+      <div class="btn-row form-actions"><button type="button" class="btn green" data-apply>Apply the ticked changes</button></div>`)}`);
   };
   el.onchange = (e) => {
     if (e.target.matches("[data-season]")) { seasonId = e.target.value; return draw(); }

@@ -48,7 +48,7 @@ export async function marketPage(el, { onChange = () => {} } = {}) {
       ${panel("Marketplace settings", html`<form class="form" data-mk-settings>
         <label class="check"><input type="checkbox" name="market_on" ${site.market_on !== false ? "checked" : ""}> The marketplace is open (/marketplace)</label>
         <label>Text at the top of the marketplace<textarea name="market_intro" rows="3" placeholder="Cues, cases, tables and kit for sale between players…">${site.market_intro ?? ""}</textarea></label>
-        <div class="btn-row"><button class="btn">Save</button></div></form>`, { color: "yellow" })}`);
+        <div class="btn-row form-actions"><button class="btn">Save</button></div></form>`, { color: "yellow" })}`);
   };
   el.onclick = async (e) => {
     const t = e.target.closest("button");

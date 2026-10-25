@@ -51,7 +51,7 @@ export async function seoPage(el) {
         <label>Description ${count((site.social_description || "").length, TEXT_MAX)}<textarea name="social_description" rows="2" maxlength="300" placeholder="Fixtures, results, league tables, breaks and rankings…">${site.social_description ?? ""}</textarea></label>
         <label>Preview picture <span class="muted">(1200 × 630 is ideal)</span></label>${imageField("social_image_url", site.social_image_url)}
         ${previews({ title: siteTitle, text: siteText, image: site.social_image_url, url: `${origin}/` })}
-        <div class="btn-row"><button class="btn">Save site settings</button></div></form>`)}
+        <div class="btn-row form-actions"><button class="btn">Save site settings</button></div></form>`)}
       ${panel("Page settings", html`<form class="form" data-seo-page>
         <label>Page<select data-seo-pick>${pages.map(([p, l]) => html`<option value="${p}" ${p === current ? "selected" : ""}>${l} — ${p}</option>`)}
           ${pages.some(([p]) => p === current) ? "" : html`<option value="${current}" selected>${current}</option>`}</select></label>
@@ -63,7 +63,7 @@ export async function seoPage(el) {
         <label class="check"><input type="checkbox" name="index" ${row.noindex ? "" : "checked"}> <span><b>Search engines</b> — show this page in Google and other search engines</span></label>
         <label class="check"><input type="checkbox" name="search" ${row.hide_in_search ? "" : "checked"}> <span><b>Site search</b> — show this page in the website's own search (the magnifying glass)</span></label>
         ${previews({ title: row.title || `${nameOf(current)} | ${siteTitle}`, text: row.description || siteText, image: row.image_url || site.social_image_url, url: `${origin}${current}` })}
-        <div class="btn-row"><button class="btn">Save page settings</button>${rows.some((r) => r.path === current) ? html`<button type="button" class="btn ghost" data-seo-reset>Back to the site's settings</button>` : ""}</div></form>`, { color: "yellow" })}
+        <div class="btn-row form-actions"><button class="btn">Save page settings</button>${rows.some((r) => r.path === current) ? html`<button type="button" class="btn ghost" data-seo-reset>Back to the site's settings</button>` : ""}</div></form>`, { color: "yellow" })}
       ${rows.length ? panel("Pages with their own settings", dataTable([
         { label: "Page", cell: (r) => html`<button type="button" class="linkish" data-seo-go="${r.path}">${nameOf(r.path)}</button> <small class="muted">${r.path}</small>` },
         { label: "Title", cell: (r) => r.title || "–", cls: "hide-sm" },

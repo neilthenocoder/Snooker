@@ -28,7 +28,7 @@ export async function rolesPage(el) {
         ${ROLES.map((r) => (canHave(r, key) ? html`<td class="num ${TEAM_ROLES.includes(r) ? "perm-team" : ""}" data-label="${ROLE_LABEL[r]}"><input type="checkbox" data-role="${r}" data-area="${key}" ${state[r].has(key) ? "checked" : ""} aria-label="${ROLE_LABEL[r]}: ${name}"></td>`
           : html`<td class="num perm-team perm-na" data-label="${ROLE_LABEL[r]}"><span aria-label="Not for ${ROLE_LABEL[r]}s" title="Captains and vice captains have their team's tools by right, and no part of the dashboard">–</span></td>`))}
       </tr>`)}</tbody></table></div>`)}
-    <div class="btn-row"><button type="button" class="btn green" data-save>Save permissions</button>
+    <div class="btn-row form-actions"><button type="button" class="btn green" data-save>Save permissions</button>
       <button type="button" class="btn ghost" data-defaults>Put back the standard permissions</button></div>
     <div class="muted perm-notes">
       <p><b>Captains and Vice Captains</b> always enter scorecards, pick their team (Manage team), postpone and add match night photos for their own team only — that is not in the grid. Two things can be ticked for them. <b>Live scoring</b>: the “Ball by ball” view appears on their own team's scorecards (off unless you tick it). <b>Write news</b>: they write articles from My area → Write news, and can change only their own (off unless you tick it). A Player login can only edit that player's own profile. An officer who also plays can be given captain rights on their login (People → Logins → Team rights) — what they can do is then what their officer role is ticked for here.</p>

@@ -79,7 +79,7 @@ export async function securityPage(el) {
       <div class="grid-2"><label>Wrong passwords allowed in a row <small class="muted">(0 = no limit)</small><input type="number" name="max_attempts" min="0" max="50" value="${s.max_attempts}"></label>
         <label>Then wait (minutes)<input type="number" name="lockout_minutes" min="1" max="1440" value="${s.lockout_minutes}"></label></div>
       <p class="muted" style="margin-top:0">Counted for each email address from each place, so someone guessing can't lock the real person out from their own phone. Supabase also limits sign-ins on its side.</p>
-      <div class="btn-row"><button class="btn">Save login security</button></div>`, { color: "yellow" })}
+      <div class="btn-row form-actions"><button class="btn">Save login security</button></div>`, { color: "yellow" })}
     </form>
 
     ${panel(html`Recent logins${failed24 ? html` <span class="nav-count">${failed24} failed today</span>` : ""}`, dataTable([

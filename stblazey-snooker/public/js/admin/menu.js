@@ -51,7 +51,7 @@ export async function menuPage(el) {
           <button type="button" data-mremove="${i}" aria-label="Remove">✕</button></span></li>`)}</ol>
       <div class="btn-row"><button type="button" class="btn small green" data-add-more>+ Add a link</button></div>`, { color: "yellow" })}
     <datalist id="mn-pages">${suggestions.map(([href, label]) => html`<option value="${href}">${label}</option>`)}</datalist>
-    <div class="btn-row"><button type="button" class="btn" data-save>Save the menu</button><button type="button" class="btn ghost" data-standard>Back to the standard menu</button></div>`);
+    <div class="btn-row form-actions"><button type="button" class="btn" data-save>Save the menu</button><button type="button" class="btn ghost" data-standard>Back to the standard menu</button></div>`);
   draw();
 
   const swap = (list, i, j) => { [list[i], list[j]] = [list[j], list[i]]; draw(); };
