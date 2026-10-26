@@ -517,6 +517,9 @@ export const RESOURCES = {
         { name: key, in: "home_sections", label: `Show: ${label}`, type: "checkbox", default: std },
         { name: `${key}_pos`, in: "home_sections", label: "Order on the page", type: "number", min: 1, max: 30, placeholder: String(i + 1) },
       ]),
+      // Round 48: the guided tour (core/guide.js). Kept in home_sections, so no database change is needed for it.
+      { type: "heading", tab: "Home page", label: "Welcome guide", help: "A short guided tour that lights up each part of a logged-in person's home page (My Snooker) with a note: their team, next match, the table, Home page settings and so on. It starts by itself the first time they see their home page on a phone or computer. Anyone can start it again from their account menu or the footer (“Show me around”)." },
+      { name: "guide_on", in: "home_sections", label: "Show the welcome guide the first time someone sees their home page", type: "checkbox", default: true },
       { type: "heading", tab: "Home page", label: "Season promotion", help: "A big block for the months with no snooker (about April to September): when the new season starts (the first league match on the calendar, or a key date with “season” in its name), the next key dates — AGM, presentation night, entries closing — and a button inviting new players and teams. Leave the words empty to use the standard ones." },
       { name: "promo_mode", label: "When to show it", type: "select", options: ["auto", "always", "never"], default: "auto",
         labels: { auto: "By itself between seasons — no league match in the last 2 weeks or the next 3 (standard)", always: "All the time", never: "Never" } },

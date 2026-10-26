@@ -4,8 +4,15 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.44.0";
+export const SITE_VERSION = "1.45.0";
 export const CHANGES = [
+  "My Snooker is the home page: logged in and following a team or player, the home page shows your team — next match, the table round your team, your players in the rankings, fixtures, breaks and news — with the live strip and quick links on top; no on/off switch; Normal home page one press away",
+  "Home page settings (was My Snooker settings): who you follow, which sections you see, and ↑ ↓ to put them in your own order",
+  "Show me around: a guided tour of the home page — starts by itself the first time someone sees their home page (Site settings → Home page → Welcome guide), and from the account menu or footer any time",
+  "Team pages: the team's players in the rankings, and the team's breaks",
+  "Match times shown in each visitor's own time zone (the dashboard stays in UK time); a note for visitors outside the UK",
+  "Admin: Save buttons stay in view at the bottom of the screen; settings headings are separate boxes; search on phones; Needs you buttons one width; colour pickers spaced from their labels",
+  "Menu underline stays thin while it animates; one thin red line under the menu; the strip's top line 2px; back buttons readable on hover and over pictures; account menu order: Admin dashboard, My Snooker, Home page settings",
   "New standard home page: news and promotion first — latest news, competitions (the one being played as the big feature), players and teams, and a “make this page your own” My Snooker invitation; tables and rankings optional (Site settings → Home page; run schema.sql — version 33)",
   "Season promotion block between seasons: when the new season starts, the next key dates and a Join the league button",
   "Thinner red line under the menu; an optional thin line on top of the strip; a banner background colour",

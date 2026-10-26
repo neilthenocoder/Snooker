@@ -9,7 +9,7 @@ import { seasonContext } from "../core/context.js";
 import { settings, loadCompetitions, updateMyPlayer, addPlayerToTeam, seasonFrames, setFixtureStatus, setMyPrefs, table, teamLineups, setLineup, claimPlayer } from "../core/api.js";
 import { upcomingFor, pickedCount, dayText, untilText, fixtureLine } from "../core/squad.js";
 import { deadlineWarnings, deadlineList } from "../core/comp-deadlines.js";
-import { SECTIONS, prefsToSave } from "../core/my-snooker.js";
+import { SECTIONS, prefsToSave, sectionOrder, MAIN } from "../core/my-snooker.js";
 import { listField, wireListFields } from "../core/list-field.js";
 import { canWriteNews, isStaff, isCaptain, isMember, isPlainPlayer, mySnookerOn, myPrefs, refreshUser, canEditFixture, canPostpone, canEditCompMatch, canAddMatchPhotos, changePassword, roleText, isMaster } from "../core/auth.js";
 import { buildBracket, isEntry, roundName, compScoreText } from "../core/bracket.js";
@@ -21,7 +21,7 @@ import { setTitle, navigate, refreshShell } from "../core/router.js";
 import { mustLogin } from "./scorecard.js";
 import { newsWizardPage } from "../admin/news-wizard.js";
 
-const LABEL = { news: "Write news", snooker: "My Snooker", team: "My Team", squad: "Manage team", fixtures: "Fixtures", profile: "Profile", details: "User details", competitions: "Competitions" };
+const LABEL = { news: "Write news", snooker: "Home page settings", team: "My Team", squad: "Manage team", fixtures: "Fixtures", profile: "Profile", details: "User details", competitions: "Competitions" };
 /** The tabs this login gets. Everyone has My Snooker; what else they have is as it always was. */
 function tabsFor(user) {
   if (!isMember(user)) return ["snooker", "details"];                       // an officer with no team or player
@@ -87,12 +87,12 @@ function postponedNotices(ctx, team) {
 
 const noTeam = html`<div class="notice error">Your login isn't linked to a team yet. Please contact the league secretary.</div>`;
 
-// ── My Snooker: who they follow and what they see ──────────────
-// (It is always a page of its own — /myteam, "My Snooker" in the menu. The home page stays the same for everyone.)
+// ── Home page settings (was "My Snooker"): who they follow, what they see and in what order ──
+// Round 48: a logged-in person's home page is their My Snooker (pages/home.js); this is where they change it.
 // Every login has this tab. It changes what THEY see on the website; it gives no extra rights.
 async function snookerTab(el, { ctx, user, team, me }) {
-  const on = mySnookerOn(user);
   const prefs = myPrefs(user);
+  const order = sectionOrder(prefs);
   const categories = (await table("categories", "sort").catch(() => [])).map((c) => c.name);
   const followed = new Set(prefs.teams);
   let players = prefs.players.filter((id) => ctx.player.get(id));
@@ -104,21 +104,15 @@ async function snookerTab(el, { ctx, user, team, me }) {
 
   mount(el, html`
     <form class="form ms-set" data-snooker>
-      <div class="ms-card ${on ? "on" : "off"}">
+      <div class="ms-card on">
         <div class="ms-card-head">
-          <div><small>My Snooker</small><h2>${on ? "Your own view of the league" : "Switched off"}</h2></div>
-          ${on ? html`<a class="btn green" href="/myteam">Open my page</a>` : ""}
+          <div><small>Home page settings</small><h2>Make the home page your own</h2></div>
+          <a class="btn green" href="/">Open my home page</a>
         </div>
-        <p>Your own page of the league: follow the teams and players you care about, and tick everything you want to see on it — as much or as little as you like.
-          Open it any time from the menu (<b>★ My Snooker</b>) — and choose below whether the Home button takes you there.</p>
-        <label class="ms-switch"><input type="checkbox" name="on" ${on ? "checked" : ""}><span class="ms-slider" aria-hidden="true"></span>
-          <span><b>Use My Snooker</b><small>Switch it off and you simply get the normal website</small></span></label>
+        <p>When you are logged in, the home page shows the teams and players you follow: their matches, results, the league table,
+          rankings, breaks and news. Choose who to follow, which sections you see and the order they come in.
+          Everyone's normal home page is always one press away (<b>Normal home page</b>, at the top of yours).</p>
       </div>
-
-      <fieldset class="ms-set-box"><legend>The Home button</legend>
-        <div class="ms-place">${[["page", "Home opens My Snooker", "Your own page comes up whenever you press Home or the logo. The normal home page is one press away."],
-          ["home", "Home shows the normal home page", "My Snooker stays in the menu (the ★), for whenever you want it."]].map(([key, label, help]) => html`<label class="ms-radio"><input type="radio" name="place" value="${key}" ${(prefs.place === "home" ? "home" : "page") === key ? "checked" : ""}>
-          <span><b>${label}</b><small>${help}</small></span></label>`)}</div></fieldset>
 
       <fieldset class="ms-set-box"><legend>Teams I follow</legend>
         <p class="ms-help">The first team you tick is the one your page opens on. Follow more and you get a button for each.</p>
@@ -131,10 +125,18 @@ async function snookerTab(el, { ctx, user, team, me }) {
           <button type="button" class="btn small secondary" data-player-add-btn>Follow</button></div>
         <datalist id="ms-players">${pickable.map((p) => html`<option value="${p.full_name}">${teamName(p)}</option>`)}</datalist></fieldset>
 
-      <fieldset class="ms-set-box"><legend>What I want to see</legend>
-        <p class="ms-help">Tick the sections you want. <button type="button" class="link-btn" data-all="1">Tick them all</button> · <button type="button" class="link-btn" data-all="0">Untick them all</button></p>
-        <div class="ms-sections">${SECTIONS.map(([key, label, help]) => html`<label class="ms-tick wide"><input type="checkbox" name="section" value="${key}" ${wants(key) ? "checked" : ""}>
-          <span><b>${label}</b><small>${help}</small></span></label>`)}</div></fieldset>
+      <fieldset class="ms-set-box"><legend>What I see, and in what order</legend>
+        <p class="ms-help">Tick the sections you want, and use <b>↑</b> and <b>↓</b> to put the most important ones first.
+          <button type="button" class="link-btn" data-all="1">Tick them all</button> · <button type="button" class="link-btn" data-all="0">Untick them all</button> ·
+          <button type="button" class="link-btn" data-order-reset>Standard order</button></p>
+        <div class="ms-order-cols">
+          ${[["main", "Main column", "The wide column, on the left"], ["side", "Side column", "Beside it on a computer — under it on a phone"]].map(([col, name, help]) => html`<div>
+            <h4 class="ms-set-h">${name} <small class="muted">${help}</small></h4>
+            <ol class="ms-order" data-col="${col}">${order.filter((k) => (col === "main") === MAIN.includes(k)).map((key) => { const [, label, about] = SECTIONS.find(([k]) => k === key);
+              return html`<li class="ms-order-row" data-key="${key}"><label class="ms-tick wide"><input type="checkbox" name="section" value="${key}" ${wants(key) ? "checked" : ""}>
+                <span><b>${label}</b><small>${about}</small></span></label>
+                <span class="ms-move"><button type="button" data-move="-1" aria-label="Move ${label} up" title="Move up">↑</button><button type="button" data-move="1" aria-label="Move ${label} down" title="Move down">↓</button></span></li>`; })}</ol></div>`)}
+        </div></fieldset>
 
       ${categories.length ? html`<fieldset class="ms-set-box"><legend>News I want</legend>
         <p class="ms-help">For the “Latest news” section. Tick none and you get everything.</p>
@@ -144,7 +146,7 @@ async function snookerTab(el, { ctx, user, team, me }) {
 
       <div class="btn-row form-actions" data-ms-actions><button class="btn green">Save my choices</button><span class="ms-unsaved">Not saved yet</span>
         <button type="button" class="btn ghost" data-reset>Reset</button>
-        <span class="muted" style="font-size:13px"><b>Reset</b>: switched on, ${team ? `following ${team.name}` : "following nobody"}${me ? ` and ${me.full_name}` : ""}, every section.</span></div>
+        <span class="muted" style="font-size:13px"><b>Reset</b>: ${team ? `following ${team.name}` : "following nobody"}${me ? ` and ${me.full_name}` : ""}, every section, in the standard order.</span></div>
     </form>`);
   chips();
 
@@ -173,12 +175,20 @@ async function snookerTab(el, { ctx, user, team, me }) {
     if (t.dataset.unfollow) { players = players.filter((id) => id !== t.dataset.unfollow); chips(); }
     if (t.matches("[data-player-add-btn]")) addPlayer();
     if (t.dataset.all) for (const box of form.querySelectorAll("[name=section]")) box.checked = t.dataset.all === "1";
-    if (t.matches("[data-reset]")) save(true, { place: "page", teams: [user.profile?.team_id].filter(Boolean), players: [user.profile?.player_id].filter(Boolean), cats: [], sections: null }, "My Snooker reset");
+    // ↑ ↓: move a section one place up or down its column (round 48 — Rich: "shuffle up and down").
+    if (t.dataset.move) {
+      const row = t.closest("li"), up = t.dataset.move === "-1", other = up ? row.previousElementSibling : row.nextElementSibling;
+      if (other) { (up ? other.before(row) : other.after(row)); t.focus(); row.classList.remove("moved"); void row.offsetWidth; row.classList.add("moved"); }
+    }
+    if (t.matches("[data-order-reset]")) for (const list of form.querySelectorAll(".ms-order")) {
+      [...list.children].sort((a, b) => SECTIONS.findIndex(([k]) => k === a.dataset.key) - SECTIONS.findIndex(([k]) => k === b.dataset.key)).forEach((li) => list.append(li));
+    }
+    if (t.matches("[data-reset]")) save(true, { place: "page", teams: [user.profile?.team_id].filter(Boolean), players: [user.profile?.player_id].filter(Boolean), cats: [], sections: null }, "Home page settings reset");
   });
   // Anything changed: the Save bar at the bottom of the screen says so until it is saved.
   const dirty = () => $("[data-ms-actions]", el)?.classList.add("dirty");
   form.addEventListener("change", dirty);
-  form.addEventListener("click", (e) => { if (e.target.closest("[data-unfollow], [data-player-add-btn], [data-all]")) dirty(); });
+  form.addEventListener("click", (e) => { if (e.target.closest("[data-unfollow], [data-player-add-btn], [data-all], [data-move], [data-order-reset]")) dirty(); });
   $("[data-player-add]", el).addEventListener("suggest:pick", dirty);
   // "No news at all" unticks (or ticks back) the two news sections; ticking a news section unticks "No news".
   form.addEventListener("change", (e) => {
@@ -193,12 +203,12 @@ async function snookerTab(el, { ctx, user, team, me }) {
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const ticked = (name) => [...form.querySelectorAll(`[name=${name}]:checked`)].map((b) => b.value);
-    const sections = ticked("section");
+    // The ticked sections in the order they are on the screen (main column, then side column). Always saved as a
+    // list, so the order is kept; "form_off" remembers that Form was unticked (it came later — see wants()).
+    const sections = [...form.querySelectorAll(".ms-order [name=section]")].filter((b) => b.checked).map((b) => b.value);
     // Keep the order the teams were followed in (so the first stays first), then any newly ticked ones.
     const teams = [...prefs.teams.filter((id) => ticked("team").includes(id)), ...ticked("team").filter((id) => !prefs.teams.includes(id))];
-    const turnOn = form.elements.on.checked;
-    save(turnOn, { place: form.elements.place?.value === "home" ? "home" : "page", teams, players, cats: ticked("cat"), sections: sections.length === SECTIONS.length ? null : [...sections, ...(sections.includes("form") ? [] : ["form_off"])] },
-      turnOn ? "My Snooker saved" : "My Snooker switched off");
+    save(true, { place: "page", teams, players, cats: ticked("cat"), sections: [...sections, ...(sections.includes("form") ? [] : ["form_off"])] }, "Home page settings saved");
   });
 }
 

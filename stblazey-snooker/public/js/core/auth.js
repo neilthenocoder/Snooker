@@ -196,8 +196,9 @@ export function myPrefs(user) {
 }
 /** The first team a login follows (the one its page opens on). */
 export const mySnookerTeamId = (user) => myPrefs(user).teams[0] ?? null;
-/** Is My Snooker switched on for this login? (It is until they turn it off.) */
-export const mySnookerOn = (user) => !!user?.profile && user.profile.my_snooker !== false;
+/** Is My Snooker on for this login? Round 48 (Neil's idea, Rich agreed to try it): there is no switch any more —
+ *  every login has it, and their home page IS their My Snooker once they follow a team or a player. */
+export const mySnookerOn = (user) => !!user?.profile;
 /** Have they chosen anything to follow yet? */
 export const mySnookerSetUp = (user) => { const p = myPrefs(user); return p.teams.length + p.players.length > 0; };
 /**
@@ -211,11 +212,11 @@ export const mySnookerOwnPage = (user) => mySnookerOn(user);
  * Does Home take them to their My Snooker page? Yes, once it is switched on and set up (following a team or a player) —
  * unless they chose "Home shows the normal home page" (saved as place: "home"). Rich, round 16: it should stick.
  */
-export const mySnookerHome = (user) => mySnookerOn(user) && mySnookerSetUp(user) && myPrefs(user).place !== "home";
+export const mySnookerHome = (user) => mySnookerOn(user) && mySnookerSetUp(user);
 /** A plain player login: no dashboard, no captain's tools. My Snooker is their home. */
 export const isPlainPlayer = (user) => !!user?.profile && !isStaff(user) && !isCaptain(user);
 /** Where someone lands after logging in: officers on the dashboard, captains in My Team, players on their own My Snooker page (or the home page, if that is where they put it). */
-export const homeFor = (user) => (isStaff(user) ? "/admin" : !isPlainPlayer(user) ? "/my" : !mySnookerOn(user) ? "/my" : mySnookerOwnPage(user) ? "/myteam" : "/");
+export const homeFor = (user) => (isStaff(user) ? "/admin" : !isPlainPlayer(user) ? "/my" : "/");
 
 /** Forget the cached login details (after the profile changes). */
 export function refreshUser() { cached = undefined; return getUser(); }

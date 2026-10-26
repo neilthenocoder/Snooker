@@ -81,7 +81,7 @@ export function mySnookerPrompt(user, ctx) {
   const href = user ? "/my/snooker" : "/login";
   return html`<a class="ms-invite" href="${href}">
     <span class="ms-invite-star" aria-hidden="true">★</span>
-    <span><b>Make this page your own</b><small>${user ? "Set up My Snooker" : "Log in and use My Snooker"}: your team's table, fixtures, results, rankings, breaks and news on one page.</small></span>
+    <span><b>Make this page your own</b><small>${user ? "Choose your team" : "Log in"} and this page becomes your own: your team's table, fixtures, results, rankings, breaks and news, in the order you choose.</small></span>
     <i>${user ? "Set it up" : "Log in"} ${arrow}</i></a>`;
 }
 

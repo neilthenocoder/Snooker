@@ -29,6 +29,7 @@ import { ROUTES } from "./core/routes.js";
 import { placeAds } from "./core/ads.js";
 import { rulesHelpButton } from "./core/rules-help.js";
 import { canInstall, installApp, offerInstall } from "./core/install.js";
+import { requestGuide } from "./core/guide.js";
 
 // Every address of the website and the page that draws it: core/routes.js (the link checker uses the list too).
 
@@ -135,7 +136,7 @@ async function drawHeader() {
       <div class="nav-icons">
         ${noLogin ? "" : html`<button type="button" class="nav-icon nav-account ${user ? "in" : ""}" data-account-open aria-label="${user ? `My account: ${name}` : "Log in"}" title="${user ? `My account: ${name}` : "Log in"}">
           ${personIcon}</button>`}
-        ${user && mySnookerOn(user) ? html`<a class="nav-icon nav-mysnooker" href="/myteam" aria-label="My Snooker" title="My Snooker — your own page">${starIcon}</a>` : ""}
+        ${user && mySnookerOn(user) ? html`<a class="nav-icon nav-mysnooker" href="/myteam" aria-label="My Snooker" title="My Snooker — your home page">${starIcon}</a>` : ""}
         <button type="button" class="nav-icon nav-bell" data-bell aria-label="Notifications" title="Notifications">${bell}</button>
         <button type="button" class="nav-icon nav-search" data-search-open aria-label="Search" title="Search">${searchIcon}</button>
         <button type="button" class="nav-icon nav-toggle" data-menu-open aria-label="Menu" aria-expanded="false">${menuIcon}</button>
@@ -239,6 +240,7 @@ async function drawFooter() {
     ${socials.length ? html`<div class="socials">${socials.map(([key, name, icon]) => html`<a href="${safeHref(site[key])}" target="_blank" rel="noopener" aria-label="${name}" title="${name}">
       <svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></a>`)}</div>` : ""}
     ${links.length ? html`<nav class="foot-links" aria-label="Footer">${links.map((l) => html`<a href="${l.href}" ${l.outside ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}</nav>` : ""}
+    <p class="foot-news"><a href="/" data-guide-start>? Show me around: a quick tour of the website</a></p>
     ${site.newsletter_footer_link !== false ? html`<p class="foot-news"><a href="/newsletter" data-newsletter-open>✉ Sign up to the newsletter</a></p>` : ""}
     ${zoneNote()}
     <p class="foot-copy">© ${new Date().getFullYear()} ${owner}${creditText ? html` · ${credit ? html`<a href="${credit.href}" ${credit.outside ? html`target="_blank" rel="noopener"` : ""}>${creditText}</a>` : creditText}` : ""}</p>
@@ -339,10 +341,8 @@ async function renderRoute() {
     let [mod, user, site] = await Promise.all([import(`./pages/${page}.js`), getUser(), settings()]);
     // Two-step login still to do (Security → Two-step login): every page asks for the code first.
     if (user?.mfaNeeded) { const { twoStep } = await import("./pages/login.js"); return twoStep(view); }
-    // My Snooker sticks (Rich, round 16): for someone who has it switched on and set up, Home is their My Snooker page,
-    // every time — unless they chose "Home shows the normal home page" in their settings. The "Normal home page"
-    // button on My Snooker opens /?home=1, which shows the ordinary home page once (with a bar back to their page).
-    if (page === "home" && mySnookerHome(user) && new URLSearchParams(location.search).get("home") !== "1") return navigate("/myteam", { replace: true });
+    // Round 48: the home page itself is a logged-in person's My Snooker (pages/home.js draws it), so Home no longer
+    // jumps to a separate page. /myteam still works for old links and bookmarks: it comes back here.
     document.body.classList.toggle("maintenance", !!site.maintenance_on && !user);
     drawTicker(page === "home" && !(site.maintenance_on && !user));
     if (site.maintenance_on && !user && page !== "login") return holdingPage(view, site);
@@ -401,6 +401,8 @@ document.addEventListener("click", async (e) => {
   if (e.target.closest("[data-menu-open]")) return setMenu(true);
   if (e.target.closest("[data-menu-close]")) return setMenu(false);
   if (e.target.closest("[data-account-open]")) { setMenu(false); return openAccount(await getUser()); }
+  // "Show me around" (account menu, footer): the guided tour of the home page (core/guide.js).
+  if (e.target.closest("[data-guide-start]")) { e.preventDefault(); setMenu(false); closeDrawer(); return requestGuide(navigate); }
   if (e.target.closest("[data-scroll-down]")) return window.scrollBy({ top: window.innerHeight * 0.8, behavior: "smooth" });
   // The ‹ › buttons of a news strip move it along by most of its width.
   const nsMove = e.target.closest("[data-ns-move]");

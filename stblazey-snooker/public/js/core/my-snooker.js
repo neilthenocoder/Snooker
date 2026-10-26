@@ -30,11 +30,19 @@ export const SECTIONS = [
   ["handicaps", "Team & handicaps", "The team's players, their handicaps and ranking points"],
   ["players", "Players I follow", "Handicap, frames, ranking points and best break of each player you follow"],
   ["breaks", "Breaks", "Your team's breaks of 30 or more"],
-  ["table", "League table", "The table, with your team picked out"],
-  ["rankings", "Rankings", "The top of the league's player rankings"],
+  ["table", "League table", "The part of the table round your team, picked out — the full table a press away"],
+  ["rankings", "Rankings", "The top of the rankings, plus where your team's players and the players you follow are"],
   ["cueviews", "CueViews", "CueViews of the players you follow and your team's players"],
 ];
-const MAIN = ["next", "team", "results", "fixtures", "comps", "team_news", "news"];   // the wide column; the rest sit beside it
+export const MAIN = ["next", "team", "results", "fixtures", "comps", "team_news", "news"];   // the wide column; the rest sit beside it
+const KEYS = SECTIONS.map(([key]) => key);
+/**
+ * The sections in the order this person put them (round 48: Home page settings → ↑ ↓). Their saved list holds
+ * the sections they show, in their order; any not in it follow in the standard order (shown or not is wants()).
+ */
+export const sectionOrder = (prefs) => (prefs.sections
+  ? [...new Set([...prefs.sections.filter((k) => KEYS.includes(k)), ...KEYS])]
+  : [...KEYS]);
 
 const star = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.6 2.9 6 6.5.9-4.7 4.6 1.1 6.5-5.8-3.1-5.8 3.1 1.1-6.5L2.6 9.5l6.5-.9Z"/></svg>`;
 
@@ -43,7 +51,7 @@ const star = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.6 2
 export function followButton(kind, id, user) {
   const on = !!user?.profile && myPrefs(user)[`${kind}s`].includes(id);
   return html`<button type="button" class="follow-btn ${on ? "on" : ""}" data-follow="${kind}:${id}" aria-pressed="${on ? "true" : "false"}"
-    title="${on ? "On your My Snooker page — press to stop following" : "Add to your My Snooker page"}">${star}<span>${on ? "Following" : "Follow"}</span></button>`;
+    title="${on ? "On your home page (My Snooker) — press to stop following" : "Add to your home page (My Snooker)"}">${star}<span>${on ? "Following" : "Follow"}</span></button>`;
 }
 /** The shape set_my_prefs() expects (sections are left out when they have every section). */
 export const prefsToSave = (p) => ({ place: p.place, teams: p.teams, players: p.players, cats: p.cats, ...(p.sections ? { sections: p.sections } : {}) });
@@ -229,8 +237,11 @@ function view(user, { ctx, news, comps, site = {}, form: formData = null }, pref
         { label: "Date", cell: (b) => html`<a href="${urls.match(b.fixture)}">${fmtDate(b.fixture.starts_at)}</a>` },
         { label: "Break", cell: (b) => breakTag(b.value), cls: "num strong" },
       ], teamBreaks.slice(0, limit), { empty: "No breaks of 30 or more yet this season." }))),
-    table: () => (league ? leagueTablePanel(ctx, league, { highlightTeamId: team.id, ...(home ? { limit: 6 } : {}) }) : ""),
-    rankings: () => { if (!league) return ""; const all = ctx.rankings(league.id), top = all[0], rows = all.slice(0, home ? 5 : 10);
+    // Neil, round 48: the part of the table round your team, with your team picked out — the full table is a press away.
+    table: () => (league ? leagueTablePanel(ctx, league, { highlightTeamId: team.id, ...(home ? { limit: 6 } : { around: 3 }) }) : ""),
+    // The top of the rankings, then wherever your team's players and the players you follow are — picked out.
+    rankings: () => { if (!league) return ""; const all = ctx.rankings(league.id), top = all[0], topN = home ? 5 : 8;
+      const rows = all.filter((r, i) => i < topN || squadIds.has(r.player.id) || followIds.has(r.player.id)).slice(0, home ? 8 : 20);
       return panel(`${league.short_name || league.name} rankings`, dataTable([
         { label: "", cell: (r) => r.pos, cls: "num" },
         { label: "Player", cell: (r) => playerLink(r.player) },
@@ -242,7 +253,7 @@ function view(user, { ctx, news, comps, site = {}, form: formData = null }, pref
         ${avatar(p, "ms-news-pic round")}<span><small>${ctx.team.get(p.team_id)?.name ?? ""}</small><strong>${p.full_name}</strong></span></a>`)}</div>`) : ""),
   };
 
-  const shown = SECTIONS.map(([key]) => key).filter(wants);
+  const shown = sectionOrder(prefs).filter(wants);
   // Only the sections that have something to show (a section with nothing in it leaves no gap).
   const drawn = shown.map((k) => [k, parts[k]()]).filter(([, body]) => body);
   const col = (keys) => drawn.filter(([k]) => keys.includes(k)).map(([k, body]) => html`<section class="ms-sec ms-sec-${k}">${body}</section>`);

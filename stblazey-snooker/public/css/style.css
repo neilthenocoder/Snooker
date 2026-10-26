@@ -4559,3 +4559,53 @@ html.look-calm .site-header, .site-header { border-bottom: 0 !important; }
 /* Rich: a thin line of colour along the top of the live & upcoming strip (on as standard, red;
    Site settings → Strip & results to change the colour or turn it off) */
 .live-strip-wrap.strip-line-red, .live-strip-wrap.strip-line-yellow, .live-strip-wrap.strip-line-grey { border-top-width: 2px !important; }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 48 — My Snooker is the home page (Neil's idea, Rich to try it), and the guide
+   ═════════════════════════════════════════════════════════════ */
+/* the logged-in home page: the live strip on its own (no banner), then the person's own header and sections */
+.hero.hero-personal { background: none; border-bottom: 0; margin-top: 0; }
+.ms-home-hero { border-radius: 14px; margin-bottom: 18px; }
+.ms-homepage > .stack > .home-top { margin-bottom: 4px; }
+.ms-homepage [data-ms-home] { margin-top: 22px; }
+.ms-homepage [data-ms-home]:empty { min-height: 320px; }
+
+/* Home page settings: the sections in two columns, each with ↑ ↓ to move it, numbered in order */
+.ms-order-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 22px; }
+.ms-order-cols .ms-set-h small { font-weight: 400; letter-spacing: 0; text-transform: none; margin-left: 4px; }
+.ms-order { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; counter-reset: ms-order; }
+.ms-order-row { display: flex; align-items: stretch; gap: 8px; counter-increment: ms-order; border-radius: 10px; }
+.ms-order-row::before { content: counter(ms-order); flex: none; width: 26px; display: grid; place-items: center; font: 700 13px var(--font-head); color: var(--muted); }
+.ms-order-row .ms-tick { flex: 1; min-width: 0; }
+.ms-move { display: flex; flex-direction: column; gap: 4px; flex: none; }
+.ms-move button { flex: 1; width: 40px; min-height: 26px; border: 1px solid #dddccf; background: #fff; border-radius: 8px; font: 700 15px/1 var(--font-body); color: var(--ink); cursor: pointer; padding: 0; }
+.ms-move button:hover, .ms-move button:focus-visible { border-color: var(--ink); background: #f3f2ea; }
+.ms-order-row:first-child [data-move="-1"], .ms-order-row:last-child [data-move="1"] { opacity: .3; pointer-events: none; }
+.ms-order-row.moved { animation: msMoved .7s ease-out; }
+@keyframes msMoved { from { background: #fff1b8; } to { background: transparent; } }
+@media (max-width: 760px) { .ms-order-cols { grid-template-columns: 1fr; } }
+
+/* team pages: the team's rankings and breaks, side by side */
+.team-extra { gap: 18px; align-items: start; margin: 22px 0; }
+
+/* the guide: the page dimmed, one part lit up, and a note beside it */
+.guide-shade { position: fixed; inset: 0; z-index: 1000; background: rgba(12, 12, 12, .62); }
+.guide-spot { position: fixed; z-index: 1001; border-radius: 10px; pointer-events: none; box-shadow: 0 0 0 3px var(--red), 0 0 24px rgba(232, 0, 61, .35);
+  transition: left .3s ease, top .3s ease, width .3s ease, height .3s ease; }
+.guide-spot.none { display: none; }
+.guide-tip { position: fixed; z-index: 1002; width: min(370px, calc(100vw - 24px)); background: #fff; color: var(--ink); border-radius: 16px;
+  padding: 18px 18px 14px; box-shadow: 0 18px 50px rgba(0, 0, 0, .35); transition: left .3s ease, top .3s ease; }
+.guide-tip.middle { width: min(440px, calc(100vw - 24px)); padding: 24px 24px 16px; }
+.guide-count { font: 700 11px var(--font-head); letter-spacing: .08em; text-transform: uppercase; color: var(--red); }
+.guide-title { margin: 6px 0 6px; font-size: 19px; line-height: 1.2; text-transform: none; }
+.guide-text { margin: 0; font-size: 14.5px; line-height: 1.55; color: #3a3a3a; }
+.guide-dots { display: flex; flex-wrap: wrap; gap: 5px; margin: 14px 0 12px; }
+.guide-dots i { width: 7px; height: 7px; border-radius: 50%; background: #dcdbd2; }
+.guide-dots i.done { background: #9b9a90; }
+.guide-dots i.on { background: var(--red); width: 18px; border-radius: 4px; }
+.guide-btns { display: flex; align-items: center; gap: 8px; }
+.guide-btns > span { flex: 1; }
+.guide-skip { border: 0; background: none; padding: 6px 2px; font: 600 13px var(--font-body); color: var(--muted); cursor: pointer; text-decoration: underline; }
+.guide-skip:hover { color: var(--ink); }
+html.guide-on .squad-box, html.guide-on .a2hs-bar, html.guide-on .live-pops, html.guide-on .to-top { visibility: hidden; }
+@media (prefers-reduced-motion: reduce) { .guide-spot, .guide-tip { transition: none; } }

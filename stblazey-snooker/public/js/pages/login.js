@@ -22,7 +22,7 @@ export default async function login(view, { user }) {
       <label>Email<input name="email" type="email" autocomplete="username" required></label>
       <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
       <button class="btn" type="submit">Log in</button>
-      <p class="muted" style="font-size:13px;margin-bottom:0">Accounts are created by the league secretary. Players: your login opens <b>My Snooker</b>, your own page for your team. Forgotten your password? Ask them to reset it.</p>
+      <p class="muted" style="font-size:13px;margin-bottom:0">Accounts are created by the league secretary. Players: the home page becomes <b>My Snooker</b>, your own page for your team. Forgotten your password? Ask them to reset it.</p>
     </form>
   </div>`);
 

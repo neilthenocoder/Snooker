@@ -255,8 +255,16 @@ export function leagueMarks(ctx, league, { highlightTeamId, shown } = {}) {
   };
 }
 
-export function leagueTablePanel(ctx, league, { limit = Infinity, highlightTeamId } = {}) {
-  const rows = ctx.standings(league.id).slice(0, limit);
+export function leagueTablePanel(ctx, league, { limit = Infinity, highlightTeamId, around = 0 } = {}) {
+  // around (round 48, the personal home page): just the part of the table round the highlighted team —
+  // `around` places above and below it (more below when it is near the top) — with "View full table" underneath.
+  const all = ctx.standings(league.id);
+  let rows = all.slice(0, limit);
+  const at = around && highlightTeamId ? all.findIndex((r) => r.team.id === highlightTeamId) : -1;
+  if (at >= 0 && all.length > around * 2 + 1) {
+    const size = around * 2 + 1, start = Math.max(0, Math.min(at - around, all.length - size));
+    rows = all.slice(start, start + size); limit = size;
+  }
   const m = leagueMarks(ctx, league, { highlightTeamId, shown: rows });
   const table = dataTable([
     { label: "P", cell: m.pos, cls: "num" },

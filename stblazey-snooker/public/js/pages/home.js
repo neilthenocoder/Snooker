@@ -2,7 +2,9 @@ import { html, mount, $, $$, fmtDate, fmtTime, cssUrl, ukDay, todayUK, safeHref 
 import { TICKER_PX } from "../core/branding.js";
 import { sideName, matchLabel, onTable } from "../core/live-score.js";
 import { mountSquadBox } from "../core/squad.js";
-import { mySnookerOn, mySnookerSetUp, mySnookerTeamId, mySnookerHome } from "../core/auth.js";
+import { mySnookerOn, mySnookerSetUp, mySnookerTeamId, mySnookerHome, myPrefs } from "../core/auth.js";
+import { mountMySnooker, mySnookerStar } from "../core/my-snooker.js";
+import { maybeStartGuide } from "../core/guide.js";
 import { openForEntry } from "./enter.js";
 import { seasonContext, sideBoxData } from "../core/context.js";
 import { articles, settings, upcomingMatches, loadCompetitions, subscribe, table, liveMatches, currentCompetitions } from "../core/api.js";
@@ -44,6 +46,10 @@ export default async function home(view, { user } = {}) {
   // This season's competitions (ones with no season set count as current).
   const comps = allComps.filter(({ c }) => !c.season_id || c.season_id === ctx.season?.id);
   view.classList.add("flush");
+  // Round 48 (Neil's idea, Rich agreed to try it): logged in and following a team or a player → the home page IS
+  // their My Snooker: the live strip and the quick links stay on top, then their own sections in their own order.
+  // "Normal home page" (/?home=1) shows everyone's home page once.
+  const personal = !!user && mySnookerHome(user) && new URLSearchParams(location.search).get("home") !== "1";
   // Round 47 (Rich): the standard home page — news and promotion first, the blocks and their order chosen in Site settings.
   // "Everything" is the earlier home page with all the tables (Site settings → Home page → Home page style).
   const standard = site.home_style !== "full";
@@ -65,6 +71,7 @@ export default async function home(view, { user } = {}) {
   // The home page is the same for everyone (My Snooker is a page of its own, in the menu).
 
   mount(view, html`
+    ${personal ? html`<section class="hero hero-personal"><div class="live-strip-wrap ${["red", "yellow", "grey"].includes(site.strip_line ?? "red") ? `strip-line-${site.strip_line ?? "red"}` : ""}"><div class="wrap"><div class="live-strip" data-strip></div></div></div></section>` : html`
     <section class="hero hero-l-${heroLayout(site)}" style="${site.hero_image_url && heroLayout(site) !== "white" ? `--hero-img:${cssUrl(site.hero_image_url)};` : ""}${/^#[0-9a-f]{6}$/i.test(site.hero_bg ?? "") ? `--hero-bg:${site.hero_bg}` : ""}">
       ${heroLayout(site) === "big" ? html`<div class="hero-bgs" aria-hidden="true">${slides.map((a, i) => html`<div class="hero-bg ${i ? "" : "on"}" style="${a.image_url || a.circle_image_url ? `background-image:${cssUrl(a.image_url || a.circle_image_url)}` : ""}"></div>`)}</div>` : ""}
       <div class="wrap hero-inner">
@@ -75,11 +82,13 @@ export default async function home(view, { user } = {}) {
       </div>
       <div class="live-strip-wrap ${["red", "yellow", "grey"].includes(site.strip_line ?? "red") ? `strip-line-${site.strip_line ?? "red"}` : ""}"><div class="wrap"><div class="live-strip" data-strip></div></div></div>
     </section>
-    <div class="wrap layout" style="margin-top:30px">
+    `}
+    <div class="${personal ? "wrap ms-homepage" : "wrap layout"}" style="margin-top:${personal ? 24 : 30}px">
       <div class="stack">
-        ${user && mySnookerOn(user) ? html`<a class="ms-bar" href="${mySnookerSetUp(user) ? "/myteam" : "/my/snooker"}"><b>★ My Snooker</b>
-          <span>${mySnookerSetUp(user) ? html`${ctx.team.get(mySnookerTeamId(user))?.name ?? "The players you follow"}: matches, results, breaks and news${mySnookerHome(user) ? " — the Home button takes you there" : ""}` : "Follow your team and players, and get your own page"}</span>
-          <i>${mySnookerSetUp(user) ? "Back to my page →" : "Set it up →"}</i></a>` : ""}
+        ${personal ? personalHero(user, ctx) : ""}
+        ${user && mySnookerOn(user) && !personal ? html`<a class="ms-bar" href="${mySnookerSetUp(user) ? "/myteam" : "/my/snooker"}"><b>★ My Snooker</b>
+          <span>${mySnookerSetUp(user) ? html`This is everyone's home page. Yours has ${ctx.team.get(mySnookerTeamId(user))?.name ?? "the players you follow"}: matches, results, the table and news` : "Follow your team and players, and the home page becomes your own"}</span>
+          <i>${mySnookerSetUp(user) ? "Back to my home page →" : "Set it up →"}</i></a>` : ""}
         <div class="home-top">
         <nav class="quick-links" aria-label="Quick links">
           <a style="background:var(--yellow);color:#1b0e06" href="/competitions">${quickIcon.competitions}<span>Competitions</span></a>
@@ -92,7 +101,7 @@ export default async function home(view, { user } = {}) {
         ${entering.length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${entering.map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
         ${keyDates(site, dates, allComps.map((x) => x.c), today)}
         </div>
-        ${standard ? html`${sections.filter((x) => x.on).map((x) => block[x.key]?.() ?? "")}` : html`
+        ${personal ? html`<div data-ms-home></div>` : standard ? html`${sections.filter((x) => x.on).map((x) => block[x.key]?.() ?? "")}` : html`
         ${ctx.leagues.map((l) => leagueTablePanel(ctx, l, { limit: 10 }))}
         ${site.shields_show !== false ? shieldsBox(ctx) : ""}
         ${spotlights(ctx, site)}
@@ -102,10 +111,14 @@ export default async function home(view, { user } = {}) {
             : html`<div class="empty">No competitions yet.</div>`}
         </div>`, { color: "yellow", href: "/competitions" })}`}
       </div>
-      ${sidebar(ctx, latestNews(news, site, slides.map((a) => a.id)), { count: site.latest_news_count || 1, box,
+      ${personal ? "" : sidebar(ctx, latestNews(news, site, slides.map((a) => a.id)), { count: site.latest_news_count || 1, box,
         breaks: !standard || on("side_breaks"), rankings: !standard || on("side_rankings") })}
     </div>`);
 
+  // Their own sections (core/my-snooker.js — the same view as before, now on the home page).
+  const stopMine = personal ? await mountMySnooker($("[data-ms-home]", view), user).catch((err) => { console.warn("My Snooker:", err); return null; }) : null;
+  // The guide: the first time someone sees their own home page, or straight after "Show me around".
+  maybeStartGuide({ personal, site });
   // Captains and vice captains: the "Manage team" box at the bottom of the screen in the days before a match.
   const stopSquad = await mountSquadBox(user, ctx, site).catch(() => () => {});
 
@@ -119,8 +132,8 @@ export default async function home(view, { user } = {}) {
     dots.forEach((d, j) => d.classList.toggle("on", j === current));
   };
   dots.forEach((d) => d.addEventListener("click", () => show(Number(d.dataset.dot))));
-  $(".hero-inner", view).addEventListener("mouseenter", () => { paused = true; });
-  $(".hero-inner", view).addEventListener("mouseleave", () => { paused = false; });
+  $(".hero-inner", view)?.addEventListener("mouseenter", () => { paused = true; });
+  $(".hero-inner", view)?.addEventListener("mouseleave", () => { paused = false; });
   const timer = slideEls.length > 1 ? setInterval(() => { if (!paused && !document.hidden) show(current + 1); }, ROTATE_MS) : null;
 
   // Live & upcoming matches strip, updated live.
@@ -187,7 +200,30 @@ export default async function home(view, { user } = {}) {
   strip.addEventListener("click", (e) => { const b = e.target.closest("[data-strip-move]"); if (b) move(Number(b.dataset.stripMove)); });
   const carousel = setInterval(() => { if (!stripPaused && !document.hidden) move(1); }, CAROUSEL_MS);
 
-  return () => { clearInterval(timer); clearInterval(carousel); clearInterval(featureTimer); unsubscribe(); stopSquad(); window.removeEventListener("resize", kdFit); };
+  return () => { clearInterval(timer); clearInterval(carousel); clearInterval(featureTimer); unsubscribe(); stopSquad(); stopMine?.(); window.removeEventListener("resize", kdFit); };
+}
+
+/** The top of a logged-in person's home page: their team, and the two buttons to change it or see everyone's page. */
+function personalHero(user, ctx) {
+  const prefs = myPrefs(user);
+  const teams = prefs.teams.map((id) => ctx.team.get(id)).filter(Boolean);
+  const players = prefs.players.map((id) => ctx.player.get(id)).filter(Boolean);
+  const team = teams[0];
+  const league = team && ctx.league.get(team.league_id), venue = team && ctx.venue.get(team.venue_id);
+  const first = (user.profile?.full_name || "").trim().split(/\s+/)[0];
+  return html`<header class="ms-hero ms-home-hero" data-guide="hero">
+    ${team ? html`<span class="ms-badge">${badge(team)}</span>` : ""}
+    <div class="ms-hero-text">
+      <small class="ms-kicker">${mySnookerStar} My Snooker${first ? html` · ${first}` : ""}</small>
+      <h1>${teams.length === 1 ? team.name : first ? `Hello, ${first}` : "My Snooker"}</h1>
+      <p>${teams.length === 1 ? html`${league?.name ?? ""}${venue ? html` · Home: <a href="${urls.venue(venue)}">${venue.name}</a>` : ""}`
+        : `Following ${[teams.length ? `${teams.length} team${teams.length > 1 ? "s" : ""}` : "", players.length ? `${players.length} player${players.length > 1 ? "s" : ""}` : ""].filter(Boolean).join(" and ")}`}</p>
+    </div>
+    <div class="ms-hero-actions">
+      <a class="btn small" href="/my/snooker" data-guide="settings">Home page settings</a>
+      <a class="btn small ghost" href="/?home=1" data-guide="normal">Normal home page</a>
+    </div>
+  </header>`;
 }
 
 /** The banner's layout (Admin → Site settings → Home page banner — Rich, round 23): picture beside, one big picture, or headline only. */
