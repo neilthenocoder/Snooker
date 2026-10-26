@@ -1,5 +1,5 @@
 // Public page for one cup match: score, frames, breaks — updates live.
-import { html, mount, fmtDate, fmtTime, fmtLongDate } from "../core/dom.js";
+import { html, mount, fmtDate, fmtTime, fmtTimeBoth, fmtLongDate } from "../core/dom.js";
 import { countdown, startCountdowns } from "../core/countdown.js";
 import { loadCompMatch, loadCompetitions, subscribe, table } from "../core/api.js";
 import { buildBracket, roundName, winnerSide, walkoverSide, placeLabel } from "../core/bracket.js";
@@ -53,7 +53,7 @@ export default async function cupMatch(view, { params, user }) {
     mount(view, html`<div class="wrap stack">
       <div class="cm-row">${breadcrumb([["Home", "/"], ["Competitions", "/competitions"], [c?.name ?? "Competition", c ? urls.competition(c) : null], [`${nameA} vs ${nameB}`]])}<span data-chat-slot></span></div>
       <div class="match-hero">
-        <div class="mh-band">${c?.name} · ${roundName(match.round, info.bracket.totalRounds, info.bracket)}${match.starts_at ? ` · ${fmtDate(match.starts_at)} ${fmtTime(match.starts_at)}` : ""}</div>
+        <div class="mh-band">${c?.name} · ${roundName(match.round, info.bracket.totalRounds, info.bracket)}${match.starts_at ? ` · ${fmtDate(match.starts_at)} ${fmtTimeBoth(match.starts_at)}` : ""}</div>
         <div class="mh-body">
           <div class="mh-side ${won("a") ? "won" : won("b") ? "lost" : ""}">${teamOf(info.a) ? badge(teamOf(info.a)) : ""}<span>${nameA}</span></div>
           <div class="mh-score">${wo ? html`<b>W/O</b>` : html`<b>${match.score_a ?? "–"}</b><i>:</i><b>${match.score_b ?? "–"}</b>`}

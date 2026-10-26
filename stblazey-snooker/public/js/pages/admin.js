@@ -183,6 +183,7 @@ export default async function admin(view, { params, user, query }) {
       any ||= shown > 0;
     }
     $(".admin-none", view).hidden = any || q.length >= 2;
+    menu.classList.toggle("finding", !!q);   // on phones the results only show while searching
     findRecords(q);
   });
   // Round 40: the search also finds players, teams, venues, leagues, competitions, news and this season's fixtures,

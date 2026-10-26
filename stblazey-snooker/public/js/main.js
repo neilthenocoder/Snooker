@@ -8,7 +8,7 @@ import { html, mount, $, ukDay, toast, safeHref } from "./core/dom.js";
 import { applyBranding, loaderOn, loaderOff, layoutFor, TICKER_PX } from "./core/branding.js";
 import { getUser, signOut, mySnookerOn, mySnookerHome, canOpenSection } from "./core/auth.js";
 import { seasonContext, sideBoxData } from "./core/context.js";
-import { sidebar, crumbs } from "./core/components.js";
+import { sidebar, crumbs, zoneNote } from "./core/components.js";
 import { openAccount, openNotifications, closeDrawer } from "./core/drawers.js";
 import { toggleFollow } from "./core/my-snooker.js";
 import { openSearch } from "./core/search.js";
@@ -240,6 +240,7 @@ async function drawFooter() {
       <svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></a>`)}</div>` : ""}
     ${links.length ? html`<nav class="foot-links" aria-label="Footer">${links.map((l) => html`<a href="${l.href}" ${l.outside ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}</nav>` : ""}
     ${site.newsletter_footer_link !== false ? html`<p class="foot-news"><a href="/newsletter" data-newsletter-open>✉ Sign up to the newsletter</a></p>` : ""}
+    ${zoneNote()}
     <p class="foot-copy">© ${new Date().getFullYear()} ${owner}${creditText ? html` · ${credit ? html`<a href="${credit.href}" ${credit.outside ? html`target="_blank" rel="noopener"` : ""}>${creditText}</a>` : creditText}` : ""}</p>
   </div></footer>`);
 }

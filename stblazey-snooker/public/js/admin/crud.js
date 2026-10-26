@@ -265,21 +265,32 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
     const title = res.single ? res.label : editing.id ? `Edit ${res.label}` : `Add to ${res.label}`;
     // Round 40: a long form (Site settings) is split into tabs — each heading says which tab it goes on.
     const fieldsHtml = formFields(res, editing, refs, rows);
+    // Round 46 (Neil): each heading starts its own box — the heading on top, its settings underneath —
+    // so a long form reads as separate settings, one at a time. Fields before the first heading get a box too.
+    const boxes = (items) => {
+      const out = [];
+      for (const { f, h } of items) {
+        if (f.type === "heading") out.push({ head: h, fields: [] });
+        else { if (!out.length) out.push({ head: "", fields: [] }); out.at(-1).fields.push(h); }
+      }
+      return out.map((b) => html`<section class="form-sec ${b.head ? "" : "no-head"}">${b.head}${b.fields.length ? html`<div class="grid-2">${b.fields}</div>` : ""}</section>`);
+    };
+    const pairs = res.fields.map((f, i) => ({ f, h: fieldsHtml[i] }));
     let body;
     if (res.fields.some((f) => f.tab)) {
       // Sections with the same tab go together, in the order the tabs first appear.
       const groups = [];
       let current = null;
-      res.fields.forEach((f, i) => {
-        if (f.type === "heading" && f.tab) current = groups.find((g) => g.tab === f.tab) ?? groups[groups.push({ tab: f.tab, items: [] }) - 1];
+      pairs.forEach((p) => {
+        if (p.f.type === "heading" && p.f.tab) current = groups.find((g) => g.tab === p.f.tab) ?? groups[groups.push({ tab: p.f.tab, items: [] }) - 1];
         current ??= groups[groups.push({ tab: "General", items: [] }) - 1];
-        current.items.push(fieldsHtml[i]);
+        current.items.push(p);
       });
       let open = 0;
       try { open = Math.max(0, groups.findIndex((g) => g.tab === localStorage.getItem(`sbdsl-tab-${res.table}`))); } catch { /* first tab */ }
       body = html`<div class="form-tabs" role="tablist">${groups.map((g, i) => html`<button type="button" role="tab" class="${i === open ? "on" : ""}" data-form-tab="${i}" aria-selected="${i === open}">${g.tab}</button>`)}</div>
-        ${groups.map((g, i) => html`<div class="grid-2 form-pane" data-form-pane="${i}" ${i === open ? "" : "hidden"}>${g.items}</div>`)}`;
-    } else body = html`<div class="grid-2">${fieldsHtml}</div>`;
+        ${groups.map((g, i) => html`<div class="form-pane" data-form-pane="${i}" ${i === open ? "" : "hidden"}>${boxes(g.items)}</div>`)}`;
+    } else body = res.fields.some((f) => f.type === "heading") ? html`<div class="form-pane">${boxes(pairs)}</div>` : html`<div class="grid-2">${fieldsHtml}</div>`;
     mount(box, panel(title, html`<form class="form" data-crud-form>
       ${body}
       <div class="btn-row form-actions"><button class="btn">Save</button>${res.single ? "" : html`<button type="button" class="btn ghost" data-cancel>Cancel</button>`}</div>

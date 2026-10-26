@@ -36,16 +36,42 @@ export const safeHref = (u) => { const v = String(u ?? "").trim(); return /^(htt
 export const paragraphs = (text = "") =>
   html`${String(text).split(/\n\s*\n/).filter(Boolean).map((p) => html`<p>${raw(esc(p).replace(/\n/g, "<br>"))}</p>`)}`;
 
-// ── dates (always shown in UK time) ───────────────────────────
-const fmt = (opts) => new Intl.DateTimeFormat("en-GB", { timeZone: SITE.timeZone, ...opts });
-const dateF = fmt({ day: "2-digit", month: "2-digit", year: "numeric" });
-const timeF = fmt({ hour: "2-digit", minute: "2-digit", hour12: false });
-const dayF = fmt({ year: "numeric", month: "2-digit", day: "2-digit" });
-export const fmtDate = (iso) => (iso ? dateF.format(new Date(iso)) : "");
-const longF = fmt({ day: "numeric", month: "long", year: "numeric" });
+// ── dates and times ───────────────────────────────────────────
+// Match times are saved as exact moments, entered in UK time (GMT in winter, BST in summer).
+// Visitors see each moment in THEIR OWN time zone — the browser knows it, and it knows when
+// every country's clocks go forward and back — so 19:30 in St Blazey shows as 14:30 in New York.
+// The admin dashboard keeps UK time, because that is what officers type into its forms.
+// Dates with no time (a deadline, a season start: "2026-10-20") are a day on the calendar,
+// not a moment, so they are shown exactly as written wherever the visitor is.
+const fmtCache = new Map();
+const fmtIn = (zone, opts) => {
+  const key = zone + JSON.stringify(opts);
+  if (!fmtCache.has(key)) fmtCache.set(key, new Intl.DateTimeFormat("en-GB", { timeZone: zone, ...opts }));
+  return fmtCache.get(key);
+};
+let visitorZone = SITE.timeZone;
+try { visitorZone = Intl.DateTimeFormat().resolvedOptions().timeZone || SITE.timeZone; } catch { /* old browser: UK time */ }
+const inDashboard = () => typeof location !== "undefined" && /^\/admin(\/|$)/.test(location.pathname);
+/** The time zone times are shown in on this page. */
+export const shownZone = () => (inDashboard() ? SITE.timeZone : visitorZone);
+const dateOnly = (v) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+const show = (iso, opts) => (iso ? fmtIn(dateOnly(iso) ? "UTC" : shownZone(), opts).format(new Date(iso)) : "");
+const DATE = { day: "2-digit", month: "2-digit", year: "numeric" };
+const TIME = { hour: "2-digit", minute: "2-digit", hour12: false };
+const LONG = { day: "numeric", month: "long", year: "numeric" };
+export const fmtDate = (iso) => show(iso, DATE);
 /** "12 November 2024" — for dates inside sentences (the match preview summary). */
-export const fmtLongDate = (iso) => (iso ? longF.format(new Date(iso)) : "");
-export const fmtTime = (iso) => (iso ? timeF.format(new Date(iso)) : "");
+export const fmtLongDate = (iso) => show(iso, LONG);
+export const fmtTime = (iso) => show(iso, TIME);
+/** "19:30" in UK time, whoever is looking (forms and anything officers type in). */
+export const fmtTimeUK = (iso) => (iso ? fmtIn(SITE.timeZone, TIME).format(new Date(iso)) : "");
+/** True when this visitor's clock differs from UK time at that moment (or now). */
+export const notUKTime = (iso = new Date().toISOString()) => fmtTime(iso) !== fmtTimeUK(iso);
+/** "14:30 your time (19:30 UK)" for visitors abroad; just "19:30" in the UK. */
+export const fmtTimeBoth = (iso) => (iso && notUKTime(iso) ? `${fmtTime(iso)} your time (${fmtTimeUK(iso)} UK)` : fmtTime(iso));
+/** "New York" from "America/New_York" — for the note that times are in the visitor's own time. */
+export const zoneName = () => String(shownZone().split("/").pop() || "").replace(/_/g, " ");
+const dayF = fmtIn(SITE.timeZone, { year: "numeric", month: "2-digit", day: "2-digit" });
 /** "YYYY-MM-DD" of an ISO timestamp in UK time. */
 export const ukDay = (iso) => dayF.format(new Date(iso)).split("/").reverse().join("-");
 export const todayUK = () => ukDay(new Date().toISOString());
@@ -53,7 +79,7 @@ export const todayUK = () => ukDay(new Date().toISOString());
 /** Value for <input type="datetime-local"> in UK time, and back again. */
 export function toLocalInput(iso) {
   if (!iso) return "";
-  return `${ukDay(iso)}T${fmtTime(iso)}`;
+  return `${ukDay(iso)}T${fmtTimeUK(iso)}`;
 }
 export function fromLocalInput(value) {
   if (!value) return null;

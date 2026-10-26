@@ -4493,3 +4493,69 @@ html.look-calm #admin-body .panel { overflow: clip; }
 html.look-calm .back-link:hover { background-color: var(--ink) !important; color: #fff; }
 html.look-calm :is(.comp-hero, .art-hero, .sb, .draw-hero, .pres-hero) .back-link { background-color: rgba(0, 0, 0, .55) !important; color: #fff; }
 html.look-calm :is(.comp-hero, .art-hero, .sb, .draw-hero, .pres-hero) .back-link:hover { background-color: #fff !important; color: #111; }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 46 — Neil's feedback 62
+   ═════════════════════════════════════════════════════════════ */
+/* Menu underline: it grew with a "transform", which browsers draw blurred while it moves, so it looked
+   thick during the hover and thin once it stopped. Now the bar's painted width grows instead: crisp and
+   the same thin line from start to finish. */
+html.look-calm .main-nav a::after {
+  transform: none !important; transition: background-size .18s ease;
+  background: linear-gradient(var(--red), var(--red)) center / 0 100% no-repeat;
+}
+html.look-calm .main-nav a:hover::after, html.look-calm .main-nav a:focus-visible::after,
+html.look-calm[data-section="home"] .main-nav .nav-home::after, html.look-calm[data-section="competitions"] .main-nav .nav-comps::after,
+html.look-calm[data-section="fixtures"] .main-nav .nav-fixtures::after, html.look-calm[data-section="league"] .main-nav .nav-league::after,
+html.look-calm[data-section="news"] .main-nav .nav-news::after { background-size: 100% 100%; }
+
+/* Times in the visitor's own time zone: the small note under fixture lists, the calendar and in the footer */
+.zone-note { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+.site-footer .zone-note { color: inherit; opacity: .7; margin: 0 0 8px; }
+
+/* Admin search on phones and tablets: the menu down the side is replaced by the "Admin menu" list,
+   but the search box stays. Type in it and the matching pages, players, teams and matches drop down below. */
+@media (max-width: 1000px) {
+  .admin > .admin-nav { display: block; position: static; max-height: none; margin: 0 0 4px; padding: 0; background: none; }
+  .admin > .admin-nav > :not(.admin-find) { display: none; }
+  .admin > .admin-nav.finding > .nav-group:not(.nav-hide),
+  .admin > .admin-nav.finding > .admin-records:not([hidden]),
+  .admin > .admin-nav.finding > .admin-none:not([hidden]) { display: block; }
+  .admin > .admin-nav.finding { background: #fff; border-radius: 14px; padding: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, .1); }
+  .admin > .admin-nav .admin-find input { font-size: 16px; }   /* 16px stops iPhones zooming in on the box */
+}
+
+/* Overview → Needs you: the buttons on the right are all one width, so they line up */
+.ny-group summary .btn { width: 112px; justify-content: center; text-align: center; }
+
+/* Colour pickers sit on their own line under the label, with a little room, instead of touching the words */
+.form label > input[type=color] { display: block; margin-top: 8px; }
+.color-field { margin-top: 8px; }
+
+/* Admin settings forms: every heading is its own box — a title strip on top, its settings underneath —
+   with space between boxes, so each setting can be dealt with on its own. */
+#admin-body .form-sec { background: #fff; border: 1px solid #e6e5da; border-radius: 14px; padding: 0 20px 6px; margin: 0 0 18px; box-shadow: 0 1px 2px rgba(0, 0, 0, .04); }
+#admin-body .form-sec:last-child { margin-bottom: 0; }
+#admin-body .form-sec > .form-heading {
+  position: relative; margin: 0 -20px 18px; padding: 15px 20px 14px 34px; border-top: 0;
+  border-bottom: 1px solid #ecebe3; background: #f7f6f0; border-radius: 13px 13px 0 0; font-size: 15px; letter-spacing: .02em;
+}
+#admin-body .form-sec > .form-heading::before { content: ""; position: absolute; left: 20px; top: 16px; width: 4px; height: 17px; border-radius: 2px; background: var(--red); }
+#admin-body .form-sec > .form-heading small { margin-top: 5px; font-size: 13px; line-height: 1.45; letter-spacing: 0; }
+#admin-body .form-sec.no-head { padding-top: 18px; }
+#admin-body .form-sec > .grid-2 { padding-bottom: 4px; }
+/* the tabs above the boxes get a little room */
+#admin-body .form-tabs + .form-pane, #admin-body .form-tabs ~ .form-pane { margin-top: 18px; }
+@media (max-width: 1000px) {
+  #admin-body .form-sec { padding: 0 14px 4px; }
+  #admin-body .form-sec > .form-heading { margin: 0 -14px 14px; padding: 13px 14px 12px 28px; }
+  #admin-body .form-sec > .form-heading::before { left: 14px; top: 14px; }
+}
+
+/* Rich: a thinner red line under the menu. There were two 3px lines on top of each other (the header and
+   the bar inside it), so it still looked thick. Now it is one 2px line. */
+html.look-calm .site-header, .site-header { border-bottom: 0 !important; }
+.site-bar { border-bottom-width: 2px !important; }
+/* Rich: a thin line of colour along the top of the live & upcoming strip (on as standard, red;
+   Site settings → Strip & results to change the colour or turn it off) */
+.live-strip-wrap.strip-line-red, .live-strip-wrap.strip-line-yellow, .live-strip-wrap.strip-line-grey { border-top-width: 2px !important; }

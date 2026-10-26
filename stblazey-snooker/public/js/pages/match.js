@@ -1,4 +1,4 @@
-import { html, mount, $, toast, fmtDate, fmtTime, safeHref, fmtLongDate } from "../core/dom.js";
+import { html, mount, $, toast, fmtDate, fmtTime, fmtTimeBoth, safeHref, fmtLongDate } from "../core/dom.js";
 import { countdown, startCountdowns } from "../core/countdown.js";
 import { seasonContext } from "../core/context.js";
 import { loadFixture, headToHead, subscribe, setMatchPhotos, fixtureBoards } from "../core/api.js";
@@ -94,7 +94,7 @@ export default async function match(view, { params, user }) {
     mount(view, html`
       <div class="wrap cm-row">${breadcrumb([["Home", "/"], [title]])}<span data-chat-slot></span></div>
       <div class="wrap"><div class="match-hero">
-        <div class="mh-band">${league?.name ?? ""} · ${fmtDate(fx.starts_at)} ${fmtTime(fx.starts_at)}</div>
+        <div class="mh-band">${league?.name ?? ""} · ${fmtDate(fx.starts_at)} ${fmtTimeBoth(fx.starts_at)}</div>
         <div class="mh-body">
           <a class="mh-side ${won("home") ? "won" : lost("home") ? "lost" : ""}" href="${home ? urls.team(home) : "#"}">${badge(home)}<span>${home?.name}</span></a>
           <div class="mh-score"><b class="${won("home") ? "won" : lost("home") ? "lost" : ""}">${played ? score.home : "–"}</b><i>:</i><b class="${won("away") ? "won" : lost("away") ? "lost" : ""}">${played ? score.away : "–"}</b>

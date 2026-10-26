@@ -73,7 +73,7 @@ export default async function home(view, { user } = {}) {
         </div>
         ${slides.length > 1 ? html`<div class="hero-dots">${slides.map((_, i) => html`<button class="${i ? "" : "on"}" data-dot="${i}" aria-label="Show article ${i + 1}"></button>`)}</div>` : ""}
       </div>
-      <div class="live-strip-wrap ${["red", "yellow", "grey"].includes(site.strip_line) ? `strip-line-${site.strip_line}` : ""}"><div class="wrap"><div class="live-strip" data-strip></div></div></div>
+      <div class="live-strip-wrap ${["red", "yellow", "grey"].includes(site.strip_line ?? "red") ? `strip-line-${site.strip_line ?? "red"}` : ""}"><div class="wrap"><div class="live-strip" data-strip></div></div></div>
     </section>
     <div class="wrap layout" style="margin-top:30px">
       <div class="stack">

@@ -7,7 +7,7 @@ import { seasonContext } from "../core/context.js";
 import { loadCompetitions, table, currentCompetitions } from "../core/api.js";
 import { buildBracket, isEntry, roundName, compScoreText, placeLabel } from "../core/bracket.js";
 import { addDays } from "../core/schedule.js";
-import { breadcrumb, urls, liveSoonTag } from "../core/components.js";
+import { breadcrumb, urls, liveSoonTag, zoneNote } from "../core/components.js";
 import { SITE } from "../config.js";
 import { setTitle, adminEdit } from "../core/router.js";
 
@@ -123,7 +123,7 @@ export default async function calendar(view, { query }) {
 
   mount(view, html`<div class="wrap cal">
     ${breadcrumb([["Home", "/"], ["Calendar"]])}
-    <h1>Calendar ${ctx.season?.name ?? ""}</h1>
+    <h1>Calendar ${ctx.season?.name ?? ""}</h1>${zoneNote()}
     <div class="cal-top">
       <label class="cal-team"><span class="sr-only">Show matches for</span>
         <select data-team><option value="">All teams</option>${ctx.leagues.map((l) => html`<optgroup label="${l.name}">${ctx.teamsIn(l.id).map((t) => html`<option value="${t.id}" ${t.id === teamId ? "selected" : ""}>${t.name}</option>`)}</optgroup>`)}</select></label>

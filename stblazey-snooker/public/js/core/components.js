@@ -1,6 +1,6 @@
 // Reusable building blocks. Every table, panel and card on the site
 // is drawn by one of these functions — change it here, it changes everywhere.
-import { html, fmtDate, fmtTime, ukDay } from "./dom.js";
+import { html, fmtDate, fmtTime, ukDay, notUKTime, zoneName } from "./dom.js";
 import { isProvisional, PROVISIONAL_NOTE, frameWinner, NOT_UPDATED, isLiveSoon } from "./rules.js";
 import { formBadge as formBadgeFn, formChips as formChipsFn } from "./form.js";
 /** The picture for a player with no photo: grey in the calm look (round 43), red in the classic one. */
@@ -493,8 +493,13 @@ export function fixturesTable(ctx, fixtures, { actions, byes = [], forTeam = nul
       ? { label: "", cell: (f) => (f.bye ? "" : actions(f)), cls: "fx-act" }
       : { label: "Article", cell: (f) => (f.bye ? "No match" : html`<a href="${urls.match(f)}">${ctx.hasResult(f) ? "Recap" : "Preview"}</a>`), cls: "fx-art" },
     { label: "Postponed", cell: (f) => (f.status === "postponed" ? "Yes" : "-"), cls: "hide-sm" },
-  ], rows, { rowClass: (f) => (f.bye ? "is-bye" : ""), empty: "No fixtures for this season yet." })}</div>`;
+  ], rows, { rowClass: (f) => (f.bye ? "is-bye" : ""), empty: "No fixtures for this season yet." })}</div>${zoneNote()}`;
 }
+
+/** For visitors outside the UK: a small line saying the times are in their own time zone. Nothing for UK visitors. */
+export const zoneNote = () => (notUKTime()
+  ? html`<p class="zone-note"><span aria-hidden="true">🕒</span> Times are shown in your local time (${zoneName()}).</p>`
+  : "");
 
 /** Compact Home / Results / Away table (team history, past meetings). */
 export function resultsList(ctx, fixtures, { scoreFn = (f) => resultText(ctx, f) } = {}) {
