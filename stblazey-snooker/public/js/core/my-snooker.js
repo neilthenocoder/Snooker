@@ -250,7 +250,7 @@ function view(user, { ctx, news, comps, site = {}, form: formData = null }, pref
           ${formBadge(mine, { big: true, trend: true })}</a>` : ""}
         ${tf?.n ? html`<a class="ms-myform team" href="${urls.team(team)}#form">
           <span><small>${team.name}</small><strong>${formChips(tf, { links: false })}</strong></span>${formBadge(tf, { big: true, trend: true })}</a>` : ""}
-        ${others.length ? html`<ul class="ms-formlist">${others.slice(0, home ? 5 : 12).map(({ p, f }) => html`<li><a href="${urls.player(p)}#form">
+        ${others.length ? html`<ul class="ms-formlist">${others.slice(0, home ? 5 : 12).map(({ p, f }) => html`<li><a href="${urls.player(p)}">
           ${avatar(p, "ms-fl-photo")}<span><strong>${p.full_name}</strong><small>${ctx.team.get(p.team_id)?.name ?? ""}</small></span>
           ${formChips(f, { links: false })}${formBadge(f, { trend: true })}</a></li>`)}</ul>` : ""}`,
         { foot: { href: team ? `/form?league=${ctx.league.get(team.league_id)?.slug ?? ""}` : "/form", label: "Everyone's form — the form guide" } });

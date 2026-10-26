@@ -4641,29 +4641,38 @@ html.look-calm :is(.feat-main, .ns-card):hover, html.look-calm :is(.feat-main, .
 html.look-calm .hero-text h2 a:hover, html.look-calm .art-hero h1 a:hover { color: inherit; }
 
 /* The phone menu: cream, the logo at the top, the main pages as plain rows like the desktop menu, then the rest */
-html.look-calm .menu-overlay { background: var(--page-bg, var(--cream)); color: var(--ink); padding: 14px 20px 24px; }
-html.look-calm .menu-top { padding-bottom: 10px; }
-html.look-calm .menu-logo .logo-main { display: none !important; }
-html.look-calm .menu-logo .logo-light { display: block !important; height: 54px; width: auto; }
-html.look-calm .menu-logo .logo-light.auto { filter: invert(1) hue-rotate(180deg); }
-html.look-calm .menu-x { border-color: #c9c8bc; color: var(--ink); background: transparent; }
-html.look-calm .menu-x:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
-html.look-calm .menu-links { gap: 0; margin-top: 8px; border-top: 1px solid #d9d8cc; }
-html.look-calm .menu-links a { background: none !important; color: var(--ink) !important; border: 0; border-bottom: 1px solid #d9d8cc; border-radius: 0;
+html.look-calm.menu-cream .menu-overlay { background: var(--page-bg, var(--cream)); color: var(--ink); padding: 14px 20px 24px; }
+html.look-calm.menu-cream .menu-top { padding-bottom: 10px; }
+html.look-calm.menu-cream .menu-logo .logo-main { display: none !important; }
+html.look-calm.menu-cream .menu-logo .logo-light { display: block !important; height: 54px; width: auto; }
+html.look-calm.menu-cream .menu-logo .logo-light.auto { filter: invert(1) hue-rotate(180deg); }
+html.look-calm.menu-cream .menu-x { border-color: #c9c8bc; color: var(--ink); background: transparent; }
+html.look-calm.menu-cream .menu-x:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+html.look-calm.menu-cream .menu-links { gap: 0; margin-top: 8px; border-top: 1px solid #d9d8cc; }
+html.look-calm.menu-cream .menu-links a { background: none !important; color: var(--ink) !important; border: 0; border-bottom: 1px solid #d9d8cc; border-radius: 0;
   min-height: 56px; padding: 0 2px; font: 700 21px/1 var(--font-head); justify-content: space-between; box-shadow: none; }
-html.look-calm .menu-links a::after { content: "›"; font: 400 26px/1 var(--font-body); color: #a9a89c; }
-html.look-calm .menu-links a:hover, html.look-calm .menu-links a:active { color: var(--red) !important; }
-html.look-calm[data-section="home"] .menu-links .nav-home, html.look-calm[data-section="competitions"] .menu-links .nav-comps,
-html.look-calm[data-section="fixtures"] .menu-links .nav-fixtures, html.look-calm[data-section="league"] .menu-links .nav-league,
-html.look-calm[data-section="news"] .menu-links .nav-news { color: var(--red) !important; }
-html.look-calm .menu-links a.menu-live span { display: inline-flex; align-items: center; gap: 10px; }
-html.look-calm .menu-links a.menu-live span::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #b5b4a8; }
-html.look-calm .menu-links a.menu-live.state-live span::before, html.look-calm .menu-links a.menu-live.state-soon span::before { background: var(--live-green, #19a33a); }
-html.look-calm .menu-more { margin-top: 22px; padding-top: 0; border-top: 0; gap: 0 20px; }
-html.look-calm .menu-more::before { content: "More"; grid-column: 1 / -1; font: 700 12px var(--font-head); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding-bottom: 4px; }
-html.look-calm .menu-more a { color: var(--ink); font-weight: 600; border-bottom: 1px solid #e3e2d7; }
-html.look-calm .menu-more a:hover { color: var(--red); }
-html.look-calm .menu-foot .btn { background: #fff !important; color: var(--ink) !important; border: 1px solid #c9c8bc; box-shadow: none; }
-html.look-calm .menu-foot .btn:first-child { background: var(--ink) !important; color: #fff !important; border-color: var(--ink); }
-html.look-calm .menu-links a.menu-live::before { display: none !important; }   /* the menu bar's own dot: the row has its dot by the word */
-html.look-calm .menu-links a.menu-live { animation: none !important; }
+html.look-calm.menu-cream .menu-links a::after { content: "›"; font: 400 26px/1 var(--font-body); color: #a9a89c; }
+html.look-calm.menu-cream .menu-links a:hover, html.look-calm.menu-cream .menu-links a:active { color: var(--red) !important; }
+html.look-calm.menu-cream[data-section="home"] .menu-links .nav-home, html.look-calm.menu-cream[data-section="competitions"] .menu-links .nav-comps,
+html.look-calm.menu-cream[data-section="fixtures"] .menu-links .nav-fixtures, html.look-calm.menu-cream[data-section="league"] .menu-links .nav-league,
+html.look-calm.menu-cream[data-section="news"] .menu-links .nav-news { color: var(--red) !important; }
+html.look-calm.menu-cream .menu-links a.menu-live span { display: inline-flex; align-items: center; gap: 10px; }
+html.look-calm.menu-cream .menu-links a.menu-live span::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #b5b4a8; }
+html.look-calm.menu-cream .menu-links a.menu-live.state-live span::before, html.look-calm.menu-cream .menu-links a.menu-live.state-soon span::before { background: var(--live-green, #19a33a); }
+html.look-calm.menu-cream .menu-more { margin-top: 22px; padding-top: 0; border-top: 0; gap: 0 20px; }
+html.look-calm.menu-cream .menu-more::before { content: "More"; grid-column: 1 / -1; font: 700 12px var(--font-head); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding-bottom: 4px; }
+html.look-calm.menu-cream .menu-more a { color: var(--ink); font-weight: 600; border-bottom: 1px solid #e3e2d7; }
+html.look-calm.menu-cream .menu-more a:hover { color: var(--red); }
+html.look-calm.menu-cream .menu-foot .btn { background: #fff !important; color: var(--ink) !important; border: 1px solid #c9c8bc; box-shadow: none; }
+html.look-calm.menu-cream .menu-foot .btn:first-child { background: var(--ink) !important; color: #fff !important; border-color: var(--ink); }
+html.look-calm.menu-cream .menu-links a.menu-live::before { display: none !important; }   /* the menu bar's own dot: the row has its dot by the word */
+html.look-calm.menu-cream .menu-links a.menu-live { animation: none !important; }
+
+/* Round 50 — the last red hovers on news headlines: the banner headline on the cream banner, its picture's border,
+   and any other link to a news story (they keep their own colour) */
+html.look-calm .hero .hero-text h2 a:hover, html.look-calm .hero .hero-text h2 a:hover span { color: inherit !important; }
+html.look-calm .hero-pic-link:hover { border-color: var(--ink) !important; }
+html.look-calm a[href^="/news/"]:not(.btn):not(.feat-main):not(.ns-card):not(.hero-more):not(.hub-more):hover { color: inherit; }
+/* the colour-blocks phone menu is black, so it always shows the main logo */
+html:not(.menu-cream) .menu-logo .logo-light { display: none !important; }
+html:not(.menu-cream) .menu-logo .logo-main { display: block !important; }

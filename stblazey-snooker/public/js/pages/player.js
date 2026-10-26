@@ -203,11 +203,11 @@ export default async function player(view, { params, user }) {
     { rowClass: (r) => (r.total ? "total-row" : ""), empty: "Not updated yet." }))}
 
     <div class="grid-2" style="gap:30px;align-items:start">
-      <span id="breaks"></span>${panel("Breaks", dataTable([
+      <div id="breaks">${panel("Breaks", dataTable([
         { label: "Date", cell: (b) => { const fx = fixtureById.get(b.fixture_id) ?? ctx.fixture.get(b.fixture_id); return fx ? html`<a href="${urls.match(fx)}">${fmtDate(fx.starts_at)}</a>` : "–"; } },
         { label: "Break", cell: (b) => breakTag(b.value), cls: "num strong" },
         { label: "Points", cell: (b) => breakPoints(b.value) || "–", cls: "num" },
-      ], [...playerPast.breaks].sort((a, b) => b.value - a.value), { empty: "Not updated yet." }))}
+      ], [...playerPast.breaks].sort((a, b) => b.value - a.value), { empty: "Not updated yet." }))}</div>
       ${panel("Competitions", dataTable([
         { label: "Competition", cell: (x) => html`<a href="${urls.competition(x.c)}">${x.c.name}</a>` },
         { label: "Result", cell: (x) => x.standing?.status ?? "–" },

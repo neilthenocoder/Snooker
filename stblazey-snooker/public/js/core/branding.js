@@ -112,6 +112,8 @@ function brandOf(site) {
     // Round 45 (Rich): the Live & upcoming strip light or black, and the header black or grey (calm look only).
     strip: site.strip_style === "dark" ? "dark" : "light",
     header: ["grey", "light"].includes(site.header_style) ? site.header_style : "black",
+    // Round 50: the phone menu, cream (standard) or the colour blocks from before.
+    menu: site.home_sections?.menu_style === "blocks" ? "blocks" : "cream",
     loader: site.loading_logo_url || site.logo_url || "",
     loaderShow: site.loader_show !== false,
     loaderMs: Math.max(0, Math.min(10, Number(site.loader_seconds) || 0)) * 1000,
@@ -134,6 +136,7 @@ export function paint(brand) {
   root.classList.toggle("strip-dark", brand.strip === "dark");
   root.classList.toggle("head-grey", brand.header === "grey");
   root.classList.toggle("head-light", brand.header === "light");
+  root.classList.toggle("menu-cream", brand.menu !== "blocks");
   // Font stylesheets: keep the ones still wanted, drop the rest.
   const wanted = brand.links ?? [];
   for (const link of document.querySelectorAll("link[data-brand-font]")) if (!wanted.includes(link.href)) link.remove();

@@ -479,6 +479,10 @@ export const RESOURCES = {
         labels: { light: "Light grey with white cards (standard)", dark: "Black" } },
       { name: "header_style", label: "Header behind the logo and menu (calm look)", type: "select", options: ["black", "grey", "light"], default: "black",
         labels: { black: "Black (standard)", grey: "Dark grey", light: "Light cream (#fbfaef) — upload the logo for a light header below" } },
+      // Round 50 (Rich): the phone menu (the ☰ button) — the new cream one, or the colour blocks from before. Kept in
+      // home_sections, so no database change is needed.
+      { name: "menu_style", in: "home_sections", label: "Phone menu (the ☰ button, calm look)", type: "select", options: ["cream", "blocks"], default: "cream",
+        labels: { cream: "Cream — the logo on top, the main pages as rows like the desktop menu, the rest underneath (standard)", blocks: "Colour blocks — the coloured buttons on black, as before" } },
       { type: "heading", label: "Menu and section colours (Classic look)", help: "Each menu button has its own colour, and the pages in that part of the site use it for their headers." },
       { name: "color_home", label: "Home (standard: brown)", type: "color", optional: true, default: "#4b2019" },
       { name: "color_competitions", label: "Competitions & Handicaps (standard: gold)", type: "color", optional: true, default: "#fbb61a" },
