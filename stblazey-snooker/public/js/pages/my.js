@@ -96,7 +96,7 @@ async function snookerTab(el, { ctx, user, team, me }) {
   const categories = (await table("categories", "sort").catch(() => [])).map((c) => c.name);
   const followed = new Set(prefs.teams);
   let players = prefs.players.filter((id) => ctx.player.get(id));
-  const wants = (key) => !prefs.sections || prefs.sections.includes(key) || (key === "form" && !prefs.sections.includes("form_off"));
+  const wants = (key) => !prefs.sections || prefs.sections.includes(key) || (["form", "glance"].includes(key) && !prefs.sections.includes(`${key}_off`));
   const pickable = ctx.players.filter((p) => !["deceased"].includes(p.status)).sort((a, b) => a.full_name.localeCompare(b.full_name));
   const teamName = (p) => ctx.team.get(p.team_id)?.name ?? "no team";
   const chips = () => mount($("[data-chips]", el), players.length ? html`${players.map((id) => { const p = ctx.player.get(id); return html`<span class="chip">${p.full_name} <small class="muted">${teamName(p)}</small>
@@ -208,7 +208,7 @@ async function snookerTab(el, { ctx, user, team, me }) {
     const sections = [...form.querySelectorAll(".ms-order [name=section]")].filter((b) => b.checked).map((b) => b.value);
     // Keep the order the teams were followed in (so the first stays first), then any newly ticked ones.
     const teams = [...prefs.teams.filter((id) => ticked("team").includes(id)), ...ticked("team").filter((id) => !prefs.teams.includes(id))];
-    save(true, { place: "page", teams, players, cats: ticked("cat"), sections: [...sections, ...(sections.includes("form") ? [] : ["form_off"])] }, "Home page settings saved");
+    save(true, { place: "page", teams, players, cats: ticked("cat"), sections: [...sections, ...["form", "glance"].filter((k) => !sections.includes(k)).map((k) => `${k}_off`)] }, "Home page settings saved");
   });
 }
 

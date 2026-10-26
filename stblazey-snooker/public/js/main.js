@@ -143,7 +143,7 @@ async function drawHeader() {
       </div>
     </div></div></header>
     <div class="menu-overlay" data-menu role="dialog" aria-modal="true" aria-label="Menu">
-      <div class="menu-top"><a class="logo" href="/" aria-label="${SITE.name} home"><img src="${site.logo_url || "/assets/logo.svg"}" alt=""></a>
+      <div class="menu-top"><a class="logo menu-logo" href="/" aria-label="${SITE.name} home"><img class="logo-main" src="${site.logo_url || "/assets/logo.svg"}" alt=""><img class="logo-light ${site.logo_light_url ? "" : "auto"}" src="${site.logo_light_url || site.logo_url || "/assets/logo.svg"}" alt=""></a>
         <button type="button" class="menu-x" data-menu-close aria-label="Close the menu">×</button></div>
       <nav class="menu-links" aria-label="Main menu">
         ${MENU.map((item) => menuLink(item, html`<span>${item.label}</span>`))}

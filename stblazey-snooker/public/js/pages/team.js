@@ -39,7 +39,7 @@ export default async function team(view, { params, query, user }) {
     </div>
     ${teamForm?.n ? formPanel(teamForm, { name: team.name, kind: "team" }) : ""}
     ${panel(`${team.name} fixtures & results`, fixturesTable(ctx, ctx.fixturesFor(team.id), { byes: ctx.byesFor(team.id), forTeam: team.id }))}
-    ${league && (ranks.length || breaks.length) ? html`<div class="grid-2 team-extra">
+    ${league && (ranks.length || breaks.length) ? html`<div class="grid-2 team-extra" id="breaks">
       ${panel(`${team.name} in the rankings`, dataTable([
         { label: "Pos", cell: (r) => r.pos, cls: "num" },
         { label: "Player", cell: (r) => playerLink(r.player) },

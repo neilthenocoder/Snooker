@@ -4609,3 +4609,61 @@ html.look-calm .site-header, .site-header { border-bottom: 0 !important; }
 .guide-skip:hover { color: var(--ink); }
 html.guide-on .squad-box, html.guide-on .a2hs-bar, html.guide-on .live-pops, html.guide-on .to-top { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { .guide-spot, .guide-tip { transition: none; } }
+
+/* Round 49 — My Snooker "At a glance": league position, ranking and breaks, three tiles at the top */
+.glance { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.glance-tile { position: relative; display: flex; flex-direction: column; gap: 2px; background: #fff; border-radius: 14px; padding: 16px 18px; color: var(--ink); border-top: 4px solid var(--red); transition: box-shadow .15s, transform .15s; }
+.glance-tile:nth-child(2) { border-top-color: var(--ink); }
+.glance-tile:nth-child(3) { border-top-color: var(--green, #1f7a35); }
+.glance-tile small { font: 700 11px var(--font-head); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.glance-tile b { font: 700 38px/1.1 var(--font-head); }
+.glance-tile span { font-size: 13px; color: var(--muted); }
+.glance-tile i { position: absolute; right: 14px; top: 12px; font-style: normal; color: #b5b4a8; }
+.glance-tile:hover { box-shadow: 0 8px 20px rgba(0, 0, 0, .1); transform: translateY(-2px); color: var(--ink); }
+@media (max-width: 640px) { .glance { grid-template-columns: 1fr; gap: 8px; } .glance-tile { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 10px; padding: 12px 14px; } .glance-tile small { width: 100%; } .glance-tile b { font-size: 28px; } }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 49 — Rich's feedback (26 Oct)
+   ═════════════════════════════════════════════════════════════ */
+/* Footer social icons: like the logo — see-through with a thin black border */
+html.look-calm .site-footer .socials a { background: transparent !important; color: var(--ink) !important; border: 1px solid var(--ink); }
+html.look-calm .site-footer .socials a svg { fill: var(--ink) !important; }
+html.look-calm .site-footer .socials a:hover, html.look-calm .site-footer .socials a:focus-visible { background: var(--ink) !important; color: #fff !important; }
+html.look-calm .site-footer .socials a:hover svg, html.look-calm .site-footer .socials a:focus-visible svg { fill: #fff !important; }
+
+/* Home page: the Competitions / Calendar / Handicaps / Fixtures buttons get a thin border */
+html.look-calm .quick-links a { border: 1px solid var(--ink) !important; }
+
+/* News headlines: no red when the mouse is over them (they stay their own colour) */
+html.look-calm :is(.hub-card, .feat-card, .news-mini, .ms-news, a.card, .cf-card):hover,
+html.look-calm :is(.hub-card, .feat-card, .news-mini, .ms-news, a.card, .cf-card):hover :is(h3, h4, strong) { color: var(--ink) !important; }
+html.look-calm :is(.feat-main, .ns-card):hover, html.look-calm :is(.feat-main, .ns-card):hover :is(h3, h4, strong) { color: #fff !important; }
+html.look-calm .hero-text h2 a:hover, html.look-calm .art-hero h1 a:hover { color: inherit; }
+
+/* The phone menu: cream, the logo at the top, the main pages as plain rows like the desktop menu, then the rest */
+html.look-calm .menu-overlay { background: var(--page-bg, var(--cream)); color: var(--ink); padding: 14px 20px 24px; }
+html.look-calm .menu-top { padding-bottom: 10px; }
+html.look-calm .menu-logo .logo-main { display: none !important; }
+html.look-calm .menu-logo .logo-light { display: block !important; height: 54px; width: auto; }
+html.look-calm .menu-logo .logo-light.auto { filter: invert(1) hue-rotate(180deg); }
+html.look-calm .menu-x { border-color: #c9c8bc; color: var(--ink); background: transparent; }
+html.look-calm .menu-x:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+html.look-calm .menu-links { gap: 0; margin-top: 8px; border-top: 1px solid #d9d8cc; }
+html.look-calm .menu-links a { background: none !important; color: var(--ink) !important; border: 0; border-bottom: 1px solid #d9d8cc; border-radius: 0;
+  min-height: 56px; padding: 0 2px; font: 700 21px/1 var(--font-head); justify-content: space-between; box-shadow: none; }
+html.look-calm .menu-links a::after { content: "›"; font: 400 26px/1 var(--font-body); color: #a9a89c; }
+html.look-calm .menu-links a:hover, html.look-calm .menu-links a:active { color: var(--red) !important; }
+html.look-calm[data-section="home"] .menu-links .nav-home, html.look-calm[data-section="competitions"] .menu-links .nav-comps,
+html.look-calm[data-section="fixtures"] .menu-links .nav-fixtures, html.look-calm[data-section="league"] .menu-links .nav-league,
+html.look-calm[data-section="news"] .menu-links .nav-news { color: var(--red) !important; }
+html.look-calm .menu-links a.menu-live span { display: inline-flex; align-items: center; gap: 10px; }
+html.look-calm .menu-links a.menu-live span::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #b5b4a8; }
+html.look-calm .menu-links a.menu-live.state-live span::before, html.look-calm .menu-links a.menu-live.state-soon span::before { background: var(--live-green, #19a33a); }
+html.look-calm .menu-more { margin-top: 22px; padding-top: 0; border-top: 0; gap: 0 20px; }
+html.look-calm .menu-more::before { content: "More"; grid-column: 1 / -1; font: 700 12px var(--font-head); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding-bottom: 4px; }
+html.look-calm .menu-more a { color: var(--ink); font-weight: 600; border-bottom: 1px solid #e3e2d7; }
+html.look-calm .menu-more a:hover { color: var(--red); }
+html.look-calm .menu-foot .btn { background: #fff !important; color: var(--ink) !important; border: 1px solid #c9c8bc; box-shadow: none; }
+html.look-calm .menu-foot .btn:first-child { background: var(--ink) !important; color: #fff !important; border-color: var(--ink); }
+html.look-calm .menu-links a.menu-live::before { display: none !important; }   /* the menu bar's own dot: the row has its dot by the word */
+html.look-calm .menu-links a.menu-live { animation: none !important; }

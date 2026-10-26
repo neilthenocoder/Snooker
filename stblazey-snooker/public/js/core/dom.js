@@ -63,6 +63,23 @@ export const fmtDate = (iso) => show(iso, DATE);
 /** "12 November 2024" — for dates inside sentences (the match preview summary). */
 export const fmtLongDate = (iso) => show(iso, LONG);
 export const fmtTime = (iso) => show(iso, TIME);
+/** "27th Oct" (Rich, round 49: instead of 27/10/2026 in the Live & upcoming strip); withYear: "27th Oct 2026". */
+const ORD = (n) => `${n}${n % 10 === 1 && n % 100 !== 11 ? "st" : n % 10 === 2 && n % 100 !== 12 ? "nd" : n % 10 === 3 && n % 100 !== 13 ? "rd" : "th"}`;
+export const fmtDay = (iso, { withYear = false } = {}) => {
+  if (!iso) return "";
+  const parts = Object.fromEntries(fmtIn(dateOnly(iso) ? "UTC" : shownZone(), { day: "numeric", month: "short", year: "numeric" }).formatToParts(new Date(iso)).map((p) => [p.type, p.value]));
+  return `${ORD(Number(parts.day))} ${parts.month.replace(".", "").slice(0, 3)}${withYear ? ` ${parts.year}` : ""}`;
+};
+/** How long ago (Rich, round 49 — the banner's news date): today "26th Oct 2026", then "1 day ago", "3 days ago",
+ *  "1 week ago", "2 months ago", "1 year ago". Counted in whole days on the visitor's calendar. */
+export const fmtAgo = (iso) => {
+  if (!iso) return "";
+  const dayNo = (d) => { const p = Object.fromEntries(fmtIn(shownZone(), { year: "numeric", month: "numeric", day: "numeric" }).formatToParts(d).map((x) => [x.type, x.value])); return Date.UTC(p.year, p.month - 1, p.day) / 864e5; };
+  const days = Math.round(dayNo(new Date()) - dayNo(new Date(iso)));
+  if (days <= 0) return fmtDay(iso, { withYear: true });
+  const say = (n, unit) => `${n} ${unit}${n > 1 ? "s" : ""} ago`;
+  return days < 7 ? say(days, "day") : days < 30 ? say(Math.floor(days / 7), "week") : days < 365 ? say(Math.floor(days / 30), "month") : say(Math.floor(days / 365), "year");
+};
 /** "19:30" in UK time, whoever is looking (forms and anything officers type in). */
 export const fmtTimeUK = (iso) => (iso ? fmtIn(SITE.timeZone, TIME).format(new Date(iso)) : "");
 /** True when this visitor's clock differs from UK time at that moment (or now). */

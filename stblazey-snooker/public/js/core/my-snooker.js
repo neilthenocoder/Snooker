@@ -19,6 +19,7 @@ import { loadForm, formBadge, formChips } from "./form.js";
 
 /** Every section someone can have on their page: [key, name, what it shows]. This is also the order they appear in. */
 export const SECTIONS = [
+  ["glance", "At a glance", "Your team's league position, your ranking and your breaks, at the top"],
   ["next", "Next match", "When and where your team plays next"],
   ["team", "Team summary", "League position, played, won, points and the last five results"],
   ["results", "Results", "Every game played, each with its frame-by-frame page"],
@@ -34,7 +35,7 @@ export const SECTIONS = [
   ["rankings", "Rankings", "The top of the rankings, plus where your team's players and the players you follow are"],
   ["cueviews", "CueViews", "CueViews of the players you follow and your team's players"],
 ];
-export const MAIN = ["next", "team", "results", "fixtures", "comps", "team_news", "news"];   // the wide column; the rest sit beside it
+export const MAIN = ["glance", "next", "team", "results", "fixtures", "comps", "team_news", "news"];   // the wide column; the rest sit beside it
 const KEYS = SECTIONS.map(([key]) => key);
 /**
  * The sections in the order this person put them (round 48: Home page settings → ↑ ↓). Their saved list holds
@@ -102,7 +103,7 @@ export async function mountMySnooker(el, user, { home = false, data = null } = {
 
 function view(user, { ctx, news, comps, site = {}, form: formData = null }, prefs, teams, teamId, home) {
   // "Form" came after people had chosen their sections (round 25), so it is on unless they untick it ("form_off").
-  const wants = (key) => !prefs.sections || prefs.sections.includes(key) || (key === "form" && !prefs.sections.includes("form_off"));
+  const wants = (key) => !prefs.sections || prefs.sections.includes(key) || (["form", "glance"].includes(key) && !prefs.sections.includes(`${key}_off`));
   const team = ctx.team.get(teamId);
   const league = team && ctx.league.get(team.league_id);
   const limit = home ? 5 : Infinity;                       // the home page shows the top of each list
@@ -160,6 +161,28 @@ function view(user, { ctx, news, comps, site = {}, form: formData = null }, pref
   const cvPeople = [...new Map([...followed, ...squad].map((p) => [p.id, p])).values()].filter((p) => answered(p).length);
 
   const parts = {
+    // Rich, round 49: "they will want to see their position in the league table, their rankings and their breaks" —
+    // three tiles at the top, each opening the full list. "Your" = the player this login is linked to; a login with
+    // no player gets the team's best-ranked player and the team's breaks instead.
+    glance: () => {
+      if (!team) return "";
+      const me = ctx.player.get(user?.profile?.player_id);
+      const mine = me && squadIds.has(me.id) ? me : null;
+      const ranks = league ? ctx.rankings(league.id) : [];
+      const myRank = mine ? ranks.find((r) => r.player.id === mine.id) : ranks.find((r) => squadIds.has(r.player.id));
+      const myBreaks = mine ? teamBreaks.filter((b) => b.player_id === mine.id) : teamBreaks;
+      const best = myBreaks.reduce((m, b) => Math.max(m, Number(b.value) || 0), 0);
+      const nth = (n) => `${n}${[, "st", "nd", "rd"][(n % 100 >> 3 ^ 1) && n % 10] || "th"}`;
+      const tile = (href, label, big, sub) => html`<a class="glance-tile" href="${href}"><small>${label}</small><b>${big}</b><span>${sub}</span><i aria-hidden="true">→</i></a>`;
+      const teamsIn = league ? ctx.standings(league.id).length : 0;
+      return html`<div class="glance">
+        ${tile(league ? urls.standings(league) : "#", `${team.name} in the league`, row?.p ? nth(row.pos) : "–", league ? `of ${teamsIn} · ${league.short_name || league.name} · ${row?.pts ?? 0} pts` : "")}
+        ${tile(league ? urls.season(ctx.season, "rankings", league) : "#", mine ? "My ranking" : "Team's best ranked", myRank?.played ? nth(myRank.pos) : "–",
+          myRank ? `${mine ? "" : `${myRank.player.full_name} · `}${myRank.pts} pts · won ${myRank.won} of ${myRank.played}` : "No frames played yet")}
+        ${tile(mine ? `${urls.player(mine)}#breaks` : `${urls.team(team)}#breaks`, mine ? "My breaks" : `${team.name} breaks`, best || "–",
+          myBreaks.length ? `best · ${myBreaks.length} break${myBreaks.length > 1 ? "s" : ""} of 30+ this season` : "No breaks of 30+ yet")}
+      </div>`;
+    },
     next: () => (!team ? "" : next ? html`<a class="next-match ms-next" href="${urls.match(next)}">
         <div><small>${next.status === "in_progress" ? "On now" : "Next match"} · ${fmtDate(next.starts_at)} ${fmtTime(next.starts_at)} ${liveSoonTag(next)}</small>
           <strong>${next.home_team_id === team.id ? "Home" : "Away"} v ${opp(next)?.name}</strong>

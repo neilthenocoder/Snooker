@@ -1,4 +1,4 @@
-import { html, mount, $, $$, fmtDate, fmtTime, cssUrl, ukDay, todayUK, safeHref } from "../core/dom.js";
+import { html, mount, $, $$, fmtDate, fmtTime, fmtDay, fmtAgo, cssUrl, ukDay, todayUK, safeHref } from "../core/dom.js";
 import { TICKER_PX } from "../core/branding.js";
 import { sideName, matchLabel, onTable } from "../core/live-score.js";
 import { mountSquadBox } from "../core/squad.js";
@@ -235,7 +235,7 @@ function heroSlide(a, on) {
   return html`<div class="hero-slide ${on ? "on" : ""}">
     <div class="hero-text">
       <h2><a href="${urls.article(a)}"><span>${a.title}</span></a></h2>
-      <p class="hero-meta">${a.category} · ${fmtDate(a.published_at)}</p>
+      <p class="hero-meta">${a.category} · <time datetime="${a.published_at ?? ""}" title="${fmtDate(a.published_at)}">${fmtAgo(a.published_at)}</time></p>
       <a class="hero-more" href="${urls.article(a)}">Continue reading <span aria-hidden="true">→</span></a>
     </div>
     ${a.image_url || a.circle_image_url ? html`<a class="hero-pic-link" href="${urls.article(a)}" aria-label="${a.title}"><img class="hero-pic" src="${a.image_url || a.circle_image_url}" alt=""></a>` : ""}
@@ -407,10 +407,10 @@ async function liveStrip() {
       <span class="strip-ctrl"><button type="button" data-strip-move="-1" aria-label="Previous matches">‹</button><button type="button" data-strip-move="1" aria-label="Next matches">›</button>
         <a href="/calendar">Calendar →</a></span></div>
     <div class="strip-row">${cards.map((c) => (c.draw ? html`<a class="strip-card is-draw ${c.live ? "is-live" : ""}" href="${c.href}">
-      <div class="sc-top"><span>${ukDay(c.when) === todayUK() ? "Today" : fmtDate(c.when)}</span><span class="sc-comp">${c.title}</span></div>
+      <div class="sc-top"><span>${ukDay(c.when) === todayUK() ? "Today" : fmtDay(c.when)}</span><span class="sc-comp">${c.title}</span></div>
       <div class="sc-draw">${c.live ? html`<span class="live-dot">Live draw</span>` : html`<b>The draw</b>`}<p>${c.text}</p></div>
       <div class="sc-foot">${c.foot}</div></a>` : html`<a class="strip-card ${c.live ? "is-live" : ""}" href="${c.href}">
-      <div class="sc-top"><span>${ukDay(c.when) === todayUK() ? "Tonight" : fmtDate(c.when)}</span><span class="sc-comp">${c.title}</span></div>
+      <div class="sc-top"><span>${ukDay(c.when) === todayUK() ? "Tonight" : fmtDay(c.when)}</span><span class="sc-comp">${c.title}</span></div>
       <div class="sc-body">${side(c.a)}
         <div class="sc-mid">${c.postponed ? html`<b>P - P</b>` : c.walkover ? html`<b>W/O</b>` : c.hasFrames || c.done ? html`<b>${c.score.home} - ${c.score.away}</b>` : html`<b class="time">${fmtTime(c.when)}</b>`}
           ${c.postponed ? html`<span class="sc-label postponed">Postponed</span>` : c.live ? html`<span class="live-dot">Live</span>` : c.done ? html`<span class="sc-label ${c.label ?? "completed"}">${{ pending: "Pending", walkover: "Walkover" }[c.label] ?? "Completed"}</span>` : c.hasFrames ? "" : liveSoonTag({ starts_at: c.when, status: c.status ?? "scheduled" })}</div>

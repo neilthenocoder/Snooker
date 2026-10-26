@@ -102,6 +102,26 @@ export default async function player(view, { params, user }) {
   const playerNews = news.filter((a) => (a.player_ids ?? []).includes(p.id));
   const extThisSeason = frameRows.filter((x) => x.fx.season_id === ctx.season?.id && x.fr[`${x.side}_ext`]).length;
   const cueview = answered(p);
+  // Rich, round 49: the Seasons line as a sentence — "This is your 6th season, and you have been playing in the
+  // St Blazey & District league for 10 years" — instead of a list of season names (the list is in the Season record below).
+  const seasonsText = () => {
+    const names = [...new Set(seasonRows.map((r) => r.season?.name).filter(Boolean))].sort();
+    if (!names.length) return "";
+    const yearOf = (n) => Number(String(n).match(/\d{4}/)?.[0]) || null;
+    const n = names.length, first = yearOf(names[0]), last = yearOf(names.at(-1)), now = yearOf(ctx.season?.name);
+    const ord = (k) => `${k}${k % 10 === 1 && k % 100 !== 11 ? "st" : k % 10 === 2 && k % 100 !== 12 ? "nd" : k % 10 === 3 && k % 100 !== 13 ? "rd" : "th"}`;
+    const mine = user?.profile?.player_id === p.id, firstName = p.full_name.trim().split(/\s+/)[0];
+    const who = mine ? "your" : `${firstName}'s`, they = mine ? "you have" : `${firstName} has`;
+    const playingNow = !gone && names.at(-1) === ctx.season?.name;
+    const span = (to) => (first && to ? to - first : 0);
+    if (playingNow) {
+      const years = span(now);
+      if (n === 1) return `This is ${who} first season in the St Blazey & District league.`;
+      return `This is ${who} ${ord(n)} season${years >= 1 ? `, and ${they} been playing in the St Blazey & District league for ${years} year${years > 1 ? "s" : ""}` : ""}.`;
+    }
+    const years = span(last) + 1;
+    return `${n} season${n > 1 ? "s" : ""} in the St Blazey & District league${n > 1 && first && last ? `, from ${names[0]} to ${names.at(-1)}` : ` (${names[0]})`}${years > n ? ` — ${years} years in all` : ""}.`;
+  };
   const facts = [
     ["Position", p.position],
     ["Handicap", html`${handicapText(p.handicap)}${handicapMove(p)}`],
@@ -110,7 +130,7 @@ export default async function player(view, { params, user }) {
     ...(pastTeams.length ? [["Past teams", pastTeams.join(", ")]] : []),
     ["League", league ? html`<a href="${urls.standings(league)}">${league.name}</a>` : "–"],
     ...(myComps.length ? [["Competitions", myComps.map((x) => x.c.name).join(", ")]] : []),
-    ["Seasons", [...new Set(seasonRows.map((r) => r.season?.name).filter(Boolean))].sort().join(", ") || notUpdatedTag()],
+    ["Seasons", seasonsText() || notUpdatedTag()],
     ...(p.cueview?.hand ? [["Left or right handed", p.cueview.hand]] : []),
     ...(gone || p.status === "not_playing" ? [] : [["Extra (Ext) games this season", `${extThisSeason} of ${EXT_PER_SEASON}`]]),
     ...(gone ? (lifeYears(p) ? [["Years", lifeYears(p)]] : []) : p.birth_date ? [["Birthday", fmtDate(p.birth_date)], ["Age", age]] : []),
@@ -183,7 +203,7 @@ export default async function player(view, { params, user }) {
     { rowClass: (r) => (r.total ? "total-row" : ""), empty: "Not updated yet." }))}
 
     <div class="grid-2" style="gap:30px;align-items:start">
-      ${panel("Breaks", dataTable([
+      <span id="breaks"></span>${panel("Breaks", dataTable([
         { label: "Date", cell: (b) => { const fx = fixtureById.get(b.fixture_id) ?? ctx.fixture.get(b.fixture_id); return fx ? html`<a href="${urls.match(fx)}">${fmtDate(fx.starts_at)}</a>` : "–"; } },
         { label: "Break", cell: (b) => breakTag(b.value), cls: "num strong" },
         { label: "Points", cell: (b) => breakPoints(b.value) || "–", cls: "num" },
