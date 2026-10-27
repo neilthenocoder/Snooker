@@ -9,7 +9,7 @@ import { applyBranding, loaderOn, loaderOff, layoutFor, TICKER_PX } from "./core
 import { getUser, signOut, mySnookerOn, mySnookerHome, canOpenSection } from "./core/auth.js";
 import { seasonContext, sideBoxData } from "./core/context.js";
 import { sidebar, crumbs, zoneNote } from "./core/components.js";
-import { openAccount, openNotifications, closeDrawer } from "./core/drawers.js";
+import { openAccount, openNotifications, closeDrawer, accountLinks, roleLabel, initials } from "./core/drawers.js";
 import { toggleFollow } from "./core/my-snooker.js";
 import { openSearch } from "./core/search.js";
 import { initSuggest } from "./core/suggest.js";
@@ -124,6 +124,8 @@ async function drawHeader() {
   // Security → custom login address: the person button can be hidden from visitors (people then log in at that address).
   const noLogin = !user && !!gate.hide_button;
   const name = user?.profile?.full_name || user?.email || "";
+  const role = user ? roleLabel(user) : "";
+  const more = menuMore(site);
   // On the right, always in this order: the person (log in / my account), the bell (notifications), search.
   // Phones add the menu button, which opens the full-screen menu.
   mount($("#site-header"), html`
@@ -131,12 +133,20 @@ async function drawHeader() {
     <header class="site-header"><div class="site-bar"><div class="wrap">
       <a class="logo" href="/" aria-label="${SITE.name} home"><img class="logo-main" src="${site.logo_url || "/assets/logo.svg"}" alt="${SITE.name}"><img class="logo-light ${site.logo_light_url ? "" : "auto"}" src="${site.logo_light_url || site.logo_url || "/assets/logo.svg"}" alt="${SITE.name}"></a>
       <nav class="main-nav" aria-label="Main menu">
-        ${MENU.map((item) => navLink(item, item.color === "live" ? html`<span>${item.label}</span>` : item.label))}
+        ${MENU.filter((item) => item.color !== "live").map((item) => navLink(item, item.label))}
+        ${more.length ? html`<div class="nav-drop-wrap"><button type="button" class="nav-more" data-drop="more" aria-expanded="false" aria-haspopup="true">More<i class="chev" aria-hidden="true"></i></button>
+          <div class="nav-drop more-drop" data-drop-panel="more" hidden>${more.map((l) => html`<a href="${l.href}" ${isOutside(l.href) ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}</div></div>` : ""}
+        ${MENU.filter((item) => item.color === "live").map((item) => navLink(item, html`<span>${item.label}</span>`))}
       </nav>
       <div class="nav-icons">
-        ${noLogin ? "" : html`<button type="button" class="nav-icon nav-account ${user ? "in" : ""}" data-account-open aria-label="${user ? `My account: ${name}` : "Log in"}" title="${user ? `My account: ${name}` : "Log in"}">
-          ${personIcon}</button>`}
-        ${user && mySnookerOn(user) ? html`<a class="nav-icon nav-mysnooker" href="/myteam" aria-label="My Snooker" title="My Snooker — your home page">${starIcon}</a>` : ""}
+        ${user ? html`<div class="nav-drop-wrap acct-wrap"><button type="button" class="nav-acct" data-drop="acct" aria-expanded="false" aria-haspopup="true" aria-label="${role} menu: ${name}" title="${name}">
+            <span class="nav-acct-ico">${personIcon}</span><span class="nav-acct-word">${role}</span><i class="chev" aria-hidden="true"></i></button>
+          <div class="nav-drop acct-drop" data-drop-panel="acct" hidden>
+            <div class="acct-who"><span class="drawer-initials">${initials(name)}</span><span><strong>${name}</strong><small>${role}</small></span></div>
+            ${acctItems(user)}
+            <button type="button" class="acct-item acct-out" data-logout><span class="acct-ico">${logoutIcon}</span><span><b>Log out</b></span></button>
+          </div></div>`
+          : noLogin ? "" : html`<button type="button" class="nav-login" data-account-open>Log in</button>`}
         <button type="button" class="nav-icon nav-bell" data-bell aria-label="Notifications" title="Notifications">${bell}</button>
         <button type="button" class="nav-icon nav-search" data-search-open aria-label="Search" title="Search">${searchIcon}</button>
         <button type="button" class="nav-icon nav-toggle" data-menu-open aria-label="Menu" aria-expanded="false">${menuIcon}</button>
@@ -148,12 +158,16 @@ async function drawHeader() {
       <nav class="menu-links" aria-label="Main menu">
         ${MENU.map((item) => menuLink(item, html`<span>${item.label}</span>`))}
       </nav>
+      ${user ? html`<section class="menu-acct" data-menu-acct aria-label="${role} menu">
+          <h4 class="menu-h">${role} · ${name.split(" ")[0]}</h4>
+          ${acctItems(user)}
+          <button type="button" class="acct-item acct-out" data-logout><span class="acct-ico">${logoutIcon}</span><span><b>Log out</b></span></button>
+        </section>`
+        : noLogin ? "" : html`<button type="button" class="btn menu-login" data-account-open>Log in</button>`}
       <div class="menu-more">
-        ${menuMore(site).map((l) => html`<a href="${l.href}" ${isOutside(l.href) ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}
+        ${more.map((l) => html`<a href="${l.href}" ${isOutside(l.href) ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}
       </div>
       <div class="menu-foot">
-        ${user && mySnookerOn(user) ? html`<a class="btn green" href="/myteam">★ My Snooker</a>` : ""}
-        ${noLogin ? "" : html`<button type="button" class="btn ${user ? "secondary" : ""}" data-account-open>${user ? html`My account · ${name.split(" ")[0]}` : "Log in"}</button>`}
         <button type="button" class="btn ghost" data-search-open>Search</button>
         <button type="button" class="btn ghost" data-bell>Notifications</button>
         ${canInstall() ? html`<button type="button" class="btn green menu-a2hs" data-install-app>＋ Add to home screen</button>` : ""}
@@ -218,7 +232,29 @@ window.addEventListener("resize", measureHeader, { passive: true });   // a diff
 const setMenu = (open) => {
   document.documentElement.classList.toggle("menu-open", open);
   $("[data-menu-open]")?.setAttribute("aria-expanded", String(open));
+  if (open) closeDrops();
 };
+/** The account links as rows (the dropdown on a computer and the phone menu share them — drawers.js accountLinks). */
+const acctItems = (user) => html`${accountLinks(user).map((l) => (l.guide
+  ? html`<button type="button" class="acct-item" data-guide-start><span class="acct-ico">${l.icon}</span><span><b>${l.label}</b>${l.note ? html`<small>${l.note}</small>` : ""}</span></button>`
+  : html`<a class="acct-item" href="${l.href}"><span class="acct-ico">${l.icon}</span><span><b>${l.label}</b>${l.note ? html`<small>${l.note}</small>` : ""}</span></a>`))}`;
+const logoutIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3h9v18h-9v-2h7V5h-7Zm-.6 4.6L5 12l4.4 4.4 1.4-1.4-2-2H15v-2H8.8l2-2Z"/></svg>`;
+/** The two dropdowns in the menu bar (More ▾ and Admin ▾ / Captain ▾ / My account ▾): one open at a time. */
+function closeDrops(except = null) {
+  for (const b of document.querySelectorAll("[data-drop]")) {
+    if (b.dataset.drop === except) continue;
+    b.setAttribute("aria-expanded", "false");
+    const panel = document.querySelector(`[data-drop-panel="${b.dataset.drop}"]`); if (panel) panel.hidden = true;
+  }
+}
+const phoneMenu = () => window.matchMedia("(max-width: 900px)").matches;
+/** Open the account part: the dropdown on a computer; on a phone, the one menu, at its account section. */
+function openAcctMenu() {
+  if (phoneMenu()) { setMenu(true); requestAnimationFrame(() => $("[data-menu-acct]")?.scrollIntoView({ block: "start" })); return; }
+  const b = $('[data-drop="acct"]'); if (!b) return;
+  closeDrops("acct"); b.setAttribute("aria-expanded", "true"); $('[data-drop-panel="acct"]').hidden = false;
+  $('[data-drop-panel="acct"] .acct-item')?.focus();
+}
 
 async function drawFooter() {
   const [sponsors, pages, site] = await Promise.all([
@@ -320,7 +356,7 @@ async function renderRoute() {
   document.querySelector(".edit-page")?.remove();
   const view = $("#view");
   view.className = "";
-  setMenu(false); closeDrawer();
+  setMenu(false); closeDrawer(); closeDrops();
   let { page, params } = match(location.pathname);
   // Security → custom login address (Rich, round 22): /login only works while no address of its own is set; the chosen one does.
   if (page === "login" || page === "not-found") {
@@ -400,7 +436,18 @@ document.addEventListener("click", async (e) => {
   }
   if (e.target.closest("[data-menu-open]")) return setMenu(true);
   if (e.target.closest("[data-menu-close]")) return setMenu(false);
-  if (e.target.closest("[data-account-open]")) { setMenu(false); return openAccount(await getUser()); }
+  // Log in (logged out); once logged in the same buttons open the account menu instead (round 51 — one menu, not two).
+  if (e.target.closest("[data-account-open]")) { const u = await getUser(); if (u) return openAcctMenu(); setMenu(false); return openAccount(u); }
+  // The menu bar's dropdowns: More ▾, and Admin ▾ / Captain ▾ / My account ▾ (on a phone that one opens the phone menu).
+  const dropBtn = e.target.closest("[data-drop]");
+  if (dropBtn) {
+    if (dropBtn.dataset.drop === "acct" && phoneMenu()) return openAcctMenu();
+    const open = dropBtn.getAttribute("aria-expanded") !== "true";
+    closeDrops(); dropBtn.setAttribute("aria-expanded", String(open));
+    const panel = $(`[data-drop-panel="${dropBtn.dataset.drop}"]`); if (panel) panel.hidden = !open;
+    return;
+  }
+  if (!e.target.closest("[data-drop-panel]") || e.target.closest("a, button")) closeDrops();
   // "Show me around" (account menu, footer): the guided tour of the home page (core/guide.js).
   if (e.target.closest("[data-guide-start]")) { e.preventDefault(); setMenu(false); closeDrawer(); return requestGuide(navigate); }
   if (e.target.closest("[data-scroll-down]")) return window.scrollBy({ top: window.innerHeight * 0.8, behavior: "smooth" });
@@ -532,4 +579,11 @@ document.addEventListener("click", async (e) => {
   } catch (err) {
     if (err?.name !== "AbortError") prompt("Copy this link to share the page:", url);
   }
+});
+
+// Esc closes the menu bar's dropdowns (and puts the focus back on their button).
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  const open = document.querySelector('[data-drop][aria-expanded="true"]');
+  if (open) { closeDrops(); open.focus(); }
 });

@@ -11,11 +11,13 @@
 import { safeHref } from "./dom.js";
 
 export const MENU_COLORS = { home: "Home colour (brown)", comps: "Competitions colour (yellow)", fixtures: "Fixtures colour (green)", league: "League colour (white)", news: "News colour (blue)", login: "Red", live: "LIVE button (changes by itself)" };
+// Round 51 (Neil): most important first — Home, then what people check every week (fixtures and results, the tables),
+// then competitions and news. Live stays last, as its own green button. The extra pages are under "More ▾".
 export const STANDARD_MENU = [
   { label: "Home", href: "/", color: "home" },
-  { label: "Competitions", href: "/competitions", color: "comps" },
   { label: "Fixtures", href: "/fixtures", color: "fixtures" },
   { label: "League", href: "/league", color: "league" },
+  { label: "Competitions", href: "/competitions", color: "comps" },
   { label: "News", href: "/news", color: "news" },
   { label: "Live", href: "/live", color: "live" },
 ];

@@ -4676,3 +4676,81 @@ html.look-calm a[href^="/news/"]:not(.btn):not(.feat-main):not(.ns-card):not(.he
 /* the colour-blocks phone menu is black, so it always shows the main logo */
 html:not(.menu-cream) .menu-logo .logo-light { display: none !important; }
 html:not(.menu-cream) .menu-logo .logo-main { display: block !important; }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 51 — one menu (Neil, feedback 64): More ▾ and Admin ▾ / Captain ▾ / My account ▾ in the bar,
+   Log in as a button, the phone menu holding everything; the strip's All | My team switch; white scores
+   ═════════════════════════════════════════════════════════════ */
+/* the dropdowns */
+.nav-drop-wrap { position: relative; display: flex; align-items: center; }
+.chev { display: inline-block; width: 7px; height: 7px; margin-left: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform .15s; }
+[aria-expanded="true"] > .chev { transform: translateY(1px) rotate(-135deg); }
+html.look-calm .main-nav .nav-more { display: inline-flex; align-items: center; cursor: pointer; border: 0; font-family: var(--font-head); font-weight: 700; text-transform: uppercase; }
+html.look-calm .main-nav .nav-more::after { display: none; }
+.nav-drop { position: absolute; top: calc(100% + 12px); z-index: 300; background: #fff; color: var(--ink); border: 1px solid #e3e2d7; border-radius: 14px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .18); padding: 8px; text-align: left; }
+.nav-drop[hidden] { display: none; }
+.more-drop { left: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 6px; min-width: 380px; }
+html.look-calm .main-nav .more-drop a { display: block; height: auto; padding: 11px 12px; border-radius: 8px; background: none !important; color: var(--ink) !important;
+  font: 600 15px/1.25 var(--font-body); letter-spacing: 0; text-transform: none; white-space: nowrap; }
+html.look-calm .main-nav .more-drop a::after { display: none; }
+html.look-calm .main-nav .more-drop a:hover, html.look-calm .main-nav .more-drop a:focus-visible { background: #f3f2ea !important; color: var(--ink) !important; }
+/* Log in (logged out) — a plain button with words, not a picture */
+.nav-login { height: 46px; padding: 0 22px; border: 0; border-radius: 999px; background: var(--red); color: #fff; font: 700 15px var(--font-head); text-transform: uppercase; letter-spacing: .04em; cursor: pointer; flex: none; }
+.nav-login:hover { background: var(--ink); color: #fff; }
+/* Admin ▾ / Captain ▾ / My account ▾ (logged in) */
+.nav-acct { display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 14px 0 6px; border-radius: 999px; border: 1px solid #3a3a3a; background: transparent; color: #fff;
+  font: 700 15px var(--font-head); text-transform: uppercase; letter-spacing: .04em; cursor: pointer; flex: none; }
+.nav-acct-ico { width: 34px; height: 34px; border-radius: 50%; background: var(--red); display: grid; place-items: center; flex: none; }
+.nav-acct-ico svg { width: 22px; height: 22px; fill: #fff; }
+.nav-acct:hover, .nav-acct[aria-expanded="true"] { background: #fff; color: var(--ink); border-color: #fff; }
+html.look-calm.head-light .nav-acct { background: #ecebdf; border-color: #ecebdf; color: var(--ink); }
+html.look-calm.head-light .nav-acct:hover, html.look-calm.head-light .nav-acct[aria-expanded="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.acct-drop { right: 0; width: 330px; }
+.acct-who { display: flex; align-items: center; gap: 12px; padding: 10px 10px 12px; margin-bottom: 4px; border-bottom: 1px solid #ecebe3; }
+.acct-who strong { display: block; font-size: 15px; } .acct-who small { color: var(--muted); font-size: 12.5px; }
+.acct-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 10px; border: 0; border-radius: 10px; background: none; color: var(--ink); text-align: left; cursor: pointer; font: inherit; }
+.acct-item:hover, .acct-item:focus-visible { background: #f3f2ea; color: var(--ink); }
+.acct-item b { display: block; font-size: 15px; } .acct-item small { display: block; font-size: 12.5px; color: var(--muted); line-height: 1.3; }
+.acct-ico { width: 34px; height: 34px; border-radius: 50%; background: #f1f0e8; display: grid; place-items: center; flex: none; }
+.acct-ico svg { width: 18px; height: 18px; fill: var(--ink); }
+.acct-out { margin-top: 4px; border-top: 1px solid #ecebe3; border-radius: 0 0 10px 10px; }
+.acct-out b { color: var(--red); }
+@media (max-width: 1180px) { .nav-acct-word { display: none; } .nav-acct { padding: 0 10px 0 6px; gap: 2px; } }
+@media (max-width: 900px) {
+  .nav-acct { width: 42px; height: 42px; padding: 0; justify-content: center; border: 0; background: none !important; }
+  .nav-acct .chev { display: none; }
+  .nav-acct-ico { width: 42px; height: 42px; }
+  .nav-login { height: 42px; padding: 0 16px; font-size: 14px; }
+}
+
+/* the phone menu: the account part (same links as the dropdown), Log in, and the buttons at the bottom */
+.menu-acct { margin-top: 22px; }
+.menu-h { margin: 0 0 6px; font: 700 12px var(--font-head); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.menu-acct .acct-item { padding: 10px 2px; border-radius: 0; border-bottom: 1px solid #333; color: #fff; }
+.menu-acct .acct-item small { color: #aaa; } .menu-acct .acct-ico { background: #222; } .menu-acct .acct-ico svg { fill: #fff; }
+html.look-calm.menu-cream .menu-acct .acct-item { color: var(--ink); border-bottom-color: #e3e2d7; }
+html.look-calm.menu-cream .menu-acct .acct-item small { color: var(--muted); }
+html.look-calm.menu-cream .menu-acct .acct-ico { background: #fff; border: 1px solid #e3e2d7; } html.look-calm.menu-cream .menu-acct .acct-ico svg { fill: var(--ink); }
+.menu-acct .acct-out { border-top: 0; }
+.menu-login { display: block; width: 100%; margin-top: 18px; padding: 15px; font-size: 16px; background: var(--red) !important; color: #fff !important; border: 0 !important; }
+/* Feedback 64: every button at the bottom fills its space (an odd one out goes the full width) */
+.menu-foot .btn:first-child { grid-column: auto; }
+.menu-foot > .btn:last-child:nth-child(odd) { grid-column: 1 / -1; }
+html.look-calm.menu-cream .menu-foot .btn:first-child { background: #fff !important; color: var(--ink) !important; border-color: #c9c8bc; }
+html.look-calm.menu-cream .menu-foot .menu-a2hs { background: var(--ink) !important; color: #fff !important; border-color: var(--ink); }
+
+/* the strip: All | My team */
+.strip-mine { display: inline-flex; padding: 2px; margin-right: 6px; border: 1px solid currentColor; border-radius: 999px; }
+.strip-mine button { border: 0; background: none; color: inherit; padding: 5px 12px; border-radius: 999px; font: 700 12.5px var(--font-body); cursor: pointer; white-space: nowrap; }
+.strip-mine button[aria-pressed="true"] { background: var(--red); color: #fff; }
+.live-strip .strip-ctrl { flex-wrap: wrap; justify-content: flex-end; }
+
+/* Feedback 64: the match score at the top of a match page is just white (no green and red) */
+.mh-score b.won, .mh-score b.lost, .mh-score b, .mh-score i { color: #fff; }
+/* the switch has its own look (the strip's round ‹ › button styles must not reach it) */
+html .live-strip .strip-mine, html.look-calm [data-strip] .strip-mine { background: #fff; border: 1px solid #d5d4c8; color: var(--ink); }
+html .live-strip .strip-mine button, html.look-calm [data-strip] .strip-mine button, html.look-calm.strip-dark [data-strip] .strip-mine button {
+  width: auto !important; height: auto !important; min-width: 0; padding: 6px 14px; border: 0 !important; border-radius: 999px; background: transparent !important; color: var(--ink) !important; font: 700 13px var(--font-body); }
+html .live-strip .strip-mine button[aria-pressed="true"], html.look-calm [data-strip] .strip-mine button[aria-pressed="true"],
+html.look-calm.strip-dark [data-strip] .strip-mine button[aria-pressed="true"] { background: var(--red) !important; color: #fff !important; }

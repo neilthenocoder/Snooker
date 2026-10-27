@@ -8,7 +8,7 @@
 import { html, mount, $, readForm, toast, fmtDate, safeHref } from "./dom.js";
 import { DEMO_MODE } from "../config.js";
 import { canInstall, installApp } from "./install.js";
-import { signInChecked, homeFor, isStaff, isMember, isPlainPlayer, isMaster, roleText, mySnookerOn, canWriteNews } from "./auth.js";
+import { signInChecked, homeFor, isStaff, isMember, isPlainPlayer, isMaster, isCaptain, roleText, mySnookerOn, canWriteNews } from "./auth.js";
 import { notificationsOn, setNotifications, NOTIFY_KINDS, notifyPrefs, setNotifyPref, latestNotices, markNoticesSeen, seenNotices, NOTICE_KIND } from "./notify.js";
 import { navigate, refreshShell } from "./router.js";
 
@@ -102,16 +102,9 @@ export function openAccount(user, { message = "" } = {}) {
   const el = drawer("account", "My account", html`
     <div class="drawer-who"><span class="drawer-initials">${initials(name)}</span><div><strong>${name}</strong><small>${roleText(p)}</small></div></div>
     <nav class="drawer-links" aria-label="My account">
-      ${isStaff(user) ? link("/admin", ICON.admin, "Admin dashboard", "Everything your role looks after") : ""}
-      ${link("/myteam", ICON.star, "My Snooker", "Your home page: the teams and players you follow")}
-      ${link("/my/snooker", ICON.cog, "Home page settings", "Who you follow, what you see and in what order")}
-      <button type="button" class="drawer-link as-btn" data-guide-start><span class="drawer-ico">${ICON.help}</span><span><b>Show me around</b><small>A quick guided tour of the website</small></span>${ICON.go}</button>
-      ${isMember(user) && !isPlainPlayer(user) ? link("/my", ICON.team, "My Team", "Scorecards, fixtures and your team") : ""}
-      ${canWriteNews(user) && !isStaff(user) ? link("/my/news", ICON.pen, "Write news", "Step by step: headline, story, pictures, this week's tables") : ""}
-      ${p.player_id ? link(`/player/${p.player_id}#form`, ICON.form, "My form", "Your mark out of 10 from your last 6 matches") : ""}
-      ${p.player_id ? link("/my/profile", ICON.team, "My profile", "Your photo, bio and CueView") : ""}
-      ${!p.player_id && isMaster(user) ? link("/admin/accounts", ICON.team, "Do you play? Link your player profile", "Logins → your own login → Player profile: then My profile and My form appear here") : ""}
-      ${link("/my/details", ICON.key, "Password & details")}
+      ${accountLinks(user).map((l) => (l.guide
+        ? html`<button type="button" class="drawer-link as-btn" data-guide-start><span class="drawer-ico">${l.icon}</span><span><b>${l.label}</b>${l.note ? html`<small>${l.note}</small>` : ""}</span>${ICON.go}</button>`
+        : link(l.href, l.icon, l.label, l.note)))}
     </nav>
     ${installBlock()}
     <button type="button" class="drawer-logout" data-logout>${ICON.out}<span>Log out</span></button>`);
@@ -119,6 +112,30 @@ export function openAccount(user, { message = "" } = {}) {
   // (Log out itself is handled in main.js, like every other log out button.)
   $("[data-logout]", el).addEventListener("click", () => closeDrawer());
 }
+/**
+ * Round 51 (Neil — one menu, not two): everything a logged-in person can open, most important first. The same list is
+ * the dropdown in the menu bar on a computer (Admin ▾ / Captain ▾ / My account ▾) and the account part of the phone menu.
+ * My Snooker is not in it any more: it is the home page (Home, or the logo).
+ */
+export function accountLinks(user) {
+  const p = user?.profile ?? {};
+  return [
+    isStaff(user) && { href: "/admin", icon: ICON.admin, label: "Admin dashboard", note: "Everything your role looks after" },
+    isMember(user) && !isPlainPlayer(user) && { href: "/my", icon: ICON.team, label: "My team", note: "Scorecards, fixtures and your team" },
+    isCaptain(user) && { href: "/my/squad", icon: ICON.team, label: "Manage team", note: "The team sheet, and adding players" },
+    canWriteNews(user) && !isStaff(user) && { href: "/my/news", icon: ICON.pen, label: "Write news", note: "Step by step: headline, story, pictures" },
+    { href: "/my/snooker", icon: ICON.cog, label: "Home page settings", note: "Who you follow, what you see and in what order" },
+    p.player_id && { href: "/my/profile", icon: ICON.team, label: "My profile", note: "Your photo, bio and CueView" },
+    p.player_id && { href: `/player/${p.player_id}#form`, icon: ICON.form, label: "My form", note: "Your mark out of 10 from your last 6 matches" },
+    !p.player_id && isMaster(user) && { href: "/admin/accounts", icon: ICON.team, label: "Do you play? Link your player profile", note: "Then My profile and My form appear here" },
+    { href: "/my/details", icon: ICON.key, label: "Password & details" },
+    { guide: true, icon: ICON.help, label: "Show me around", note: "A quick guided tour of the website" },
+  ].filter(Boolean);
+}
+/** The word on the account button once logged in: Admin, Captain or My account. */
+export const roleLabel = (user) => (isStaff(user) ? "Admin" : isCaptain(user) ? "Captain" : "My account");
+export { ICON as MENU_ICON };
+
 export const initials = (name) => String(name ?? "").trim().split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "?";
 
 // ── the bell: the league's notices, and which notifications ────

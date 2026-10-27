@@ -137,7 +137,7 @@ export default async function home(view, { user } = {}) {
   const timer = slideEls.length > 1 ? setInterval(() => { if (!paused && !document.hidden) show(current + 1); }, ROTATE_MS) : null;
 
   // Live & upcoming matches strip, updated live.
-  const drawStrip = async () => mount($("[data-strip]", view), await liveStrip());
+  const drawStrip = async () => mount($("[data-strip]", view), await liveStrip(user));
   await drawStrip();
   const unsubscribe = subscribe(["fixtures", "frames", "competition_matches", "competitions", "live_matches"], drawStrip);
 
@@ -198,6 +198,13 @@ export default async function home(view, { user } = {}) {
     strip.addEventListener(off, () => { stripPaused = false; }, { passive: true });
   }
   strip.addEventListener("click", (e) => { const b = e.target.closest("[data-strip-move]"); if (b) move(Number(b.dataset.stripMove)); });
+  // All | My team (round 51): which matches the strip shows — remembered on this device.
+  strip.addEventListener("click", (e) => {
+    const t = e.target.closest("[data-strip-mine]");
+    if (!t) return;
+    try { localStorage.setItem(STRIP_MINE, t.dataset.stripMine); } catch { /* not remembered */ }
+    drawStrip();
+  });
   const carousel = setInterval(() => { if (!stripPaused && !document.hidden) move(1); }, CAROUSEL_MS);
 
   return () => { clearInterval(timer); clearInterval(carousel); clearInterval(featureTimer); unsubscribe(); stopSquad(); stopMine?.(); window.removeEventListener("resize", kdFit); };
@@ -221,7 +228,6 @@ function personalHero(user, ctx) {
     </div>
     <div class="ms-hero-actions">
       <a class="btn small" href="/my/snooker" data-guide="settings">Home page settings</a>
-      <a class="btn small ghost" href="/?home=1" data-guide="normal">Normal home page</a>
     </div>
   </header>`;
 }
@@ -314,14 +320,24 @@ function keyDates(site, dates, competitions, today) {
 }
 
 // ── live & upcoming strip ─────────────────────────────────────
-async function liveStrip() {
+// Round 51 (Neil): a logged-in person can see only their own team's matches on the strip (All | Bugle).
+const STRIP_MINE = "sbds-strip-mine";
+const stripMine = () => { try { return localStorage.getItem(STRIP_MINE) === "1"; } catch { return false; } };
+/** The teams (and players) "my team" means: the teams they follow, their own team, and their player's team. */
+function stripTeams(user, players) {
+  if (!user?.profile) return { teams: new Set(), people: new Set() };
+  const prefs = myPrefs(user), me = players.find((x) => x.id === user.profile.player_id);
+  return { teams: new Set([...prefs.teams, user.profile.team_id, me?.team_id].filter(Boolean)), people: new Set([...prefs.players, me?.id].filter(Boolean)) };
+}
+
+async function liveStrip(user = null) {
   // Round 38 (Rich): how long results stay on the strip, and the colours of its Live / Live soon / Completed / Pending /
   // Walkover / Postponed (round 39)
   // labels, are set under Admin → Site settings → "Home page: Live & upcoming strip".
   const site = await settings().catch(() => ({}));
   const hours = Number.isFinite(Number(site.strip_result_hours)) && site.strip_result_hours !== null && site.strip_result_hours !== "" ? Number(site.strip_result_hours) : 48;
   const [{ fixtures, comps, frames }, teams, leagues, compData, venues, players, boards] = await Promise.all([
-    upcomingMatches(12, hours), table("teams", "name"), table("leagues", "sort"), currentCompetitions(), table("venues", "name"), table("players", "full_name"), liveMatches().catch(() => []),
+    upcomingMatches(user && stripMine() ? 80 : 12, hours), table("teams", "name"), table("leagues", "sort"), currentCompetitions(), table("venues", "name"), table("players", "full_name"), liveMatches().catch(() => []),
   ]);
   const team = new Map(teams.map((t) => [t.id, t]));
   const framesBy = new Map();
@@ -376,6 +392,14 @@ async function liveStrip() {
       return null;
     }).filter(Boolean),
   ].sort((x, y) => (y.live - x.live) || String(x.when).localeCompare(String(y.when)));
+  // My team only: matches with one of their teams (or a player they follow) on either side.
+  const mineSets = stripTeams(user, players), canMine = mineSets.teams.size > 0, mine = canMine && stripMine();
+  const ours = (c) => [c.a, c.b].some((sd) => sd && ((sd.team && mineSets.teams.has(sd.team.id)) || (sd.player?.team_id && mineSets.teams.has(sd.player.team_id)) || (sd.player?.id && mineSets.people.has(sd.player.id))));
+  const pool = mine ? all.filter((c) => !c.draw && ours(c)) : all;
+  const mineTeams = [...mineSets.teams].map((id) => team.get(id)).filter(Boolean);
+  const mineLabel = mineTeams.length === 1 ? mineTeams[0].name : "My teams";
+  const toggle = canMine ? html`<span class="strip-mine" role="group" aria-label="Which matches to show">
+    <button type="button" data-strip-mine="0" aria-pressed="${mine ? "false" : "true"}">All</button><button type="button" data-strip-mine="1" aria-pressed="${mine ? "true" : "false"}">${mineLabel}</button></span>` : "";
   // Rich, round 33: a league night fills a dozen places on its own, so cup matches a week or two away never got a
   // look in. Everything live comes first; then the next matches in date order, keeping up to four places for the
   // next cup matches (and draws) that would otherwise drop off the end.
@@ -383,10 +407,10 @@ async function liveStrip() {
   // Results stay for the hours set in Site settings (0 = never), counted from when the result went in (a cup result
   // typed in later counts from then). At most eight, the newest; they come first, then what's coming up.
   const cutoff = Date.now() - hours * 3600e3;
-  const results = all.filter((c) => c.done && !c.live && hours > 0 && Date.parse(c.doneAt ?? c.when) >= cutoff)
+  const results = pool.filter((c) => c.done && !c.live && hours > 0 && Date.parse(c.doneAt ?? c.when) >= cutoff)
     .sort((x, y) => String(y.doneAt ?? y.when).localeCompare(String(x.doneAt ?? x.when))).slice(0, RESULT_PLACES)
     .sort((x, y) => String(x.when).localeCompare(String(y.when)));
-  const live = all.filter((c) => c.live), rest = all.filter((c) => !c.live && !c.done);
+  const live = pool.filter((c) => c.live), rest = pool.filter((c) => !c.live && !c.done);
   const isCup = (c) => c.cup || c.draw;
   let shown = rest.slice(0, Math.max(0, PLACES - live.length));
   const wanted = Math.min(CUP_PLACES, rest.filter(isCup).length, shown.length);
@@ -400,11 +424,14 @@ async function liveStrip() {
   shown.sort((x, y) => String(x.when).localeCompare(String(y.when)));
   const cards = [...live, ...results, ...shown];
 
-  if (!cards.length) return html`<div class="strip-empty">No matches coming up. <a href="/calendar">See the calendar</a></div>`;
+  if (!cards.length) return mine
+    ? html`<div class="strip-head"><h3>Live & upcoming matches</h3><span class="strip-ctrl">${toggle}</span></div>
+      <div class="strip-empty">No matches coming up for ${mineLabel} just now. <a href="/calendar?team=${mineTeams[0]?.id ?? ""}">See the calendar</a></div>`
+    : html`<div class="strip-empty">No matches coming up. <a href="/calendar">See the calendar</a></div>`;
   const face = (s) => (s.player ? avatar(s.player, "avatar sc-face") : s.team ? badge(s.team) : html`<span class="badge">${s.name.slice(0, 2).toUpperCase()}</span>`);
   const side = (s) => html`<div class="sc-side">${face(s)}<span>${s.name}</span></div>`;
   return html`${stripColours(site)}<div class="strip-head"><h3>Live & upcoming matches</h3>
-      <span class="strip-ctrl"><button type="button" data-strip-move="-1" aria-label="Previous matches">‹</button><button type="button" data-strip-move="1" aria-label="Next matches">›</button>
+      <span class="strip-ctrl">${toggle}<button type="button" data-strip-move="-1" aria-label="Previous matches">‹</button><button type="button" data-strip-move="1" aria-label="Next matches">›</button>
         <a href="/calendar">Calendar →</a></span></div>
     <div class="strip-row">${cards.map((c) => (c.draw ? html`<a class="strip-card is-draw ${c.live ? "is-live" : ""}" href="${c.href}">
       <div class="sc-top"><span>${ukDay(c.when) === todayUK() ? "Today" : fmtDay(c.when)}</span><span class="sc-comp">${c.title}</span></div>
