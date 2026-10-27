@@ -4,8 +4,16 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.46.0";
+export const SITE_VERSION = "1.47.0";
 export const CHANGES = [
+  "Home page Quick links: eight buttons in two even rows (two columns on phones, icons shown) — Fixtures, Results, League tables, Rankings, Breaks, Competitions, Calendar, Handicaps",
+  "Phones: Live (grey / orange Live soon / green), a glowing ★ for My Snooker, the bell and search in the menu bar",
+  "Menu bar buttons one height; More ▾ styled like the Admin ▾ menu, with icons",
+  "Featured competition: the one with the nearest result or match, showing its whole current round",
+  "Search finds the website's pages too (Fixtures, League tables, My Snooker…), with everyday words",
+  "Dates across the site as 28th Oct 2026; news dates as 3 days ago, 1 week ago…; the home-screen app refreshes itself",
+  "Our League page in groups; Help in the footer; search box rounded; banner dots inside the white card",
+  "Admin: competitions listed by season; Weekly roundup can show both leagues; players: a Sadly passed away tick box",
   "The home page is the same for everyone again; My Snooker is its own page (/mysnooker) with the Live & upcoming strip (All | my team), At a glance and the sections in your own order",
   "My Snooker settings (was Home page settings); Reset asks first",
   "Home page strip: filter by league or competition and by team; choosing a team offers View … stats (that team on My Snooker, for anyone)",

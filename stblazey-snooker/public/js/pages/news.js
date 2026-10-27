@@ -3,7 +3,7 @@
 // then a row of tabs (All, then every category in the order set under Admin → News categories)
 // and the articles as cards: three across on a wide screen, and on a phone separate cards
 // with the picture on the left and the headline and date beside it.
-import { html, mount, $, fmtDate } from "../core/dom.js";
+import { html, mount, $, fmtDate, fmtAgo } from "../core/dom.js";
 import { articles, table } from "../core/api.js";
 import { breadcrumb, urls, readTime, categoriesOf } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
@@ -22,7 +22,7 @@ export default async function news(view, { query }) {
   const ticked = list.filter((a) => a.hub_featured);
   // (Fewer than four ticked: the newest of the rest make up the four, so the block is always full.)
   const featured = [...ticked, ...list.filter((a) => !a.hub_featured)].slice(0, FEATURED);
-  const when = (a) => fmtDate(a.published_at);
+  const when = (a) => fmtAgo(a.published_at);
   const pic = (a) => (a.image_url || a.circle_image_url ? html`<img src="${a.image_url || a.circle_image_url}" alt="" loading="lazy">` : html`<span class="hub-ph" aria-hidden="true"></span>`);
   let cat = names.includes(query.get("category")) ? query.get("category") : "";
   let shown = PAGE;
@@ -33,7 +33,7 @@ export default async function news(view, { query }) {
       ${a.category ? html`<span class="hub-cat">${a.category}</span>` : ""}
       <h3>${a.title}</h3>
       ${a.excerpt ? html`<p class="hub-excerpt">${a.excerpt}</p>` : ""}
-      <div class="hub-meta"><span>${fmtDate(a.published_at)}</span><span>${readTime(a)} min read</span></div>
+      <div class="hub-meta"><span>${fmtAgo(a.published_at)}</span><span>${readTime(a)} min read</span></div>
     </div></a>`;
 
   mount(view, html`<div class="wrap news-hub">

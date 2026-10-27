@@ -31,6 +31,11 @@ const quickIcon = {
   calendar: qi("M7 2h2v2h6V2h2v2h3v17H4V4h3Zm11 8H6v9h12Zm0-4H6v2h12Z"),
   handicaps: qi("M4 7h3V4h2v3h3v2H9v3H7V9H4Zm9 9h7v2h-7Zm4.6-11.5 1.6 1.2-11 14.6-1.6-1.2Z"),
   fixtures: qi("M4 5h16v2H4Zm0 6h16v2H4Zm0 6h10v2H4Z"),
+  // Round 53 (Rich): League tables, Rankings, Breaks — "as important as the 4 buttons" — and Results, so there are two even rows.
+  results: qi("M4 4h16v16H4Zm2 2v12h12V6Zm2 2h3v3H8Zm5 1h3v1h-3Zm-5 4h3v3H8Zm5 1h3v1h-3Z"),
+  tables: qi("M3 4h18v16H3Zm2 2v3h14V6Zm0 5v3h4v-3Zm6 0v3h8v-3Zm-6 5v2h4v-2Zm6 0v2h8v-2Z"),
+  rankings: qi("M4 20V10h4v10Zm6 0V4h4v16Zm6 0v-7h4v7Z"),
+  breaks: qi("M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18Zm0 2a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm0 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z"),
 };
 
 export default async function home(view, { user } = {}) {
@@ -77,9 +82,9 @@ export default async function home(view, { user } = {}) {
       ${heroLayout(site) === "big" ? html`<div class="hero-bgs" aria-hidden="true">${slides.map((a, i) => html`<div class="hero-bg ${i ? "" : "on"}" style="${a.image_url || a.circle_image_url ? `background-image:${cssUrl(a.image_url || a.circle_image_url)}` : ""}"></div>`)}</div>` : ""}
       <div class="wrap hero-inner">
         <div class="hero-slides" data-slides>
-          ${slides.length ? slides.map((a, i) => heroSlide(a, i === 0)) : html`<div class="hero-slide on"><div class="hero-text"><h2><span>${SITE.name}</span></h2><p class="hero-meta">Established ${SITE.established}</p></div></div>`}
+          ${slides.length ? slides.map((a, i) => heroSlide(a, i === 0, heroLayout(site) === "white" && slides.length > 1 ? { at: i, of: slides.length } : null)) : html`<div class="hero-slide on"><div class="hero-text"><h2><span>${SITE.name}</span></h2><p class="hero-meta">Established ${SITE.established}</p></div></div>`}
         </div>
-        ${slides.length > 1 ? html`<div class="hero-dots">${slides.map((_, i) => html`<button class="${i ? "" : "on"}" data-dot="${i}" aria-label="Show article ${i + 1}"></button>`)}</div>` : ""}
+        ${slides.length > 1 && heroLayout(site) !== "white" ? html`<div class="hero-dots">${slides.map((_, i) => html`<button class="${i ? "" : "on"}" data-dot="${i}" aria-label="Show article ${i + 1}"></button>`)}</div>` : ""}
       </div>
       <div class="live-strip-wrap ${["red", "yellow", "grey"].includes(site.strip_line ?? "red") ? `strip-line-${site.strip_line ?? "red"}` : ""}"><div class="wrap"><div class="live-strip" data-strip></div></div></div>
     </section>
@@ -87,11 +92,16 @@ export default async function home(view, { user } = {}) {
     <div class="${personal ? "wrap ms-homepage" : "wrap layout"}" style="margin-top:${personal ? 24 : 30}px">
       <div class="stack">
         <div class="home-top">
-        <nav class="quick-links" aria-label="Quick links">
+        <div class="hb-head ql-head"><h2>Quick links</h2></div>
+        <nav class="quick-links ql-8" aria-label="Quick links">
+          <a style="background:var(--green)" href="/fixtures">${quickIcon.fixtures}<span>Fixtures</span></a>
+          <a style="background:var(--red)" href="/results">${quickIcon.results}<span>Results</span></a>
+          <a style="background:var(--blue)" href="${urls.season(ctx.season, "league-tables")}">${quickIcon.tables}<span>League tables</span></a>
+          <a style="background:var(--red)" href="${urls.season(ctx.season, "rankings")}">${quickIcon.rankings}<span>Rankings</span></a>
+          <a style="background:var(--green)" href="${urls.season(ctx.season, "breaks")}">${quickIcon.breaks}<span>Breaks</span></a>
           <a style="background:var(--yellow);color:#1b0e06" href="/competitions">${quickIcon.competitions}<span>Competitions</span></a>
           <a style="background:var(--red)" href="/calendar">${quickIcon.calendar}<span>Calendar</span></a>
           <a style="background:var(--blue)" href="/handicaps">${quickIcon.handicaps}<span>Handicaps</span></a>
-          <a style="background:var(--green)" href="/fixtures">${quickIcon.fixtures}<span>Fixtures</span></a>
         </nav>
         ${myBtn(user, ctx)}
         ${featureBox(site, notices, today)}
@@ -125,7 +135,7 @@ export default async function home(view, { user } = {}) {
     current = (i + slideEls.length) % slideEls.length;
     slideEls.forEach((s, j) => s.classList.toggle("on", j === current));
     $$(".hero-bg", view).forEach((s, j) => s.classList.toggle("on", j === current));
-    dots.forEach((d, j) => d.classList.toggle("on", j === current));
+    dots.forEach((d) => d.classList.toggle("on", Number(d.dataset.dot) === current));
   };
   dots.forEach((d) => d.addEventListener("click", () => show(Number(d.dataset.dot))));
   $(".hero-inner", view)?.addEventListener("mouseenter", () => { paused = true; });
@@ -185,12 +195,14 @@ export default async function home(view, { user } = {}) {
 const heroLayout = (site) => (["big", "text", "white"].includes(site.hero_layout) ? site.hero_layout : "side");
 
 /** One banner article: headline, category and date, a small "continue reading" — all linking to the article. */
-function heroSlide(a, on) {
+// dots (round 53, Rich): on the white banner the slider dots sit in the white card, under "Continue reading".
+function heroSlide(a, on, dots = null) {
   return html`<div class="hero-slide ${on ? "on" : ""}">
     <div class="hero-text">
       <h2><a href="${urls.article(a)}"><span>${a.title}</span></a></h2>
       <p class="hero-meta">${a.category} · <time datetime="${a.published_at ?? ""}" title="${fmtDate(a.published_at)}">${fmtAgo(a.published_at)}</time></p>
       <a class="hero-more" href="${urls.article(a)}">Continue reading <span aria-hidden="true">→</span></a>
+      ${dots ? html`<div class="hero-dots in-card">${Array.from({ length: dots.of }, (_, i) => html`<button class="${i === dots.at ? "on" : ""}" data-dot="${i}" aria-label="Show article ${i + 1}"></button>`)}</div>` : ""}
     </div>
     ${a.image_url || a.circle_image_url ? html`<a class="hero-pic-link" href="${urls.article(a)}" aria-label="${a.title}"><img class="hero-pic" src="${a.image_url || a.circle_image_url}" alt=""></a>` : ""}
   </div>`;
@@ -274,7 +286,7 @@ function myBtn(user, ctx) {
   if (!user) return "";
   const team = ctx.team.get(mySnookerTeamId(user));
   return html`<a class="my-snooker-btn" href="/mysnooker">${mySnookerStar}<b>My Snooker</b>
-    <span>${team ? html`${team.name}: view my team stats` : mySnookerSetUp(user) ? "The players you follow" : "Choose your team and see its stats"}</span><i aria-hidden="true">→</i></a>`;
+    <span>${team ? html`The latest stats for ${team.name} and everyone you follow` : "The latest stats of all your favourite teams and players"}</span><i aria-hidden="true">→</i></a>`;
 }
 
 // Round 51 (Neil): a logged-in person can see only their own team's matches on the strip (All | Bugle).

@@ -4824,3 +4824,109 @@ html.look-calm.strip-dark .strip-select.is-set { border-color: var(--red); }
   .strip-select { flex: 1 1 0; max-width: none; }
   .strip-stats { flex-basis: 100%; }
 }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 53 — Neil's feedback 70
+   ═════════════════════════════════════════════════════════════ */
+/* Home page buttons: eight of them, two even rows of four (two columns on phones), each with its icon */
+html.look-calm .quick-links.ql-8 { display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; overflow: visible; }
+html.look-calm .quick-links.ql-8 a { justify-content: flex-start; gap: 10px; padding: 13px 14px; font-size: 15px; min-width: 0; white-space: nowrap; }
+html.look-calm .quick-links.ql-8 a span { overflow: hidden; text-overflow: ellipsis; }
+html.look-calm .quick-links.ql-8 svg { display: block !important; width: 20px; height: 20px; flex: none; }
+@media (max-width: 1100px) { html.look-calm .quick-links.ql-8 a { font-size: 13.5px; padding: 12px 10px; gap: 8px; } }
+@media (max-width: 760px) {
+  html.look-calm .quick-links.ql-8 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  html.look-calm .quick-links.ql-8 a { font-size: 14px; padding: 13px 12px; }
+}
+
+/* Menu bar: Live, the account button, the bell and search all one height (a touch taller) */
+.nav-icon, .nav-acct, .nav-login { height: 50px; }
+.nav-icon { width: 50px; }
+.nav-acct-ico { width: 38px; height: 38px; }
+html.look-calm .main-nav .nav-live-btn { height: 50px; margin-top: 0; padding: 0 20px; align-self: center; }
+html.look-calm .main-nav { align-items: center; }
+@media (max-width: 900px) { .nav-icon { width: 42px; height: 42px; } .nav-login { height: 42px; } }
+/* More ▾ looks like the Admin ▾ dropdown: a heading, then rows with a round icon */
+.more-drop { display: block; min-width: 0; width: 460px; }
+.more-head strong { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.more-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 4px; }
+html.look-calm .main-nav .more-drop a.acct-item { display: flex; height: auto; padding: 8px 10px; border-radius: 10px; font: inherit; text-transform: none; letter-spacing: 0; white-space: normal; color: var(--ink) !important; }
+html.look-calm .main-nav .more-drop a.acct-item b { font: 700 14.5px var(--font-body); }
+html.look-calm .main-nav .more-drop a.acct-item:hover, html.look-calm .main-nav .more-drop a.acct-item:focus-visible { background: #f3f2ea !important; }
+/* Phones: the ★ goes straight to My Snooker (before the bell); computers have it in the Admin ▾ menu and on the home page */
+.nav-star { display: none !important; }
+@media (max-width: 900px) { .nav-star { display: grid !important; } html.look-calm .nav-star svg { fill: #e0a800 !important; } }
+
+/* Featured competition: its current round — results and fixtures */
+.cf-round { margin-top: 12px; }
+.cf-round-h { display: block; font: 700 12px var(--font-head); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.cf-round ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.cf-round li { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: center; font-size: 14px; }
+.cf-round li span:first-child { text-align: right; } .cf-round li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-round li b { min-width: 58px; text-align: center; padding: 3px 8px; border-radius: 6px; background: #f1f0e8; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.cf-round li.done b { background: var(--ink); color: #fff; }
+.cf-round-more { display: block; margin-top: 6px; color: var(--muted); font-size: 12.5px; }
+
+/* the white banner's slider dots, inside the card under "Continue reading" (Rich) */
+.hero .hero-dots.in-card { margin-top: 18px; }
+.hero.hero-l-white .hero-dots.in-card button { border-color: #bbb; }
+.hero.hero-l-white .hero-dots.in-card button.on { background: var(--red); border-color: var(--red); }
+
+/* search: rounded corners like the rest of the site (Rich) */
+dialog.search { border-radius: 18px; }
+.search-bar input { border-radius: 999px; border: 1px solid #dddccf; padding: 10px 16px; background: #fff; }
+.search-bar input:focus { border-color: var(--ink); outline: none; box-shadow: 0 0 0 3px rgba(0, 0, 0, .07); }
+.search-dot.go { background: var(--red); color: #fff; font-weight: 700; }
+
+/* Our League page in groups (Rich), with buttons to jump to each group */
+.league-jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
+.league-jump a { padding: 9px 16px; border-radius: 999px; background: #fff; border: 1px solid #d9d8cc; font-weight: 700; font-size: 14px; color: var(--ink); }
+.league-jump a:hover { border-color: var(--ink); color: var(--ink); }
+.league-group { margin-bottom: 30px; scroll-margin-top: calc(var(--header-h, 90px) + 16px); }
+.league-group-h { display: flex; align-items: center; gap: 10px; font-size: 20px; margin: 0 0 14px; }
+.league-group-h::before { content: ""; width: 4px; height: 20px; border-radius: 2px; background: var(--red); }
+
+/* footer: Help first in the row of links */
+.foot-links .foot-help { font-weight: 700; }
+
+/* admin → player: the "Sadly passed away" tick box */
+.passed-away { padding: 12px 14px; border: 1px solid #e3e2d7; border-radius: 10px; background: #faf9f4; margin: 0 0 14px !important; align-items: flex-start !important; }
+.passed-away input { margin-top: 3px; }
+
+/* Phones (Neil): Live, then ★ My Snooker, then the bell, then search — Live keeps its grey / orange "Live soon" / green look */
+.nav-live-m { display: none !important; }
+@media (max-width: 900px) {
+  .nav-live-m { display: inline-flex !important; align-items: center; gap: 6px; height: 42px; padding: 0 13px; border-radius: 999px; flex: none;
+    font: 700 13px var(--font-head); text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; border: 1px solid #3a3a3a; color: #fff; background: transparent; }
+  .nav-live-m::before { width: 8px; height: 8px; margin: 0; }
+  html.look-calm.head-light .nav-live-m:not(.state-soon):not(.state-live) { background: #ecebdf; border-color: #ecebdf; color: var(--ink); }
+  .nav-live-m.state-soon { background: var(--soon-orange) !important; border-color: transparent !important; color: #fff !important; }
+  .nav-live-m.state-live { background: var(--live-green) !important; border-color: transparent !important; color: #fff !important; }
+  .nav-live-m.state-soon::before, .nav-live-m.state-live::before { background: #fff; }
+}
+@media (max-width: 400px) { .nav-live-m { padding: 0 10px; font-size: 12px; } .nav-icons { gap: 5px; } }
+/* …and the ★ glows like the My Snooker row in the menu: gold, with the same soft shine passing over it */
+@media (max-width: 900px) {
+  .nav-icon.nav-star { position: relative; overflow: hidden; background: linear-gradient(135deg, #fff7d1, #ffe58a) !important; border: 1px solid #f0cd55 !important; }
+  html.look-calm .nav-icon.nav-star svg { fill: var(--ink) !important; }
+  .nav-icon.nav-star::after { content: ""; position: absolute; top: 0; bottom: 0; left: -70%; width: 50%; transform: skewX(-20deg);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .8), transparent); animation: acctShine 4.5s ease-in-out infinite; pointer-events: none; }
+}
+@media (prefers-reduced-motion: reduce) { .nav-icon.nav-star::after { display: none; } }
+
+/* Home page buttons: long names ("League tables", "Competitions") wrap onto two lines instead of being cut off */
+html.look-calm .quick-links.ql-8 a { white-space: normal; line-height: 1.15; text-align: left; letter-spacing: .01em; }
+html.look-calm .quick-links.ql-8 a span { overflow: visible; text-overflow: clip; }
+/* Featured competition (dark card): upcoming dates readable — light text on a soft panel; results in white panels */
+.cf-main .cf-round li b { background: rgba(255, 255, 255, .14); color: #fff; }
+.cf-main .cf-round li.done b { background: #fff; color: var(--ink); }
+.cf-main .cf-round-h, .cf-main .cf-round-more { color: #bdbdbd; }
+/* the heading over the eight buttons */
+.ql-head { margin: 0 0 12px; }
+.ql-head h2 { margin: 0; }
+/* (stronger than the cream header's own button colour, which was winning) */
+@media (max-width: 900px) {
+  html .nav-icons a.nav-icon.nav-star { background: linear-gradient(135deg, #fff7d1, #ffd84d) !important; border: 1px solid #e9bf2e !important; box-shadow: 0 0 0 3px rgba(255, 210, 55, .28), 0 0 14px rgba(255, 196, 0, .45); }
+  html .nav-icons a.nav-icon.nav-star svg { fill: var(--ink) !important; }
+}
+@media (min-width: 761px) { html.look-calm .quick-links.ql-8 a { font-size: 14px; letter-spacing: 0; padding: 13px 12px; gap: 9px; } html.look-calm .quick-links.ql-8 svg { width: 18px; height: 18px; } }

@@ -131,7 +131,7 @@ export function accountLinks(user) {
     p.player_id && { href: `/player/${p.player_id}#form`, icon: ICON.form, label: "My form", note: "Your mark out of 10 from your last 6 matches" },
     !p.player_id && isMaster(user) && { href: "/admin/accounts", icon: ICON.team, label: "Do you play? Link your player profile", note: "Then My profile and My form appear here" },
     { href: "/my/details", icon: ICON.key, label: "Password & details" },
-    { guide: true, icon: ICON.help, label: "Show me around", note: "A quick guided tour of the website" },
+    // (Round 53, Rich: "Help link should go in the footer" — Show me around is the Help link there now.)
   ].filter(Boolean);
 }
 /** The word on the account button once logged in: Admin, Captain or My account. */

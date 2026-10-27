@@ -6,7 +6,7 @@
 //  snooker from about April to September) a promotion block fills the gap: when the new season
 //  starts, the AGM / presentation night and the other key dates, and "join the league".
 // ─────────────────────────────────────────────────────────────
-import { html, fmtDate, fmtLongDate, fmtTime, safeHref } from "./dom.js";
+import { html, fmtDate, fmtLongDate, fmtTime, fmtDay, safeHref, fmtAgo } from "./dom.js";
 import { urls, badge, trophy, picture, compBoxStyle } from "./components.js";
 import { buildBracket, roundName, compScoreText } from "./bracket.js";
 import { mySnookerOn, mySnookerSetUp } from "./auth.js";
@@ -70,7 +70,7 @@ export function promoBlock(site, ctx, dates, today) {
         <a class="btn ghost promo-more" href="/calendar">All the dates</a></div>
     </div>
     ${coming.length ? html`<ul class="promo-dates">${coming.map((d) => html`<li><a href="${safeHref(d.url) || "/calendar"}">
-      <time datetime="${d.starts_on}"><b>${fmtDate(d.starts_on).slice(0, 2)}</b><small>${new Date(`${d.starts_on}T12:00:00Z`).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" })}</small></time>
+      <time datetime="${d.starts_on}"><b>${Number(String(d.starts_on).slice(8, 10))}</b><small>${new Date(`${d.starts_on}T12:00:00Z`).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" })}</small></time>
       <span>${d.title}</span></a></li>`)}</ul>` : ""}
   </section>`;
 }
@@ -95,7 +95,7 @@ export function newsBlock(news, skipIds = []) {
     <div class="mini-cards home-news">${list.map((a) => html`<a class="hub-card" href="${urls.article(a)}">
       <div class="hub-pic">${pic(a)}</div>
       <div class="hub-body">${a.category ? html`<span class="hub-cat">${a.category}</span>` : ""}<h3>${a.title}</h3>
-        <div class="hub-meta"><span>${fmtDate(a.published_at)}</span></div></div></a>`)}</div>
+        <div class="hub-meta"><span>${fmtAgo(a.published_at)}</span></div></div></a>`)}</div>
   </section>`;
 }
 
@@ -103,6 +103,21 @@ export function newsBlock(news, skipIds = []) {
  * Competitions like the news: the one being played now (or next, or most recently) as the big
  * feature, and the others beside it.
  */
+/** The featured competition's current round (round 53, Rich): its results and the fixtures still to play, up to six. */
+function roundList(x, focus) {
+  const ms = (x.b.rounds[focus.round - 1] ?? []).filter((m) => !m.isBye && x.b.entryById.has(m.a) && x.b.entryById.has(m.b));
+  if (!ms.length) return "";
+  const played = ms.filter((m) => m.played).length;
+  // Being played first, then results (newest first), then fixtures (soonest first).
+  const order = (m) => (m.row.status === "in_progress" ? 0 : m.played ? 1 : 2);
+  const list = [...ms].sort((p, q) => order(p) - order(q) || (order(p) === 1 ? String(q.row.result_at ?? q.row.starts_at ?? "").localeCompare(String(p.row.result_at ?? p.row.starts_at ?? ""))
+    : String(p.row.starts_at ?? "9").localeCompare(String(q.row.starts_at ?? "9"))));
+  return html`<div class="cf-round"><span class="cf-round-h">${roundName(focus.round, x.b.totalRounds, x.b)} · ${played} of ${ms.length} played</span>
+    <ul>${list.slice(0, 6).map((m) => html`<li class="${m.played ? "done" : ""}"><span>${x.name(m.a)}</span>
+      <b>${m.row.status === "in_progress" ? "Live" : m.played ? compScoreText(m.row, "–") : m.row.starts_at ? fmtDay(m.row.starts_at) : "v"}</b><span>${x.name(m.b)}</span></li>`)}</ul>
+    ${list.length > 6 ? html`<small class="cf-round-more">and ${list.length - 6} more in this round</small>` : ""}</div>`;
+}
+
 export function compsBlock(comps, data) {
   if (!comps.length) return "";
   const now = Date.now();
@@ -115,8 +130,11 @@ export function compsBlock(comps, data) {
     const next = real.filter((m) => !m.played && known(m) && m.row.starts_at && Date.parse(m.row.starts_at) > now - 3 * 3600e3).sort((p, q) => p.row.starts_at.localeCompare(q.row.starts_at))[0];
     const name = (id) => b.entryById.get(id)?.name ?? "TBC";
     const done = !!b.champion, drawn = real.length > 0;
-    // Most active first: live, then the soonest match coming up, then the latest result; finished and undrawn last.
-    const score = live ? 4e15 : next && !done ? 3e15 - Date.parse(next.row.starts_at) : last && !done ? 2e15 + Date.parse(last.row.result_at ?? last.row.starts_at ?? 0) : done ? 1e15 : 0;
+    // Rich, round 53: the featured competition is the one with something happening nearest to today — a result just in or
+    // a match about to be played, whichever is closer — live first; finished and undrawn last.
+    const lastAt = last ? Date.parse(last.row.result_at ?? last.row.starts_at ?? 0) : null, nextAt = next ? Date.parse(next.row.starts_at) : null;
+    const nearest = Math.min(...[lastAt, nextAt].filter((t) => t !== null).map((t) => Math.abs(now - t)));
+    const score = live ? 4e15 : !done && Number.isFinite(nearest) ? 3e15 - nearest : done ? 1e15 : 0;
     return { ...x, b, live, last, next, name, done, drawn, score };
   }).sort((p, q) => q.score - p.score);
   const [top, ...rest] = info;
@@ -130,7 +148,7 @@ export function compsBlock(comps, data) {
       <a class="cf-main" href="${urls.competition(top.c)}">${pic}
         <div class="cf-text"><span class="cf-kicker">${status}</span><strong>${top.c.name}</strong>
           <small>${top.progress}</small>
-          ${focus ? html`<p class="cf-match">${roundName(focus.round, top.b.totalRounds, top.b)}: ${line(focus, top)}${top.next && focus === top.next ? html` <em>${fmtDate(focus.row.starts_at)} ${fmtTime(focus.row.starts_at)}</em>` : ""}</p>` : ""}
+          ${focus ? roundList(top, focus) : ""}
           <span class="cf-go">See the draw ${arrow}</span></div></a>
       ${rest.length ? html`<div class="cf-side">${rest.slice(0, 4).map((x) => html`<a class="cf-card" href="${urls.competition(x.c)}">
         <span class="cf-mini">${trophy(x.c)}</span><span><strong>${x.c.name}</strong><small>${x.live ? "Being played now" : x.next && !x.done ? `Next match ${fmtDate(x.next.row.starts_at)}` : x.progress}</small></span></a>`)}</div>` : ""}

@@ -1,6 +1,6 @@
 // Reusable building blocks. Every table, panel and card on the site
 // is drawn by one of these functions — change it here, it changes everywhere.
-import { html, fmtDate, fmtTime, ukDay, notUKTime, zoneName } from "./dom.js";
+import { html, fmtDate, fmtTime, ukDay, notUKTime, zoneName, fmtAgo } from "./dom.js";
 import { isProvisional, PROVISIONAL_NOTE, frameWinner, NOT_UPDATED, isLiveSoon } from "./rules.js";
 import { formBadge as formBadgeFn, formChips as formChipsFn } from "./form.js";
 /** The picture for a player with no photo: grey in the calm look (round 43), red in the classic one. */
@@ -180,7 +180,7 @@ export const articleThumb = (a) => a.circle_image_url || a.image_url;
 
 export function articleCard(a) {
   return html`<a class="card" href="${urls.article(a)}">${picture(a.image_url || a.circle_image_url, a.title)}
-    <div><h4>${a.title}</h4><small>${fmtDate(a.published_at)}</small>${a.excerpt}</div></a>`;
+    <div><h4>${a.title}</h4><small>${fmtAgo(a.published_at)}</small>${a.excerpt}</div></a>`;
 }
 
 // ── league widgets ────────────────────────────────────────────
@@ -381,7 +381,7 @@ export function latestNews(news, site, bannerIds = []) {
 }
 
 export const newsMini = (a) => html`<a class="news-mini" href="${urls.article(a)}">${picture(articleThumb(a))}
-  <div><strong>${a.title}</strong><small>${a.category} · ${fmtDate(a.published_at)}</small>${a.excerpt}</div></a>`;
+  <div><strong>${a.title}</strong><small>${a.category} · ${fmtAgo(a.published_at)}</small>${a.excerpt}</div></a>`;
 
 /**
  * The right-hand column. By default it shows every league; pass `leagues`
@@ -571,7 +571,7 @@ export function newsStrip(title, list, { more = "/news" } = {}) {
       <button type="button" data-ns-move="-1" aria-label="Earlier articles">‹</button><button type="button" data-ns-move="1" aria-label="More articles">›</button></span></header>
     <div class="ns-row">${list.map((a) => html`<a class="ns-card" href="${urls.article(a)}">
       ${a.image_url || a.circle_image_url ? html`<img src="${a.image_url || a.circle_image_url}" alt="" loading="lazy">` : html`<span class="ns-ph" aria-hidden="true"></span>`}
-      <span class="ns-text"><strong>${a.title}</strong><small>${a.category} | ${fmtDate(a.published_at)}</small></span></a>`)}</div>
+      <span class="ns-text"><strong>${a.title}</strong><small>${a.category} | ${fmtAgo(a.published_at)}</small></span></a>`)}</div>
   </div></section>`;
 }
 

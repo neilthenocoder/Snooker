@@ -59,7 +59,8 @@ const show = (iso, opts) => (iso ? fmtIn(dateOnly(iso) ? "UTC" : shownZone(), op
 const DATE = { day: "2-digit", month: "2-digit", year: "numeric" };
 const TIME = { hour: "2-digit", minute: "2-digit", hour12: false };
 const LONG = { day: "numeric", month: "long", year: "numeric" };
-export const fmtDate = (iso) => show(iso, DATE);
+// Round 53 (Rich: "the date scenario… across the whole site"): "28th Oct 2026" instead of 28/10/2026, everywhere.
+export const fmtDate = (iso) => (iso ? fmtDay(iso, { withYear: true }) : "");
 /** "12 November 2024" — for dates inside sentences (the match preview summary). */
 export const fmtLongDate = (iso) => show(iso, LONG);
 export const fmtTime = (iso) => show(iso, TIME);

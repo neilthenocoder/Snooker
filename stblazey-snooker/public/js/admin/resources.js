@@ -153,6 +153,14 @@ export const RESOURCES = {
     validate: (row) => (row.slug && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(row.slug) ? "The web address can only have small letters, numbers and dashes (e.g. sam-bolitho)." : null),
     // "No team at the moment" means just that: the player leaves their team's list.
     beforeSave: (row) => ({ ...row, team_id: row.status === "no_team" ? null : row.team_id }),
+    // Round 53 (Rich): the "Sadly passed away" tick box and the Status list stay in step — tick it and the player is
+    // "Sadly no longer with us" (they go to that page on the website); untick it and they are "Not playing".
+    onInput: (form, el) => {
+      const tick = form.querySelector("[data-passed-away]"), status = form.elements.status;
+      if (!tick || !status) return;
+      if (el === tick) status.value = tick.checked ? "deceased" : (status.dataset.before && status.dataset.before !== "deceased" ? status.dataset.before : "not_playing");
+      else if (el === status) { tick.checked = status.value === "deceased"; if (status.value !== "deceased") status.dataset.before = status.value; }
+    },
     rowActions: [{ label: "View", href: (row) => `/player/${row.slug || row.id}` }],
     fields: [
       { name: "full_name", label: "Full name", type: "text", required: true },
@@ -161,6 +169,8 @@ export const RESOURCES = {
       { name: "handicap", label: "Handicap (leave empty if not known yet: it shows as “Not updated yet”)", type: "number", default: 0, placeholder: "Not updated yet" },
       { name: "status", label: "Status", type: "select", options: Object.keys(PLAYER_STATUS), labels: PLAYER_STATUS, default: "playing",
         help: "“Not playing” and “No longer with us” take the player out of squad lists, scorecards and entry forms. Their results, breaks and profile page stay." },
+      { type: "custom", render: (row) => html`<label class="check passed-away"><input type="checkbox" data-passed-away ${row?.status === "deceased" ? "checked" : ""}>
+        <span><b>Sadly passed away</b> <small class="muted">— they are shown on the “Sadly no longer with us” page, and their page carries a tribute (fill in “In memoriam” below)</small></span></label>` },
       { name: "birth_date", label: "Birthday (optional)", type: "date" },
       { name: "avatar_url", label: "Photo (shown as a circle — square photos work best)", type: "image", folder: "players", maxSize: 600, round: true },
       { type: "heading", label: "Profile", help: "Players with a login can fill these in themselves under My area → Profile, and anyone can send a CueView in on the website (League → CueViews to approve)." },
@@ -285,7 +295,7 @@ export const RESOURCES = {
       { name: "cueview_extra", label: "More questions (your own)", type: "textarea", rows: 6,
         help: "Type a question on one line and the answer on the next. Leave a blank line before the next question." },
       { type: "heading", label: "Weekly round-up (optional)", help: "Adds tables under the article for the week ending on the date you choose." },
-      { name: "league_id", label: "League", type: "ref", ref: "leagues" },
+      { name: "league_id", label: "League (leave on All leagues to show both)", type: "ref", ref: "leagues", empty: "All leagues (both)" },
       { name: "week_ending", label: "Week ending (leave blank to use the article date)", type: "date" },
       { name: "show_breaks", label: "Show top breaks of the week", type: "checkbox" },
       { name: "show_results", label: "Show team results of the week", type: "checkbox" },

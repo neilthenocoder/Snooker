@@ -31,10 +31,12 @@ export default async function article(view, { params }) {
   const weekStart = weekEnd ? addDays(weekEnd, -6) : null;
   const inWeek = (iso) => weekStart && ukDay(iso) >= weekStart && ukDay(iso) <= weekEnd;
   // The weekly tables: for the league chosen, or for every league when none is (Rich, round 21: "all leagues").
-  const roundLeagues = league ? [league] : a.week_ending && (a.show_breaks || a.show_results || a.show_standings) ? ctx.leagues : [];
+  // Round 53 (Rich: "show both leagues"): no league chosen = both, whether or not a week-ending date was filled in.
+  const wantsTables = !!(a.show_breaks || a.show_results || a.show_standings);
+  const roundLeagues = league ? [league] : wantsTables ? ctx.leagues : [];
   const many = roundLeagues.length > 1;
   // Match night photos the home captains added to that week's matches (the round-up's league, or every league).
-  const isRoundup = league || a.week_ending;
+  const isRoundup = league || a.week_ending || wantsTables;
   const photoMatches = isRoundup && a.show_photos !== false
     ? (league ? ctx.fixturesIn(league.id) : ctx.fixtures).filter((f) => inWeek(f.starts_at) && f.gallery?.length) : [];
 

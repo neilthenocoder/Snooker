@@ -6,7 +6,7 @@
 //  What they chose is in profiles.my_prefs (see myPrefs() in auth.js);
 //  it is changed under My area → My Snooker, or with a Follow button.
 // ─────────────────────────────────────────────────────────────
-import { html, mount, fmtDate, fmtTime } from "./dom.js";
+import { html, mount, fmtDate, fmtTime, fmtAgo } from "./dom.js";
 import { seasonContext } from "./context.js";
 import { articles, loadCompetitions, setMyPrefs, settings, currentCompetitions } from "./api.js";
 import { deadlineWarnings, deadlineList } from "./comp-deadlines.js";
@@ -151,13 +151,13 @@ function view(user, { ctx, news, comps, site = {}, form: formData = null }, pref
   const newsPic = (a) => (a.image_url || a.circle_image_url ? html`<img src="${a.image_url || a.circle_image_url}" alt="" loading="lazy">` : html`<span class="hub-ph" aria-hidden="true"></span>`);
   const miniFeature = (list) => html`<div class="feat-grid mini-feat ${list.length === 1 ? "solo" : ""}">
     <a class="feat-main" href="${urls.article(list[0])}">${newsPic(list[0])}
-      <span class="feat-text"><strong>${list[0].title}</strong><small>${list[0].category} | ${fmtDate(list[0].published_at)}</small></span></a>
+      <span class="feat-text"><strong>${list[0].title}</strong><small>${list[0].category} | ${fmtAgo(list[0].published_at)}</small></span></a>
     ${list.length > 1 ? html`<div class="feat-side">${list.slice(1).map((a) => html`<a class="feat-card" href="${urls.article(a)}">${newsPic(a)}
-      <span class="feat-text"><strong>${a.title}</strong><small><b>${a.category}</b> | ${fmtDate(a.published_at)}</small></span></a>`)}</div>` : ""}</div>`;
+      <span class="feat-text"><strong>${a.title}</strong><small><b>${a.category}</b> | ${fmtAgo(a.published_at)}</small></span></a>`)}</div>` : ""}</div>`;
   const miniCards = (list) => html`<div class="mini-cards">${list.map((a) => html`<a class="hub-card" href="${urls.article(a)}">
     <div class="hub-pic">${newsPic(a)}</div>
     <div class="hub-body">${a.category ? html`<span class="hub-cat">${a.category}</span>` : ""}<h3>${a.title}</h3>
-      <div class="hub-meta"><span>${fmtDate(a.published_at)}</span></div></div></a>`)}</div>`;
+      <div class="hub-meta"><span>${fmtAgo(a.published_at)}</span></div></div></a>`)}</div>`;
   // CueViews: followed players first, then the team's own.
   const cvPeople = [...new Map([...followed, ...squad].map((p) => [p.id, p])).values()].filter((p) => answered(p).length);
 

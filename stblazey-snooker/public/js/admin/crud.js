@@ -27,6 +27,8 @@ const valueOf = (f, row) => (f.in ? row[f.in]?.[f.name] : row[f.name]);
 
 async function loadRefs(res) {
   const names = [...new Set([...res.fields.filter((f) => ["ref", "tags"].includes(f.type) || f.suggest).map((f) => f.ref ?? f.suggest), ...res.fields.flatMap((f) => f.needs ?? [])])];
+  // Competitions are listed season by season (round 53 — the same cup every year looked like one name repeated).
+  if (names.includes("competitions") && !names.includes("seasons")) names.push("seasons");
   const byName = { players: "full_name" };
   const order = { leagues: "sort", categories: "sort", competitions: "sort", fixtures: "starts_at", articles: "published_at", pages: "sort" };
   const loaded = await Promise.all(names.map((n) => table(n, order[n] ?? byName[n] ?? "name")));
@@ -136,7 +138,19 @@ function input(field, row, refs, rows) {
         <select data-tag-add="${name}"><option value="">+ Add…</option>${refs[field.ref].map((r) => html`<option value="${r[field.store ?? "id"]}">${labelOf(r)}</option>`)}</select>
         <input type="hidden" name="${name}" value="${JSON.stringify(ids)}"></div>`;
     }
-    case "ref": return html`<select ${a(attrs)}><option value="">– none –</option>${refs[field.ref].map((r) => html`<option value="${refValue(field, r)}" ${refValue(field, r) === value ? "selected" : ""}>${labelOf(r)}</option>`)}</select>`;
+    case "ref": {
+      const opt = (r) => html`<option value="${refValue(field, r)}" ${refValue(field, r) === value ? "selected" : ""}>${labelOf(r)}</option>`;
+      const none = html`<option value="">${field.empty ?? "– none –"}</option>`;
+      if (field.ref === "competitions" && refs.seasons?.length) {
+        // Newest season first, each in its own group; competitions with no season at the end.
+        const seasons = [...refs.seasons].sort((x, y) => String(y.name).localeCompare(String(x.name)));
+        const inSeason = (id) => refs.competitions.filter((c) => c.season_id === id);
+        const loose = refs.competitions.filter((c) => !seasons.some((se) => se.id === c.season_id));
+        return html`<select ${a(attrs)}>${none}${seasons.filter((se) => inSeason(se.id).length).map((se) => html`<optgroup label="${se.name}">${inSeason(se.id).map(opt)}</optgroup>`)}
+          ${loose.length ? html`<optgroup label="Any season">${loose.map(opt)}</optgroup>` : ""}</select>`;
+      }
+      return html`<select ${a(attrs)}>${none}${refs[field.ref].map(opt)}</select>`;
+    }
     default: {
       // A text box can offer choices as you type: the values already used (list: true), or its own (choices: (refs) => [[value, label]]).
       const list = field.choices ? html`<datalist id="dl-${name}">${field.choices(refs).map(([v, l]) => html`<option value="${v}">${l}</option>`)}</datalist>`

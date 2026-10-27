@@ -135,10 +135,11 @@ async function drawHeader() {
       <nav class="main-nav" aria-label="Main menu">
         ${MENU.filter((item) => item.color !== "live").map((item) => navLink(item, item.label))}
         ${more.length ? html`<div class="nav-drop-wrap"><button type="button" class="nav-more" data-drop="more" aria-expanded="false" aria-haspopup="true">More<i class="chev" aria-hidden="true"></i></button>
-          <div class="nav-drop more-drop" data-drop-panel="more" hidden>${more.map((l) => html`<a href="${l.href}" ${isOutside(l.href) ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}</div></div>` : ""}
+          <div class="nav-drop more-drop" data-drop-panel="more" hidden><div class="acct-who more-head"><strong>More pages</strong></div><div class="more-grid">${more.map((l) => html`<a class="acct-item" href="${l.href}" ${isOutside(l.href) ? html`target="_blank" rel="noopener"` : ""}><span class="acct-ico">${moreIcon(l.href)}</span><span><b>${l.label}</b></span></a>`)}</div></div></div>` : ""}
         ${MENU.filter((item) => item.color === "live").map((item) => navLink(item, html`<span>${item.label}</span>`))}
       </nav>
       <div class="nav-icons">
+        ${MENU.some((item) => item.color === "live") ? html`<a class="nav-live-btn nav-live-m state-idle" href="${MENU.find((item) => item.color === "live").href}"><span>Live</span></a>` : ""}
         ${user ? html`<div class="nav-drop-wrap acct-wrap"><button type="button" class="nav-acct" data-drop="acct" aria-expanded="false" aria-haspopup="true" aria-label="${role} menu: ${name}" title="${name}">
             <span class="nav-acct-ico">${personIcon}</span><span class="nav-acct-word">${role}</span><i class="chev" aria-hidden="true"></i></button>
           <div class="nav-drop acct-drop" data-drop-panel="acct" hidden>
@@ -147,6 +148,7 @@ async function drawHeader() {
             <button type="button" class="acct-item acct-out" data-logout><span class="acct-ico">${logoutIcon}</span><span><b>Log out</b></span></button>
           </div></div>`
           : noLogin ? "" : html`<button type="button" class="nav-login" data-account-open>Log in</button>`}
+        ${user ? html`<a class="nav-icon nav-star" href="/mysnooker" aria-label="My Snooker" title="My Snooker">${starIcon}</a>` : ""}
         <button type="button" class="nav-icon nav-bell" data-bell aria-label="Notifications" title="Notifications">${bell}</button>
         <button type="button" class="nav-icon nav-search" data-search-open aria-label="Search" title="Search">${searchIcon}</button>
         <button type="button" class="nav-icon nav-toggle" data-menu-open aria-label="Menu" aria-expanded="false">${menuIcon}</button>
@@ -238,6 +240,22 @@ const setMenu = (open) => {
 const acctItems = (user) => html`${accountLinks(user).map((l) => (l.guide
   ? html`<button type="button" class="acct-item" data-guide-start><span class="acct-ico">${l.icon}</span><span><b>${l.label}</b>${l.note ? html`<small>${l.note}</small>` : ""}</span></button>`
   : html`<a class="acct-item ${l.special ? "acct-special" : ""}" href="${l.href}"><span class="acct-ico">${l.icon}</span><span><b>${l.label}</b>${l.note ? html`<small>${l.note}</small>` : ""}</span></a>`))}`;
+/** Round 53: a small picture for each page in the More dropdown (styled like the Admin dropdown). */
+const mi = (d) => html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
+const MORE_ICONS = [
+  [/calendar/, "M7 2h2v2h6V2h2v2h3v17H4V4h3Zm11 8H6v9h12Zm0-4H6v2h12Z"],
+  [/results/, "M4 4h16v16H4Zm2 2v12h12V6Zm2 2h3v3H8Zm5 1h3v1h-3Zm-5 4h3v3H8Zm5 1h3v1h-3Z"],
+  [/handicap/, "M4 7h3V4h2v3h3v2H9v3H7V9H4Zm9 9h7v2h-7Zm4.6-11.5 1.6 1.2-11 14.6-1.6-1.2Z"],
+  [/players/, "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-8 8c0-3.3 3.6-6 8-6s8 2.7 8 6v1H4Z"],
+  [/form/, "M4 20V10h4v10Zm6 0V4h4v16Zm6 0v-7h4v7Z"],
+  [/wrapped/, "M4 8h16v12H4Zm0-2h16v2H4Zm7-2h2v16h-2Z"],
+  [/seasons/, "M5 3h14v18H5Zm2 2v14h10V5Zm2 2h6v2H9Zm0 4h6v2H9Z"],
+  [/scoreboard|live/, "M3 5h18v12H3Zm2 2v8h14V7Zm2 12h10v2H7Z"],
+  [/market/, "M4 4h16l-1 5a3 3 0 0 1-5 1 3 3 0 0 1-4 0 3 3 0 0 1-5-1Zm1 8h14v8H5Z"],
+  [/hall-of-fame/, "M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v2H8v-2h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3Z"],
+  [/download/, "M11 3h2v9l3-3 1.4 1.4L12 15.8l-5.4-5.4L8 9l3 3Zm-7 14h16v4H4Z"],
+];
+const moreIcon = (href) => mi((MORE_ICONS.find(([re]) => re.test(href)) ?? [, "M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Z"])[1]);
 const logoutIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3h9v18h-9v-2h7V5h-7Zm-.6 4.6L5 12l4.4 4.4 1.4-1.4-2-2H15v-2H8.8l2-2Z"/></svg>`;
 /** The two dropdowns in the menu bar (More ▾ and Admin ▾ / Captain ▾ / My account ▾): one open at a time. */
 function closeDrops(except = null) {
@@ -275,8 +293,7 @@ async function drawFooter() {
     <h3 class="foot-h">#SBDS</h3>
     ${socials.length ? html`<div class="socials">${socials.map(([key, name, icon]) => html`<a href="${safeHref(site[key])}" target="_blank" rel="noopener" aria-label="${name}" title="${name}">
       <svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></a>`)}</div>` : ""}
-    ${links.length ? html`<nav class="foot-links" aria-label="Footer">${links.map((l) => html`<a href="${l.href}" ${l.outside ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}</nav>` : ""}
-    <p class="foot-news"><a href="/" data-guide-start>? Show me around: a quick tour of the website</a></p>
+    <nav class="foot-links" aria-label="Footer"><a href="/" class="foot-help" data-guide-start>Help: show me around</a>${links.map((l) => html`<a href="${l.href}" ${l.outside ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}</nav>
     ${site.newsletter_footer_link !== false ? html`<p class="foot-news"><a href="/newsletter" data-newsletter-open>✉ Sign up to the newsletter</a></p>` : ""}
     ${zoneNote()}
     <p class="foot-copy">© ${new Date().getFullYear()} ${owner}${creditText ? html` · ${credit ? html`<a href="${credit.href}" ${credit.outside ? html`target="_blank" rel="noopener"` : ""}>${creditText}</a>` : creditText}` : ""}</p>
@@ -587,3 +604,26 @@ document.addEventListener("keydown", (e) => {
   const open = document.querySelector('[data-drop][aria-expanded="true"]');
   if (open) { closeDrops(); open.focus(); }
 });
+
+// ── Keeping it up to date (Rich, round 53: the home-screen app showed old news until it was closed) ──
+// People rarely close the app — they switch away and come back. So when the website comes back on screen after
+// more than 30 seconds away, and every 5 minutes while it is open, the page fetches everything again and is drawn
+// afresh where the reader was. Never while someone is typing, in a form, in the dashboard or scoring a match.
+let awayAt = 0;
+const busy = () => !!document.querySelector("input:focus, textarea:focus, select:focus, [contenteditable]:focus, dialog[open], .guide-tip")
+  || document.documentElement.classList.contains("menu-open") || document.querySelector('[data-drop][aria-expanded="true"]')
+  || /^\/(admin|my|scorecard|cup-scorecard|scoreboard|marketplace\/new|login)/.test(location.pathname) || /\/edit$/.test(location.pathname);
+async function quietRefresh() {
+  if (busy()) return;
+  const y = window.scrollY;
+  invalidate();
+  await Promise.all([drawHeader(), drawFooter()]).catch(() => {});
+  await renderRoute().catch(() => {});
+  window.scrollTo(0, y);
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) { awayAt = Date.now(); return; }
+  if (awayAt && Date.now() - awayAt > 30e3) quietRefresh();
+  awayAt = 0;
+});
+setInterval(() => { if (!document.hidden) quietRefresh(); }, 5 * 60e3);

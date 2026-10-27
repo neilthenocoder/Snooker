@@ -39,9 +39,26 @@ export default async function league(view) {
     // Info pages — except the sets of rules (they are the tabs of the Rules page) and any with the same name as a built-in tile.
     ...pages.filter((p) => p.show_in_league !== false && !p.show_in_rules && !builtIn.has(p.title.trim().toLowerCase())).map((p) => [p.title, p.summary, urls.page(p)]),
   ];
+  // Rich, round 53: "a lot on here and you need to scroll" — the tiles in groups, like the admin menu, with a row of
+  // buttons at the top to jump to each group. Anything not named below (new info pages) goes under League information.
+  const GROUPS = [
+    ["season", "This season", ["News", "Seasons", "Competitions", "Form guide", "Handicaps", "Live scoreboard"]],
+    ["players", "Players", ["Our Players", "Send in your CueView", "Hall of Fame", "Sadly no longer with us"]],
+    ["history", "Honours & history", ["Season archive", "Presentation night", "Season review"]],
+    ["info", "League information", ["Rules", "Venues", "Meetings", "Downloads"]],
+    ["shop", "Shop & support", ["Merchandise", "Marketplace", "Sponsorship"]],
+  ];
+  const named = new Map(GROUPS.flatMap(([key, , list]) => list.map((t) => [t, key])));
+  const leagueKeys = new Set([...leagues.map((l) => l.name), ...leagues.filter((l) => l.shield_team_id).map((l) => l.shield_name || `${l.name} Runabout Shield`)]);
+  const groupOf = ([t]) => (leagueKeys.has(t) ? "season" : named.get(t) ?? "info");
+  // The leagues' own tables and shields lead "This season" — they are what people come for.
+  const sections = GROUPS.map(([key, name]) => [key, name, tiles.filter((x) => groupOf(x) === key).sort((x, y) => leagueKeys.has(y[0]) - leagueKeys.has(x[0]))])
+    .filter(([, , list]) => list.length);
   mount(view, html`<div class="wrap">
     ${breadcrumb([["Home", "/"], ["Our League"]])}
     <h1>Our League</h1>
-    <div class="cards">${tiles.map(([t, text, href]) => tile(t, text, href, "tall"))}</div>
+    <nav class="league-jump" aria-label="Jump to">${sections.map(([key, name]) => html`<a href="#lg-${key}">${name}</a>`)}</nav>
+    ${sections.map(([key, name, list]) => html`<section class="league-group" id="lg-${key}"><h2 class="league-group-h">${name}</h2>
+      <div class="cards">${list.map(([t, text, href]) => tile(t, text, href, "tall"))}</div></section>`)}
   </div>`);
 }
