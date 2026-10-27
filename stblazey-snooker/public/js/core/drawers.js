@@ -120,11 +120,13 @@ export function openAccount(user, { message = "" } = {}) {
 export function accountLinks(user) {
   const p = user?.profile ?? {};
   return [
+    // Round 52: My Snooker is a page of its own again — first in the list, and it stands out (special: true).
+    { href: "/mysnooker", icon: ICON.star, label: "My Snooker", note: "Your team's stats, table, rankings and breaks", special: true },
     isStaff(user) && { href: "/admin", icon: ICON.admin, label: "Admin dashboard", note: "Everything your role looks after" },
     isMember(user) && !isPlainPlayer(user) && { href: "/my", icon: ICON.team, label: "My team", note: "Scorecards, fixtures and your team" },
     isCaptain(user) && { href: "/my/squad", icon: ICON.team, label: "Manage team", note: "The team sheet, and adding players" },
     canWriteNews(user) && !isStaff(user) && { href: "/my/news", icon: ICON.pen, label: "Write news", note: "Step by step: headline, story, pictures" },
-    { href: "/my/snooker", icon: ICON.cog, label: "Home page settings", note: "Who you follow, what you see and in what order" },
+    { href: "/my/snooker", icon: ICON.cog, label: "My Snooker settings", note: "Who you follow, what you see and in what order" },
     p.player_id && { href: "/my/profile", icon: ICON.team, label: "My profile", note: "Your photo, bio and CueView" },
     p.player_id && { href: `/player/${p.player_id}#form`, icon: ICON.form, label: "My form", note: "Your mark out of 10 from your last 6 matches" },
     !p.player_id && isMaster(user) && { href: "/admin/accounts", icon: ICON.team, label: "Do you play? Link your player profile", note: "Then My profile and My form appear here" },

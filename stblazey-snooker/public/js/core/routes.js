@@ -41,6 +41,7 @@ export const ROUTES = [
   ["/my", "my"],
   ["/my/:tab", "my"],
   ["/myteam", "myteam"],
+  ["/mysnooker", "myteam"],
   ["/merchandise", "merchandise"],
   ["/cueview", "cueview"],
   ["/captain", "my"],

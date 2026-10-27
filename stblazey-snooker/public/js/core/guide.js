@@ -15,7 +15,7 @@ const markSeen = () => { try { localStorage.setItem(DONE_KEY, "1"); } catch { /*
 /** The steps for a logged-in person's own home page, then for everyone else's. */
 function steps(personal) {
   const mine = [
-    { title: "Welcome to your home page", text: "When you're logged in, the home page is <b>My Snooker</b>: your own page of the league, built round the team and players you follow. Press <b>Home</b> any time to come back here. This takes about a minute: use <b>Next</b>, or the arrow keys." },
+    { title: "Welcome to My Snooker", text: "<b>My Snooker</b> is your own page of the league, built round the team and players you follow. Find it any time in your menu, or with the <b>My Snooker</b> button on the home page. This takes about a minute: use <b>Next</b>, or the arrow keys." },
     { at: "[data-guide=hero]", title: "Your team", text: "Who your page is for. Everything below follows this team." },
     { at: ".ms-teams", title: "More than one team?", text: "Follow more teams and you get a button for each. Press one to see that team's matches, table and players." },
     { at: ".ms-sec-next", title: "Your next match", text: "When and where you play next. Press it for the match preview, and on the night to follow the score live." },
@@ -23,12 +23,12 @@ function steps(personal) {
     { at: ".ms-sec-fixtures", title: "Your fixtures", text: "Every match to come, with bye weeks. <b>See these on the calendar</b> shows them by month." },
     { at: ".ms-sec-table", title: "The table, round your team", text: "Your team is picked out. Press <b>View full table</b> to see the whole league." },
     { at: ".ms-sec-rankings", title: "Your players in the rankings", text: "The top of the rankings, plus wherever your team's players and the players you follow are, picked out." },
-    { at: "[data-guide=settings]", title: "Make it yours", text: "<b>Home page settings</b>: follow more teams and players, tick the sections you want, and use <b>↑ ↓</b> to put the most important first." },
-    { at: ".live-strip", title: "Live and upcoming", text: "Tonight's matches and what's coming up. A green card is being played now: press it to follow it live." },
+    { at: "[data-guide=settings]", title: "Make it yours", text: "<b>My Snooker settings</b>: follow more teams and players, tick the sections you want, and use <b>↑ ↓</b> to put the most important first." },
+    { at: ".live-strip", title: "Live and upcoming", text: "Tonight's matches and what's coming up. Press your team's name above the cards to see only your matches. A green card is being played now: press it to follow it live." },
     { at: ".quick-links", title: "The rest of the league", text: "Competitions, the calendar, handicaps and every team's fixtures are always here." },
     { at: ".nav-toggle", title: "The menu", text: "Every page of the website is in here: fixtures, tables, competitions, news, and <b>More</b>." },
     { at: ".nav-more", title: "More pages", text: "The calendar, results, handicaps, players and the rest are all under <b>More</b>." },
-    { at: ".nav-acct", title: "Your menu", text: "Everything for your login is here: home page settings, your profile, your password, <b>Show me around</b> to see this guide again, and Log out." },
+    { at: ".nav-acct", title: "Your menu", text: "Everything for your login is here: My Snooker, its settings, your profile, your password, <b>Show me around</b> to see this guide again, and Log out." },
     { at: ".nav-bell", title: "Notifications", text: "League news and alerts. Choose which ones you get in here." },
     { at: ".nav-search", title: "Search", text: "Find any player, team, venue or news story." },
     { title: "One more thing: Follow", text: "On any team or player page, press <b>☆ Follow</b> to add them to your home page. That's it. Enjoy the snooker!" },
@@ -38,7 +38,8 @@ function steps(personal) {
     { at: ".live-strip", title: "Live and upcoming", text: "Tonight's matches and what's coming up. A green card is being played now: press it to follow it live." },
     { at: ".quick-links", title: "Find your way", text: "Competitions, the calendar, handicaps and every team's fixtures." },
     { at: ".main-nav", title: "The menu", text: "Results, tables, competitions and news, all from here." },
-    { at: ".ms-invite", title: "Make this page your own", text: "Log in and the home page becomes <b>My Snooker</b>: your team's table, fixtures, results, rankings and breaks, in the order you choose." },
+    { at: ".strip-filters", title: "Just one league, or one team", text: "Choose a league, a competition or a team here to see only their matches. Pick a team and you can open its stats." },
+    { at: ".ms-invite", title: "My Snooker", text: "Log in for <b>My Snooker</b>: your own page with your team's table, fixtures, results, rankings and breaks, in the order you choose." },
     { at: ".nav-toggle", title: "The menu", text: "Every page of the website is in here: fixtures, tables, competitions, news, and <b>More</b>." },
     { at: ".nav-more", title: "More pages", text: "The calendar, results, handicaps, players and the rest are all under <b>More</b>." },
     { at: ".nav-login", title: "Log in", text: "Players, captains and officers log in here, and the home page becomes your own. Your login comes from the league secretary." },
@@ -151,11 +152,13 @@ export function maybeStartGuide({ personal, site }) {
 }
 
 /** "Show me around": go to the home page (if not there) and start the guide when it has drawn. */
-export function requestGuide(navigate) {
+export function requestGuide(navigate, loggedIn = false) {
+  // Round 52: logged in, the guide is about My Snooker (/mysnooker); otherwise about the home page.
+  const target = loggedIn ? "/mysnooker" : "/";
   try { sessionStorage.setItem(NOW_KEY, "1"); } catch { /* falls back to starting it here */ }
-  if (location.pathname === "/" && !new URLSearchParams(location.search).has("home")) {
+  if (location.pathname === target && !location.search) {
     try { sessionStorage.removeItem(NOW_KEY); } catch { /* */ }
-    return startGuide({ personal: !!document.querySelector("[data-guide=hero]") });
+    return startGuide({ personal: loggedIn });
   }
-  navigate("/");
+  navigate(target);
 }

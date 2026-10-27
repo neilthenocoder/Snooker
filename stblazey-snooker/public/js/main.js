@@ -237,7 +237,7 @@ const setMenu = (open) => {
 /** The account links as rows (the dropdown on a computer and the phone menu share them — drawers.js accountLinks). */
 const acctItems = (user) => html`${accountLinks(user).map((l) => (l.guide
   ? html`<button type="button" class="acct-item" data-guide-start><span class="acct-ico">${l.icon}</span><span><b>${l.label}</b>${l.note ? html`<small>${l.note}</small>` : ""}</span></button>`
-  : html`<a class="acct-item" href="${l.href}"><span class="acct-ico">${l.icon}</span><span><b>${l.label}</b>${l.note ? html`<small>${l.note}</small>` : ""}</span></a>`))}`;
+  : html`<a class="acct-item ${l.special ? "acct-special" : ""}" href="${l.href}"><span class="acct-ico">${l.icon}</span><span><b>${l.label}</b>${l.note ? html`<small>${l.note}</small>` : ""}</span></a>`))}`;
 const logoutIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3h9v18h-9v-2h7V5h-7Zm-.6 4.6L5 12l4.4 4.4 1.4-1.4-2-2H15v-2H8.8l2-2Z"/></svg>`;
 /** The two dropdowns in the menu bar (More ▾ and Admin ▾ / Captain ▾ / My account ▾): one open at a time. */
 function closeDrops(except = null) {
@@ -449,7 +449,7 @@ document.addEventListener("click", async (e) => {
   }
   if (!e.target.closest("[data-drop-panel]") || e.target.closest("a, button")) closeDrops();
   // "Show me around" (account menu, footer): the guided tour of the home page (core/guide.js).
-  if (e.target.closest("[data-guide-start]")) { e.preventDefault(); setMenu(false); closeDrawer(); return requestGuide(navigate); }
+  if (e.target.closest("[data-guide-start]")) { e.preventDefault(); setMenu(false); closeDrawer(); return requestGuide(navigate, !!(await getUser())); }
   if (e.target.closest("[data-scroll-down]")) return window.scrollBy({ top: window.innerHeight * 0.8, behavior: "smooth" });
   // The ‹ › buttons of a news strip move it along by most of its width.
   const nsMove = e.target.closest("[data-ns-move]");

@@ -49,7 +49,8 @@ export default async function home(view, { user } = {}) {
   // Round 48 (Neil's idea, Rich agreed to try it): logged in and following a team or a player → the home page IS
   // their My Snooker: the live strip and the quick links stay on top, then their own sections in their own order.
   // "Normal home page" (/?home=1) shows everyone's home page once.
-  const personal = !!user && mySnookerHome(user) && new URLSearchParams(location.search).get("home") !== "1";
+  // Round 52 (Neil): the home page is the same for everyone again; My Snooker is its own page (/mysnooker, pages/myteam.js).
+  const personal = false;
   // Round 47 (Rich): the standard home page — news and promotion first, the blocks and their order chosen in Site settings.
   // "Everything" is the earlier home page with all the tables (Site settings → Home page → Home page style).
   const standard = site.home_style !== "full";
@@ -85,10 +86,6 @@ export default async function home(view, { user } = {}) {
     `}
     <div class="${personal ? "wrap ms-homepage" : "wrap layout"}" style="margin-top:${personal ? 24 : 30}px">
       <div class="stack">
-        ${personal ? personalHero(user, ctx) : ""}
-        ${user && mySnookerOn(user) && !personal ? html`<a class="ms-bar" href="${mySnookerSetUp(user) ? "/myteam" : "/my/snooker"}"><b>★ My Snooker</b>
-          <span>${mySnookerSetUp(user) ? html`This is everyone's home page. Yours has ${ctx.team.get(mySnookerTeamId(user))?.name ?? "the players you follow"}: matches, results, the table and news` : "Follow your team and players, and the home page becomes your own"}</span>
-          <i>${mySnookerSetUp(user) ? "Back to my home page →" : "Set it up →"}</i></a>` : ""}
         <div class="home-top">
         <nav class="quick-links" aria-label="Quick links">
           <a style="background:var(--yellow);color:#1b0e06" href="/competitions">${quickIcon.competitions}<span>Competitions</span></a>
@@ -96,6 +93,7 @@ export default async function home(view, { user } = {}) {
           <a style="background:var(--blue)" href="/handicaps">${quickIcon.handicaps}<span>Handicaps</span></a>
           <a style="background:var(--green)" href="/fixtures">${quickIcon.fixtures}<span>Fixtures</span></a>
         </nav>
+        ${user ? myBtn(user, ctx) : ""}
         ${featureBox(site, notices, today)}
         ${user ? deadlineBar(deadlineWarnings(user, ctx, await currentCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] })), site)) : ""}
         ${entering.length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${entering.map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
@@ -115,8 +113,6 @@ export default async function home(view, { user } = {}) {
         breaks: !standard || on("side_breaks"), rankings: !standard || on("side_rankings") })}
     </div>`);
 
-  // Their own sections (core/my-snooker.js — the same view as before, now on the home page).
-  const stopMine = personal ? await mountMySnooker($("[data-ms-home]", view), user).catch((err) => { console.warn("My Snooker:", err); return null; }) : null;
   // The guide: the first time someone sees their own home page, or straight after "Show me around".
   maybeStartGuide({ personal, site });
   // Captains and vice captains: the "Manage team" box at the bottom of the screen in the days before a match.
@@ -136,10 +132,8 @@ export default async function home(view, { user } = {}) {
   $(".hero-inner", view)?.addEventListener("mouseleave", () => { paused = false; });
   const timer = slideEls.length > 1 ? setInterval(() => { if (!paused && !document.hidden) show(current + 1); }, ROTATE_MS) : null;
 
-  // Live & upcoming matches strip, updated live.
-  const drawStrip = async () => mount($("[data-strip]", view), await liveStrip(user));
-  await drawStrip();
-  const unsubscribe = subscribe(["fixtures", "frames", "competition_matches", "competitions", "live_matches"], drawStrip);
+  // Live & upcoming matches strip, updated live — with the league / competition and team filters (round 52).
+  const stopStrip = await mountLiveStrip($("[data-strip]", view), user, { mode: "filters" });
 
   // The feature box: scrolling like the ticker (at the ticker's speed), or one message at a time.
   const feature = $("[data-feature]", view);
@@ -181,56 +175,10 @@ export default async function home(view, { user } = {}) {
     kd.addEventListener("click", (e) => { const b = e.target.closest("[data-kd-move]"); if (b) kdRow.scrollBy({ left: Number(b.dataset.kdMove) * Math.max(240, kdRow.clientWidth * 0.8), behavior: "smooth" }); });
   }
 
-  // …which moves on one card at a time, then goes back to the start.
-  const strip = $("[data-strip]", view);
-  let stripPaused = false;
-  const move = (dir) => {
-    const row = $(".strip-row", strip);
-    if (!row) return;
-    const stepPx = ($(".strip-card", row)?.offsetWidth ?? 230) + 10;
-    const atEnd = row.scrollLeft + row.clientWidth >= row.scrollWidth - 4;
-    if (dir > 0 && atEnd) row.scrollTo({ left: 0, behavior: "smooth" });
-    else if (dir < 0 && row.scrollLeft <= 4) row.scrollTo({ left: row.scrollWidth, behavior: "smooth" });
-    else row.scrollBy({ left: dir * stepPx, behavior: "smooth" });
-  };
-  for (const [on, off] of [["mouseenter", "mouseleave"], ["touchstart", "touchend"], ["focusin", "focusout"]]) {
-    strip.addEventListener(on, () => { stripPaused = true; }, { passive: true });
-    strip.addEventListener(off, () => { stripPaused = false; }, { passive: true });
-  }
-  strip.addEventListener("click", (e) => { const b = e.target.closest("[data-strip-move]"); if (b) move(Number(b.dataset.stripMove)); });
-  // All | My team (round 51): which matches the strip shows — remembered on this device.
-  strip.addEventListener("click", (e) => {
-    const t = e.target.closest("[data-strip-mine]");
-    if (!t) return;
-    try { localStorage.setItem(STRIP_MINE, t.dataset.stripMine); } catch { /* not remembered */ }
-    drawStrip();
-  });
-  const carousel = setInterval(() => { if (!stripPaused && !document.hidden) move(1); }, CAROUSEL_MS);
 
-  return () => { clearInterval(timer); clearInterval(carousel); clearInterval(featureTimer); unsubscribe(); stopSquad(); stopMine?.(); window.removeEventListener("resize", kdFit); };
+  return () => { clearInterval(timer); clearInterval(featureTimer); stopStrip(); stopSquad(); window.removeEventListener("resize", kdFit); };
 }
 
-/** The top of a logged-in person's home page: their team, and the two buttons to change it or see everyone's page. */
-function personalHero(user, ctx) {
-  const prefs = myPrefs(user);
-  const teams = prefs.teams.map((id) => ctx.team.get(id)).filter(Boolean);
-  const players = prefs.players.map((id) => ctx.player.get(id)).filter(Boolean);
-  const team = teams[0];
-  const league = team && ctx.league.get(team.league_id), venue = team && ctx.venue.get(team.venue_id);
-  const first = (user.profile?.full_name || "").trim().split(/\s+/)[0];
-  return html`<header class="ms-hero ms-home-hero" data-guide="hero">
-    ${team ? html`<span class="ms-badge">${badge(team)}</span>` : ""}
-    <div class="ms-hero-text">
-      <small class="ms-kicker">${mySnookerStar} My Snooker${first ? html` · ${first}` : ""}</small>
-      <h1>${teams.length === 1 ? team.name : first ? `Hello, ${first}` : "My Snooker"}</h1>
-      <p>${teams.length === 1 ? html`${league?.name ?? ""}${venue ? html` · Home: <a href="${urls.venue(venue)}">${venue.name}</a>` : ""}`
-        : `Following ${[teams.length ? `${teams.length} team${teams.length > 1 ? "s" : ""}` : "", players.length ? `${players.length} player${players.length > 1 ? "s" : ""}` : ""].filter(Boolean).join(" and ")}`}</p>
-    </div>
-    <div class="ms-hero-actions">
-      <a class="btn small" href="/my/snooker" data-guide="settings">Home page settings</a>
-    </div>
-  </header>`;
-}
 
 /** The banner's layout (Admin → Site settings → Home page banner — Rich, round 23): picture beside, one big picture, or headline only. */
 // Round 28: "white" — a white banner, the headline on the left and the picture on the right .
@@ -320,6 +268,13 @@ function keyDates(site, dates, competitions, today) {
 }
 
 // ── live & upcoming strip ─────────────────────────────────────
+/** Round 52 (Neil): under the four quick links, for anyone logged in — the way to their My Snooker page. */
+function myBtn(user, ctx) {
+  const team = ctx.team.get(mySnookerTeamId(user));
+  return html`<a class="my-snooker-btn" href="/mysnooker">${mySnookerStar}<b>My Snooker</b>
+    <span>${team ? html`${team.name}: view my team stats` : mySnookerSetUp(user) ? "The players you follow" : "Choose your team and see its stats"}</span><i aria-hidden="true">→</i></a>`;
+}
+
 // Round 51 (Neil): a logged-in person can see only their own team's matches on the strip (All | Bugle).
 const STRIP_MINE = "sbds-strip-mine";
 const stripMine = () => { try { return localStorage.getItem(STRIP_MINE) === "1"; } catch { return false; } };
@@ -330,14 +285,57 @@ function stripTeams(user, players) {
   return { teams: new Set([...prefs.teams, user.profile.team_id, me?.team_id].filter(Boolean)), people: new Set([...prefs.players, me?.id].filter(Boolean)) };
 }
 
-async function liveStrip(user = null) {
+// Round 52 (Neil): on the home page, two filters — a league or competition, and a team (remembered on this device).
+const STRIP_FILTER = "sbds-strip-filter";
+const stripFilter = () => { try { const v = JSON.parse(localStorage.getItem(STRIP_FILTER) || "{}"); return { comp: String(v.comp || ""), team: String(v.team || "") }; } catch { return { comp: "", team: "" }; } };
+const setStripFilter = (v) => { try { localStorage.setItem(STRIP_FILTER, JSON.stringify(v)); } catch { /* not remembered */ } };
+
+/**
+ * The Live & upcoming strip, drawn into `el` and kept up to date, moving on one card at a time.
+ * mode "filters" (the home page): League / competition and Team dropdowns; choosing a team offers "View team stats".
+ * mode "mine" (My Snooker): the All | my team switch. Returns a function that stops it.
+ */
+export async function mountLiveStrip(el, user, { mode = "filters" } = {}) {
+  const draw = async () => mount(el, await liveStrip(user, mode));
+  await draw();
+  const unsubscribe = subscribe(["fixtures", "frames", "competition_matches", "competitions", "live_matches"], draw);
+  let paused = false;
+  const move = (dir) => {
+    const row = $(".strip-row", el);
+    if (!row) return;
+    const stepPx = ($(".strip-card", row)?.offsetWidth ?? 230) + 10;
+    const atEnd = row.scrollLeft + row.clientWidth >= row.scrollWidth - 4;
+    if (dir > 0 && atEnd) row.scrollTo({ left: 0, behavior: "smooth" });
+    else if (dir < 0 && row.scrollLeft <= 4) row.scrollTo({ left: row.scrollWidth, behavior: "smooth" });
+    else row.scrollBy({ left: dir * stepPx, behavior: "smooth" });
+  };
+  for (const [on, off] of [["mouseenter", "mouseleave"], ["touchstart", "touchend"], ["focusin", "focusout"]]) {
+    el.addEventListener(on, () => { paused = true; }, { passive: true });
+    el.addEventListener(off, () => { paused = false; }, { passive: true });
+  }
+  el.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-strip-move]"); if (b) return move(Number(b.dataset.stripMove));
+    const t = e.target.closest("[data-strip-mine]");
+    if (t) { try { localStorage.setItem(STRIP_MINE, t.dataset.stripMine); } catch { /* not remembered */ } draw(); }
+  });
+  el.addEventListener("change", (e) => {
+    const sel = e.target.closest("[data-strip-filter]");
+    if (!sel) return;
+    setStripFilter({ ...stripFilter(), [sel.dataset.stripFilter]: sel.value });
+    draw();
+  });
+  const carousel = setInterval(() => { if (!paused && !document.hidden) move(1); }, CAROUSEL_MS);
+  return () => { clearInterval(carousel); unsubscribe(); };
+}
+
+async function liveStrip(user = null, mode = "filters") {
   // Round 38 (Rich): how long results stay on the strip, and the colours of its Live / Live soon / Completed / Pending /
   // Walkover / Postponed (round 39)
   // labels, are set under Admin → Site settings → "Home page: Live & upcoming strip".
   const site = await settings().catch(() => ({}));
   const hours = Number.isFinite(Number(site.strip_result_hours)) && site.strip_result_hours !== null && site.strip_result_hours !== "" ? Number(site.strip_result_hours) : 48;
   const [{ fixtures, comps, frames }, teams, leagues, compData, venues, players, boards] = await Promise.all([
-    upcomingMatches(user && stripMine() ? 80 : 12, hours), table("teams", "name"), table("leagues", "sort"), currentCompetitions(), table("venues", "name"), table("players", "full_name"), liveMatches().catch(() => []),
+    upcomingMatches((mode === "mine" && user && stripMine()) || (mode === "filters" && (stripFilter().comp || stripFilter().team)) ? 80 : 12, hours), table("teams", "name"), table("leagues", "sort"), currentCompetitions(), table("venues", "name"), table("players", "full_name"), liveMatches().catch(() => []),
   ]);
   const team = new Map(teams.map((t) => [t.id, t]));
   const framesBy = new Map();
@@ -346,7 +344,7 @@ async function liveStrip(user = null) {
 
   const all = [
     ...fixtures.map((fx) => ({
-      when: fx.starts_at, status: fx.status, live: fx.status === "in_progress", done: ["submitted", "approved"].includes(fx.status), doneAt: fx.starts_at,
+      key: `l:${fx.league_id}`, when: fx.starts_at, status: fx.status, live: fx.status === "in_progress", done: ["submitted", "approved"].includes(fx.status), doneAt: fx.starts_at,
       label: fx.status === "submitted" ? "pending" : fx.status === "approved" ? "completed" : fx.status === "postponed" ? "postponed" : null,
       postponed: fx.status === "postponed",
       title: leagues.find((l) => l.id === fx.league_id)?.name ?? "League",
@@ -365,7 +363,7 @@ async function liveStrip(user = null) {
       const who = (id) => { const e = compData.entries.find((x) => x.id === id); return { name: e.name, team: team.get(e.team_id), player: players.find((p) => p.id === e.player_id) }; };
       return {
         // A result typed in with no date goes by the time it went in (result_at); a match being scored, by now.
-        when: m.starts_at ?? m.result_at ?? new Date().toISOString(), status: m.status, live: m.status === "in_progress", done: m.status === "completed", title: c.name, cup: true,
+        key: `c:${c.id}`, when: m.starts_at ?? m.result_at ?? new Date().toISOString(), status: m.status, live: m.status === "in_progress", done: m.status === "completed", title: c.name, cup: true,
         doneAt: m.result_at ?? m.starts_at, label: m.status === "completed" ? (walkoverSide(m) ? "walkover" : "completed") : m.status === "postponed" ? "postponed" : null,
         postponed: m.status === "postponed",
         a: who(bm.a), b: who(bm.b),
@@ -385,17 +383,34 @@ async function liveStrip(user = null) {
       const dl = c.draw_live, entry = (id) => compData.entries.find((e) => e.id === id)?.name;
       const last = dl?.log?.at(-1);
       const tie = last ? (last.a && last.b ? `${entry(last.a)} has drawn ${entry(last.b)}` : `${entry(last.a ?? last.b)} gets a bye`) : "";
-      if (dl?.status === "live") return { draw: true, live: true, when: dl.started_at, title: c.name, text: tie || "The draw is starting…", foot: "Watch the draw live →", href: `/draw/${c.slug}` };
-      if (dl?.status === "done" && Date.now() - Date.parse(dl.finished_at) < 48 * 3600e3) return { draw: true, live: false, when: dl.finished_at, title: c.name, text: tie, foot: "See the full draw →", href: `/draw/${c.slug}` };
+      if (dl?.status === "live") return { key: `c:${c.id}`, draw: true, live: true, when: dl.started_at, title: c.name, text: tie || "The draw is starting…", foot: "Watch the draw live →", href: `/draw/${c.slug}` };
+      if (dl?.status === "done" && Date.now() - Date.parse(dl.finished_at) < 48 * 3600e3) return { key: `c:${c.id}`, draw: true, live: false, when: dl.finished_at, title: c.name, text: tie, foot: "See the full draw →", href: `/draw/${c.slug}` };
       if (!dl && c.draw_at && Date.parse(c.draw_at) > Date.now() - 3 * 3600e3 && Date.parse(c.draw_at) < Date.now() + 21 * 864e5)
-        return { draw: true, live: false, when: c.draw_at, title: c.name, text: `Draw at ${fmtTime(c.draw_at)}`, foot: "Live on the website →", href: `/draw/${c.slug}` };
+        return { key: `c:${c.id}`, draw: true, live: false, when: c.draw_at, title: c.name, text: `Draw at ${fmtTime(c.draw_at)}`, foot: "Live on the website →", href: `/draw/${c.slug}` };
       return null;
     }).filter(Boolean),
   ].sort((x, y) => (y.live - x.live) || String(x.when).localeCompare(String(y.when)));
   // My team only: matches with one of their teams (or a player they follow) on either side.
-  const mineSets = stripTeams(user, players), canMine = mineSets.teams.size > 0, mine = canMine && stripMine();
+  const mineSets = stripTeams(user, players), canMine = mode === "mine" && mineSets.teams.size > 0, mine = canMine && stripMine();
   const ours = (c) => [c.a, c.b].some((sd) => sd && ((sd.team && mineSets.teams.has(sd.team.id)) || (sd.player?.team_id && mineSets.teams.has(sd.player.team_id)) || (sd.player?.id && mineSets.people.has(sd.player.id))));
-  const pool = mine ? all.filter((c) => !c.draw && ours(c)) : all;
+  // The home page's filters: a league or competition, and a team (a team's cup matches count, and its players' singles).
+  const f = mode === "filters" ? stripFilter() : { comp: "", team: "" };
+  const hasTeam = (c, id) => [c.a, c.b].some((sd) => sd && ((sd.team && sd.team.id === id) || sd.player?.team_id === id));
+  const pool = mine ? all.filter((c) => !c.draw && ours(c))
+    : all.filter((c) => (!f.comp || c.key === f.comp) && (!f.team || (!c.draw && hasTeam(c, f.team))));
+  const fTeam = f.team ? team.get(f.team) : null;
+  const filters = mode !== "filters" ? "" : html`<div class="strip-filters">
+    <label class="strip-select"><span class="sr-only">League or competition</span><select data-strip-filter="comp">
+      <option value="">All leagues & competitions</option>
+      <optgroup label="Leagues">${leagues.map((l) => html`<option value="l:${l.id}" ${f.comp === `l:${l.id}` ? "selected" : ""}>${l.name}</option>`)}</optgroup>
+      ${compData.competitions.length ? html`<optgroup label="Competitions">${compData.competitions.map((c) => html`<option value="c:${c.id}" ${f.comp === `c:${c.id}` ? "selected" : ""}>${c.name}</option>`)}</optgroup>` : ""}
+    </select></label>
+    <label class="strip-select"><span class="sr-only">Team</span><select data-strip-filter="team">
+      <option value="">All teams</option>
+      ${teams.filter((t) => t.active !== false || t.id === f.team).map((t) => html`<option value="${t.id}" ${f.team === t.id ? "selected" : ""}>${t.name}</option>`)}
+    </select></label>
+    ${fTeam ? html`<a class="strip-stats" href="/mysnooker?team=${fTeam.id}">View ${fTeam.name} stats →</a>` : ""}
+  </div>`;
   const mineTeams = [...mineSets.teams].map((id) => team.get(id)).filter(Boolean);
   const mineLabel = mineTeams.length === 1 ? mineTeams[0].name : "My teams";
   const toggle = canMine ? html`<span class="strip-mine" role="group" aria-label="Which matches to show">
@@ -424,15 +439,15 @@ async function liveStrip(user = null) {
   shown.sort((x, y) => String(x.when).localeCompare(String(y.when)));
   const cards = [...live, ...results, ...shown];
 
-  if (!cards.length) return mine
-    ? html`<div class="strip-head"><h3>Live & upcoming matches</h3><span class="strip-ctrl">${toggle}</span></div>
-      <div class="strip-empty">No matches coming up for ${mineLabel} just now. <a href="/calendar?team=${mineTeams[0]?.id ?? ""}">See the calendar</a></div>`
-    : html`<div class="strip-empty">No matches coming up. <a href="/calendar">See the calendar</a></div>`;
+  const head = html`<div class="strip-head"><h3>Live & upcoming matches</h3>
+      <span class="strip-ctrl"><span class="strip-arrows"><button type="button" data-strip-move="-1" aria-label="Previous matches">‹</button><button type="button" data-strip-move="1" aria-label="Next matches">›</button></span>
+        <a href="/calendar">Calendar →</a></span></div>
+    ${filters}${toggle ? html`<div class="strip-filters">${toggle}</div>` : ""}`;
+  if (!cards.length) return html`${stripColours(site)}${filters || toggle ? head : ""}<div class="strip-empty">${mine ? `No matches coming up for ${mineLabel} just now.`
+    : f.comp || f.team ? "No matches for that choice just now." : "No matches coming up."} <a href="/calendar">See the calendar</a></div>`;
   const face = (s) => (s.player ? avatar(s.player, "avatar sc-face") : s.team ? badge(s.team) : html`<span class="badge">${s.name.slice(0, 2).toUpperCase()}</span>`);
   const side = (s) => html`<div class="sc-side">${face(s)}<span>${s.name}</span></div>`;
-  return html`${stripColours(site)}<div class="strip-head"><h3>Live & upcoming matches</h3>
-      <span class="strip-ctrl">${toggle}<button type="button" data-strip-move="-1" aria-label="Previous matches">‹</button><button type="button" data-strip-move="1" aria-label="Next matches">›</button>
-        <a href="/calendar">Calendar →</a></span></div>
+  return html`${stripColours(site)}${head}
     <div class="strip-row">${cards.map((c) => (c.draw ? html`<a class="strip-card is-draw ${c.live ? "is-live" : ""}" href="${c.href}">
       <div class="sc-top"><span>${ukDay(c.when) === todayUK() ? "Today" : fmtDay(c.when)}</span><span class="sc-comp">${c.title}</span></div>
       <div class="sc-draw">${c.live ? html`<span class="live-dot">Live draw</span>` : html`<b>The draw</b>`}<p>${c.text}</p></div>

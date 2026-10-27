@@ -4754,3 +4754,51 @@ html .live-strip .strip-mine button, html.look-calm [data-strip] .strip-mine but
   width: auto !important; height: auto !important; min-width: 0; padding: 6px 14px; border: 0 !important; border-radius: 999px; background: transparent !important; color: var(--ink) !important; font: 700 13px var(--font-body); }
 html .live-strip .strip-mine button[aria-pressed="true"], html.look-calm [data-strip] .strip-mine button[aria-pressed="true"],
 html.look-calm.strip-dark [data-strip] .strip-mine button[aria-pressed="true"] { background: var(--red) !important; color: #fff !important; }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 52 — My Snooker is its own page again (/mysnooker); the home page is the same for everyone
+   ═════════════════════════════════════════════════════════════ */
+/* Home page, under Competitions / Calendar / Handicaps / Fixtures: the way to My Snooker (logged in, computers) */
+.my-snooker-btn { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 14px 18px; border-radius: var(--radius, 12px);
+  background: var(--ink); color: #fff; border: 1px solid var(--ink); transition: transform .15s, box-shadow .15s; }
+.my-snooker-btn svg { width: 22px; height: 22px; fill: var(--yellow, #ffd237); flex: none; }
+.my-snooker-btn b { font: 700 17px var(--font-head); text-transform: uppercase; letter-spacing: .03em; }
+.my-snooker-btn span { flex: 1; color: #d7d7d7; font-size: 14px; }
+.my-snooker-btn i { font-style: normal; font-size: 20px; color: var(--yellow, #ffd237); transition: transform .15s; }
+.my-snooker-btn:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0, 0, 0, .18); }
+.my-snooker-btn:hover i { transform: translateX(4px); }
+@media (max-width: 900px) { .my-snooker-btn { display: none; } }
+
+/* My Snooker in the account menu (phone menu and the dropdown): it stands out, with a soft shine */
+.acct-item.acct-special { position: relative; overflow: hidden; background: linear-gradient(135deg, #fff7d1, #ffe58a) !important; border: 1px solid #f0cd55 !important;
+  border-radius: 12px !important; margin: 4px 0 8px; padding: 12px 12px !important; }
+.acct-item.acct-special .acct-ico { background: var(--ink) !important; border: 0 !important; }
+.acct-item.acct-special .acct-ico svg { fill: var(--yellow, #ffd237) !important; }
+.acct-item.acct-special b { color: var(--ink) !important; font-size: 16px; } .acct-item.acct-special small { color: #5c4a00 !important; }
+.acct-item.acct-special::after { content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; transform: skewX(-20deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .7), transparent); animation: acctShine 4.5s ease-in-out infinite; pointer-events: none; }
+@keyframes acctShine { 0%, 70% { left: -60%; } 100% { left: 130%; } }
+@media (prefers-reduced-motion: reduce) { .acct-item.acct-special::after { animation: none; display: none; } }
+
+/* Phones: no person button in the bar — everything for the login is in the ☰ menu */
+@media (max-width: 900px) { .acct-wrap, .nav-acct { display: none !important; } }
+
+/* The strip's controls: ‹ › and Calendar always together on one line; the filters (or All | my team) on a row below */
+.live-strip .strip-ctrl { flex-wrap: nowrap; white-space: nowrap; }
+.strip-arrows { display: inline-flex; gap: 6px; flex: none; }
+.strip-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 2px 0 12px; }
+.strip-filters .strip-mine { margin: 0; }
+.strip-select select { height: 36px; padding: 0 34px 0 12px; border-radius: 999px; border: 1px solid #d5d4c8; background-color: #fff; color: var(--ink);
+  font: 600 14px var(--font-body); max-width: 260px; cursor: pointer; margin: 0; }
+.strip-stats { display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 999px; background: var(--red); color: #fff !important; font: 700 13.5px var(--font-body); white-space: nowrap; }
+.strip-stats:hover { background: var(--ink); }
+@media (max-width: 640px) { .strip-select { flex: 1 1 140px; } .strip-select select { width: 100%; max-width: none; } .strip-stats { width: 100%; justify-content: center; } }
+
+/* the My Snooker page itself */
+.ms-page { margin-top: 22px; }
+.ms-page .ms-home-hero { margin-top: 4px; }
+
+/* Neil, round 52: the round "scroll down" button sits above a Save bar, not on top of it */
+@media (max-width: 1000px) {
+  body:has(.form-actions) .scroll-hint, body:has(.save-all-row) .scroll-hint { bottom: calc(96px + env(safe-area-inset-bottom)); }
+}

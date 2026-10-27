@@ -212,7 +212,7 @@ export const mySnookerOwnPage = (user) => mySnookerOn(user);
  * Does Home take them to their My Snooker page? Yes, once it is switched on and set up (following a team or a player) —
  * unless they chose "Home shows the normal home page" (saved as place: "home"). Rich, round 16: it should stick.
  */
-export const mySnookerHome = (user) => mySnookerOn(user) && mySnookerSetUp(user);
+export const mySnookerHome = () => false;   // round 52: My Snooker is its own page again (/mysnooker); the home page is the same for everyone
 /** A plain player login: no dashboard, no captain's tools. My Snooker is their home. */
 export const isPlainPlayer = (user) => !!user?.profile && !isStaff(user) && !isCaptain(user);
 /** Where someone lands after logging in: officers on the dashboard, captains in My Team, players on their own My Snooker page (or the home page, if that is where they put it). */

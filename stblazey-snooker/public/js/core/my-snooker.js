@@ -52,7 +52,7 @@ const star = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.6 2
 export function followButton(kind, id, user) {
   const on = !!user?.profile && myPrefs(user)[`${kind}s`].includes(id);
   return html`<button type="button" class="follow-btn ${on ? "on" : ""}" data-follow="${kind}:${id}" aria-pressed="${on ? "true" : "false"}"
-    title="${on ? "On your home page (My Snooker) — press to stop following" : "Add to your home page (My Snooker)"}">${star}<span>${on ? "Following" : "Follow"}</span></button>`;
+    title="${on ? "On your My Snooker page — press to stop following" : "Add to your My Snooker page"}">${star}<span>${on ? "Following" : "Follow"}</span></button>`;
 }
 /** The shape set_my_prefs() expects (sections are left out when they have every section). */
 export const prefsToSave = (p) => ({ place: p.place, teams: p.teams, players: p.players, cats: p.cats, ...(p.sections ? { sections: p.sections } : {}) });
@@ -84,10 +84,11 @@ export async function mySnookerData() {
  * options: home = true for the shorter version at the top of the home page.
  * Returns a function that stops it listening.
  */
-export async function mountMySnooker(el, user, { home = false, data = null } = {}) {
+export async function mountMySnooker(el, user, { home = false, data = null, prefs: given = null } = {}) {
   const d = data ?? await mySnookerData();
   const { ctx } = d;
-  const prefs = myPrefs(user);
+  // given: a team looked at from the home page's "View team stats" (/mysnooker?team=…), on top of what they follow.
+  const prefs = given ?? myPrefs(user);
   const teams = prefs.teams.map((id) => ctx.team.get(id)).filter(Boolean);
   let teamId = teams[0]?.id ?? null;
   const draw = () => mount(el, view(user, d, prefs, teams, teamId, home));
@@ -107,7 +108,7 @@ function view(user, { ctx, news, comps, site = {}, form: formData = null }, pref
   const team = ctx.team.get(teamId);
   const league = team && ctx.league.get(team.league_id);
   const limit = home ? 5 : Infinity;                       // the home page shows the top of each list
-  const more = home ? { href: "/myteam", label: "See it all on my page" } : null;
+  const more = home ? { href: "/mysnooker", label: "See it all on My Snooker" } : null;
   const followed = prefs.players.map((id) => ctx.player.get(id)).filter(Boolean);
 
   // The chosen team's numbers.
@@ -289,7 +290,7 @@ function view(user, { ctx, news, comps, site = {}, form: formData = null }, pref
   return html`
     ${deadlines}
     ${teams.length > 1 ? html`<nav class="ms-teams" aria-label="The teams you follow">${teams.map((t) => html`<button type="button" class="${t.id === teamId ? "on" : ""}" data-ms-team="${t.id}">${badge(t)}<span>${t.name}</span></button>`)}</nav>` : ""}
-    ${!team && !followed.length ? html`<div class="notice" style="margin:0">You are not following a team or a player yet. <a href="/my/snooker" style="font-weight:700;color:var(--red)">Choose who to follow</a></div>` : ""}
+    ${!team && !followed.length ? html`<div class="notice" style="margin:0">You are not following a team or a player yet. <a href="/my/snooker" style="font-weight:700;color:var(--red)">Choose who to follow (My Snooker settings)</a></div>` : ""}
     <div class="ms-grid ${side.length && drawn.length > side.length ? "" : "one"}">
       ${drawn.length > side.length ? html`<div class="stack">${col(MAIN)}</div>` : ""}
       ${side.length ? html`<div class="stack">${col(side.map(([k]) => k))}</div>` : ""}

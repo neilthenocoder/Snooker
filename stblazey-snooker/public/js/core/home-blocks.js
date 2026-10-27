@@ -15,7 +15,7 @@ import { SITE } from "../config.js";
 /** Every block the standard home page can show: [key, name in the dashboard, shown as standard]. */
 export const HOME_SECTIONS = [
   ["promo", "Season & “join the league” promotion (shows by itself between seasons)", true],
-  ["mysnooker", "“Make this page your own” — the My Snooker invitation", true],
+  ["mysnooker", "“My Snooker” — the invitation to log in (visitors only)", true],
   ["news", "Latest news", true],
   ["competitions", "Competitions (the one being played as the big feature)", true],
   ["spotlights", "Player and team of the week / month", true],
@@ -77,11 +77,11 @@ export function promoBlock(site, ctx, dates, today) {
 
 /** The invitation to make the page your own with My Snooker (or the way back to it). */
 export function mySnookerPrompt(user, ctx) {
-  if (user && mySnookerOn(user) && mySnookerSetUp(user)) return "";       // they already have the bar at the top
+  if (user) return "";       // round 52: logged in, they have the My Snooker button under the quick links
   const href = user ? "/my/snooker" : "/login";
   return html`<a class="ms-invite" href="${href}">
     <span class="ms-invite-star" aria-hidden="true">★</span>
-    <span><b>Make this page your own</b><small>${user ? "Choose your team" : "Log in"} and this page becomes your own: your team's table, fixtures, results, rankings, breaks and news, in the order you choose.</small></span>
+    <span><b>My Snooker: your team's own page</b><small>Log in and see your team's table, fixtures, results, rankings, breaks and news, in the order you choose.</small></span>
     <i>${user ? "Set it up" : "Log in"} ${arrow}</i></a>`;
 }
 

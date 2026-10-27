@@ -21,7 +21,7 @@ import { setTitle, navigate, refreshShell } from "../core/router.js";
 import { mustLogin } from "./scorecard.js";
 import { newsWizardPage } from "../admin/news-wizard.js";
 
-const LABEL = { news: "Write news", snooker: "Home page settings", team: "My Team", squad: "Manage team", fixtures: "Fixtures", profile: "Profile", details: "User details", competitions: "Competitions" };
+const LABEL = { news: "Write news", snooker: "My Snooker settings", team: "My Team", squad: "Manage team", fixtures: "Fixtures", profile: "Profile", details: "User details", competitions: "Competitions" };
 /** The tabs this login gets. Everyone has My Snooker; what else they have is as it always was. */
 function tabsFor(user) {
   if (!isMember(user)) return ["snooker", "details"];                       // an officer with no team or player
@@ -87,7 +87,7 @@ function postponedNotices(ctx, team) {
 
 const noTeam = html`<div class="notice error">Your login isn't linked to a team yet. Please contact the league secretary.</div>`;
 
-// ── Home page settings (was "My Snooker"): who they follow, what they see and in what order ──
+// ── My Snooker settings: who they follow, what they see on /mysnooker and in what order (round 52: was "Home page settings") ──
 // Round 48: a logged-in person's home page is their My Snooker (pages/home.js); this is where they change it.
 // Every login has this tab. It changes what THEY see on the website; it gives no extra rights.
 async function snookerTab(el, { ctx, user, team, me }) {
@@ -106,12 +106,12 @@ async function snookerTab(el, { ctx, user, team, me }) {
     <form class="form ms-set" data-snooker>
       <div class="ms-card on">
         <div class="ms-card-head">
-          <div><small>Home page settings</small><h2>Make the home page your own</h2></div>
-          <a class="btn green" href="/">Open my home page</a>
+          <div><small>My Snooker settings</small><h2>Your own page of the league</h2></div>
+          <a class="btn green" href="/mysnooker">Open My Snooker</a>
         </div>
-        <p>When you are logged in, the home page shows the teams and players you follow: their matches, results, the league table,
+        <p>My Snooker is your own page: the teams and players you follow, with their matches, results, the league table,
           rankings, breaks and news. Choose who to follow, which sections you see and the order they come in.
-          Everyone's normal home page is always one press away (<b>Normal home page</b>, at the top of yours).</p>
+          Open it any time from <b>My Snooker</b> in your menu, or the button under Competitions, Calendar, Handicaps and Fixtures on the home page.</p>
       </div>
 
       <fieldset class="ms-set-box"><legend>Teams I follow</legend>
@@ -183,7 +183,9 @@ async function snookerTab(el, { ctx, user, team, me }) {
     if (t.matches("[data-order-reset]")) for (const list of form.querySelectorAll(".ms-order")) {
       [...list.children].sort((a, b) => SECTIONS.findIndex(([k]) => k === a.dataset.key) - SECTIONS.findIndex(([k]) => k === b.dataset.key)).forEach((li) => list.append(li));
     }
-    if (t.matches("[data-reset]")) save(true, { place: "page", teams: [user.profile?.team_id].filter(Boolean), players: [user.profile?.player_id].filter(Boolean), cats: [], sections: null }, "Home page settings reset");
+    // Reset asks first (Neil, round 52: one accidental tap shouldn't lose everything).
+    if (t.matches("[data-reset]")) confirmBox("Your teams and players go back to your own team only, and every section comes back in the standard order.\n\nThis can't be undone.",
+      { title: "Reset My Snooker?", ok: "Yes, reset" }).then((ok) => ok && save(true, { place: "page", teams: [user.profile?.team_id].filter(Boolean), players: [user.profile?.player_id].filter(Boolean), cats: [], sections: null }, "My Snooker reset"));
   });
   // Anything changed: the Save bar at the bottom of the screen says so until it is saved.
   const dirty = () => $("[data-ms-actions]", el)?.classList.add("dirty");
@@ -208,7 +210,7 @@ async function snookerTab(el, { ctx, user, team, me }) {
     const sections = [...form.querySelectorAll(".ms-order [name=section]")].filter((b) => b.checked).map((b) => b.value);
     // Keep the order the teams were followed in (so the first stays first), then any newly ticked ones.
     const teams = [...prefs.teams.filter((id) => ticked("team").includes(id)), ...ticked("team").filter((id) => !prefs.teams.includes(id))];
-    save(true, { place: "page", teams, players, cats: ticked("cat"), sections: [...sections, ...["form", "glance"].filter((k) => !sections.includes(k)).map((k) => `${k}_off`)] }, "Home page settings saved");
+    save(true, { place: "page", teams, players, cats: ticked("cat"), sections: [...sections, ...["form", "glance"].filter((k) => !sections.includes(k)).map((k) => `${k}_off`)] }, "My Snooker settings saved");
   });
 }
 

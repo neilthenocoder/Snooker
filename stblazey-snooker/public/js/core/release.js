@@ -4,8 +4,13 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.45.0";
+export const SITE_VERSION = "1.46.0";
 export const CHANGES = [
+  "The home page is the same for everyone again; My Snooker is its own page (/mysnooker) with the Live & upcoming strip (All | my team), At a glance and the sections in your own order",
+  "My Snooker settings (was Home page settings); Reset asks first",
+  "Home page strip: filter by league or competition and by team; choosing a team offers View … stats (that team on My Snooker, for anyone)",
+  "Menu bar: Home, Fixtures, League, Competitions, News, More ▾, Live; Log in button, then Admin ▾ / Captain ▾ / My account ▾; My Snooker first in that menu, highlighted; no person button on phones; a My Snooker button under the quick links on computers",
+  "Strip arrows stay beside Calendar; the scroll button sits above Save bars; phone menu buttons fill the width; match scores in white",
   "My Snooker is the home page: logged in and following a team or player, the home page shows your team — next match, the table round your team, your players in the rankings, fixtures, breaks and news — with the live strip and quick links on top; no on/off switch; Normal home page one press away",
   "Home page settings (was My Snooker settings): who you follow, which sections you see, and ↑ ↓ to put them in your own order",
   "Show me around: a guided tour of the home page — starts by itself the first time someone sees their home page (Site settings → Home page → Welcome guide), and from the account menu or footer any time",
