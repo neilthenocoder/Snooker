@@ -270,9 +270,8 @@ function keyDates(site, dates, competitions, today) {
 // ── live & upcoming strip ─────────────────────────────────────
 /** Round 52 (Neil): under the four quick links, for anyone logged in — the way to their My Snooker page. */
 function myBtn(user, ctx) {
-  // Not logged in: the same button invites them to log in and try My Snooker (it opens the log in panel).
-  if (!user) return html`<button type="button" class="my-snooker-btn is-guest" data-account-open>${mySnookerStar}<b>My Snooker</b>
-    <span>Log in and try it: your team's stats, table, rankings and breaks on your own page</span><i aria-hidden="true">→</i></button>`;
+  // Not logged in: nothing here — the "My Snooker: your team's own page" invitation further down does that job.
+  if (!user) return "";
   const team = ctx.team.get(mySnookerTeamId(user));
   return html`<a class="my-snooker-btn" href="/mysnooker">${mySnookerStar}<b>My Snooker</b>
     <span>${team ? html`${team.name}: view my team stats` : mySnookerSetUp(user) ? "The players you follow" : "Choose your team and see its stats"}</span><i aria-hidden="true">→</i></a>`;
