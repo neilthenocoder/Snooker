@@ -4802,3 +4802,25 @@ html.look-calm.strip-dark [data-strip] .strip-mine button[aria-pressed="true"] {
 @media (max-width: 1000px) {
   body:has(.form-actions) .scroll-hint, body:has(.save-all-row) .scroll-hint { bottom: calc(96px + env(safe-area-inset-bottom)); }
 }
+/* the same button for visitors (it's a <button>: opens Log in) */
+button.my-snooker-btn { width: 100%; text-align: left; cursor: pointer; font: inherit; }
+
+/* Round 53 — the strip's filters: small pills in the strip's own style (the real dropdown sits invisibly on top) */
+.strip-select { position: relative; display: inline-flex; align-items: center; height: 34px; min-width: 0; max-width: 250px; padding: 0 36px 0 14px;
+  border-radius: 999px; border: 1px solid #cfcec2; background: #fff; color: var(--ink); font: 600 13px/1 var(--font-body); cursor: pointer; }
+.strip-select-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.strip-select::after { content: ""; position: absolute; right: 15px; top: 50%; width: 6px; height: 6px; margin-top: -5px;
+  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); opacity: .7; pointer-events: none; }
+.strip-select select { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; margin: 0; padding: 0; opacity: 0; cursor: pointer;
+  border: 0; border-radius: 999px; font-size: 16px !important; appearance: none; -webkit-appearance: none; }
+.strip-select:focus-within { outline: 2px solid var(--red); outline-offset: 2px; }
+.strip-select.is-set { border-color: var(--red); font-weight: 700; }
+/* on the dark strip: dark pills like its ‹ › buttons */
+html.look-calm.strip-dark .strip-select { background: #0d0d0d; border-color: #4a4a4a; color: #fff; }
+html.look-calm.strip-dark .strip-select.is-set { border-color: var(--red); }
+.strip-stats { height: 34px; font-size: 13px; }
+@media (max-width: 640px) {
+  .strip-filters { gap: 8px; }
+  .strip-select { flex: 1 1 0; max-width: none; }
+  .strip-stats { flex-basis: 100%; }
+}

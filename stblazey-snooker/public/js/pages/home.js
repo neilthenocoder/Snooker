@@ -93,7 +93,7 @@ export default async function home(view, { user } = {}) {
           <a style="background:var(--blue)" href="/handicaps">${quickIcon.handicaps}<span>Handicaps</span></a>
           <a style="background:var(--green)" href="/fixtures">${quickIcon.fixtures}<span>Fixtures</span></a>
         </nav>
-        ${user ? myBtn(user, ctx) : ""}
+        ${myBtn(user, ctx)}
         ${featureBox(site, notices, today)}
         ${user ? deadlineBar(deadlineWarnings(user, ctx, await currentCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] })), site)) : ""}
         ${entering.length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${entering.map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
@@ -270,6 +270,9 @@ function keyDates(site, dates, competitions, today) {
 // ── live & upcoming strip ─────────────────────────────────────
 /** Round 52 (Neil): under the four quick links, for anyone logged in — the way to their My Snooker page. */
 function myBtn(user, ctx) {
+  // Not logged in: the same button invites them to log in and try My Snooker (it opens the log in panel).
+  if (!user) return html`<button type="button" class="my-snooker-btn is-guest" data-account-open>${mySnookerStar}<b>My Snooker</b>
+    <span>Log in and try it: your team's stats, table, rankings and breaks on your own page</span><i aria-hidden="true">→</i></button>`;
   const team = ctx.team.get(mySnookerTeamId(user));
   return html`<a class="my-snooker-btn" href="/mysnooker">${mySnookerStar}<b>My Snooker</b>
     <span>${team ? html`${team.name}: view my team stats` : mySnookerSetUp(user) ? "The players you follow" : "Choose your team and see its stats"}</span><i aria-hidden="true">→</i></a>`;
@@ -399,16 +402,21 @@ async function liveStrip(user = null, mode = "filters") {
   const pool = mine ? all.filter((c) => !c.draw && ours(c))
     : all.filter((c) => (!f.comp || c.key === f.comp) && (!f.team || (!c.draw && hasTeam(c, f.team))));
   const fTeam = f.team ? team.get(f.team) : null;
+  // Round 53 (Neil): each filter is a small pill showing the choice, with the real dropdown laid invisibly on top — so
+  // tapping still opens the phone's own list, and iPhones don't zoom in (their dropdowns stay 16px, just unseen).
+  const compName = f.comp.startsWith("l:") ? leagues.find((l) => `l:${l.id}` === f.comp)?.name : compData.competitions.find((c) => `c:${c.id}` === f.comp)?.name;
   const filters = mode !== "filters" ? "" : html`<div class="strip-filters">
-    <label class="strip-select"><span class="sr-only">League or competition</span><select data-strip-filter="comp">
-      <option value="">All leagues & competitions</option>
-      <optgroup label="Leagues">${leagues.map((l) => html`<option value="l:${l.id}" ${f.comp === `l:${l.id}` ? "selected" : ""}>${l.name}</option>`)}</optgroup>
-      ${compData.competitions.length ? html`<optgroup label="Competitions">${compData.competitions.map((c) => html`<option value="c:${c.id}" ${f.comp === `c:${c.id}` ? "selected" : ""}>${c.name}</option>`)}</optgroup>` : ""}
-    </select></label>
-    <label class="strip-select"><span class="sr-only">Team</span><select data-strip-filter="team">
-      <option value="">All teams</option>
-      ${teams.filter((t) => t.active !== false || t.id === f.team).map((t) => html`<option value="${t.id}" ${f.team === t.id ? "selected" : ""}>${t.name}</option>`)}
-    </select></label>
+    <label class="strip-select ${compName ? "is-set" : ""}"><span class="strip-select-text">${compName || "All leagues & cups"}</span>
+      <select data-strip-filter="comp" aria-label="League or competition">
+        <option value="">All leagues & cups</option>
+        <optgroup label="Leagues">${leagues.map((l) => html`<option value="l:${l.id}" ${f.comp === `l:${l.id}` ? "selected" : ""}>${l.name}</option>`)}</optgroup>
+        ${compData.competitions.length ? html`<optgroup label="Competitions">${compData.competitions.map((c) => html`<option value="c:${c.id}" ${f.comp === `c:${c.id}` ? "selected" : ""}>${c.name}</option>`)}</optgroup>` : ""}
+      </select></label>
+    <label class="strip-select ${fTeam ? "is-set" : ""}"><span class="strip-select-text">${fTeam?.name || "All teams"}</span>
+      <select data-strip-filter="team" aria-label="Team">
+        <option value="">All teams</option>
+        ${teams.filter((t) => t.active !== false || t.id === f.team).map((t) => html`<option value="${t.id}" ${f.team === t.id ? "selected" : ""}>${t.name}</option>`)}
+      </select></label>
     ${fTeam ? html`<a class="strip-stats" href="/mysnooker?team=${fTeam.id}">View ${fTeam.name} stats →</a>` : ""}
   </div>`;
   const mineTeams = [...mineSets.teams].map((id) => team.get(id)).filter(Boolean);
