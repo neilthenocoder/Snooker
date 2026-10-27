@@ -158,7 +158,7 @@ async function drawHeader() {
       <div class="menu-top"><a class="logo menu-logo" href="/" aria-label="${SITE.name} home"><img class="logo-main" src="${site.logo_url || "/assets/logo.svg"}" alt=""><img class="logo-light ${site.logo_light_url ? "" : "auto"}" src="${site.logo_light_url || site.logo_url || "/assets/logo.svg"}" alt=""></a>
         <button type="button" class="menu-x" data-menu-close aria-label="Close the menu">×</button></div>
       <nav class="menu-links" aria-label="Main menu">
-        ${MENU.map((item) => menuLink(item, html`<span>${item.label}</span>`))}
+        ${MENU.filter((item) => item.color !== "live").map((item) => menuLink(item, html`<span>${item.label}</span>`))}
       </nav>
       ${user ? html`<section class="menu-acct" data-menu-acct aria-label="${role} menu">
           <h4 class="menu-h">${role} · ${name.split(" ")[0]}</h4>
