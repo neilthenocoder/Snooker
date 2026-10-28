@@ -65,4 +65,7 @@ export const ROUTES = [
   ["/form", "form"],
   // Round 40
   ["/wrapped", "wrapped"],
+  // Round 55: Help & support requests
+  ["/support", "support"],
+  ["/support/:token", "support"],
 ];

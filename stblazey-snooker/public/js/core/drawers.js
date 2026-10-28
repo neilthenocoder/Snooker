@@ -63,7 +63,7 @@ function drawer(name, title, body) {
 }
 
 // ── the person: log in, or your own links ──────────────────────
-export function openAccount(user, { message = "" } = {}) {
+export function openAccount(user, { message = "", back = "" } = {}) {
   if (!user) {
     const el = drawer("account", "Log in", html`
       ${message ? html`<div class="notice">${message}</div>` : ""}
@@ -86,7 +86,7 @@ export function openAccount(user, { message = "" } = {}) {
         await refreshShell();
         closeDrawer();
         // The two-step code, when this login's role needs it, is asked for on the login page.
-        navigate(u?.mfaNeeded ? "/login" : homeFor(u));
+        navigate(u?.mfaNeeded ? "/login" : back && back.startsWith("/") && !back.startsWith("//") ? back : homeFor(u));
       } catch (err) {
         mount($("[data-login-error]", el), html`<div class="notice error">${err.message}</div>`);
         btn.disabled = false;
@@ -131,6 +131,8 @@ export function accountLinks(user) {
     p.player_id && { href: `/player/${p.player_id}#form`, icon: ICON.form, label: "My form", note: "Your mark out of 10 from your last 6 matches" },
     !p.player_id && isMaster(user) && { href: "/admin/accounts", icon: ICON.team, label: "Do you play? Link your player profile", note: "Then My profile and My form appear here" },
     { href: "/my/details", icon: ICON.key, label: "Password & details" },
+    // Round 55: questions and problems for the league, and the answers.
+    { href: "/support", icon: ICON.help, label: "Help & support", note: "Ask the league, and see your requests" },
     // (Round 53, Rich: "Help link should go in the footer" — Show me around is the Help link there now.)
   ].filter(Boolean);
 }

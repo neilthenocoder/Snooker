@@ -24,6 +24,20 @@ import { HOME_SECTIONS } from "../core/home-blocks.js";
 import { html } from "../core/dom.js";
 import { adminUsers } from "../core/db.js";
 import { STATUSES } from "../core/rules.js";
+
+/**
+ * Round 54 (Rich): how complete a fixture's scorecard is, as a coloured pill in the Fixtures list —
+ * green finished, yellow under way or waiting for approval, red postponed or overdue, grey still to come.
+ */
+export function fixtureState(f) {
+  const past = Date.parse(f.starts_at) < Date.now() - 6 * 36e5;
+  if (f.status === "approved") return { cls: "approved", label: "Complete", rank: 5 };
+  if (f.status === "submitted") return { cls: "submitted", label: "Waiting for approval", rank: 1 };
+  if (f.status === "in_progress") return { cls: "in_progress", label: "In progress", rank: 2 };
+  if (f.status === "postponed") return { cls: "postponed", label: "Postponed", rank: 3 };
+  if (past) return { cls: "postponed", label: "No scorecard yet", rank: 0 };
+  return { cls: "scheduled", label: "To come", rank: 4 };
+}
 import { CUEVIEW } from "../core/cueview.js";
 import { ROLE_LABEL, TEAM_ROLE_LABEL } from "../core/auth.js";
 import { refreshShell } from "../core/router.js";
@@ -57,6 +71,21 @@ export const RESOURCES = {
   fixtures: {
     label: "Fixtures", table: "fixtures", order: "starts_at",
     filters: ["season_id", "league_id", "status"],
+    // Rich, round 54: the latest match night at the top (no scrolling miles to find it), then the ones coming up.
+    sorts: [
+      ["latest", "latest match night first", (a, b) => { const now = Date.now() + 12 * 36e5, pa = Date.parse(a.starts_at) <= now, pb = Date.parse(b.starts_at) <= now;
+        return pa !== pb ? (pa ? -1 : 1) : pa ? b.starts_at.localeCompare(a.starts_at) : a.starts_at.localeCompare(b.starts_at); }],
+      ["oldest", "date, oldest first", (a, b) => a.starts_at.localeCompare(b.starts_at)],
+      ["newest", "date, newest first", (a, b) => b.starts_at.localeCompare(a.starts_at)],
+      ["attention", "needs attention first", (a, b) => fixtureState(a).rank - fixtureState(b).rank || b.starts_at.localeCompare(a.starts_at)],
+    ],
+    // Moving a postponed match to the date that has been agreed (Rich): the date goes in, the match is back on.
+    onInput: (form, el) => {
+      const when = form.querySelector("[data-new-date]"), status = form.elements.status, wrap = form.querySelector("[data-new-date-wrap]");
+      if (!when || !status) return;
+      if (el === status) wrap.hidden = status.value !== "postponed";
+      if (el === when && when.value) { form.elements.starts_at.value = when.value; status.value = "scheduled"; wrap.querySelector("small").textContent = "Done — the match moves to this date and is back on (press Save)."; }
+    },
     columns: ["starts_at", "home_team_id", "away_team_id", "league_id", "status"],
     fields: [
       { name: "season_id", label: "Season", type: "ref", ref: "seasons", required: true },
@@ -65,7 +94,9 @@ export const RESOURCES = {
       { name: "away_team_id", label: "Away team", type: "ref", ref: "teams", required: true },
       { name: "venue_id", label: "Venue (leave blank for home team's venue)", type: "ref", ref: "venues" },
       { name: "starts_at", label: "Date & time", type: "datetime", required: true },
-      { name: "status", label: "Status", type: "select", options: STATUSES, default: "scheduled" },
+      { name: "status", label: "Status", type: "select", options: STATUSES, default: "scheduled", cellOf: (r) => { const st = fixtureState(r); return html`<span class="status ${st.cls}">${st.label}</span>`; } },
+      { type: "custom", render: (row) => html`<label data-new-date-wrap ${row?.status === "postponed" ? "" : "hidden"}>New date, if one has been agreed <span class="muted" style="font-weight:400">(optional)</span>
+        <input type="datetime-local" data-new-date><small class="help">Put the agreed date in and the match moves to it and is back on the fixture list.</small></label>` },
       { name: "notes", label: "Notes (shown on the match page)", type: "textarea" },
       { type: "heading", label: "Old results (optional)", help: "Only for results from before this website that have no frame-by-frame scorecard: type the final score and set the status to Approved. Leave blank for normal matches." },
       { name: "home_score", label: "Home frames won", type: "number" },
@@ -80,6 +111,11 @@ export const RESOURCES = {
   },
   competitions: {
     label: "Competitions", table: "competitions", order: "sort", filters: ["season_id", "kind"],
+    // Rich, round 54: newest season first (the same cups come round every year, so the names repeat).
+    sorts: [
+      ["season", "newest season first", (a, b, refs) => { const sn = (r) => refs.seasons?.find((x) => x.id === r.season_id)?.name ?? ""; return sn(b).localeCompare(sn(a)) || (a.sort ?? 0) - (b.sort ?? 0) || a.name.localeCompare(b.name); }],
+      ["name", "name", (a, b) => a.name.localeCompare(b.name)],
+    ],
     columns: ["trophy_url", "name", "kind", "league_ids", "season_id", "entries_open"],
     intro: "Create the competition here, then add its entrants, round deadlines and the draw under “Draws & results”. A plate competition (for those knocked out in the first round) is created from its main competition's Draws page.",
     fields: [
@@ -93,7 +129,7 @@ export const RESOURCES = {
         help: "bracket = winners follow the fixed bracket. redraw = a fresh random draw is made every round." },
       { name: "best_of", label: "Frames per match (best of)", type: "number", default: 5 },
       { name: "sort", label: "Display order", type: "number", default: 1 },
-      { name: "image_url", label: "Picture (winner photo, venue… — the background of the competition's page)", type: "image", folder: "competitions", maxSize: 1200 },
+      { name: "image_url", label: "Picture (winner photo, venue… — the background of the competition's page; landscape 16:9 works best, e.g. 1600 × 900)", type: "image", folder: "competitions", maxSize: 1600 },
       // Rich, round 34: the box on the Competitions page (and the home page card) shows the trophy OR fills with the picture.
       { name: "card_style", label: "The competition's box on the Competitions page and home page shows", type: "select", options: ["", "trophy", "picture"],
         labels: { "": "Automatic: the picture if there is one (with the trophy in the corner), otherwise the trophy", trophy: "The trophy, in the middle of the dark box", picture: "The picture, filling the whole box" } },
@@ -274,7 +310,7 @@ export const RESOURCES = {
       { name: "featured", label: "Show in the home page banner", short: "Home banner", type: "checkbox", default: true },
       { name: "breaking", label: "Breaking news (it pops up for everyone on the website in red, and is listed behind the bell with a red number on it)", short: "Breaking", type: "checkbox" },
       { type: "heading", label: "Pictures and video" },
-      { name: "image_url", label: "Background image (wide)", type: "image", folder: "news", maxSize: 1800 },
+      { name: "image_url", label: "Main picture (landscape 16:9, like a snooker table — e.g. 1600 × 900; it is shown that shape on the site)", type: "image", folder: "news", maxSize: 1800 },
       { name: "circle_image_url", label: "Circle image (square works best — leave blank to use the background image)", type: "image", folder: "news", maxSize: 600, round: true },
       { name: "video_url", label: "Video (optional): paste the link to a YouTube or Vimeo video, or to a video file (.mp4)", short: "Video", type: "text", wide: true, placeholder: "https://www.youtube.com/watch?v=…",
         help: "It is shown in the article, above the text. Type [video] on its own line in the text to put it somewhere else." },
@@ -542,7 +578,7 @@ export const RESOURCES = {
       { name: "promo_button", label: "Button words", type: "text", placeholder: "Join the league" },
       { name: "promo_url", label: "Button link (a page on this site such as /page/contact-us, or a full web address)", type: "text", placeholder: "/page/contact-us" },
       { type: "heading", tab: "Home page", label: "Home page banner", help: "The logo, colours and fonts are under Website → Branding." },
-      { name: "hero_image_url", label: "Home page banner background (leave blank for the standard photo)", type: "image", folder: "branding", maxSize: 2000 },
+      { name: "hero_image_url", label: "Home page banner background (landscape 16:9 or wider, e.g. 1920 × 1080 — leave blank for the standard photo)", type: "image", folder: "branding", maxSize: 2000 },
       { name: "hero_count", label: "How many news articles rotate in the banner", type: "number", default: 4 },
       { name: "hero_layout", label: "Banner layout", type: "select", options: ["side", "white", "big", "text"], default: "side",
         labels: { side: "Headline with the article's picture beside it", white: "White: headline on the left, big picture on the right",
@@ -595,12 +631,12 @@ export const RESOURCES = {
       { name: "latest_news_ids", label: "Chosen articles (for “the articles I choose”)", type: "tags", ref: "articles" },
       { type: "heading", tab: "Strip & results", label: "Home page: Live & upcoming strip", help: "The row of match cards under the banner. Results stay on it for a while after a match, with a label: Completed, Pending (a league result waiting for approval) or Walkover. Postponed matches show too, labelled Postponed. Choose how long results stay, and the colours of the labels." },
       { name: "strip_result_hours", label: "How long a result stays on the strip, in hours (0 = don't show results; standard 48). A cup result typed in later counts from when it was typed in.", short: "Results stay (hours)", type: "number", default: 48, min: 0, max: 336 },
-      { name: "strip_live_color", label: "“Live” label and the edge of a live card (standard: red label, green edge)", type: "color", optional: true, default: "#e8003d" },
+      { name: "strip_live_color", label: "“Live” label and the edge of a live card (standard: green, like the Live button)", type: "color", optional: true, default: "#19a33a" },
       { name: "strip_soon_color", label: "“Live soon” label (standard: orange)", type: "color", optional: true, default: "#ff8a00" },
       { name: "strip_done_color", label: "“Completed” label (standard: green)", type: "color", optional: true, default: "#2f7d32" },
       { name: "strip_pending_color", label: "“Pending” label — a league result waiting for approval (standard: yellow)", type: "color", optional: true, default: "#f2b705" },
-      { name: "strip_walkover_color", label: "“Walkover” label (standard: the Completed colour)", type: "color", optional: true, default: "#2f7d32" },
-      { name: "strip_postponed_color", label: "“Postponed” label — shown from the match's date until a week ahead (standard: grey)", type: "color", optional: true, default: "#6b6b6b" },
+      { name: "strip_walkover_color", label: "“Walkover” label (standard: red)", type: "color", optional: true, default: "#c4112f" },
+      { name: "strip_postponed_color", label: "“Postponed” label — shown from the match's date until a week ahead (standard: red)", type: "color", optional: true, default: "#c4112f" },
       { type: "custom", render: () => stripPreview() },
       { name: "strip_line", label: "A thin line along the top of the strip", type: "select", options: ["none", "red", "yellow", "grey"], default: "red",
         labels: { none: "None", red: "Red — the main colour (standard)", yellow: "Yellow", grey: "Grey" } },
@@ -811,14 +847,14 @@ function stripPreview() {
   const labels = [["live", "Live"], ["soon", "Live soon"], ["done", "Completed"], ["pending", "Pending"], ["walkover", "Walkover"], ["postponed", "Postponed"]];
   return html`<div class="strip-preview" data-strip-preview><span class="muted">Preview:</span>${labels.map(([k, l]) => html`<span class="sp-tag" data-sp="${k}">${l}</span>`)}</div>`;
 }
-const STANDARD = { live: "#e8003d", soon: "#ff8a00", done: "#2f7d32", pending: "#f2b705", walkover: "#2f7d32", postponed: "#6b6b6b" };
+const STANDARD = { live: "#19a33a", soon: "#ff8a00", done: "#2f7d32", pending: "#f2b705", walkover: "#c4112f", postponed: "#c4112f" };
 const inkFor = (c) => { const n = parseInt(c.slice(1), 16), [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255]; return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#111" : "#fff"; };
 function liveStripPreview(form) {
   const box = form.querySelector("[data-strip-preview]");
   if (!box) return;
   for (const k of Object.keys(STANDARD)) {
     const name = `strip_${k}_color`, own = form.querySelector(`[data-own-color="${name}"]`)?.checked;
-    const c = own ? form.elements[name]?.value : k === "walkover" && form.querySelector('[data-own-color="strip_done_color"]')?.checked ? form.elements.strip_done_color.value : STANDARD[k];
+    const c = own ? form.elements[name]?.value : STANDARD[k];
     const tag = box.querySelector(`[data-sp="${k}"]`);
     if (tag && /^#[0-9a-f]{6}$/i.test(c)) { tag.style.background = c; tag.style.color = inkFor(c); }
   }

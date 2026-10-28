@@ -34,6 +34,8 @@ const SITE_PAGES = (season) => [
   ["Season wrapped", "/wrapped", "The season in numbers", "wrapped review"],
   ["Venues", "/venues", "Where the matches are played", "clubs venue address"],
   ["Rules", "/rules", "The league rules", "rules help"],
+  ["Help", "/page/help", "Questions and answers about the website and the league", "help faq questions how"],
+  ["Contact the league", "/support", "Send the league a question or a problem — and see your requests", "support contact ticket problem question email help request"],
   ["Hall of Fame", "/hall-of-fame", "The league's greats", "fame legends"],
   ["In memoriam", "/in-memoriam", "Remembering players we have lost", "memorial passed away"],
   ["Marketplace", "/marketplace", "Buy and sell snooker things", "buy sell cue"],

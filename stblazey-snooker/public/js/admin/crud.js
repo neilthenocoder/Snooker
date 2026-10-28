@@ -215,6 +215,10 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
   let editing = null;
   const filters = { ...preset };
   let search = "";
+  // Round 54 (Rich): a section can offer ways to sort its list (res.sorts: [[key, label, (a, b, refs) => …], …]);
+  // the first is the standard, and the choice is remembered on this device.
+  let sortKey = res.sorts?.[0]?.[0] ?? null;
+  try { const kept = localStorage.getItem(`sbdsl-sort-${res.table}`); if (kept && res.sorts?.some(([k]) => k === kept)) sortKey = kept; } catch { /* standard order */ }
   let page = 0;
   // Every list is paged like an email inbox: "1–50 of 116  ‹ ›". A section can set its own `pageSize` in resources.js.
   const PAGE_SIZE = res.pageSize ?? 50;
@@ -234,7 +238,7 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
     ...(res.columns ?? []).map((name) => {
       const f = res.fields.find((x) => x.name === name);
       const tag = (r) => (flag && name === flag.column && flagged(r) ? html` <span class="new-tag">${flag.tag}</span>` : "");
-      return { label: shortLabel(f), cell: (r) => html`${display(f, r[name], refs)}${tag(r)}` };
+      return { label: shortLabel(f), cell: (r) => html`${f.cellOf ? f.cellOf(r, refs) : display(f, r[name], refs)}${tag(r)}` };
     }),
     { label: "", cls: "right", cell: (r) => html`<span class="btn-row" style="justify-content:flex-end;flex-wrap:nowrap">
       ${(res.rowActions ?? []).map((a) => html`<a class="btn small ghost" href="${a.href(r)}">${a.label}</a>`)}
@@ -247,6 +251,7 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
   const visible = () => rows.filter((r) =>
     Object.entries(filters).every(([k, v]) => !v || r[k] === v) &&
     (!search || (res.columns ?? []).some((c) => String(display(res.fields.find((f) => f.name === c), r[c], refs)).toLowerCase().includes(search))))
+    .sort((a, b) => { const s = res.sorts?.find(([k]) => k === sortKey); return s ? s[2](a, b, refs) : 0; })
     .sort((a, b) => flagged(b) - flagged(a));
 
   /** "1–50 of 115  ‹ ›" — like an email inbox. */
@@ -328,6 +333,7 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
     ${res.single ? "" : html`<div class="toolbar">
       <button class="btn green" data-new>+ Add new</button>
       <input type="search" placeholder="Search…" data-search>
+      ${res.sorts ? html`<select data-sort aria-label="Sort">${res.sorts.map(([k, l]) => html`<option value="${k}" ${k === sortKey ? "selected" : ""}>Sort: ${l}</option>`)}</select>` : ""}
       ${filterFields.map((f) => html`<select data-filter="${f.name}"><option value="">Any ${shortLabel(f).toLowerCase()}</option>
         ${(f.type === "ref" ? refs[f.ref].map((r) => [refValue(f, r), labelOf(r)]) : (f.options ? optionsOf(f) : [...new Set(rows.map((r) => r[f.name]).filter(Boolean))]).map((o) => [o, optionLabel(f, o)]))
           .map(([v, l]) => html`<option value="${v}" ${filters[f.name] === v ? "selected" : ""}>${l}</option>`)}</select>`)}
@@ -426,6 +432,7 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
     if (e.target.type === "color") { const own = form()?.querySelector(`[data-own-color="${e.target.name}"]`); if (own) own.checked = true; }
     if (e.target.matches("[data-search]")) { search = e.target.value.trim().toLowerCase(); page = 0; drawList(); }
     if (e.target.matches("[data-filter]")) { filters[e.target.dataset.filter] = e.target.value; page = 0; drawList(); }
+    if (e.target.matches("[data-sort]")) { sortKey = e.target.value; page = 0; try { localStorage.setItem(`sbdsl-sort-${res.table}`, sortKey); } catch { /* not remembered */ } drawList(); }
   });
 
   el.addEventListener("click", async (e) => {

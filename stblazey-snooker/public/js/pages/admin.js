@@ -41,6 +41,8 @@ import { SITE_VERSION } from "../core/release.js";
 import { tonightPanel, needsYouPanel, recentChangesPanel } from "../admin/overview-plus.js";
 import { freeDates } from "../admin/rearrange.js";
 import { handicapSuggestPage } from "../admin/handicap-suggest.js";
+import { supportPage, supportCategoriesPage, needsAnswer } from "../admin/support.js";
+const backIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 5.3 8 12l6.7 6.7 1.4-1.4L10.8 12l5.3-5.3Z"/></svg>`;
 
 
 /** Watches the height of the dashboard menu (see where the menu is drawn). */
@@ -58,6 +60,8 @@ const NAV = [
   ["Pages & content", [["pages", "Info pages & rules"], ["key_dates", "Key dates"], ["meetings", "Meetings"], ["hall_of_fame", "Hall of Fame"], ["downloads", "Downloads"], ["merchandise", "Merchandise"], ["media", "Image library"]]],
   ["Sponsors & adverts", [["sponsors", "Sponsors"], ["sponsor_packages", "Sponsorship packages"], ["ads", "Side adverts"], ["popups", "Pop-up adverts"]]],
   ["Community", [["market", "Marketplace adverts"], ["market_categories", "Marketplace categories"], ["comments", "Match chat"]]],
+  // Round 55: Help & support requests sent from /support, each to the roles its category is given to.
+  ["Support", [["support", "Support inbox"], ["support_categories", "Support categories"]]],
   ["Look & settings", [["settings", "Site settings & home page"], ["branding", "Branding"], ["menu", "Menu"], ["page_settings_23", "Page introductions"], ["seo", "SEO"], ["emails", "Emails"]]],
   ["Tools", [["stats", "Statistics"], ["links", "Link checker"], ["performance", "Performance"]]],
   ["Newsletter", [["campaigns", "Campaigns"], ["subscribers", "Subscribers"], ["newsletter_setup", "Sign-up pop-up"]]],
@@ -66,10 +70,11 @@ const NAV = [
 ];
 const SPECIAL = { overview, results, generator, draws, media: mediaPage, stats: statsPage, import: importPage, handicaps: handicapsPage, entries: entriesPage,
   roles: rolesPage, activity: activityPage, backup: backupPage, awards: awardsPage, scoreboard: scoreboardPage, emails: emailsPage, cueviews: cueviewsPage, write: newsWizardPage, approvals: newsApprovePage,
-  campaigns: campaignsPage, subscribers: subscribersPage, market: marketPage, comments: commentsPage, menu: menuPage, seo: seoPage, links: linksPage, performance: performancePage, security: securityPage, versions: versionsPage, handicap_suggest: handicapSuggestPage };
+  campaigns: campaignsPage, subscribers: subscribersPage, market: marketPage, comments: commentsPage, menu: menuPage, seo: seoPage, links: linksPage, performance: performancePage, security: securityPage, versions: versionsPage, handicap_suggest: handicapSuggestPage,
+  support: supportPage, support_categories: supportCategoriesPage };
 // Menu items that show a red number when something is waiting.
-const COUNTS = { players: "Players waiting to be accepted", entries: "Entries waiting for payment", cueviews: "CueViews waiting to be checked", approvals: "News waiting for your approval", market: "Adverts waiting for approval" };
-const COUNT_WORD = { players: "new", entries: "waiting", cueviews: "waiting", approvals: "waiting", market: "waiting" };
+const COUNTS = { players: "Players waiting to be accepted", entries: "Entries waiting for payment", cueviews: "CueViews waiting to be checked", approvals: "News waiting for your approval", market: "Adverts waiting for approval", support: "Support requests waiting for an answer" };
+const COUNT_WORD = { players: "new", entries: "waiting", cueviews: "waiting", approvals: "waiting", market: "waiting", support: "to answer" };
 // A small picture for each group of the menu.
 const ico = (d) => html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
 const GROUP_ICON = {
@@ -82,6 +87,7 @@ const GROUP_ICON = {
   News: ico("M4 4h13v14a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2Zm2 2v4h9V6Zm0 6v2h9v-2Zm0 4v2h6v-2Zm13-8h2v10a2 2 0 0 1-4 0V8Z"),
   "Pages & content": ico("M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm8 1.5V8h4.5ZM7 11v2h10v-2Zm0 4v2h10v-2Z"),
   "Sponsors & adverts": ico("M3 10v4a1 1 0 0 0 1 1h2l5 4V5L6 9H4a1 1 0 0 0-1 1Zm13-3.5v11a6 6 0 0 0 0-11Zm0-4v2.1a8 8 0 0 1 0 14.8v2.1a10 10 0 0 0 0-19Z"),
+  Support: ico("M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 15.5a1.3 1.3 0 1 1 0-2.6 1.3 1.3 0 0 1 0 2.6Zm1.2-4.6v.6h-2.4v-1c0-1.3.8-2 1.6-2.6.7-.5 1.2-.9 1.2-1.6a1.6 1.6 0 0 0-3.2.1H8a4 4 0 0 1 8 0c0 1.6-1 2.4-1.8 3-.6.4-1 .8-1 1.5Z"),
   Community: ico("M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"),
   "Look & settings": ico("m19.4 13 .1-1-.1-1 2-1.6-2-3.4-2.4 1a7 7 0 0 0-1.7-1L15 3.5h-4L10.7 6a7 7 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11l-.1 1 .1 1-2 1.6 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.3 2.5h4l.3-2.5a7 7 0 0 0 1.7-1l2.4 1 2-3.4ZM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"),
   Tools: ico("M21 18.6 13.4 11a5 5 0 0 0-6.5-6.5L10.2 8 8 10.2 4.5 6.9A5 5 0 0 0 11 13.4l7.6 7.6Z"),
@@ -111,7 +117,8 @@ export default async function admin(view, { params, user, query }) {
   const count = (key) => (COUNTS[key] ? html` <span class="nav-count" data-count="${key}" title="${COUNTS[key]}" hidden></span>` : "");
 
   mount(view, html`<div class="wrap wide">
-    ${breadcrumb([["Home", "/"], ["Admin", "/admin"], [title]])}
+    <div class="admin-crumbs"><button type="button" class="back-link admin-back" data-admin-back aria-label="Back to the previous screen">${backIcon}<span>Back</span></button>
+    ${breadcrumb([["Home", "/"], ["Admin", "/admin"], [title]])}</div>
     <h1>${title}</h1>
     <div data-db-behind></div>
     <label class="admin-jump">Admin menu
@@ -234,6 +241,8 @@ export default async function admin(view, { params, user, query }) {
   });
 
   $("[data-admin-jump]").addEventListener("change", (e) => navigate(`/admin/${e.target.value}`));
+  // Back (Rich, round 54): the screen you were on before, or the dashboard if you came straight here.
+  $("[data-admin-back]", view)?.addEventListener("click", () => (history.length > 1 && document.referrer !== location.href ? history.back() : navigate("/admin")));
 
   // The red numbers in the menu: new players still to be checked, and competition entries
   // waiting for payment. Worked out again whenever something is saved, so they go as soon as it's dealt with.
@@ -245,6 +254,7 @@ export default async function admin(view, { params, user, query }) {
       cueviews: canOpenSection(user, "cueviews") ? (await cueviewSubmissions().catch(() => [])).filter((r) => r.status === "pending").length : 0,
       approvals: canOpenSection(user, "approvals") ? (await waitingNews().catch(() => [])).length : 0,
       market: canOpenSection(user, "market") ? (await waitingAds().catch(() => [])).length : 0,
+      support: canOpenSection(user, "support") ? (await needsAnswer(user).catch(() => [])).length : 0,
     };
     for (const [key, n] of Object.entries(waiting)) {
       const badge = $(`[data-count="${key}"]`, view);

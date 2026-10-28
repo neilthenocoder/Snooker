@@ -7,6 +7,7 @@
 // ─────────────────────────────────────────────────────────────
 import { buildSeed } from "../demo/seed-data.js";
 import { SCHEMA_VERSION } from "./version.js";
+import { DEFAULT_SUPPORT_CATEGORIES } from "./support.js";
 
 const KEY = "sbdsl-demo-db-v15";
 const SESSION_KEY = "sbdsl-demo-session";
@@ -17,13 +18,38 @@ const store = typeof localStorage !== "undefined" ? localStorage : (() => {
 
 let state = load();
 function load() {
-  try { const s = JSON.parse(store.getItem(KEY)); if (s?.tables) return s; } catch {}
+  try { const s = JSON.parse(store.getItem(KEY)); if (s?.tables) return upgrade(s); } catch {}
   const seed = buildSeed();
-  const fresh = { tables: seed.tables, users: seed.demoUsers };
+  const fresh = upgrade({ tables: seed.tables, users: seed.demoUsers });
   store.setItem(KEY, JSON.stringify(fresh));
   return fresh;
 }
 const persist = () => store.setItem(KEY, JSON.stringify(state));
+// Sample data saved before a round added new tables: add them (round 55: support categories).
+function upgrade(s) {
+  if (!s.tables.support_categories) {
+    s.tables.support_categories = demoSupportCategories();
+    s.tables.support_tickets ??= []; s.tables.support_messages ??= [];
+    // Two sample requests, so the Support inbox has something in it.
+    const ago = (h) => new Date(Date.now() - h * 3600e3).toISOString(), cap = s.tables.profiles?.find((p) => p.email === "captain@demo.test");
+    const lee = s.tables.profiles?.find((p) => p.role === "admin");
+    s.tables.support_tickets.push(
+      { id: "sup-1", no: 1001, token: "sample-request-1001", category_id: "supcat-1", category: "Scorecards & results", subject: "Frame 4 score is the wrong way round", name: "Sample Visitor", email: "visitor@example.com",
+        user_id: null, status: "new", assigned_to: null, last_from: "sender", page_url: "/results", created_at: ago(3), updated_at: ago(3) },
+      ...(cap ? [{ id: "sup-2", no: 1002, token: "sample-request-1002", category_id: "supcat-4", category: "Competitions & entries", subject: "Can I still enter the Singles?", name: cap.full_name, email: cap.email,
+        user_id: cap.id, status: "waiting", assigned_to: lee?.id ?? null, last_from: "league", page_url: "/competitions", created_at: ago(30), updated_at: ago(26) }] : []));
+    s.tables.support_messages.push(
+      { id: "supm-1", ticket_id: "sup-1", author_id: null, author_name: "Sample Visitor", from_league: false, internal: false, body: "On last Tuesday's match the frame 4 score is shown as 40–72 but it was 72–40 to the home player. Could someone change it please?", image_url: null, created_at: ago(3) },
+      ...(cap ? [
+        { id: "supm-2", ticket_id: "sup-2", author_id: cap.id, author_name: cap.full_name, from_league: false, internal: false, body: "Entries have closed on the website — is there any way I can still enter the Singles?", image_url: null, created_at: ago(30) },
+        { id: "supm-3", ticket_id: "sup-2", author_id: lee?.id ?? null, author_name: lee?.full_name ?? "The league", from_league: true, internal: true, body: "The draw isn't made until Friday — fine to add him.", image_url: null, created_at: ago(27) },
+        { id: "supm-4", ticket_id: "sup-2", author_id: lee?.id ?? null, author_name: lee?.full_name ?? "The league", from_league: true, internal: false, body: "Yes — the draw is on Friday, so I can still add you. Pay the entry fee to your captain by Thursday and you're in.", image_url: null, created_at: ago(26) },
+      ] : []));
+  }
+  return s;
+}
+export function demoSupportCategories() { return DEFAULT_SUPPORT_CATEGORIES.map(([name, description, roles], i) => ({
+  id: `supcat-${i + 1}`, name, description, roles, sort: i + 1, is_active: true, created_at: new Date().toISOString() })); }
 export function resetDemo() { store.removeItem(KEY); state = load(); emit("*"); }
 
 const newId = () => (globalThis.crypto?.randomUUID?.() ?? `id-${Date.now()}-${Math.random().toString(16).slice(2)}`);
@@ -349,6 +375,8 @@ export const demoClient = {
   async rpc(name, args) {
     // The sample database is always the version the website expects (see SCHEMA_VERSION in db.js).
     if (name === "schema_version") return { data: SCHEMA_VERSION, error: null };
+    // Round 57: sending anything to the league needs a login (as the database: see the end of schema.sql).
+    if (["enter_competitions", "submit_memory", "submit_cueview", "support_staff", "set_chat_off"].includes(name) && !me()) return { data: null, error: { message: "Please log in first" } };
     if (name === "set_fixture_status") {
       const fx = state.tables.fixtures.find((f) => f.id === args.fid);
       if (args.new_status === "submitted" && !fx.scorecard_url) return { data: null, error: { message: "Upload a photo of the paper scorecard before submitting the result" } };
@@ -410,7 +438,7 @@ export const demoClient = {
         if (c.kind === "Doubles" && (!partner || partner.id === pl.id)) return { data: null, error: { message: `Choose your partner for ${c.name}` } };
         const live = list.filter((s) => s.competition_id === cid && ["pending", "approved"].includes(s.status));
         const taken = c.kind === "Team" ? live.some((s) => s.team_id === team?.id) || t.competition_entries.some((e) => e.competition_id === cid && e.team_id === team?.id)
-          : live.some((s) => [s.player_id, s.partner_id].some((id) => id && [pl.id, partner?.id].includes(id))) || t.competition_entries.some((e) => e.competition_id === cid && [pl.id, partner?.id].includes(e.player_id));
+          : live.some((s) => [s.player_id, s.partner_id].some((id) => id && [pl.id, partner?.id].includes(id))) || t.competition_entries.some((e) => e.competition_id === cid && [e.player_id, e.partner_id].some((id) => id && [pl.id, partner?.id].includes(id)));
         if (taken) return { data: null, error: { message: `${c.kind === "Team" ? `${team?.name} are` : `${pl.full_name} is`} already entered in ${c.name}` } };
         const row = { id: newId(), competition_id: cid, player_id: pl.id, partner_id: partner?.id ?? null, team_id: c.kind === "Team" ? team?.id ?? null : null,
           name: c.kind === "Team" ? team?.name : partner ? `${pl.full_name} & ${partner.full_name}` : pl.full_name, contact: args.p_contact || null,
@@ -435,7 +463,7 @@ export const demoClient = {
       if (args.approve) {
         if (!su.entry_id) {
           const seed = Math.max(0, ...t.competition_entries.filter((e) => e.competition_id === su.competition_id).map((e) => e.seed)) + 1;
-          const entry = { id: newId(), competition_id: su.competition_id, name: su.name, team_id: su.team_id, player_id: su.team_id ? null : su.player_id, seed };
+          const entry = { id: newId(), competition_id: su.competition_id, name: su.name, team_id: su.team_id, player_id: su.team_id ? null : su.player_id, partner_id: su.team_id ? null : su.partner_id ?? null, seed };
           t.competition_entries.push(entry); su.entry_id = entry.id;
         }
         su.status = "approved";
@@ -638,6 +666,68 @@ export const demoClient = {
       (state.tables.hall_of_fame ??= []).push(row); shortAddress("hall_of_fame", row);
       if (p.contact) (state.tables.hall_of_fame_contacts ??= []).push({ id: newId(), entry_id: row.id, contact: p.contact });
       persist(); return { data: row.id, error: null };
+    }
+    if (name === "submit_support") {
+      // Mirrors submit_support() in supabase/schema.sql.
+      const p = args.p ?? {}, t = state.tables, who = me();
+      if (!who) return { data: null, error: { message: "Please log in to contact the league" } };
+      const em = String(who.email || p.email || "").trim().toLowerCase();
+      p.name = who.full_name || p.name;
+      if (String(p.website ?? "").trim()) return { data: { no: 0 }, error: null };
+      const cat = (t.support_categories ?? []).find((c) => c.id === p.category_id && c.is_active);
+      const fail = (message) => ({ data: null, error: { message } });
+      if (!cat) return fail("Please choose what your request is about");
+      if (String(p.subject ?? "").trim().length < 3) return fail("Please say in a few words what it is about");
+      if (String(p.message ?? "").trim().length < 5) return fail("Please tell us a little more");
+      if (String(p.name ?? "").trim().length < 2) return fail("Please type your name");
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return fail("Please type your email address, so the league can answer you");
+      const tickets = (t.support_tickets ??= []), msgs = (t.support_messages ??= []), now = new Date().toISOString();
+      if (tickets.filter((x) => Date.now() - Date.parse(x.created_at) < 3600e3 && (x.email === em || (who && x.user_id === who.id))).length >= 5)
+        return fail("You have sent several requests in the last hour — please wait for the league to answer");
+      const row = { id: newId(), no: Math.max(1000, ...tickets.map((x) => x.no)) + 1, token: newId(), category_id: cat.id, category: cat.name, subject: String(p.subject).trim().slice(0, 160),
+        name: String(p.name).trim().slice(0, 120), email: em, user_id: who?.id ?? null, status: "new", assigned_to: null, last_from: "sender", page_url: p.page_url || null, created_at: now, updated_at: now };
+      const msg = { id: newId(), ticket_id: row.id, author_id: who?.id ?? null, author_name: row.name, from_league: false, internal: false, body: String(p.message).trim().slice(0, 5000), image_url: p.image_url || null, created_at: now };
+      tickets.push(row); msgs.push(msg);
+      persist(); emit("support_tickets", [row], "INSERT"); emit("support_messages", [msg], "INSERT");
+      return { data: { id: row.id, no: row.no, token: row.token, message_id: msg.id }, error: null };
+    }
+    if (name === "support_staff") {
+      const cats = (state.tables.support_categories ?? []).filter((c) => c.is_active), roles = new Set(["admin", ...cats.flatMap((c) => c.roles)]);
+      return { data: state.tables.profiles.filter((p) => roles.has(p.role)).map((p) => ({ id: p.id, full_name: p.full_name || p.email, role: p.role })), error: null };
+    }
+    if (name === "support_thread") {
+      const who = me(), t = (state.tables.support_tickets ?? []).find((x) => x.token === args.p_token);
+      const cat = (state.tables.support_categories ?? []).find((c) => c.id === t?.category_id);
+      if (!t || !who || !(t.user_id === who.id || who.role === "admin" || (cat?.roles ?? []).includes(who.role))) return { data: null, error: null };
+      const messages = (state.tables.support_messages ?? []).filter((m) => m.ticket_id === t.id && !m.internal).sort((a, b) => a.created_at.localeCompare(b.created_at))
+        .map((m) => ({ ...m, author_name: m.from_league ? String(m.author_name || "The league").split(" ")[0] : m.author_name }));
+      const { id, no, subject, category, status, name: sender, created_at, updated_at } = t;
+      return { data: { ticket: { id, no, subject, category, status, name: sender, created_at, updated_at }, messages: clone(messages) }, error: null };
+    }
+    if (name === "support_reply") {
+      // Mirrors support_reply(): an officer who looks after the category answers (or adds a private note); the sender answers back.
+      const t = (state.tables.support_tickets ?? []).find((x) => (args.p_ticket && x.id === args.p_ticket) || (args.p_token && x.token === args.p_token));
+      if (!t) return { data: null, error: { message: "Request not found" } };
+      const body = String(args.p_body ?? "").trim();
+      if (!body) return { data: null, error: { message: "Please type your message" } };
+      const who = me(), cat = (state.tables.support_categories ?? []).find((c) => c.id === t.category_id);
+      if (!who) return { data: null, error: { message: "Please log in to reply" } };
+      const staff = !!who && (who.role === "admin" || (cat?.roles ?? []).includes(who.role));
+      const now = new Date().toISOString(), internal = staff && !!args.p_internal;
+      const msg = { id: newId(), ticket_id: t.id, author_id: who?.id ?? null, created_at: now, body: body.slice(0, 5000), image_url: args.p_image || null, internal };
+      if (staff) {
+        Object.assign(msg, { author_name: who.full_name || "The league", from_league: true });
+        t.status = ["new", "in_progress", "waiting", "resolved"].includes(args.p_status) ? args.p_status : internal ? (t.status === "new" ? "in_progress" : t.status) : "waiting";
+        if (!internal) t.last_from = "league";
+        t.assigned_to ??= who.id;
+      } else if (t.user_id === who.id) {
+        Object.assign(msg, { author_name: t.name, from_league: false });
+        t.status = t.status === "new" ? "new" : "in_progress"; t.last_from = "sender";
+      } else return { data: null, error: { message: "This isn't your request" } };
+      t.updated_at = now;
+      (state.tables.support_messages ??= []).push(msg);
+      persist(); emit("support_messages", [msg], "INSERT"); emit("support_tickets", [t], "UPDATE");
+      return { data: msg.id, error: null };
     }
     if (name === "login_record") {
       (state.tables.login_attempts ??= []).push({ id: Date.now(), email: String(args.p_email ?? "").trim().toLowerCase(), ip: "this browser", ok: !!args.p_ok, at: new Date().toISOString() });

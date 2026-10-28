@@ -35,15 +35,18 @@ export default async function cupScorecard(view, { params, user }) {
   // entrant's own team first, then everyone else.
   const options = (e) => {
     const home = playerTeam(e);
-    const pickable = players.filter((p) => isActivePlayer(p) || p.id === e.player_id);
-    const mine = pickable.filter((p) => p.team_id === home?.id).map((p) => ({ id: p.id, name: p.full_name, group: home?.name }));
+    const pair = [e.player_id, e.partner_id].filter(Boolean);
+    const pickable = players.filter((p) => isActivePlayer(p) || pair.includes(p.id));
+    // Round 56: a doubles pair's own two players come first.
+    const own = pair.length > 1 ? pickable.filter((p) => pair.includes(p.id)).map((p) => ({ id: p.id, name: p.full_name, group: e.name })) : [];
+    const mine = pickable.filter((p) => p.team_id === home?.id && !(own.length && pair.includes(p.id))).map((p) => ({ id: p.id, name: p.full_name, group: home?.name }));
     if (c.kind === "Team") return mine;
-    const rest = pickable.filter((p) => p.team_id !== home?.id).map((p) => ({ id: p.id, name: p.full_name, group: team(p.team_id)?.name ?? "Other" }));
-    return [...mine, ...rest];
+    const rest = pickable.filter((p) => p.team_id !== home?.id && !(own.length && pair.includes(p.id))).map((p) => ({ id: p.id, name: p.full_name, group: team(p.team_id)?.name ?? "Other" }));
+    return [...own, ...mine, ...rest];
   };
   // Singles: the entrant plays every frame, so fill them in.
-  // (Doubles: the linked player is filled in; pick their partner.)
-  const preset = ["Singles", "Doubles"].includes(c.kind) ? { a: [info.a.player_id], b: [info.b.player_id] } : {};
+  // Doubles (round 56): both players of each pair are filled in — each player's breaks go in their own box.
+  const preset = ["Singles", "Doubles"].includes(c.kind) ? { a: [info.a.player_id, info.a.partner_id ?? null].slice(0, slots), b: [info.b.player_id, info.b.partner_id ?? null].slice(0, slots) } : {};
 
   const toEditor = (f) => ({
     frame_no: f.frame_no, a_points: f.a_points, b_points: f.b_points,

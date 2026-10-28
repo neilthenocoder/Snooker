@@ -603,3 +603,24 @@ export const submitMemory = (entry) => run(db.rpc("submit_memory", { p: entry })
 export const hallOfFame = () => selectAll(() => db.from("hall_of_fame").select("*").order("sort").order("created_at", { ascending: false }));
 /** Open or close the match night chat for one match (the league only — Rich, round 24). */
 export const setChatOff = (where, off) => run(db.rpc("set_chat_off", { p_fixture: where.fixture_id ?? null, p_comp_match: where.comp_match_id ?? null, p_off: off }));
+
+// ── Round 55: Help & support requests ────────────────────────────
+// Sending, reading by the private link and answering go through database functions; the dashboard reads and
+// changes the requests it looks after directly (the database only lets each officer see their own categories).
+export const supportCategories = () => selectAll(() => db.from("support_categories").select("*").order("sort"));
+export const submitSupport = (p) => run(db.rpc("submit_support", { p }));
+export const supportThread = (token) => run(db.rpc("support_thread", { p_token: token }));
+export const supportReply = ({ ticket = null, token = null, body, internal = false, status = null, image = null }) =>
+  run(db.rpc("support_reply", { p_ticket: ticket, p_token: token, p_body: body, p_internal: internal, p_status: status, p_image: image }));
+export const supportTickets = () => selectAll(() => db.from("support_tickets").select("*").order("updated_at", { ascending: false }));
+export const myTickets = (uid) => selectAll(() => db.from("support_tickets").select("*").eq("user_id", uid).order("updated_at", { ascending: false }));
+export const ticketMessages = (id) => selectAll(() => db.from("support_messages").select("*").eq("ticket_id", id).order("created_at"));
+export const updateTicket = (id, patch) => run(db.from("support_tickets").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id).select());
+export const supportStaff = () => run(db.rpc("support_staff"));
+export const deleteTicket = (id) => run(db.from("support_tickets").delete().eq("id", id));
+/** Email whoever should hear about this new message (see netlify/functions/support-email.mjs). Never throws. */
+export async function sendSupportEmail(messageId) {
+  if (DEMO_MODE || !messageId) return { demo: DEMO_MODE };
+  try { return await callFunction("support-email", { message_id: messageId }); }
+  catch (err) { console.warn("Support email not sent:", err.message); return { error: err.message }; }
+}

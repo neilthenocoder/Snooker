@@ -4,8 +4,22 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.47.0";
+export const SITE_VERSION = "1.50.0";
 export const CHANGES = [
+  "Nothing can be sent to the league without logging in: support requests, competition entries, CueViews and Hall of Fame memories ask you to log in first, and come back to the page afterwards (the database refuses them too — run schema.sql, version 36). Reading the website never needs a login",
+  "Doubles: a pair is two players — Admin → Draws & results asks for Player 1 and Player 2 and names the pair for you; entries from the entry form keep both players. Both players get the pair's results and trophies on their own page, and on the scorecard both are filled in, each with their own breaks",
+  "Help & support: a Contact the league form (/support — from Help, the footer and the account menu). People choose what it is about and it goes to the roles that look after that kind of request; they get a reference number, an email and a private link to follow it and reply (run schema.sql — version 34)",
+  "Admin → Support inbox: each officer sees the requests for their role (the Master Admin all of them) — answer, add private notes, set the status, say who is looking after it, or move it to another category; a red number shows requests waiting for an answer",
+  "Admin → Support categories (Master Admin): the list people choose from, and which roles get each one; Admin → Emails: support emails on or off",
+  "Help page: questions and answers that open and close, in groups, with a search box (your own ?? questions in Admin → Pages replace the built-in ones)",
+  "Latest results: each result a small scoreboard — league and date on top, both teams with their badge, the winner in bold with a green score, the loser's score red",
+  "One set of colours everywhere: Live green; in progress yellow; postponed, walkover and cancelled red; complete, wins and handicap drops green; losses and handicap rises red",
+  "A pop-up when a match finishes: “St Neot have beaten Bethel A 3–2” (league and competitions)",
+  "News: the featured article shorter and not repeated in the list below; pictures in the snooker-table shape (16:9) for features, banners and competitions",
+  "My Snooker team chooser: teams as cards grouped by league",
+  "Admin fixtures: latest match night first (Sort menu), coloured status — No scorecard yet, Waiting for approval, In progress, Postponed, Complete, To come; postponed matches can be given their new date",
+  "Admin: a Back button on every screen; competitions newest season first",
+  "Admin draws: find an entrant by typing; team competitions (Team Pairs etc.) list teams first; anyone already entered is greyed out",
   "Home page Quick links: eight buttons in two even rows (two columns on phones, icons shown) — Fixtures, Results, League tables, Rankings, Breaks, Competitions, Calendar, Handicaps",
   "Phones: Live (grey / orange Live soon / green), a glowing ★ for My Snooker, the bell and search in the menu bar",
   "Menu bar buttons one height; More ▾ styled like the Admin ▾ menu, with icons",

@@ -133,6 +133,9 @@ create table if not exists competition_entries (
   player_id uuid references players on delete set null,
   seed int not null default 0
 );
+-- Round 56 (Rich: "with the doubles competition, how do I pair up who is with who?"): a doubles pair is two players —
+-- player_id and partner_id — so each of them gets the pair's results, and their own breaks.
+alter table competition_entries add column if not exists partner_id uuid references players on delete set null;
 
 -- One row per match slot in the draw. Round 1 stores who plays; later
 -- rounds are filled automatically by the winners (see js/core/bracket.js).
@@ -868,9 +871,10 @@ language sql stable security definer set search_path = public as $$
     from competition_matches m
     join competition_entries e on e.id in (m.entry_a, m.entry_b)
     left join players pl on pl.id = e.player_id
+    left join players pl2 on pl2.id = e.partner_id
     where m.id = mid
       and m.status <> 'completed'
-      and (public.is_captain_of(e.team_id) or public.is_captain_of(pl.team_id))
+      and (public.is_captain_of(e.team_id) or public.is_captain_of(pl.team_id) or public.is_captain_of(pl2.team_id))
   );
 $$;
 
@@ -1130,7 +1134,7 @@ begin
       end if;
       if exists (select 1 from competition_signups where competition_id = cid and status in ('pending', 'approved')
                    and (player_id in (pl.id, partner.id) or partner_id in (pl.id, partner.id)))
-         or exists (select 1 from competition_entries where competition_id = cid and player_id in (pl.id, partner.id)) then
+         or exists (select 1 from competition_entries where competition_id = cid and (player_id in (pl.id, partner.id) or partner_id in (pl.id, partner.id))) then
         raise exception '% already entered in %', case when c.kind = 'Doubles' then 'One of you is' else pl.full_name || ' is' end, c.name;
       end if;
     end if;
@@ -1169,8 +1173,8 @@ begin
   if su.id is null then raise exception 'That entry no longer exists'; end if;
   if approve then
     if su.entry_id is null then
-      insert into competition_entries (competition_id, name, team_id, player_id, seed)
-      values (su.competition_id, su.name, su.team_id, case when su.team_id is null then su.player_id end,
+      insert into competition_entries (competition_id, name, team_id, player_id, partner_id, seed)
+      values (su.competition_id, su.name, su.team_id, case when su.team_id is null then su.player_id end, case when su.team_id is null then su.partner_id end,
               (select coalesce(max(seed), 0) + 1 from competition_entries where competition_id = su.competition_id))
       returning id into eid;
     end if;
@@ -2698,7 +2702,246 @@ alter table settings add column if not exists promo_url text;
 alter table settings add column if not exists hero_bg text;
 alter table settings add column if not exists strip_line text not null default 'none';
 
-create or replace function public.schema_version() returns int language sql immutable as $$ select 33 $$;
+-- ── Round 55: Help & support requests (Rich: "a support function … a support ticket which certain roles get
+--    based on a support enquiry dropdown category list") ──────────────────────────────────────────────────────
+-- Anyone can send the league a request from /support (the Help page links to it): they pick a category, and the
+-- request goes to the roles that category is given to (Admin → Support → Support categories, Master Admin only).
+-- The Master Admin sees every request. The sender gets a reference (#1001) and a private link (/support/<token>)
+-- where they read the league's replies and answer back; logged-in senders also see their requests on /support.
+-- Officers can add private notes the sender never sees. Everything is changed through the functions below.
+create table if not exists support_categories (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (length(name) between 1 and 80),
+  description text check (length(description) <= 300),
+  roles text[] not null default '{}',
+  sort int not null default 1,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+insert into support_categories (name, description, roles, sort)
+select * from (values
+  ('Scorecards & results', 'A result or scorecard that looks wrong, or trouble entering one', array['league_admin','league_secretary'], 1),
+  ('Fixtures & rearranging a match', 'Dates, venues, postponements and rearranged matches', array['league_admin','league_secretary'], 2),
+  ('Handicaps', 'A question about a player''s handicap', array['league_admin','league_secretary','competition_secretary'], 3),
+  ('Competitions & entries', 'Entering a competition, draws, deadlines and cup matches', array['league_admin','competition_secretary'], 4),
+  ('Players, teams & registration', 'Joining the league, signing or moving a player, team details', array['league_admin','league_secretary'], 5),
+  ('My login & account', 'Logging in, passwords and your account', array['league_admin'], 6),
+  ('Website problem or idea', 'Something not working on the website, or an idea to make it better', array['league_admin'], 7),
+  ('Sponsorship & advertising', 'Sponsoring the league or advertising on the website', array['chairman','committee_member'], 8),
+  ('Something else', 'Anything else for the league', array['league_admin','chairman'], 9)
+) v(name, description, roles, sort)
+where not exists (select 1 from support_categories);
+
+create table if not exists support_tickets (
+  id uuid primary key default gen_random_uuid(),
+  no int generated by default as identity (start with 1001) unique,
+  token uuid not null default gen_random_uuid() unique,
+  category_id uuid references support_categories on delete set null,
+  category text not null check (length(category) <= 80),
+  subject text not null check (length(subject) between 3 and 160),
+  name text not null check (length(name) between 2 and 120),
+  email text not null check (length(email) <= 200 and email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$'),
+  user_id uuid references auth.users on delete set null,
+  status text not null default 'new' check (status in ('new', 'in_progress', 'waiting', 'resolved')),
+  assigned_to uuid references profiles on delete set null,
+  last_from text not null default 'sender' check (last_from in ('sender', 'league')),
+  page_url text check (length(page_url) <= 500),
+  emailed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists support_tickets_user on support_tickets (user_id);
+
+create table if not exists support_messages (
+  id uuid primary key default gen_random_uuid(),
+  ticket_id uuid not null references support_tickets on delete cascade,
+  author_id uuid references auth.users on delete set null,
+  author_name text check (length(author_name) <= 120),
+  from_league boolean not null default false,
+  internal boolean not null default false,
+  body text not null check (length(body) between 1 and 5000),
+  image_url text check (length(image_url) <= 500),
+  emailed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists support_messages_ticket on support_messages (ticket_id);
+
+-- Does this login look after requests in this category? (The Master Admin: all of them. A request whose category has
+-- been removed: whoever looks after Site settings.)
+create or replace function public.handles_support(cat uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from profiles p where p.id = auth.uid() and (
+    p.role = 'admin'
+    or exists (select 1 from support_categories c where c.id = cat and p.role = any(c.roles))
+    or (cat is null and exists (select 1 from role_permissions rp where rp.role = p.role and 'settings' = any(rp.areas)))
+  )) and public.session_ok();
+$$;
+-- Does this login look after any requests at all (the Support inbox in the dashboard)?
+create or replace function public.handles_any_support() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from profiles p where p.id = auth.uid() and (
+    p.role = 'admin' or exists (select 1 from support_categories c where c.is_active and p.role = any(c.roles))
+  )) and public.session_ok();
+$$;
+
+-- The officers who look after support requests (for "Looking after" in the inbox — officers can't read each other's logins).
+create or replace function public.support_staff() returns table (id uuid, full_name text, role text)
+language sql stable security definer set search_path = public as $$
+  select p.id, coalesce(nullif(p.full_name, ''), p.email), p.role from profiles p
+  where public.handles_any_support() and (p.role = 'admin' or exists (select 1 from support_categories c where c.is_active and p.role = any(c.roles)))
+  order by 2;
+$$;
+grant execute on function public.support_staff() to authenticated;
+
+-- Send a request (anyone). p: category_id, subject, message, name, email, page_url, image_url (logged in only), website (a trap
+-- for robots: people never see that box, so anything in it means the request is quietly dropped).
+create or replace function public.submit_support(p jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare cat support_categories; t support_tickets; mid uuid; me profiles; em text; img text := nullif(trim(coalesce(p->>'image_url', '')), '');
+begin
+  -- Round 57 (Neil): only logged-in people can send a request. Their name and email come from their login.
+  if auth.uid() is null then raise exception 'Please log in to contact the league'; end if;
+  select * into me from profiles where id = auth.uid();
+  em := lower(trim(coalesce(nullif(me.email, ''), (select email from auth.users where id = auth.uid()), p->>'email', '')));
+  if nullif(trim(coalesce(p->>'website', '')), '') is not null then return jsonb_build_object('no', 0); end if;
+  select * into cat from support_categories where id = nullif(p->>'category_id', '')::uuid and is_active;
+  if cat.id is null then raise exception 'Please choose what your request is about'; end if;
+  if length(trim(coalesce(p->>'subject', ''))) < 3 then raise exception 'Please say in a few words what it is about'; end if;
+  if length(trim(coalesce(p->>'message', ''))) < 5 then raise exception 'Please tell us a little more'; end if;
+  if length(trim(coalesce(nullif(me.full_name, ''), p->>'name', ''))) < 2 then raise exception 'Please type your name'; end if;
+  if em !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then raise exception 'Please type your email address, so the league can answer you'; end if;
+  if img is not null and (auth.uid() is null or not public.is_site_image(img, 'support')) then raise exception 'Pictures must be uploaded on this website'; end if;
+  -- Five requests an hour from one email address or login is plenty.
+  if (select count(*) from support_tickets where created_at > now() - interval '1 hour' and (email = em or (auth.uid() is not null and user_id = auth.uid()))) >= 5 then
+    raise exception 'You have sent several requests in the last hour — please wait for the league to answer';
+  end if;
+  insert into support_tickets (category_id, category, subject, name, email, user_id, page_url)
+  values (cat.id, cat.name, left(trim(p->>'subject'), 160), left(trim(coalesce(nullif(me.full_name, ''), p->>'name')), 120), em, auth.uid(), left(nullif(trim(coalesce(p->>'page_url', '')), ''), 500))
+  returning * into t;
+  insert into support_messages (ticket_id, author_id, author_name, body, image_url)
+  values (t.id, auth.uid(), t.name, left(trim(p->>'message'), 5000), img) returning id into mid;
+  return jsonb_build_object('id', t.id, 'no', t.no, 'token', t.token, 'message_id', mid);
+end $$;
+grant execute on function public.submit_support(jsonb) to anon, authenticated;
+
+-- A request and its conversation (the sender's own view — no private notes). Round 57: the sender has to be logged
+-- in as themselves (or be an officer who looks after it); the link alone isn't enough.
+create or replace function public.support_thread(p_token uuid) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'ticket', jsonb_build_object('id', t.id, 'no', t.no, 'subject', t.subject, 'category', t.category, 'status', t.status, 'name', t.name,
+      'created_at', t.created_at, 'updated_at', t.updated_at),
+    'messages', coalesce((select jsonb_agg(jsonb_build_object('id', m.id, 'from_league', m.from_league, 'author_name', case when m.from_league then split_part(coalesce(m.author_name, 'The league'), ' ', 1) else m.author_name end,
+      'body', m.body, 'image_url', m.image_url, 'created_at', m.created_at) order by m.created_at) from support_messages m where m.ticket_id = t.id and not m.internal), '[]'::jsonb))
+  from support_tickets t where t.token = p_token and auth.uid() is not null and (t.user_id = auth.uid() or public.handles_support(t.category_id));
+$$;
+grant execute on function public.support_thread(uuid) to anon, authenticated;
+
+-- Add to the conversation. An officer who looks after the request answers it (or adds a private note, p_internal) and
+-- can set its status at the same time; the sender (logged in, or with the private link) answers back, which opens it again.
+create or replace function public.support_reply(p_ticket uuid, p_token uuid default null, p_body text default '', p_internal boolean default false,
+  p_status text default null, p_image text default null) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare t support_tickets; me profiles; staff boolean; new_id uuid; img text := nullif(trim(coalesce(p_image, '')), '');
+begin
+  if auth.uid() is null then raise exception 'Please log in to reply'; end if;
+  select * into t from support_tickets where (p_ticket is not null and id = p_ticket) or (p_token is not null and token = p_token) limit 1;
+  if t.id is null then raise exception 'Request not found'; end if;
+  if length(trim(coalesce(p_body, ''))) < 1 then raise exception 'Please type your message'; end if;
+  if img is not null and (auth.uid() is null or not public.is_site_image(img, 'support')) then raise exception 'Pictures must be uploaded on this website'; end if;
+  select * into me from profiles where id = auth.uid();
+  staff := public.handles_support(t.category_id);
+  if staff then
+    insert into support_messages (ticket_id, author_id, author_name, from_league, internal, body, image_url)
+    values (t.id, auth.uid(), coalesce(nullif(me.full_name, ''), 'The league'), true, coalesce(p_internal, false), left(trim(p_body), 5000), img) returning id into new_id;
+    update support_tickets set
+      status = case when p_status in ('new', 'in_progress', 'waiting', 'resolved') then p_status when coalesce(p_internal, false) then (case when status = 'new' then 'in_progress' else status end) else 'waiting' end,
+      last_from = case when coalesce(p_internal, false) then last_from else 'league' end,
+      assigned_to = coalesce(assigned_to, auth.uid()), updated_at = now()
+    where id = t.id;
+  elsif t.user_id = auth.uid() then
+    insert into support_messages (ticket_id, author_id, author_name, body, image_url)
+    values (t.id, auth.uid(), t.name, left(trim(p_body), 5000), img) returning id into new_id;
+    update support_tickets set status = case when status = 'new' then 'new' else 'in_progress' end, last_from = 'sender', updated_at = now() where id = t.id;
+  else
+    raise exception 'This isn''t your request';
+  end if;
+  return new_id;
+end $$;
+grant execute on function public.support_reply(uuid, uuid, text, boolean, text, text) to anon, authenticated;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['support_categories','support_tickets','support_messages'] loop
+    execute format('alter table %I enable row level security', t);
+    execute format('drop policy if exists "public read" on %I', t);
+    execute format('drop policy if exists "support read" on %I', t);
+    execute format('drop policy if exists "support write" on %I', t);
+    execute format('drop policy if exists "admin write" on %I', t);
+    execute format('drop policy if exists "master delete" on %I', t);
+  end loop;
+end $$;
+create policy "public read" on support_categories for select using (is_active or public.handles_any_support());
+create policy "admin write" on support_categories for all using (public.is_master()) with check (public.is_master());
+-- Requests: the officers who look after that category, and the sender (logged in) their own. Officers can change the
+-- status, the category and who is looking after it; only the Master Admin can delete one.
+create policy "support read" on support_tickets for select using (public.handles_support(category_id) or (auth.uid() is not null and user_id = auth.uid()));
+create policy "support write" on support_tickets for update using (public.handles_support(category_id)) with check (public.handles_any_support());
+create policy "master delete" on support_tickets for delete using (public.is_master());
+create policy "support read" on support_messages for select using (exists (select 1 from support_tickets t where t.id = ticket_id
+  and (public.handles_support(t.category_id) or (auth.uid() is not null and t.user_id = auth.uid() and not internal))));
+create policy "master delete" on support_messages for delete using (public.is_master());
+
+-- Live updates: a new request (or answer) appears in the inbox, and the league's reply pops up for the sender.
+do $$
+declare t text;
+begin
+  foreach t in array array['support_tickets','support_messages'] loop
+    begin
+      execute format('alter publication supabase_realtime add table %I', t);
+    exception when duplicate_object then null;
+    end;
+  end loop;
+end $$;
+
+-- Support emails can be switched off (Admin → Emails → Support request emails).
+alter table private_settings add column if not exists support_email_on boolean not null default true;
+
+-- A screenshot with a request (logged in only): pictures go in support/.
+drop policy if exists "images admin insert" on storage.objects;
+create policy "images admin insert" on storage.objects for insert to authenticated
+  with check (bucket_id = 'images' and (public.is_staff()
+    or ((name like 'scorecards/%' or name like 'matchnight/%') and exists (select 1 from public.profiles where id = auth.uid()
+          and (role in ('captain', 'vice_captain') or team_role in ('captain', 'vice_captain'))))
+    or (name like 'players/%' and exists (select 1 from public.profiles where id = auth.uid() and player_id is not null))
+    or (name like 'news/%' and public.can_manage('news'))
+    or (name like 'market/%' and auth.uid() is not null)
+    or (name like 'memories/%' and auth.uid() is not null)
+    or (name like 'support/%' and auth.uid() is not null)
+  ));
+
+-- ── Round 56: doubles pairs ──────────────────────────────────────
+-- Pairs that came in on the entry form before partner_id existed: fill it in from their entry.
+update competition_entries e set partner_id = s.partner_id
+  from competition_signups s where s.entry_id = e.id and e.partner_id is null and s.partner_id is not null and e.team_id is null;
+
+-- ── Round 57 (Neil: "no one can do anything to the website without being logged in") ──
+-- Everything that sends something to the league needs a login: support requests, competition entries, CueViews and
+-- Hall of Fame memories. (Still open to everyone: reading the website, logging in, the newsletter sign-up/unsubscribe
+-- link, and the anonymous page-view counter.)
+do $$
+declare f text;
+begin
+  foreach f in array array['public.submit_support(jsonb)', 'public.support_thread(uuid)', 'public.support_reply(uuid, uuid, text, boolean, text, text)',
+    'public.support_staff()', 'public.enter_competitions(uuid, uuid[], text, jsonb)', 'public.submit_memory(jsonb)',
+    'public.submit_cueview(uuid, text, text, jsonb, text, text)', 'public.set_chat_off(uuid, uuid, boolean)'] loop
+    execute format('revoke all on function %s from public, anon', f);
+    execute format('grant execute on function %s to authenticated', f);
+  end loop;
+end $$;
+
+create or replace function public.schema_version() returns int language sql immutable as $$ select 36 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

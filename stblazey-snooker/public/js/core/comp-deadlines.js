@@ -32,7 +32,7 @@ const roundDate = (map, round) => map?.[round] ?? map?.[String(round)] ?? null;
 function ownEntry(user, ctx, c, e) {
   if (!e) return false;
   const me = user?.profile?.player_id ? ctx.player.get(user.profile.player_id) : null;
-  if (me && e.player_id === me.id) return true;
+  if (me && (e.player_id === me.id || e.partner_id === me.id)) return true;
   // A doubles pair is entered under one player's profile, with both names ("Sam Bolitho & Dan Couch").
   if (me && c.kind === "Doubles" && String(e.name ?? "").split("&").map((x) => x.trim().toLowerCase()).includes(me.full_name.toLowerCase())) return true;
   return c.kind === "Team" && !!e.team_id && e.team_id === user?.profile?.team_id && isCaptain(user);

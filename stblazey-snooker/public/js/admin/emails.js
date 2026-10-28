@@ -35,6 +35,12 @@ export async function emailsPage(el) {
         <button type="button" class="btn secondary" data-email-test="entries">Send a test email</button></div>
       <p class="muted" data-email-result="entries" style="margin:14px 0 0"></p>
     </form>`, { color: "yellow" })}
+    ${panel("Support request emails", html`<form class="form" data-support-form>
+      <label class="check"><input type="checkbox" name="on" ${on(row.support_email_on, true) ? "checked" : ""}> Email support requests (sent from the Help page) to the officers who look after them</label>
+      <p class="muted" style="margin:0">Who gets each kind of request is set under <a href="/admin/support_categories">Support categories</a> — the officers with that role, by the email address they log in with, and always the Master Admin.
+        The person who sent it gets a “we have your request” email with a private link, and an email each time the league answers (never your private notes).</p>
+      <div class="btn-row form-actions"><button class="btn">Save</button></div>
+    </form>`)}
     <div class="box prose" style="margin-top:22px;font-size:14px">
       <h3 style="margin-top:0">Before the first email can be sent</h3>
       <ol>
@@ -46,12 +52,13 @@ export async function emailsPage(el) {
       <p style="margin:0">The full walk-through, with screens to look for, is in the README under “Result emails”.</p>
     </div>`);
 
-  const results = $("[data-email-form]", el), entries = $("[data-entries-form]", el);
+  const results = $("[data-email-form]", el), entries = $("[data-entries-form]", el), support = $("[data-support-form]", el);
   // Both forms save the one private row, so each save sends everything on the page.
   const read = () => ({ id: 1,
     results_email_on: results.elements.on.checked, results_email_to: addresses(results.elements.to.value).join("\n"),
     results_copy_master: results.elements.master.checked, results_copy_captains: results.elements.captains.checked,
     entries_email_on: entries.elements.on.checked, entries_email_to: addresses(entries.elements.to.value).join("\n"),
+    support_email_on: support.elements.on.checked,
     updated_at: new Date().toISOString() });
   const problem = (r) => {
     for (const [list, onFlag, what] of [[addresses(r.results_email_to), r.results_email_on && !r.results_copy_master && !r.results_copy_captains, "result emails"], [addresses(r.entries_email_to), r.entries_email_on, "entry emails"]]) {
@@ -69,7 +76,7 @@ export async function emailsPage(el) {
     results.elements.to.value = r.results_email_to; entries.elements.to.value = r.entries_email_to;
     return r;
   };
-  for (const form of [results, entries]) form.onsubmit = async (e) => {
+  for (const form of [results, entries, support]) form.onsubmit = async (e) => {
     e.preventDefault();
     try { if (await store()) toast("Saved"); } catch (err) { toast(friendly(err), "error"); }
   };

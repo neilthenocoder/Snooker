@@ -41,7 +41,7 @@ const SECTION = {
   fixtures: "fixtures", team: "fixtures", match: "fixtures", calendar: "fixtures", live: "fixtures", results: "fixtures",
   league: "league", standings: "league", shield: "league", archive: "league", seasons: "league", players: "league", player: "league", form: "league",
   venues: "league", venue: "league", page: "league", presentation: "league", memoriam: "league", meetings: "league", rules: "league", sponsor: "league",
-  merchandise: "league", cueview: "league", marketplace: "league", "market-ad": "league", "market-edit": "league", sponsorship: "league", downloads: "league", "hall-of-fame": "league",
+  merchandise: "league", cueview: "league", marketplace: "league", "market-ad": "league", "market-edit": "league", sponsorship: "league", downloads: "league", "hall-of-fame": "league", support: "league",
   news: "news", article: "news",
   login: "login", my: "login", myteam: "login", scorecard: "login", "cup-scorecard": "login",
 };
@@ -293,7 +293,7 @@ async function drawFooter() {
     <h3 class="foot-h">#SBDS</h3>
     ${socials.length ? html`<div class="socials">${socials.map(([key, name, icon]) => html`<a href="${safeHref(site[key])}" target="_blank" rel="noopener" aria-label="${name}" title="${name}">
       <svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></a>`)}</div>` : ""}
-    <nav class="foot-links" aria-label="Footer"><a href="/" class="foot-help" data-guide-start>Help: show me around</a>${links.map((l) => html`<a href="${l.href}" ${l.outside ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}</nav>
+    <nav class="foot-links" aria-label="Footer"><a href="/" class="foot-help" data-guide-start>Help: show me around</a>${[["/page/help", "Help & FAQs"], ["/support", "Contact the league"]].filter(([h, l]) => !links.some((x) => x.href === h || (h === "/support" && /contact/i.test(x.label)))).map(([h, l]) => html`<a href="${h}">${l}</a>`)}${links.map((l) => html`<a href="${l.href}" ${l.outside ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}</nav>
     ${site.newsletter_footer_link !== false ? html`<p class="foot-news"><a href="/newsletter" data-newsletter-open>✉ Sign up to the newsletter</a></p>` : ""}
     ${zoneNote()}
     <p class="foot-copy">© ${new Date().getFullYear()} ${owner}${creditText ? html` · ${credit ? html`<a href="${credit.href}" ${credit.outside ? html`target="_blank" rel="noopener"` : ""}>${creditText}</a>` : creditText}` : ""}</p>
@@ -454,7 +454,7 @@ document.addEventListener("click", async (e) => {
   if (e.target.closest("[data-menu-open]")) return setMenu(true);
   if (e.target.closest("[data-menu-close]")) return setMenu(false);
   // Log in (logged out); once logged in the same buttons open the account menu instead (round 51 — one menu, not two).
-  if (e.target.closest("[data-account-open]")) { const u = await getUser(); if (u) return openAcctMenu(); setMenu(false); return openAccount(u); }
+  if (e.target.closest("[data-account-open]")) { const u = await getUser(); if (u) return openAcctMenu(); setMenu(false); return openAccount(u, { back: e.target.closest("[data-account-open]").dataset.back ?? "" }); }
   // The menu bar's dropdowns: More ▾, and Admin ▾ / Captain ▾ / My account ▾ (on a phone that one opens the phone menu).
   const dropBtn = e.target.closest("[data-drop]");
   if (dropBtn) {

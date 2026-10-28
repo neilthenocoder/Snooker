@@ -45,7 +45,9 @@ export default async function news(view, { query }) {
   </div>`);
 
   function draw() {
-    const items = list.filter((a) => !cat || inCat(a, cat));
+    // Rich, round 54: on the All tab the featured stories are already at the top, so the cards below don't repeat them.
+    const featIds = new Set(featured.map((a) => a.id));
+    const items = list.filter((a) => (cat ? inCat(a, cat) : !featIds.has(a.id)));
     // Featured news belongs to the "All" tab; a category tab shows just that category.
     const top = $("[data-featured]", view);
     mount(top, !cat && featured.length ? html`<h2>Featured news</h2><div class="feat-grid ${featured.length === 1 ? "solo" : ""}">

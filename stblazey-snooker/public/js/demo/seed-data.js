@@ -234,7 +234,7 @@ export function buildSeed() {
   const competitions = [], competition_entries = [], competition_matches = [];
   const shuffled = (list) => { const a = [...list]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const reesPlayers = players.filter((p) => teams.find((t) => t.id === p.team_id).league_id === leagues[1].id);
-  const pairs = teams.slice(0, 8).map((t) => { const [a, b] = teamPlayers(t.id); return { name: `${a.full_name} & ${b.full_name}`, player_id: a.id }; });
+  const pairs = teams.slice(0, 8).map((t) => { const [a, b] = teamPlayers(t.id); return { name: `${a.full_name} & ${b.full_name}`, player_id: a.id, partner_id: b.id }; });
   const compDefs = [
     // name, kind, entrant names/links, rounds fully played, extra matches played in next round, first date, options
     ["Team Handicap", "Team", teams.slice(0, 16).map((t) => ({ name: t.name, team_id: t.id })), 0, 5, "2026-09-15", { handicap: true }],

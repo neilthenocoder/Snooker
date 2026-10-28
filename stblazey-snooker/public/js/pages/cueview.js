@@ -8,9 +8,12 @@ import { submitCueview } from "../core/api.js";
 import { CUEVIEW } from "../core/cueview.js";
 import { breadcrumb, isActivePlayer } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
+import { loginWall } from "../core/login-wall.js";
 
 export default async function cueview(view, { user, query }) {
   setTitle("Send in your CueView");
+  if (!user) return loginWall(view, { crumbs: breadcrumb([["Home", "/"], ["Our League", "/league"], ["Our Players", "/players"], ["Send in your CueView"]]), title: "Log in to send in your CueView",
+    text: "Your CueView goes on your player page, so it is sent from your own login." });
   adminEdit("cueviews", null, { label: "CueViews to approve" });
   const ctx = await seasonContext();
   const players = ctx.players.filter(isActivePlayer).sort((a, b) => a.full_name.localeCompare(b.full_name));

@@ -8,6 +8,10 @@ export const EMPTY = "empty";     // a bye: nobody in this slot
 export const PENDING = "pending"; // not decided yet
 
 /** Number of rounds needed for n entrants (2 → 1, 3–4 → 2, 5–8 → 3 …). */
+/** The players of an entry: one for singles, both for a doubles pair (round 56: player_id and partner_id). */
+export const entryPlayers = (e) => (e ? [e.player_id, e.partner_id].filter(Boolean) : []);
+/** Is this player in this entry (on their own or as half of a pair)? */
+export const inEntry = (e, playerId) => !!playerId && entryPlayers(e).includes(playerId);
 export const roundsFor = (n) => Math.max(1, Math.ceil(Math.log2(Math.max(2, n))));
 
 export function roundName(round, totalRounds, bracket = null) {

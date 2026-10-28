@@ -1,4 +1,4 @@
-// Competition entry form — no login needed. Step by step:
+// Competition entry form — logged in (round 57, Neil: nothing changes the website without a login). Step by step:
 //   1 Who you are → 2 Which competitions → 3 Check and send → 4 How to pay
 // Each entry then waits for the competition secretary to confirm the fee has
 // been paid (Admin → Entries to approve). Unpaid entries lapse on their pay-by date.
@@ -6,6 +6,7 @@ import { html, mount, toast, fmtDate, paragraphs } from "../core/dom.js";
 import { table, loadCompetitions, settings, enterCompetitions, sendEntriesEmail } from "../core/api.js";
 import { breadcrumb, shortName, isActivePlayer } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
+import { loginWall } from "../core/login-wall.js";
 
 /** Competitions that can be entered today. */
 export const openForEntry = (competitions, today = new Date().toISOString().slice(0, 10)) =>
@@ -14,8 +15,10 @@ export const openForEntry = (competitions, today = new Date().toISOString().slic
 /** "£5" + "£3.50" → 8.5 (0 when a fee has no number in it). */
 const pounds = (fee) => Number(String(fee ?? "").match(/\d+(?:\.\d+)?/)?.[0] ?? 0);
 
-export default async function enter(view, { query }) {
+export default async function enter(view, { query, user }) {
   setTitle("Enter a competition");
+  if (!user) return loginWall(view, { crumbs: breadcrumb([["Home", "/"], ["Competitions", "/competitions"], ["Enter a competition"]]), title: "Log in to enter a competition",
+    text: "Entries are made from your own login, so the competition secretary knows who has entered and the draw is right." });
   adminEdit("entries", null, { href: "/admin/entries", label: "Entries to approve" });
   const [data, everyone, teams, leagues, site] = await Promise.all([
     loadCompetitions(), table("players", "full_name"), table("teams", "name"), table("leagues", "sort"), settings(),
@@ -37,7 +40,7 @@ export default async function enter(view, { query }) {
     if ((c.league_ids ?? []).length && !c.league_ids.includes(team?.league_id)) return `Open to ${leagues.filter((l) => c.league_ids.includes(l.id)).map(shortName).join(" and ")} players only`;
     if (c.kind === "Team" && !team) return "You need to be in a team";
     const entries = data.entries.filter((e) => e.competition_id === c.id);
-    if (c.kind === "Team" ? entries.some((e) => e.team_id === team.id) : entries.some((e) => e.player_id === p.id)) return `${c.kind === "Team" ? team.name : "You"} are already entered`;
+    if (c.kind === "Team" ? entries.some((e) => e.team_id === team.id) : entries.some((e) => e.player_id === p.id || e.partner_id === p.id)) return `${c.kind === "Team" ? team.name : "You"} are already entered`;
     return "";
   };
   const entrantName = (c) => (c.kind === "Team" ? myTeam()?.name : c.kind === "Doubles"

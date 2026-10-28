@@ -12,13 +12,15 @@ import { breadcrumb, urls, gallery, quoteBox } from "../core/components.js";
 import { markup } from "../core/markup.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import { uploadImage } from "../core/upload.js";
+import { loginWall } from "../core/login-wall.js";
 
 const lines = (t) => String(t ?? "").split("\n").map((x) => x.trim()).filter(Boolean);
 const href = (e) => `/hall-of-fame/${e.no ?? e.id}`;
 const pic = (e) => (Array.isArray(e.images) ? e.images[0] : null);
 
 export default async function hallOfFamePage(view, { params, user }) {
-  if (params.id === "submit") return submitForm(view, user);
+  if (params.id === "submit") return user ? submitForm(view, user)
+    : loginWall(view, { crumbs: breadcrumb([["Home", "/"], ["Hall of Fame", "/hall-of-fame"], ["Share a memory"]]), title: "Log in to share a memory", text: "Memories and photos are sent to the league from your own login." });
   const [all, site, players] = await Promise.all([hallOfFame().catch(() => []), settings(), table("players", "full_name").catch(() => [])]);
   const list = all.filter((e) => e.status === "approved");
   const crumbs = [["Home", "/"], ["Our League", "/league"], ["Hall of Fame", params.id ? "/hall-of-fame" : null]];

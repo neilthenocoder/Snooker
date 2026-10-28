@@ -15,6 +15,9 @@ import { frameWinner, RULES } from "./rules.js";
 import { celebrate } from "./celebrate.js";
 import { buildBracket } from "./bracket.js";
 import { safeHref } from "./dom.js";
+import { getUser } from "./auth.js";
+import { myTickets } from "./api.js";
+import { handlesSupport } from "./support.js";
 
 const KEY = "sbdsl-notifications";
 export const notificationsOn = () => { try { return localStorage.getItem(KEY) !== "off"; } catch { return true; } };
@@ -31,6 +34,7 @@ export const NOTIFY_KINDS = [
   ["leaders", "Tables & rankings", "A new team at the top of a league, or a new leader of the player rankings"],
   ["comps", "Competitions", "Each tie as a draw is made live, and the winner of a competition"],
   ["players", "New players", "When a player joins a team"],
+  ["support", "Help & support", "When the league answers your request (officers: new requests and replies)"],
   ["confetti", "Celebrations", "Confetti for the big moments: a new highest break, new leaders, a competition winner"],
 ];
 const PREFS = "sbdsl-notify-kinds";
@@ -254,9 +258,10 @@ export async function startNotifications() {
   // Notices already sent, so only a NEW one (or one just switched on) makes a pop-up.
   const noticesSeen = new Set((await table("notices", "created_at").catch(() => [])).filter(noticeLive).map((n) => n.id));
 
-  stop = listen(["frames", "breaks", "players", "competition_frames", "competition_breaks", "competitions", "articles", "fixtures", "competition_matches", "notices"], async (t, row, type) => {
+  stop = listen(["frames", "breaks", "players", "competition_frames", "competition_breaks", "competitions", "articles", "fixtures", "competition_matches", "notices", "support_tickets", "support_messages"], async (t, row, type) => {
     if (t === "notices") { invalidate(); onNotice(); }
     if (type === "DELETE" || !row.id) return;
+    if (t === "support_tickets" || t === "support_messages") return supportNotice(t, row, type).catch(() => {});
     if (t === "notices") {
       const k = NOTICE_KIND[row.kind];
       if (!k || !noticeLive(row)) { noticesSeen.delete(row.id); return; }
@@ -271,8 +276,8 @@ export async function startNotifications() {
       return popup(`News: ${row.title}`, { kind: "news", avatar: row.circle_image_url || row.image_url || "", href: `/news/${row.slug}` });
     }
     // A result being approved (or changed) can put a new team or player on top.
-    if (t === "fixtures") return checkLeaders();
-    if (t === "competition_matches") { if (row.status === "completed") checkChampions(); return; }
+    if (t === "fixtures") { matchResult(row).catch(() => {}); return checkLeaders(); }
+    if (t === "competition_matches") { if (row.status === "completed") { cupResult(row).catch(() => {}); checkChampions(); } return; }
     if (t === "competitions") {
       const log = row.draw_live?.log ?? [], from = tiesSeen.get(row.id) ?? 0;
       tiesSeen.set(row.id, log.length);
@@ -317,6 +322,62 @@ export async function startNotifications() {
       popup(`${row.full_name} has joined ${teams.find((x) => x.id === row.team_id)?.name ?? "the league"}`, { kind: "players", avatar: row.avatar_url ?? "" });
     }
   });
+}
+
+// Round 54 (Rich): when a whole match is finished — "Mevagissey C have beaten Lerryn 5–0" — not just each frame.
+// Once per match, and only for a match played in the last two days (an old result being corrected is not news).
+const recent = (iso) => iso && Math.abs(Date.now() - Date.parse(iso)) < 2 * 864e5;
+// ── Round 55: Help & support ──────────────────────────────────
+// The database only sends each login the requests it may see: the sender their own (never private notes), the
+// officers the categories their role looks after.
+const newTickets = new Set();
+async function supportNotice(t, row, type) {
+  if (type !== "INSERT") return;
+  const me = await getUser().catch(() => null);
+  if (!me) return;
+  const opts = (href) => ({ kind: "support", href, tone: "update", label: "Help & support", stay: NOTICE_MS });
+  if (t === "support_tickets") {
+    newTickets.add(row.id);
+    if (handlesSupport(me) && row.user_id !== me.id && !location.pathname.startsWith("/admin/support")) popup(`New support request #${row.no}: ${row.subject}`, opts(`/admin/support?t=${row.id}`));
+    return;
+  }
+  if (row.internal || (row.author_id && row.author_id === me.id)) return;
+  await new Promise((r) => setTimeout(r, 1500));          // (a new request's first message isn't news on its own)
+  if (newTickets.has(row.ticket_id)) return;
+  if (row.from_league) {
+    const mine = (await myTickets(me.id).catch(() => [])).find((x) => x.id === row.ticket_id);
+    if (mine && !location.pathname.startsWith(`/support/${mine.token}`)) popup(`The league has answered your request #${mine.no}: ${mine.subject}`, opts(`/support/${mine.token}`));
+  } else if (handlesSupport(me) && !location.search.includes(row.ticket_id)) {
+    popup(`${row.author_name || "Someone"} has replied on a support request`, opts(`/admin/support?t=${row.ticket_id}`));
+  }
+}
+
+async function matchResult(row) {
+  if (!["submitted", "approved"].includes(row.status) || !recent(row.starts_at) || seen.has(`fx-${row.id}`)) return;
+  seen.add(`fx-${row.id}`);
+  invalidate();
+  const { seasonContext } = await import("./context.js");
+  const ctx = await seasonContext();
+  const fx = ctx.fixture.get(row.id) ?? row, sc = ctx.scoreOf(fx);
+  const home = ctx.team.get(fx.home_team_id), away = ctx.team.get(fx.away_team_id);
+  if (!home || !away || (!sc.home && !sc.away)) return;
+  const [w, l, ws, ls] = sc.home >= sc.away ? [home, away, sc.home, sc.away] : [away, home, sc.away, sc.home];
+  popup(ws === ls ? `${home.name} and ${away.name} have drawn ${ws}–${ls}` : `${w.name} have beaten ${l.name} ${ws}–${ls}`,
+    { kind: "results", avatar: w.logo_url ?? "", href: (await import("./components.js")).urls.match(fx) });
+}
+async function cupResult(row) {
+  if (!recent(row.result_at ?? row.starts_at) || seen.has(`cm-${row.id}`)) return;
+  seen.add(`cm-${row.id}`);
+  const [entries, comps] = await Promise.all([table("competition_entries", "seed"), table("competitions", "sort")]);
+  const name = (id) => entries.find((e) => e.id === id)?.name;
+  const c = comps.find((x) => x.id === row.competition_id);
+  // The two sides come from the draw; the scores are on the match itself.
+  const a = row.score_a ?? 0, b = row.score_b ?? 0;
+  const ea = entries.filter((e) => e.competition_id === row.competition_id);
+  const side = (s) => name(row[`entry_${s}`]);
+  const A = side("a"), B = side("b");
+  if (!A || !B || !c || !ea.length) return;
+  popup(a > b ? `${c.name}: ${A} have beaten ${B} ${a}–${b}` : `${c.name}: ${B} have beaten ${A} ${b}–${a}`, { kind: "results", icon: "trophy", href: `/cup-match/${row.no ?? row.id}` });
 }
 
 export function stopNotifications() { if (stop) stop(); stop = null; }

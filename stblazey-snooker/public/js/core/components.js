@@ -1,6 +1,6 @@
 // Reusable building blocks. Every table, panel and card on the site
 // is drawn by one of these functions — change it here, it changes everywhere.
-import { html, fmtDate, fmtTime, ukDay, notUKTime, zoneName, fmtAgo } from "./dom.js";
+import { html, fmtDate, fmtTime, fmtDay, ukDay, notUKTime, zoneName, fmtAgo } from "./dom.js";
 import { isProvisional, PROVISIONAL_NOTE, frameWinner, NOT_UPDATED, isLiveSoon } from "./rules.js";
 import { formBadge as formBadgeFn, formChips as formChipsFn } from "./form.js";
 /** The picture for a player with no photo: grey in the calm look (round 43), red in the classic one. */
@@ -451,16 +451,23 @@ function sideBox(ctx, news, count, box) {
       </ul>
       <a class="btn small res-go" href="${r.href}">View full match statistics →</a></div></div>`;
   };
+  // Round 54 (Rich: "the balance isn't quite right"): every result is a small scoreboard — the league or competition and
+  // the date on top, then each side on its own line with its badge and its score lined up on the right. The winner is
+  // bold with a green score, the loser has a red one (wins green, losses red, all over the site).
+  const num = (v) => (v === null || v === undefined || v === "" ? null : v);
+  const sideLine = (team, name, score, side, r) => {
+    const state = r.won === side ? "won" : r.won ? "lost" : "";
+    const shown = num(score) ?? (r.won === side ? "W/O" : "–");
+    return html`<span class="res-line ${state}">${badge(team ?? { name })}<em>${name}</em><b>${shown}</b></span>`;
+  };
+  const meta = (r) => html`<span class="res-meta">${tag(r)}<time>${shownDate(r) ? fmtDay(shownDate(r)) : ""}</time></span>`;
   return html`${panel(site.side_box_title || "Latest Results", rows.length
-      ? html`<div class="res-list res-rich">${rows.map((r) => (r.fx ? html`<div class="res-card ${r.kind}">
-          <button type="button" class="res-mini res-head" data-res-more aria-expanded="false" aria-controls="res-${r.fx.id}"><small class="res-top">${shownDate(r) ? fmtDate(shownDate(r)) : ""}${tag(r)}</small>
-            <span class="res-team ${r.won === "h" ? "won" : r.won ? "lost" : ""}">${badge(r.homeTeam ?? { name: r.home })}<em>${r.home}</em></span>
-            <b class="res-pill"><i class="${r.won === "h" ? "w" : ""}">${r.hs}</i><i class="${r.won === "a" ? "w" : ""}">${r.as}</i></b>
-            <span class="res-team ${r.won === "a" ? "won" : r.won ? "lost" : ""}"><em>${r.away}</em>${badge(r.awayTeam ?? { name: r.away })}</span>
+      ? html`<div class="res-list res-sb-list">${rows.map((r) => (r.fx ? html`<div class="res-card res-sb-card ${r.kind}">
+          <button type="button" class="res-sb" data-res-more aria-expanded="false" aria-controls="res-${r.fx.id}">${meta(r)}
+            ${sideLine(r.homeTeam, r.home, r.hs, "h", r)}${sideLine(r.awayTeam, r.away, r.as, "a", r)}
             <span class="res-toggle" aria-hidden="true">${chevron}</span></button>${more(r)}</div>`
-        : html`<a class="res-mini res-cupline ${r.kind}" href="${r.href}">
-          <small class="res-top">${shownDate(r) ? fmtDate(shownDate(r)) : ""}${tag(r)}</small>
-          <span class="${r.won === "h" ? "won" : r.won ? "lost" : ""}">${r.home}</span><b>${r.score}</b><span class="${r.won === "a" ? "won" : r.won ? "lost" : ""}">${r.away}</span></a>`))}</div>`
+        : html`<a class="res-sb res-sb-card ${r.kind}" href="${r.href}">${meta(r)}
+            ${sideLine(ctx.team.get(r.aTeam), r.home, r.hs, "h", r)}${sideLine(ctx.team.get(r.bTeam), r.away, r.as, "a", r)}</a>`))}</div>`
       : html`<div class="empty">No results yet.</div>`, { color: "green", href: "/results" })}
     <a class="btn-bar green" href="/results">See all results</a>`;
 }

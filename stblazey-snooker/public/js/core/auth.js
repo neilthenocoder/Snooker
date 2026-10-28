@@ -18,13 +18,16 @@ export async function getUser() {
   if (!session) return (cached = null);
   const profile = await run(db.from("profiles").select("*").eq("id", session.user.id).maybeSingle()).catch(() => null);
   // What this role may use in the dashboard — set by the Master Admin under Admin → Roles & permissions.
-  const [perms, gate, aal] = await Promise.all([
+  const [perms, gate, aal, cats] = await Promise.all([
     profile?.role && profile.role !== "admin" ? run(db.from("role_permissions").select("*").eq("role", profile.role).maybeSingle()).catch(() => null) : null,
-    loginGate(), currentAal()]);
+    loginGate(), currentAal(),
+    // Round 55: the support categories this role looks after (Admin → Support categories) — they open the Support inbox.
+    profile?.role && !["admin", "captain", "vice_captain", "player"].includes(profile.role) ? run(db.from("support_categories").select("id, roles, is_active")).catch(() => []) : []]);
+  const supportCats = (cats ?? []).filter((c) => c.is_active && (c.roles ?? []).includes(profile.role)).map((c) => c.id);
   // Two-step login (Admin → Master Admin → Security): a role that needs it has to have used it in this session,
   // or the database refuses everything it tries to change. The website then asks for the code first (see mfaNeeded in main.js).
   const mfaNeeded = !!profile?.role && (gate.mfa_roles ?? []).includes(profile.role) && aal !== "aal2";
-  return (cached = { ...session.user, profile, areas: perms?.areas ?? DEFAULT_AREAS[profile?.role] ?? [], mfaNeeded, aal });
+  return (cached = { ...session.user, profile, areas: perms?.areas ?? DEFAULT_AREAS[profile?.role] ?? [], mfaNeeded, aal, supportCats });
 }
 
 /** "aal1" (password only) or "aal2" (password and a code from the phone app) — what this session has used. */
@@ -143,6 +146,8 @@ export const SECTION_AREA = {
   security: "master", versions: "master",
   // Round 23
   handicap_suggest: "handicaps", ads: "website", sponsor_packages: "website", downloads: "website", hall_of_fame: "website", page_settings_23: "website",
+  // Round 55: the Support inbox opens for the roles a support category is given to; the categories are the Master Admin's.
+  support: "support", support_categories: "master",
 };
 
 const roleOf = (user) => user?.profile?.role;
@@ -163,6 +168,7 @@ export const canOpenSection = (user, section) => {
   const need = SECTION_AREA[section];
   if (!need) return false;
   if (need === "master") return isMaster(user);
+  if (need === "support") return isMaster(user) || (user?.supportCats ?? []).length > 0;
   if (need.any) return need.any.some((area) => canManage(user, area));
   return [need].flat().every((area) => canManage(user, area));
 };
@@ -240,5 +246,5 @@ export const canPostpone = (user, fx) => canEditFixture(user, fx) && (isAdmin(us
 export function canEditCompMatch(user, match, entries, players) {
   if (canManage(user, "competitions")) return true;
   if (!isCaptain(user) || match.status === "completed") return false;
-  return entries.some((e) => e && (e.team_id === user.profile.team_id || players.find((p) => p.id === e.player_id)?.team_id === user.profile.team_id));
+  return entries.some((e) => e && (e.team_id === user.profile.team_id || [e.player_id, e.partner_id].some((id) => id && players.find((p) => p.id === id)?.team_id === user.profile.team_id)));
 }

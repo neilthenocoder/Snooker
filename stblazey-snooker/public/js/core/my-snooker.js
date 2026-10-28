@@ -11,7 +11,7 @@ import { seasonContext } from "./context.js";
 import { articles, loadCompetitions, setMyPrefs, settings, currentCompetitions } from "./api.js";
 import { deadlineWarnings, deadlineList } from "./comp-deadlines.js";
 import { myPrefs, mySnookerOn, refreshUser } from "./auth.js";
-import { buildBracket, isEntry, roundName, compScoreText } from "./bracket.js";
+import { buildBracket, isEntry, roundName, compScoreText, entryPlayers } from "./bracket.js";
 import { answered } from "./cueview.js";
 import { panel, dataTable, leagueTablePanel, playerLink, handicapTag, urls, badge, avatar, resultText, articleThumb, picture, outcomeTag, topPoints, breakTag, liveSoonTag } from "./components.js";
 import { refreshShell } from "./router.js";
@@ -135,7 +135,7 @@ function view(user, { ctx, news, comps, site = {}, form: formData = null }, pref
   // its players' singles; switching to Lerryn shows Lerryn's — plus the players followed one by one.
   const followIds = new Set(followed.map((p) => p.id));
   const teamIds = new Set(team ? [team.id] : teams.map((t) => t.id));
-  const mine = (e) => e && ((e.team_id && teamIds.has(e.team_id)) || followIds.has(e.player_id) || (e.player_id && teamIds.has(ctx.player.get(e.player_id)?.team_id)));
+  const mine = (e) => e && ((e.team_id && teamIds.has(e.team_id)) || entryPlayers(e).some((id) => followIds.has(id) || teamIds.has(ctx.player.get(id)?.team_id)));
   const cup = !wants("comps") ? [] : comps.competitions.filter((c) => !c.season_id || c.season_id === ctx.season?.id).flatMap((c) => {
     const b = buildBracket(comps.entries.filter((e) => e.competition_id === c.id), comps.matches.filter((m) => m.competition_id === c.id));
     return b.rounds.flat().filter((m) => !m.isBye && (mine(b.entryById.get(m.a)) || mine(b.entryById.get(m.b)))).map((m) => ({ c, b, m }));

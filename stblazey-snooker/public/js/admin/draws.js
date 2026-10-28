@@ -1,7 +1,7 @@
 // Admin: entrants, the draw and results for one knockout competition.
-import { html, mount, $, toast, readForm, toLocalInput, fromLocalInput, fmtDate, fmtTime, confirmBox } from "../core/dom.js";
+import { html, mount, $, $$, toast, readForm, toLocalInput, fromLocalInput, fmtDate, fmtTime, confirmBox } from "../core/dom.js";
 import { table, save, remove, insertMany, loadCompetitions, replaceDraw, setWalkover } from "../core/api.js";
-import { buildBracket, makeDraw, shuffle, roundName, isEntry, walkoverSide, placeLabel, EMPTY, redrawNextRound, winnerAdvance, firstMatchLosers, drawPlan, drawNextTie, PENDING } from "../core/bracket.js";
+import { buildBracket, makeDraw, shuffle, roundName, isEntry, walkoverSide, placeLabel, EMPTY, redrawNextRound, winnerAdvance, firstMatchLosers, drawPlan, drawNextTie, PENDING, inEntry } from "../core/bracket.js";
 import { slugify } from "../core/schedule.js";
 import { panel, dataTable, urls, shortName, isActivePlayer } from "../core/components.js";
 import { navigate } from "../core/router.js";
@@ -36,11 +36,21 @@ export async function draws(el, { user } = {}) {
   const linkOptions = c.kind === "Team"
     ? html`<option value="">– no team link –</option>${okTeams.map((t) => html`<option value="team:${t.id}">${t.name}</option>`)}`
     : html`<option value="">– no player link –</option>${okPlayers.map((p) => html`<option value="player:${p.id}">${p.full_name} (${teams.find((t) => t.id === p.team_id)?.name ?? "no team"})</option>`)}`;
+  // Round 54 (Rich): the entrant picker is a search box — teams first for team competitions (and anything called
+  // "Team …", like Team Pairs), players first otherwise — and anyone already entered is greyed out, as on scorecards.
+  const teamFirst = c.kind === "Team" || /\bteam/i.test(c.name);
+  // Round 56 (Rich: "with the doubles competition, how do I pair up who is with who?"): a doubles entrant is a pair —
+  // pick Player 1 and Player 2, and both get the pair's results and their own breaks. (Team Pairs enters teams.)
+  const pairMode = c.kind === "Doubles" && !teamFirst;
+  const pickable = [
+    ...(c.kind === "Singles" || pairMode ? [] : okTeams.map((t) => ({ link: `team:${t.id}`, name: t.name, sub: leagues.find((l) => l.id === t.league_id)?.name ?? "Team", group: "Teams", taken: entries.some((e) => e.team_id === t.id) }))),
+    ...(c.kind === "Team" ? [] : okPlayers.map((p) => ({ link: `player:${p.id}`, name: p.full_name, sub: teams.find((t) => t.id === p.team_id)?.name ?? "No team", group: "Players", taken: entries.some((e) => inEntry(e, p.id)) }))),
+  ].sort((a, b) => (teamFirst ? (a.group === "Teams" ? 0 : 1) - (b.group === "Teams" ? 0 : 1) : (a.group === "Players" ? 0 : 1) - (b.group === "Players" ? 0 : 1)) || a.name.localeCompare(b.name));
   // Plate competitions: for everyone who lost their first match in the main competition.
   const parent = data.competitions.find((x) => x.id === c.parent_id);
   const plate = data.competitions.find((x) => x.parent_id === c.id);
   const bracketOf = (comp) => buildBracket(data.entries.filter((e) => e.competition_id === comp.id), data.matches.filter((m) => m.competition_id === comp.id));
-  const sameEntrant = (x, y) => (x.team_id && x.team_id === y.team_id) || (x.player_id && x.player_id === y.player_id) || x.name === y.name;
+  const sameEntrant = (x, y) => (x.team_id && x.team_id === y.team_id) || (x.player_id && x.player_id === y.player_id && (x.partner_id ?? null) === (y.partner_id ?? null)) || x.name === y.name;
   const plateEntrants = (main, already = []) => firstMatchLosers(bracketOf(main)).filter((e) => !already.some((x) => sameEntrant(x, e)));
 
   mount(el, html`<div class="stack" id="draws-root">
@@ -61,11 +71,21 @@ export async function draws(el, { user } = {}) {
 
     ${panel(`1. Entrants (${entries.length})`, html`
       <form class="form" data-add-entry>
-        <div class="grid-2">
-          <label>Link to a ${c.kind === "Team" ? "team" : "player"} (fills in the name)<select name="link">${linkOptions}</select></label>
+        ${pairMode ? html`<p class="muted" style="margin:0">A doubles entrant is a <b>pair</b>: find each player. Both of them get the pair's results on their own page, and each player's breaks are entered against them on the scorecard.</p>
+        <div class="grid-3 ent-pair">
+          ${[["link", "Player 1"], ["link2", "Player 2"]].map(([field, label]) => html`<div class="field-label ent-pick" data-ent-pick="${field}"><span>${label}</span>
+            <input type="search" data-ent-q placeholder="Start typing a name…" autocomplete="off" aria-label="Find ${label}">
+            <input type="hidden" name="${field}" value="">
+            <div class="ent-list" data-ent-list hidden></div></div>`)}
+          <label>Name shown in the draw <span class="muted" style="font-weight:400">(filled in for you)</span><input name="name" placeholder="e.g. John Smith & Paul Jones"></label>
+        </div>` : html`<div class="grid-2">
+          <div class="field-label ent-pick" data-ent-pick="link"><span>Find a ${teamFirst ? "team or player" : "player or team"} <span class="muted" style="font-weight:400">(fills in the name)</span></span>
+            <input type="search" data-ent-q placeholder="Start typing a name…" autocomplete="off" aria-label="Find a player or team to enter">
+            <input type="hidden" name="link" value="">
+            <div class="ent-list" data-ent-list hidden></div></div>
           <label>Name shown in the draw<input name="name" placeholder="e.g. Bethel A, or J. Smith & P. Jones"></label>
-        </div>
-        <div class="btn-row"><button class="btn green">Add entrant</button>
+        </div>`}
+        <div class="btn-row"><button class="btn green">${pairMode ? "Add this pair" : "Add entrant"}</button>
           ${c.kind === "Team" ? html`<span class="muted">or</span>
             <select name="league" style="width:auto;margin:0">${open.map((l) => html`<option value="${l.id}">${l.name}</option>`)}</select>
             <button type="button" class="btn secondary" data-add-league>Add every team in this league</button>` : ""}
@@ -74,7 +94,7 @@ export async function draws(el, { user } = {}) {
       ${dataTable([
         { label: "Seed", cell: (e) => e.seed || "–", cls: "num" },
         { label: "Name", cell: (e) => html`<b>${e.name}</b>` },
-        { label: "Linked to", cell: (e) => teams.find((t) => t.id === e.team_id)?.name ?? players.find((p) => p.id === e.player_id)?.full_name ?? "–" },
+        { label: pairMode ? "Players" : "Linked to", cell: (e) => teams.find((t) => t.id === e.team_id)?.name ?? ([e.player_id, e.partner_id].filter(Boolean).map((id) => players.find((p) => p.id === id)?.full_name).filter(Boolean).join(" & ") || (pairMode ? html`<span class="muted">Not linked — remove and add again as a pair</span>` : "–")) },
         { label: "", cls: "right", cell: (e) => html`<button class="btn small" data-remove-entry="${e.id}">Remove</button>` },
       ], entries, { empty: "No entrants yet." })}`)}
 
@@ -241,10 +261,45 @@ export async function draws(el, { user } = {}) {
     return row.status === "postponed" ? "Saved — marked as postponed" : "Saved";
   };
 
-  // Add one entrant (the name defaults to the linked team/player's name).
+  // The search boxes: type to narrow the list; press a name (or Enter for the first one) to pick it.
+  // (Doubles: two boxes, one for each player of the pair; the name in the draw is made from both.)
+  const nameBox = $("[data-add-entry] [name=name]", root);
+  let autoName = "";
+  const pairName = () => {
+    if (!pairMode) return;
+    const names = ["link", "link2"].map((f) => players.find((p) => p.id === ($(`[data-add-entry] [name=${f}]`, root).value.split(":")[1] ?? ""))?.full_name).filter(Boolean);
+    if (names.length === 2 && (!nameBox.value || nameBox.value === autoName)) { autoName = `${names[0]} & ${names[1]}`; nameBox.value = autoName; }
+  };
+  for (const pick of $$("[data-ent-pick]", root)) {
+    const q = $("[data-ent-q]", pick), list = $("[data-ent-list]", pick), hidden = $("input[type=hidden]", pick);
+    const other = () => $$("[data-ent-pick] input[type=hidden]", root).filter((x) => x !== hidden).map((x) => x.value).filter(Boolean);
+    const draw = () => {
+      const words = q.value.trim().toLowerCase().split(/\s+/).filter(Boolean), chosen = other();
+      const hits = pickable.filter((x) => words.every((w) => `${x.name} ${x.sub}`.toLowerCase().includes(w))).slice(0, 40)
+        .map((x) => (chosen.includes(x.link) ? { ...x, taken: true, why: "Already picked" } : x));
+      const groups = [...new Set(hits.map((x) => x.group))];
+      mount(list, hits.length ? html`${groups.map((g) => html`<small class="ent-h">${g}</small>${hits.filter((x) => x.group === g).map((x) => html`<button type="button" class="ent-item ${x.taken ? "taken" : ""}" data-link="${x.link}" data-name="${x.name}" ${x.taken ? "disabled" : ""}>
+          <b>${x.name}</b><small>${x.taken ? x.why ?? "Already entered" : x.sub}</small></button>`)}`)}` : html`<p class="ent-none">Nobody matches “${q.value}”.${pairMode ? "" : " You can still type a name in the box on the right."}</p>`);
+      list.hidden = false;
+    };
+    const choose = (b) => { hidden.value = b.dataset.link; q.value = b.dataset.name; if (!pairMode && !nameBox.value) nameBox.value = b.dataset.name; list.hidden = true; pairName(); };
+    q.addEventListener("focus", draw);
+    q.addEventListener("input", () => { hidden.value = ""; draw(); });
+    q.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); const first = $(".ent-item:not([disabled])", list); if (first) choose(first); } if (e.key === "Escape") list.hidden = true; });
+    list.addEventListener("click", (e) => { const b = e.target.closest(".ent-item:not([disabled])"); if (b) choose(b); });
+    document.addEventListener("click", (e) => { if (!pick.contains(e.target)) list.hidden = true; });
+  }
+  // Add one entrant (the name defaults to the linked team/player's name; a pair's to both names).
   $("[data-add-entry]", root).addEventListener("submit", (e) => guard(async () => {
     e.preventDefault();
     const v = readForm(e.target);
+    if (pairMode) {
+      const [p1, p2] = [v.link, v.link2].map((x) => players.find((p) => p.id === String(x ?? "").split(":")[1]));
+      if (!p1 || !p2) return toast("Find both players of the pair", "error");
+      const name = v.name || `${p1.full_name} & ${p2.full_name}`;
+      await save("competition_entries", { competition_id: c.id, name, team_id: null, player_id: p1.id, partner_id: p2.id, seed: entries.length + 1 });
+      return (toast(`${name} added`), redraw());
+    }
     const [kind, linkId] = (v.link ?? "").split(":");
     const linked = kind === "team" ? teams.find((t) => t.id === linkId) : players.find((p) => p.id === linkId);
     const name = v.name || linked?.name || linked?.full_name;
@@ -265,7 +320,7 @@ export async function draws(el, { user } = {}) {
     toast("Deadlines saved"); redraw();
   }));
 
-  const asEntries = (list, competitionId, from = 0) => list.map((e, i) => ({ competition_id: competitionId, name: e.name, team_id: e.team_id ?? null, player_id: e.player_id ?? null, seed: from + i + 1 }));
+  const asEntries = (list, competitionId, from = 0) => list.map((e, i) => ({ competition_id: competitionId, name: e.name, team_id: e.team_id ?? null, player_id: e.player_id ?? null, partner_id: e.partner_id ?? null, seed: from + i + 1 }));
 
   root.addEventListener("click", (e) => guard(async () => {
     const t = e.target;

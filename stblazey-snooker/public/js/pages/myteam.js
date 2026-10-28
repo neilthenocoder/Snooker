@@ -82,8 +82,8 @@ function chooser(view, ctx, crumbs, prefs) {
       <p>Pick the team you play for or follow. Your My Snooker page then shows its matches, results, breaks, handicaps and news every time you log in.
         You can follow more teams and players, and choose what you see, whenever you like.</p></div>
       <div class="ms-hero-actions"><a class="btn ghost" href="/">Home page</a><a class="btn small ghost" href="/my/snooker">My Snooker settings</a></div></header>
-    ${ctx.leagues.map((l) => html`<h3>${l.name}</h3><div class="cards team-tiles">${ctx.teamsIn(l.id).map((t) => html`<button type="button" class="tile team-tile" data-pick="${t.id}">
-      ${badge(t)}<h4>${t.name}</h4><span>Make this my team</span></button>`)}</div>`)}
+    ${ctx.leagues.map((l) => html`<section class="pick-league"><h2 class="league-group-h">${l.name}</h2><div class="pick-grid">${ctx.teamsIn(l.id).map((t) => html`<button type="button" class="pick-team" data-pick="${t.id}">
+      <span class="pick-badge">${badge(t)}</span><b>${t.name}</b><span class="pick-go">Choose this team</span></button>`)}</div></section>`)}
   </div>`);
   $(".ms", view).addEventListener("click", async (e) => {
     const btn = e.target.closest("[data-pick]");

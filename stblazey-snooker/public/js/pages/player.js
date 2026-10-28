@@ -3,7 +3,7 @@ import { seasonContext } from "../core/context.js";
 import { table, playerHistory, loadCompetitions, articles } from "../core/api.js";
 import { playerRankings, frameWinner, breakPoints, EXT_PER_SEASON } from "../core/rules.js";
 import { answered } from "../core/cueview.js";
-import { buildBracket, competitionStandings } from "../core/bracket.js";
+import { buildBracket, competitionStandings, inEntry } from "../core/bracket.js";
 import { listItems } from "../core/list-field.js";
 import { breadcrumb, panel, dataTable, avatar, teamLink, urls, gallery, articleCard, cueviewSection, handicapText, handicapMove, breakTag, notUpdatedTag, trophy } from "../core/components.js";
 import { followButton } from "../core/my-snooker.js";
@@ -65,7 +65,7 @@ export default async function player(view, { params, user }) {
   const opp = (x) => ctx.player.get(x.fr[`${x.side === "home" ? "away" : "home"}_player_id`]) ?? allPlayers.find((q) => q.id === x.fr[`${x.side === "home" ? "away" : "home"}_player_id`]);
 
   // Knockout competitions this player entered.
-  const myComps = comps.entries.filter((e) => e.player_id === p.id).map((e) => {
+  const myComps = comps.entries.filter((e) => inEntry(e, p.id)).map((e) => {
     const c = comps.competitions.find((x) => x.id === e.competition_id);
     const b = buildBracket(comps.entries.filter((x) => x.competition_id === c.id), comps.matches.filter((m) => m.competition_id === c.id));
     return { c, standing: competitionStandings(b).find((r) => r.entry.id === e.id) };
@@ -84,9 +84,9 @@ export default async function player(view, { params, user }) {
   };
   for (const c of comps.competitions) {
     const mine = comps.entries.filter((x) => x.competition_id === c.id);
-    if (!mine.some((e) => e.player_id === p.id)) continue;
+    if (!mine.some((e) => inEntry(e, p.id))) continue;
     const b = buildBracket(mine, comps.matches.filter((m) => m.competition_id === c.id));
-    if (b.champion && b.entryById.get(b.champion)?.player_id === p.id) addWin(c.name, c.season_id, c);
+    if (b.champion && inEntry(b.entryById.get(b.champion), p.id)) addWin(c.name, c.season_id, c);
   }
   for (const a of awards) if (a.winner_player_id === p.id) addWin(a.name, a.season_id, a.trophy_url ? a : comps.competitions.find((c) => c.id === a.competition_id) ?? a);
   const trophies = [...cabinet.values()].sort((x, y) => y.seasons.size - x.seasons.size || x.name.localeCompare(y.name));

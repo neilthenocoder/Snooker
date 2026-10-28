@@ -12,7 +12,7 @@ import { deadlineWarnings, deadlineList } from "../core/comp-deadlines.js";
 import { SECTIONS, prefsToSave, sectionOrder, MAIN } from "../core/my-snooker.js";
 import { listField, wireListFields } from "../core/list-field.js";
 import { canWriteNews, isStaff, isCaptain, isMember, isPlainPlayer, mySnookerOn, myPrefs, refreshUser, canEditFixture, canPostpone, canEditCompMatch, canAddMatchPhotos, changePassword, roleText, isMaster } from "../core/auth.js";
-import { buildBracket, isEntry, roundName, compScoreText } from "../core/bracket.js";
+import { buildBracket, isEntry, roundName, compScoreText, entryPlayers } from "../core/bracket.js";
 import { extCounts, EXT_PER_SEASON, POSTPONE_WEEKS, rearrangeBy, RULES } from "../core/rules.js";
 import { CUEVIEW } from "../core/cueview.js";
 import { uploadImage } from "../core/upload.js";
@@ -480,7 +480,7 @@ async function competitionsTab(el, { ctx, user, team, me }) {
   const [data, site] = await Promise.all([loadCompetitions(), settings().catch(() => ({}))]);
   // Deadlines first: what is due soon, who is at home and who must contact whom (core/comp-deadlines.js).
   const deadlines = deadlineList(deadlineWarnings(user, ctx, data, site), { title: "Your deadlines" });
-  const mine = (e) => e && ((team && e.team_id === team.id) || (me && e.player_id === me.id) || (team && ctx.player.get(e.player_id)?.team_id === team.id));
+  const mine = (e) => e && ((team && e.team_id === team.id) || entryPlayers(e).some((id) => (me && id === me.id) || (team && ctx.player.get(id)?.team_id === team.id)));
   const rows = data.competitions.flatMap((c) => {
     const entries = data.entries.filter((e) => e.competition_id === c.id);
     const b = buildBracket(entries, data.matches.filter((m) => m.competition_id === c.id));
