@@ -117,7 +117,7 @@ export const RESOURCES = {
       ["name", "name", (a, b) => a.name.localeCompare(b.name)],
     ],
     columns: ["trophy_url", "name", "kind", "league_ids", "season_id", "entries_open"],
-    intro: "Create the competition here, then add its entrants, round deadlines and the draw under “Draws & results”. A plate competition (for those knocked out in the first round) is created from its main competition's Draws page.",
+    intro: "Create the competition here. Then press its green “Manage” button to add entrants, make the draw, enter results and score matches live (the same page is under Competitions → Draws & results, and there's a Manage button on the competition's own page when you're logged in). A plate competition (for those knocked out in the first round) is created from its main competition's Manage page.",
     fields: [
       { name: "name", label: "Competition name", type: "text", required: true },
       { name: "slug", label: "Web address (auto)", type: "slug", from: "name" },
@@ -125,6 +125,8 @@ export const RESOURCES = {
       { name: "kind", label: "Type", type: "select", options: ["Team", "Singles", "Doubles", "Other"], default: "Team" },
       { name: "league_ids", label: "Open to (which leagues can enter — leave empty for every league)", short: "Open to", type: "tags", ref: "leagues", empty: "All leagues" },
       { name: "handicap", label: "Handicap competition (scorecards show each player's handicap and the head start)", type: "checkbox" },
+      // Round 72 (Rich): St Blazey's competitions have no seeds, so it's off unless ticked.
+      { name: "seeded", label: "Seeded competition (entrants are ranked, and the draw can keep the top seeds apart). Leave unticked for a fully random draw", type: "checkbox" },
       { name: "draw_mode", label: "Draw", type: "select", options: ["bracket", "redraw"], default: "bracket",
         help: "bracket = winners follow the fixed bracket. redraw = a fresh random draw is made every round." },
       { name: "best_of", label: "Frames per match (best of)", type: "number", default: 5 },
@@ -142,7 +144,8 @@ export const RESOURCES = {
       { name: "entry_closes", label: "Entries close on (optional — the form stops taking entries after this day)", type: "date" },
     ],
     validate: (row) => (row.parent_id && row.parent_id === row.id ? "A competition can't be its own plate." : null),
-    rowActions: [{ label: "Draw", href: (row) => `/admin/draws?c=${row.id}` }, { label: "View", href: (row) => `/competition/${row.slug}` }],
+    // Round 72 (Rich: "took me a while to find out how to edit a comp live"): one clear button to run the competition.
+    rowActions: [{ label: "Manage", title: "Entrants, draw, results & live scoring", cls: "green", href: (row) => `/admin/draws?c=${row.id}` }, { label: "View", href: (row) => `/competition/${row.slug}` }],
   },
   byes: {
     label: "Bye weeks", table: "byes", order: "bye_on", filters: ["season_id", "league_id", "team_id"], columns: ["bye_on", "team_id", "league_id", "season_id"],

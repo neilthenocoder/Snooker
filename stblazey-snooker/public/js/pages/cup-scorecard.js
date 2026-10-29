@@ -104,7 +104,7 @@ export default async function cupScorecard(view, { params, user }) {
     unique: c.kind === "Team" ? "match" : "frame",
     // Handicap competitions: show each player's handicap and work out the start.
     handicap: c.handicap ? (id) => players.find((p) => p.id === id)?.handicap ?? 0 : null,
-    // Doubles: each pair starts on its two handicaps added together. A running total decides a match level on frames.
+    // Doubles (round 72): the pairs' handicaps are added up and the higher pair starts on the difference. A running total decides a match level on frames.
     handicapMode: handicapMode(c), runningTotal: !!c.handicap,
     playerName: (id) => players.find((p) => p.id === id)?.full_name ?? "A player",
     frames: bundle.frames.map(toEditor),

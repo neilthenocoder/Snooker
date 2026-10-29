@@ -241,7 +241,7 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
       return { label: shortLabel(f), cell: (r) => html`${f.cellOf ? f.cellOf(r, refs) : display(f, r[name], refs)}${tag(r)}` };
     }),
     { label: "", cls: "right", cell: (r) => html`<span class="btn-row" style="justify-content:flex-end;flex-wrap:nowrap">
-      ${(res.rowActions ?? []).map((a) => html`<a class="btn small ghost" href="${a.href(r)}">${a.label}</a>`)}
+      ${(res.rowActions ?? []).map((a) => html`<a class="btn small ${a.cls ?? "ghost"}" href="${a.href(r)}" ${a.title ? html`title="${a.title}"` : ""}>${a.label}</a>`)}
       ${flagged(r) ? html`<button class="btn small green" data-unflag="${r.id}">${flag.clear}</button>${flag.reject ? html`<button class="btn small" data-reject="${r.id}">${flag.reject.label}</button>` : ""}` : ""}
       <button class="btn small secondary" data-edit="${r.id}">Edit</button>
       <button class="btn small" data-delete="${r.id}">Delete</button></span>` },

@@ -87,7 +87,7 @@ export function wireBracket(root) {
 }
 
 /** Round-by-round cards (like a fixture list), newest round first when finished. */
-export function roundCards(b, venueById, deadlines = {}) {
+export function roundCards(b, venueById, deadlines = {}, { scoreLinks = false } = {}) {
   return b.rounds.map((list, i) => {
     const real = list.filter((m) => !m.isBye);
     if (!real.length) return "";
@@ -104,6 +104,7 @@ export function roundCards(b, venueById, deadlines = {}) {
             <b>${sideScore(m.row, side) ?? "-"}</b></div>`;
         };
         return html`<div class="fx-card">${cell("a")}<div class="fx-v">v ${m.row.id ? html`<a class="fx-link" href="/cup-match/${m.row.no ?? m.row.id}">${m.row.status === "in_progress" ? "Live" : walkoverSide(m.row) ? "Walkover" : m.played ? "Scorecard" : "Match page"} →</a>` : ""}</div>${cell("b")}
+          ${scoreLinks && isEntry(m.a) && isEntry(m.b) && m.row.id && m.row.status !== "completed" && !walkoverSide(m.row) ? html`<a class="btn small blue fx-score-live" href="/cup-scorecard/${m.row.no ?? m.row.id}">${m.row.status === "in_progress" ? "Carry on scoring live" : "Score live"}</a>` : ""}
           <div class="fx-meta">${m.row.status === "postponed" ? html`<span class="pp">Postponed</span> · ` : ""}${m.row.starts_at ? `${m.row.status === "postponed" ? "was " : ""}${fmtDate(m.row.starts_at)} ${fmtTime(m.row.starts_at)}` : "Date TBC"}${v ? html` · <a href="${urls.venue(v)}">${v.name}</a>` : ""}${onPoints(m) ? html` · <b>${onPoints(m)}</b>` : ""}</div></div>`;
       })}</div>`;
   });

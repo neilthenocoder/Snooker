@@ -24,7 +24,7 @@ export default async function drawPage(view, { params }) {
     const rows = data.matches.filter((m) => m.competition_id === c.id);
     const status = live?.status === "live" ? "live" : live?.status === "done" ? "done" : rows.length ? "made" : "waiting";
     const inHat = entries.filter((e) => !log.some((t) => [t.a, t.b].includes(e.id)));
-    const total = drawPlan(entries.length).length;
+    const total = drawPlan(entries.length, live?.prelims ?? null).length;
     const pending = status === "waiting" ? (await signupNames(c.id)).filter((s) => s.status === "pending") : [];
     const fresh = shown >= 0 ? log.length - shown : 0;   // how many ties arrived since the last look
     shown = log.length;

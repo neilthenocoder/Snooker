@@ -17,7 +17,7 @@
 // ─────────────────────────────────────────────────────────────
 import { html, mount, $, toast, fmtDate, fmtTime, confirmBox, safeHref } from "./dom.js";
 import { badge, handicapText } from "./components.js";
-import { frameWinner, parseBreaks, breakPoints, handicapStarts, RULES, EXT_PER_SEASON, MAX_BREAK } from "./rules.js";
+import { frameWinner, parseBreaks, breakPoints, handicapStarts, pairsEquation, RULES, EXT_PER_SEASON, MAX_BREAK } from "./rules.js";
 import { scorePad } from "./score-pad.js";
 
 const VIEW_KEY = "sbdsl-scorecard-view";
@@ -47,7 +47,8 @@ function startingView() {
  *   slots (1|2), allowExt, extUsed: Map(playerId → count before this match),
  *   unique: "match" (a player plays one frame — twice only as Ext) | "frame" (the same players every frame),
  *   handicap: (playerId) → number    — give this for handicap competitions: starts are worked out and checked,
- *   handicapMode: "difference" (the higher handicap starts on the difference) | "each" (doubles: each pair starts on its own total),
+ *   handicapMode: "difference" (the higher handicap starts on the difference) | "pairs" (doubles: each pair's handicaps are added
+ *                 together and the higher pair starts on the difference between the totals) | "each" (old doubles rule),
  *   runningTotal: true shows each side's total points so far (handicap matches level on frames are decided on them),
  *   frames, minFrames, preset, playerName(id), person(id) → { name, avatar_url, club },
  *   photo: { required, url: () => string | null, pick: () => void },
@@ -65,6 +66,7 @@ export function scorecardEditor(opts) {
   const samePlayers = unique === "frame";           // singles & doubles: one line-up for the whole match
   const hcap = opts.handicap ? (id) => Number(opts.handicap(id)) || 0 : null;
   const eachStart = opts.handicapMode === "each";
+  const pairStart = opts.handicapMode === "pairs";   // round 72 (Rich): doubles — the pairs' totals, then the difference
   const frames = opts.frames.length ? opts.frames : [];
   const lineUp = () => { const last = frames.at(-1); return samePlayers && last ? { a: last.a.map((s) => s.player_id), b: last.b.map((s) => s.player_id) } : opts.preset; };
   const addFrame = () => frames.push(blankFrame(frames.length + 1, slots, lineUp()));
@@ -89,7 +91,20 @@ export function scorecardEditor(opts) {
     ? handicapStarts(f.a.map((s) => hcap(s.player_id)), f.b.map((s) => hcap(s.player_id)), opts.handicapMode) : { a: 0, b: 0 });
   const startFor = (f, side) => startOf(f)[side];
   /** Doubles show every pair's start (even 0); otherwise only the side that gets one. */
-  const showsStart = (f, side) => (eachStart ? !!hcap && slotsOf(f).every((s) => s.player_id) : startFor(f, side) !== 0);
+  const showsStart = (f, side) => (eachStart || pairStart ? !!hcap && slotsOf(f).every((s) => s.player_id) : startFor(f, side) !== 0);
+  /** Doubles (round 72): the sum written out — "Keith Moore (+30) + Jake Moore (+28) = +58" for one pair. */
+  const pairSum = (f, side) => {
+    const eq = pairsEquation(f[side].map((s) => hcap(s.player_id)), []);
+    return `${f[side].map((s) => `${person(s.player_id).name} (${handicapText(hcap(s.player_id))})`).join(" + ")} = ${eq.sign(eq.a)}`;
+  };
+  const equationLine = (f) => {
+    if (!pairStart || !hcap || !slotsOf(f).every((s) => s.player_id)) return "";
+    const eq = pairsEquation(f.a.map((s) => hcap(s.player_id)), f.b.map((s) => hcap(s.player_id))), st = startOf(f);
+    const who = st.a ? sides.a.name : st.b ? sides.b.name : null;
+    return html`<div class="sc-equation"><b>Handicap start</b>
+      <span>${sides.a.name}: ${pairSum(f, "a")}</span><span>${sides.b.name}: ${pairSum(f, "b")}</span>
+      <span class="eq-sum">${eq.text} → ${who ? html`<b>${who}</b> start every frame on <b>${st.a || st.b}</b>, ${st.a ? sides.b.name : sides.a.name} on <b>0</b>` : html`level — both start on <b>0</b>`}</span></div>`;
+  };
   const startText = (n) => (eachStart ? handicapText(n) : n);
   // A pair that starts below zero can finish a frame below zero, so doubles handicap scores may be negative.
   const pointAttrs = html([eachStart ? 'min="-200" max="300"' : 'min="0" max="200" inputmode="numeric"']);
@@ -135,7 +150,9 @@ export function scorecardEditor(opts) {
     <p>${view === "classic" ? html`Type each break in the small box next to the player, e.g. <b>34, 41</b>.` : "A player can have more than one break in a frame — add each one."}
       Break points: ${RULES.breakMinimum}–39 = 3, 40–49 = 4 … 140+ = ${RULES.maxBreakPoints}. The highest possible break is ${MAX_BREAK}.</p>
     ${allowExt ? html`<p>A player picked as “(Ext)” is playing a second frame as the team's extra player — allowed ${EXT_PER_SEASON} time${EXT_PER_SEASON > 1 ? "s" : ""} a season. Otherwise each player can only be picked once.</p>` : ""}
-    ${hcap ? html`<p>${eachStart
+    ${hcap ? html`<p>${pairStart
+      ? "Handicap doubles: each pair's two handicaps are added together, then the pair with the higher total starts every frame on the difference between the two totals; the other pair starts on 0. e.g. +30 and +28 = +58 against -14 and -5 = -19: +58 − (−19) = 77, so the first pair starts on 77. Enter the scores as they finish on the scoreboard, start included."
+      : eachStart
       ? "Handicap doubles: each pair's two handicaps are added together, and that total is what the pair starts every frame on (+20 and -14 start on 6). Enter the scores as they finish on the scoreboard, start included — a pair that starts on 6 and scores 85 has a frame score of 91."
       : "Handicap match: the side with the higher handicap starts each frame with the difference already on the board. Enter the scores as they finish on the scoreboard, start included."}</p>` : ""}
   </details>`;
@@ -159,6 +176,7 @@ export function scorecardEditor(opts) {
     <td class="sc-points"><input type="number" ${pointAttrs} data-i="${i}" data-k="${side}_points" value="${f[`${side}_points`] ?? ""}" aria-label="Points"></td>`;
   const classicBody = () => html`
     ${opts.photo || opts.addPlayer ? html`<div class="sc-tools">${photoBlock()}${addPlayerButton()}</div>` : ""}
+    ${frames.length ? equationLine(frames[0]) : ""}
     <table class="sc-table">
       <thead><tr><th>Player</th><th>Points</th><th class="sc-no">#</th><th>Player</th><th>Points</th></tr></thead>
       <tbody>${frames.map((f, i) => html`<tr data-row="${i}">
@@ -206,7 +224,7 @@ export function scorecardEditor(opts) {
     })}</div>
     ${cue}
     <label class="g-points">Frame score<input type="number" ${pointAttrs} data-i="${i}" data-k="${side}_points" value="${f[`${side}_points`] ?? ""}" placeholder="${showsStart(f, side) ? startFor(f, side) : ""}"></label>
-    ${showsStart(f, side) ? html`<div class="g-start">Starts on <b>${startText(startFor(f, side))}</b> (${eachStart ? "the pair's handicaps added together" : "handicap"})</div>` : ""}
+    ${showsStart(f, side) ? html`<div class="g-start">Starts on <b>${startText(startFor(f, side))}</b> (${pairStart ? "handicap start" : eachStart ? "the pair's handicaps added together" : "handicap"})</div>` : ""}
     ${f[side].map((_, j) => breakChips(f, i, side, j))}
   </div>`;
   const frameStep = (i) => {
@@ -215,6 +233,7 @@ export function scorecardEditor(opts) {
       ${tabs()}
       <div class="g-frame" data-frame="${i}">
         <div class="g-frame-head">Frame ${f.frame_no} of ${frames.length}</div>
+        ${equationLine(f)}
         ${card(f, i, "a")}<div class="g-vs">v</div>${card(f, i, "b")}
       </div>
       ${totalsLine()}

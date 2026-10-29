@@ -5,7 +5,7 @@ import { loadCompMatch, loadCompetitions, subscribe, table } from "../core/api.j
 import { buildBracket, roundName, winnerSide, walkoverSide, placeLabel } from "../core/bracket.js";
 import { canEditCompMatch } from "../core/auth.js";
 import { breadcrumb, panel, dataTable, cupMatchInfo, urls, badge, handicapText, breakList } from "../core/components.js";
-import { handicapStarts, handicapMode } from "../core/rules.js";
+import { handicapStarts, handicapMode, pairsEquation } from "../core/rules.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
 import { matchChat } from "../core/comments.js";
@@ -28,11 +28,13 @@ export default async function cupMatch(view, { params, user }) {
     // Handicap competitions: who gets a head start in each frame, and how many.
     const hc = (id) => players.find((p) => p.id === id)?.handicap ?? 0;
     const sideIds = (f, s) => [f[`${s}_player_id`], f[`${s}_player2_id`]].filter(Boolean);
-    // Singles and team matches: the higher handicap starts on the difference. Doubles: each pair starts on its own total.
+    // Singles and team matches: the higher handicap starts on the difference. Doubles (round 72): the pairs' totals, and the higher pair starts on the difference.
     const mode = handicapMode(c);
     const startText = (f) => {
       const s = handicapStarts(sideIds(f, "a").map(hc), sideIds(f, "b").map(hc), mode);
       if (mode === "each") return `${handicapText(s.a)} v ${handicapText(s.b)}`;
+      // Round 72 (Rich): doubles show the sum — "+58 − (−19) = 77" — then who starts on it (the other pair on 0).
+      if (mode === "pairs") return `${pairsEquation(sideIds(f, "a").map(hc), sideIds(f, "b").map(hc)).text} · ${s.a ? `${nameA} start on ${s.a}, ${nameB} 0` : s.b ? `${nameB} start on ${s.b}, ${nameA} 0` : "Level"}`;
       return s.a ? `${nameA} +${s.a}` : s.b ? `${nameB} +${s.b}` : "Level";
     };
     // Running totals (points, handicap starts included): they decide a handicap match that is level on frames.

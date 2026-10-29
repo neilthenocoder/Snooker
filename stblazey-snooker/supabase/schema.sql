@@ -2941,7 +2941,12 @@ begin
   end loop;
 end $$;
 
-create or replace function public.schema_version() returns int language sql immutable as $$ select 36 $$;
+-- ── Round 72 (Rich: "competitions, we don't have seeds — but other leagues might") ──
+-- Seeds are off unless a competition is ticked as seeded (Admin → Competitions → Edit). Without seeds the draw is
+-- always random, and the Seed column and "Seeded draw" button are hidden.
+alter table competitions add column if not exists seeded boolean not null default false;
+
+create or replace function public.schema_version() returns int language sql immutable as $$ select 37 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

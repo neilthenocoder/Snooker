@@ -285,8 +285,10 @@ export function handicapStart(handicapsA, handicapsB) {
 /**
  * What each side has on the board when a handicap frame starts: { a, b }.
  *   "difference" (singles and team matches) — the higher handicap starts on the difference, the other on 0.
- *   "each" (doubles) — each pair starts on its own total: +20 and -14 make a pair that starts on 6,
- *   so if they then score 85 their frame score is 91. A total below zero starts below zero.
+ *   "pairs" (doubles, Rich round 72) — each pair's two handicaps are added together, and the pair with the higher
+ *   total starts on the difference between the totals; the other pair starts on 0.
+ *   e.g. (+30 and +28 = +58) v (-14 and -5 = -19): +58 − (−19) = 77 start for the first pair, 0 for the second.
+ *   "each" (the old doubles rule, before round 72) — each pair started on its own total.
  */
 export function handicapStarts(handicapsA, handicapsB, mode = "difference") {
   const sum = (list) => list.reduce((n, h) => n + (Number(h) || 0), 0);
@@ -294,5 +296,16 @@ export function handicapStarts(handicapsA, handicapsB, mode = "difference") {
   const s = handicapStart(handicapsA, handicapsB);
   return { a: s.side === "a" ? s.points : 0, b: s.side === "b" ? s.points : 0 };
 }
+/**
+ * The sum behind a doubles handicap start, as Rich asked for it to be shown (round 72):
+ * { a: +58, b: -19, text: "+58 − (−19) = 77" }. Totals are the pairs' handicaps added together.
+ */
+export function pairsEquation(handicapsA, handicapsB) {
+  const sum = (list) => list.reduce((n, h) => n + (Number(h) || 0), 0);
+  const sign = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : "0");
+  const a = sum(handicapsA), b = sum(handicapsB);
+  const big = Math.max(a, b), small = Math.min(a, b);
+  return { a, b, text: `${sign(big)} − ${small < 0 ? `(${sign(small)})` : sign(small)} = ${big - small}`, sign };
+}
 /** Which way a competition's handicaps work (see handicapStarts). */
-export const handicapMode = (competition) => (competition?.kind === "Doubles" ? "each" : "difference");
+export const handicapMode = (competition) => (competition?.kind === "Doubles" ? "pairs" : "difference");
