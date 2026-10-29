@@ -4,8 +4,12 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.51.0";
+export const SITE_VERSION = "1.52.0";
 export const CHANGES = [
+  "Pictures: 16:9 everywhere (one upload fits every place it appears); Featured news: the three stories beside the big one now match its height exactly",
+  "The website no longer redraws itself every few minutes: live scores and results update by themselves, and only after 20 minutes away is the page refreshed — quietly, in place, with no loading screen",
+  "Admin → Competitions → Set up step by step: the competition, the details, entries, entrants, the draw, deadlines, dates — one step at a time, with a checklist at the end",
+  "Home page featured competition: both names in each match left-aligned; the round line isn't repeated",
   "Page width: content up to 1280px (was 1112px) with space either side — more room for tables and results without stretching edge to edge (the dashboard stays wider)",
   "Picture shapes: 16:9 for the big banner pictures (home page banner, news stories, a competition's page); 4:3 for everything else (news cards, competition boxes, venues, galleries, Hall of Fame, shop, marketplace, pop-up adverts) — the upload boxes in the dashboard say which",
   "Nothing can be sent to the league without logging in: support requests, competition entries, CueViews and Hall of Fame memories ask you to log in first, and come back to the page afterwards (the database refuses them too — run schema.sql, version 36). Reading the website never needs a login",

@@ -7,7 +7,8 @@ import { panel, dataTable, urls, shortName, isActivePlayer } from "../core/compo
 import { navigate } from "../core/router.js";
 import { friendly } from "./crud.js";
 
-export async function draws(el, { user } = {}) {
+// step (round 59): 1–4 shows just that part, for "Set up a competition step by step" (admin/comp-wizard.js).
+export async function draws(el, { user, step = 0 } = {}) {
   const [data, teams, players, leagues, venues] = await Promise.all([
     loadCompetitions(), table("teams", "name"), table("players", "full_name"), table("leagues", "sort"), table("venues", "name"),
   ]);
@@ -25,7 +26,7 @@ export async function draws(el, { user } = {}) {
   const liveDone = c.draw_live?.status === "done" ? c.draw_live : null;
   const entryName = (id) => entries.find((e) => e.id === id)?.name ?? "–";
   const inHat = live ? entries.filter((e) => !live.log.some((t) => [t.a, t.b].includes(e.id))) : [];
-  const redraw = () => navigate(`/admin/draws?c=${c.id}`, { replace: true });
+  const redraw = () => navigate(step ? location.pathname + location.search : `/admin/draws?c=${c.id}`, { replace: true });
   // Only the leagues this competition is open to (all of them when none are chosen).
   const open = c.league_ids?.length ? leagues.filter((l) => c.league_ids.includes(l.id)) : leagues;
   const openIds = new Set(open.map((l) => l.id));
@@ -54,6 +55,7 @@ export async function draws(el, { user } = {}) {
   const plateEntrants = (main, already = []) => firstMatchLosers(bracketOf(main)).filter((e) => !already.some((x) => sameEntrant(x, e)));
 
   mount(el, html`<div class="stack" id="draws-root">
+    ${step ? "" : html`<a class="nw-invite" href="/admin/comp_wizard?c=${c.id}&step=1"><b>🏆 Set up a competition step by step</b><span>One step at a time: the competition, the details, entries, entrants, the draw, deadlines and dates.</span></a>`}
     <div class="toolbar">
       <label style="font-weight:700">Competition
         <select data-pick>${data.competitions.map((x) => html`<option value="${x.id}" ${x.id === c.id ? "selected" : ""}>${x.name}</option>`)}</select></label>
@@ -96,7 +98,7 @@ export async function draws(el, { user } = {}) {
         { label: "Name", cell: (e) => html`<b>${e.name}</b>` },
         { label: pairMode ? "Players" : "Linked to", cell: (e) => teams.find((t) => t.id === e.team_id)?.name ?? ([e.player_id, e.partner_id].filter(Boolean).map((id) => players.find((p) => p.id === id)?.full_name).filter(Boolean).join(" & ") || (pairMode ? html`<span class="muted">Not linked — remove and add again as a pair</span>` : "–")) },
         { label: "", cls: "right", cell: (e) => html`<button class="btn small" data-remove-entry="${e.id}">Remove</button>` },
-      ], entries, { empty: "No entrants yet." })}`)}
+      ], entries, { empty: "No entrants yet." })}`, { cls: "dstep-1" })}
 
     ${panel("2. Make the draw", html`<div class="form">
       <p style="margin-top:0">Entrants are seeded in the order listed above (seed 1 first). When the number of entrants isn't 2, 4, 8, 16 or 32,
@@ -128,9 +130,9 @@ export async function draws(el, { user } = {}) {
           <div class="btn-row"><button type="button" class="btn secondary" data-save-draw-at>Save the date</button>
             <button type="button" class="btn green" data-live-start ${entries.length < 2 ? "disabled" : ""}>Start the live draw now</button>
             <a class="btn ghost" href="/draw/${c.slug}">Public draw page</a></div></div>`}
-      </div>`)}
+      </div>`, { cls: "dstep-2" })}
 
-    ${c.draw_mode === "redraw" && b.totalRounds > 1 ? html`<div class="btn-row">${b.rounds.slice(0, -1).map((list, i) => {
+    ${c.draw_mode === "redraw" && b.totalRounds > 1 ? html`<div class="btn-row dstep-2">${b.rounds.slice(0, -1).map((list, i) => {
       const done = list.every((m) => m.winner !== PENDING);
       const nextSet = b.rounds[i + 1].some((m) => m.row.entry_a || m.row.entry_b);
       return html`<button class="btn ${done && !nextSet ? "blue" : "ghost"}" data-redraw="${i + 1}" ${done ? "" : "disabled"}>
@@ -143,7 +145,7 @@ export async function draws(el, { user } = {}) {
       <div class="deadline-grid">${b.rounds.map((_, i) => html`<fieldset class="deadline-round"><legend>${roundName(i + 1, b.totalRounds, b)}</legend>
         <label>Play by <input type="date" name="round_${i + 1}" value="${c.round_deadlines?.[i + 1] ?? ""}"></label>
         <label>Contact by <input type="date" name="contact_${i + 1}" value="${c.round_contact?.[i + 1] ?? ""}"></label></fieldset>`)}</div>
-      <div class="btn-row form-actions"><button class="btn green">Save deadlines</button></div></form>`) : ""}
+      <div class="btn-row form-actions"><button class="btn green">Save deadlines</button></div></form>`, { cls: "dstep-3" }) : ""}
 
     ${b.totalRounds ? panel("4. Pairings, dates & results", html`<div class="table-scroll"><table class="data results-edit">
       <thead><tr><th>Round</th><th class="right">Home / first named</th><th class="num">Score</th><th>Away / second named</th><th>Date & time</th><th>Venue</th><th></th></tr></thead>
@@ -189,7 +191,7 @@ export async function draws(el, { user } = {}) {
         Not played? Choose <b>Walkover to …</b> under the score, or tick <b>postponed</b> under the date — then save.
         <br><b>Drawing a round on paper before the one before it has finished?</b> Set each side to a team, <b>Bye</b>, or <b>Winner of …</b> a match
         (it shows as “St Neot or Mevagissey C” and the winner drops in by itself when that result goes in).
-        Winners move into the next round automatically. Changing a pairing by hand overrides the bracket for that match.</p>`) : ""}
+        Winners move into the next round automatically. Changing a pairing by hand overrides the bracket for that match.</p>`, { cls: "dstep-4" }) : ""}
   </div>`);
 
   const root = $("#draws-root");

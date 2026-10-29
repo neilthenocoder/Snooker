@@ -5144,19 +5144,85 @@ tr.sup-needs td:first-child { box-shadow: inset 4px 0 0 var(--bad); }
   #shell.has-side > main .wrap { padding-left: 0; padding-right: 0; }
 }
 
-/* Picture shapes, so an uploaded picture fits exactly:
-   16:9 — the big "hero" pictures: the home page banner, the banner news story, the featured news story,
-          a competition's page banner, videos.
-   4:3  — everything else: news cards, competition boxes, venues, galleries, the Hall of Fame,
-          the shop, the marketplace, pop-up adverts.
-   (Logos, emblems and player photos stay round/square; social-media previews stay 1200 × 630.) */
-.hero-pic, .feat-main, .video-box, .nw-pic-show:not(.round), .nw-sum img:not(.round) { aspect-ratio: 16 / 9 !important; }
+/* Picture shapes (round 59, Neil: "16:9 everywhere"): every photo box on the site is 16:9 — the snooker-table shape —
+   so one upload fits exactly wherever it appears. (Logos, emblems and player photos stay round/square; social-media
+   previews stay 1200 × 630; sponsor banners and side adverts keep their advert sizes.) */
+.hero-pic, .feat-main, .video-box, .nw-pic-show:not(.round), .nw-sum img:not(.round),
 .card img, .card .ph, .news-cols.few .card img, .news-cols.few .card .ph,
 .hub-pic, .ns-card, .cf-pic, .hof-pic, .appr img, .appr-ph, .pop-img, .merch-pic,
-.lib-thumb img, .gallery-item img, .venue-photo, .mk-pic, .mk-ph.big { aspect-ratio: 4 / 3 !important; }
+.lib-thumb img, .gallery-item img, .venue-photo, .mk-pic, .mk-ph.big { aspect-ratio: 16 / 9 !important; }
 .card img, .hub-pic img, .ns-card img, .cf-pic, .hof-pic img, .pop-img, .merch-pic img { object-fit: cover; object-position: center; }
-/* (where a picture sits beside text on phones, it keeps its own small shape) */
-@media (max-width: 640px) { .hub-pic { width: 112px !important; height: 84px !important; aspect-ratio: auto !important; } }
-.home-news .hub-pic { aspect-ratio: 4 / 3 !important; align-self: flex-start; }
+/* (on phones, a news picture beside its headline is a small 16:9 thumbnail) */
+@media (max-width: 640px) { .hub-pic { width: 128px !important; height: 72px !important; aspect-ratio: auto !important; } }
+.home-news .hub-pic { aspect-ratio: 16 / 9 !important; align-self: flex-start; }
 .hof-card.big .hof-pic { aspect-ratio: auto !important; }
-@media (max-width: 640px) { .hof-card.big .hof-pic { aspect-ratio: 4 / 3 !important; } }
+@media (max-width: 640px) { .hof-card.big .hof-pic { aspect-ratio: 16 / 9 !important; } }
+
+/* Featured news: the big story sets the height (16:9), and the three beside it share that height exactly — each
+   with a 16:9 thumbnail. (Before, long headlines in the side cards made that column taller than the big story,
+   leaving a gap under it.) */
+@media (min-width: 861px) {
+  .feat-grid:not(.solo) { align-items: stretch; }
+  .feat-grid:not(.solo) .feat-side { contain: size; height: auto; grid-auto-rows: minmax(0, 1fr); }
+  .feat-card { grid-template-columns: auto minmax(0, 1fr) !important; min-height: 0 !important; }
+  .feat-card img, .feat-card .hub-ph { height: 100% !important; width: auto !important; min-height: 0 !important; aspect-ratio: 16 / 9; }
+  .feat-card .feat-text { padding: 10px 14px; gap: 6px; overflow: hidden; }
+  .feat-card strong { -webkit-line-clamp: 2; }
+}
+@media (max-width: 860px) {
+  .feat-card { grid-template-columns: 40% minmax(0, 1fr) !important; min-height: 0 !important; }
+  .feat-card img, .feat-card .hub-ph { height: auto !important; min-height: 0 !important; aspect-ratio: 16 / 9; align-self: center; }
+}
+/* Featured competition (round 59, Neil): both names left-aligned, so the list reads evenly down the left edge */
+.cf-round li span:first-child { text-align: left !important; }
+
+/* ═══ ROUND 59 — Set up a competition step by step (Admin → Competitions) ═══ */
+.cw-steps { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; counter-reset: none; }
+.cw-steps li > a, .cw-steps li > span { display: flex; gap: 8px; align-items: center; height: 100%; padding: 9px 10px; border-radius: 10px; background: #fff; border: 1px solid #e3e2d7; color: var(--ink); }
+.cw-steps li > a:hover { border-color: var(--ink); }
+.cw-steps .cw-n { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #ecebe4; font: 700 13px var(--font-head); }
+.cw-steps li.ok .cw-n { background: var(--ok-bg); color: var(--ok-ink); }
+.cw-steps li.on > span { background: var(--ink); border-color: var(--ink); color: #fff; }
+.cw-steps li.on .cw-n { background: #fff; color: var(--ink); }
+.cw-steps .cw-t { display: grid; min-width: 0; }
+.cw-steps .cw-t b { font-size: 13px; line-height: 1.2; }
+.cw-steps .cw-t small { font-size: 11px; color: var(--muted); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cw-steps li.on .cw-t small { color: #cfcfcf; }
+@media (max-width: 1500px) { .cw-steps .cw-t small { display: none; } }
+@media (max-width: 900px) { .cw-steps { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .cw-steps { grid-template-columns: repeat(8, minmax(0, 1fr)); } .cw-steps .cw-t { display: none; } .cw-steps li > a, .cw-steps li > span { justify-content: center; padding: 6px 0; } }
+.cw-card { background: #fff; border: 1px solid #e3e2d7; border-radius: 16px; padding: 24px; }
+.cw-comp { margin: 0 0 4px; font: 700 12px var(--font-head); letter-spacing: .06em; text-transform: uppercase; color: var(--red); }
+.cw-q { margin: 0 0 6px; font-size: clamp(22px, 2.4vw, 28px); }
+.cw-help { margin: 0 0 18px; color: var(--muted); max-width: 760px; line-height: 1.5; }
+.cw-sub { margin: 18px 0 10px; font-size: 16px; }
+.cw-picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.cw-pick { display: grid; gap: 3px; padding: 14px 16px; border: 1px solid #e3e2d7; border-radius: 12px; color: var(--ink); background: #faf9f4; }
+.cw-pick:hover { border-color: var(--ink); color: var(--ink); }
+.cw-pick small { color: var(--muted); }
+.cw-older { margin-top: 14px; } .cw-older summary { cursor: pointer; font-weight: 700; margin-bottom: 10px; }
+.cw-new { margin-top: 22px; padding-top: 6px; border-top: 1px solid #eeede3; }
+.cw-kinds { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 6px; }
+@media (max-width: 700px) { .cw-kinds { grid-template-columns: 1fr 1fr; } }
+.cw-kind { position: relative; display: block; cursor: pointer; }
+.cw-kind input { position: absolute; opacity: 0; }
+.cw-kind span { display: grid; gap: 2px; padding: 12px 14px; border: 2px solid #e3e2d7; border-radius: 12px; height: 100%; }
+.cw-kind small { color: var(--muted); font-weight: 400; }
+.cw-kind input:checked + span { border-color: var(--ink); background: #f6f5ee; }
+.cw-kind input:focus-visible + span { outline: 2px solid var(--red); outline-offset: 2px; }
+.cw-leagues { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-bottom: 8px; }
+.cw-leagues .check { margin: 0; }
+.cw-big-check { font-size: 17px; font-weight: 700; }
+.cw-nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 22px; padding-top: 16px; border-top: 1px solid #eeede3; }
+.cw-embed #draws-root > * { display: none; }
+.cw-embed[data-step="1"] #draws-root > .dstep-1, .cw-embed[data-step="2"] #draws-root > .dstep-2,
+.cw-embed[data-step="3"] #draws-root > .dstep-3, .cw-embed[data-step="4"] #draws-root > .dstep-4 { display: block; }
+.cw-embed[data-step="2"] #draws-root > .btn-row.dstep-2 { display: flex; }
+.cw-embed .panel { margin: 0; box-shadow: none; }
+.cw-check { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 8px; }
+.cw-check li { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: #faf9f4; border: 1px solid #eeede3; }
+.cw-check li a { margin-left: auto; font-weight: 700; color: var(--red); white-space: nowrap; }
+.cw-mark { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-weight: 700; }
+.cw-check li.ok .cw-mark { background: var(--ok-bg); color: var(--ok-ink); }
+.cw-check li.todo .cw-mark { background: var(--warn-bg); color: var(--warn-ink); }
+.cw-end { flex-wrap: wrap; }

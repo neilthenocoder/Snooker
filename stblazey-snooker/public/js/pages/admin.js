@@ -12,6 +12,7 @@ import { crud } from "../admin/crud.js";
 import { setTitle, navigate, refreshShell } from "../core/router.js";
 import { mustLogin } from "./scorecard.js";
 import { draws } from "../admin/draws.js";
+import { compWizardPage } from "../admin/comp-wizard.js";
 import { mediaPage } from "../admin/picker.js";
 import { statsPage } from "../admin/stats.js";
 import { importPage } from "../admin/import.js";
@@ -53,7 +54,7 @@ const NAV = [
   ["Match nights", [["overview", "Overview"], ["results", "Results to approve"]]],
   ["Fixtures", [["fixtures", "All fixtures"], ["byes", "Bye weeks"], ["generator", "Fixture generator"], ["import", "Import from CSV"]]],
   ["League", [["leagues", "Leagues"], ["teams", "Teams"], ["players", "Players"], ["cueviews", "CueViews to approve"], ["handicaps", "Handicaps"], ["handicap_suggest", "Suggested handicaps"], ["venues", "Venues"], ["seasons", "Seasons"]]],
-  ["Competitions", [["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws & results"], ["scoreboard", "Live scoreboard"], ["awards", "Presentation awards"]]],
+  ["Competitions", [["comp_wizard", "Set up step by step"], ["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws & results"], ["scoreboard", "Live scoreboard"], ["awards", "Presentation awards"]]],
   ["People", [["accounts", "Logins"]]],
   // Rich, round 24: the long "Website" list split into groups.
   ["News", [["articles", "News"], ["approvals", "News to approve"], ["write", "Write news step by step"], ["categories", "News categories"], ["notices", "Notifications"], ["announcements", "Announcements"]]],
@@ -71,7 +72,7 @@ const NAV = [
 const SPECIAL = { overview, results, generator, draws, media: mediaPage, stats: statsPage, import: importPage, handicaps: handicapsPage, entries: entriesPage,
   roles: rolesPage, activity: activityPage, backup: backupPage, awards: awardsPage, scoreboard: scoreboardPage, emails: emailsPage, cueviews: cueviewsPage, write: newsWizardPage, approvals: newsApprovePage,
   campaigns: campaignsPage, subscribers: subscribersPage, market: marketPage, comments: commentsPage, menu: menuPage, seo: seoPage, links: linksPage, performance: performancePage, security: securityPage, versions: versionsPage, handicap_suggest: handicapSuggestPage,
-  support: supportPage, support_categories: supportCategoriesPage };
+  support: supportPage, support_categories: supportCategoriesPage, comp_wizard: compWizardPage };
 // Menu items that show a red number when something is waiting.
 const COUNTS = { players: "Players waiting to be accepted", entries: "Entries waiting for payment", cueviews: "CueViews waiting to be checked", approvals: "News waiting for your approval", market: "Adverts waiting for approval", support: "Support requests waiting for an answer" };
 const COUNT_WORD = { players: "new", entries: "waiting", cueviews: "waiting", approvals: "waiting", market: "waiting", support: "to answer" };
@@ -108,7 +109,7 @@ export default async function admin(view, { params, user, query }) {
   const nav = NAV.map(([group, items]) => [group, items.filter(([key]) => canOpenSection(user, key) && !(key === "write" && canOpenSection(user, "articles")))]).filter(([, items]) => items.length);
   // Where the dashboard opens: the first section of this login's own area (Handicaps is shared, so it isn't the landing page).
   const mine = nav.flatMap(([, items]) => items);
-  const first = (mine.find(([key]) => key !== "handicaps") ?? mine[0])[0];
+  const first = (mine.find(([key]) => key !== "handicaps" && key !== "comp_wizard") ?? mine[0])[0];
   if (!params.section && first !== "overview") return navigate(`/admin/${first}`, { replace: true });
   const section = params.section || first;
   const title = NAV.flatMap(([, items]) => items).find(([k]) => k === section)?.[1] ?? "Admin";
@@ -274,6 +275,11 @@ export default async function admin(view, { params, user, query }) {
     const current = (await table("seasons", "name")).find((s) => s.is_current);
     // News: the easy way in, for anyone who finds the full form a lot.
     let into = body;
+    // Round 59 (Rich): competitions too.
+    if (section === "competitions" && !query.get("edit")) {
+      mount(body, html`<a class="nw-invite" href="/admin/comp_wizard"><b>🏆 Set up a competition step by step</b><span>One step at a time: the competition, the details, entries, entrants, the draw, deadlines and dates.</span></a><div></div>`);
+      into = body.lastElementChild;
+    }
     if (section === "articles" && !query.get("edit")) {
       mount(body, html`${isMaster(user) ? "" : html`<div class="notice">Articles you publish go to the Master Admin to approve before they appear on the website (they show as not published until then).</div>`}<a class="nw-invite" href="/admin/write"><b>✎ Write news step by step</b><span>One question at a time: headline, category, story, quote, pictures and this week's tables.</span></a><div></div>`);
       into = body.lastElementChild;
