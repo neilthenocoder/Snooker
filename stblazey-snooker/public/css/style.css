@@ -5237,19 +5237,9 @@ table.dm-table, .dm-table tbody { display: block; width: 100%; }
 :is(.feat-card, .hub-card, .ns-card):hover { transform: none !important; }
 :is(.hub-pic, .feat-main, .feat-card, .ns-card, .hero-pic-link) img, .hero-pic { transition: none !important; }
 
-/* Pictures start from the top, so heads aren't cut off (e.g. a player standing at the table) */
-img { object-position: center top; }
-.badge.logo img, img.trophy, .shield-pic, .logo img, .sponsor img, .sponsors img { object-position: center; }
-.hero-bg { background-position: center top !important; }
-.art-hero { background-position: 0 0, center top !important; }
+/* (Round 74, Rich: cropping pictures from the top didn't work — they are centred again, as before.) */
 
 /* Banner: swipe between stories — each one slides in from the side it came from */
-.hero-inner { touch-action: pan-y; }
-.hero-slide.on.in-r { animation: heroInR .45s cubic-bezier(.2, .7, .2, 1); }
-.hero-slide.on.in-l { animation: heroInL .45s cubic-bezier(.2, .7, .2, 1); }
-@keyframes heroInR { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: none; } }
-@keyframes heroInL { from { opacity: 0; transform: translateX(-60px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .hero-slide.on.in-r, .hero-slide.on.in-l { animation: none; } }
 .hero-slide img, .hero-slide a { -webkit-user-drag: none; }
 
 /* "Headline with the picture beside it": headline one third on the left, the picture two thirds on the right */
@@ -5381,3 +5371,17 @@ html.look-calm body:not([data-page="admin"]) #view .wrap > h1:not(.sr-only)::aft
 html.look-calm .panel.bracket-panel { background: #161616 !important; }
 html.look-calm .panel.bracket-panel .bracket-hint { color: #9a9a9a; }
 .br-prelims { background: #222; margin: 8px 8px 4px; }
+
+/* ═══ ROUND 74 ═══ */
+/* Banner: the stories side by side on a track that follows the finger or mouse — no fade-in, every story always there */
+.hero-slides { display: block !important; overflow: hidden; touch-action: pan-y; }
+.hero-track { display: flex; align-items: flex-start; will-change: transform; }
+.hero-track > .hero-slide { flex: 0 0 100%; min-width: 0; grid-area: auto; opacity: 1 !important; visibility: visible !important; transition: none !important; animation: none !important; }
+.hero-slides.dragging { cursor: grabbing; user-select: none; }
+.hero-slides.dragging a { pointer-events: none; }
+@media (hover: hover) and (pointer: fine) { .hero-slides { cursor: grab; } }
+/* Room at each side of every story (headlines sit a little outside their box), and a gap between stories while dragging */
+.hero-slides { margin: 0 -14px; }
+.hero-track > .hero-slide { padding: 0 14px; box-sizing: border-box; }
+/* Phones, white banner: a little more room above the picture */
+@media (max-width: 760px) { .hero.hero-l-white .wrap.hero-inner { padding-top: 18px !important; } }

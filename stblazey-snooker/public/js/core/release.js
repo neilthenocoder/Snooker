@@ -4,8 +4,10 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.52.0";
+export const SITE_VERSION = "1.53.0";
 export const CHANGES = [
+  "Home page banner: the stories sit side by side and follow your finger (or mouse) as you drag, then settle on the next or previous one; no more fade-in — the automatic turn slides along too",
+  "Pictures are centred again (cropping from the top didn't work); phones: a little more room above the banner picture",
   "The website no longer refreshes by itself: no more reloading every 5 minutes, and coming back after 15 minutes or more redraws the page quietly in place — no loading screen, no blank page",
   "Loading screen: only when the website is first opened (standard), or on every page — Admin → Branding → Loading screen (run schema.sql — version 38)",
   "Home page banner: swipe (or drag) sideways to the next or previous story, which slides in; the side-by-side banner has the headline in a third and a picture twice the size in two thirds",

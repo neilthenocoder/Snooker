@@ -81,9 +81,9 @@ export default async function home(view, { user } = {}) {
     <section class="hero hero-l-${heroLayout(site)}" style="${site.hero_image_url && heroLayout(site) !== "white" ? `--hero-img:${cssUrl(site.hero_image_url)};` : ""}${/^#[0-9a-f]{6}$/i.test(site.hero_bg ?? "") ? `--hero-bg:${site.hero_bg}` : ""}">
       ${heroLayout(site) === "big" ? html`<div class="hero-bgs" aria-hidden="true">${slides.map((a, i) => html`<div class="hero-bg ${i ? "" : "on"}" style="${a.image_url || a.circle_image_url ? `background-image:${cssUrl(a.image_url || a.circle_image_url)}` : ""}"></div>`)}</div>` : ""}
       <div class="wrap hero-inner">
-        <div class="hero-slides" data-slides>
+        <div class="hero-slides" data-slides><div class="hero-track" data-track>
           ${slides.length ? slides.map((a, i) => heroSlide(a, i === 0, heroLayout(site) === "white" && slides.length > 1 ? { at: i, of: slides.length } : null)) : html`<div class="hero-slide on"><div class="hero-text"><h2><span>${SITE.name}</span></h2><p class="hero-meta">Established ${SITE.established}</p></div></div>`}
-        </div>
+        </div></div>
         ${slides.length > 1 && heroLayout(site) !== "white" ? html`<div class="hero-dots">${slides.map((_, i) => html`<button class="${i ? "" : "on"}" data-dot="${i}" aria-label="Show article ${i + 1}"></button>`)}</div>` : ""}
       </div>
       <div class="live-strip-wrap ${["red", "yellow", "grey"].includes(site.strip_line ?? "red") ? `strip-line-${site.strip_line ?? "red"}` : ""}"><div class="wrap"><div class="live-strip" data-strip></div></div></div>
@@ -131,32 +131,63 @@ export default async function home(view, { user } = {}) {
   // Rotate the banner articles (pauses while the mouse is over it).
   const slideEls = $$(".hero-slide", view), dots = $$("[data-dot]", view);
   let current = 0, paused = false;
-  const show = (i, dir = 1) => {
-    const prev = current;
+  // Round 74 (Neil & Rich): the stories sit side by side on a track — no fade-in. The track follows a finger (or the
+  // mouse) as it is dragged, and lets go onto the next or previous story; the automatic turn slides it along too.
+  const track = $("[data-track]", view), heroBox = $("[data-slides]", view);
+  const place = (px = 0, animate = true) => {
+    if (!track) return;
+    track.style.transition = animate ? "transform .5s cubic-bezier(.22, .7, .2, 1)" : "none";
+    track.style.transform = `translate3d(calc(${-current * 100}% + ${px}px), 0, 0)`;
+  };
+  const show = (i) => {
     current = (i + slideEls.length) % slideEls.length;
-    // Round 70.7 (Rich): the stories slide across — in from the right going forwards, from the left going back.
-    slideEls.forEach((s, j) => { s.classList.remove("in-l", "in-r"); s.classList.toggle("on", j === current); });
-    if (prev !== current) { void slideEls[current]?.offsetWidth; slideEls[current]?.classList.add(dir < 0 ? "in-l" : "in-r"); }
+    slideEls.forEach((s, j) => { s.classList.toggle("on", j === current); s.setAttribute("aria-hidden", String(j !== current)); });
     $$(".hero-bg", view).forEach((s, j) => s.classList.toggle("on", j === current));
     dots.forEach((d) => d.classList.toggle("on", Number(d.dataset.dot) === current));
+    place(0, true);
   };
+  place(0, false);
   // The dots in the white card are drawn into every slide, so they're found by click instead of up front.
-  $(".hero-inner", view)?.addEventListener("click", (e) => { const d = e.target.closest("[data-dot]"); if (d) show(Number(d.dataset.dot), Number(d.dataset.dot) < current ? -1 : 1); });
-  // Round 70.7 (Rich): swipe the banner sideways (finger, or drag with the mouse) to see the next or previous story.
-  const heroBox = $(".hero-inner", view);
-  if (heroBox && slideEls.length > 1) {
-    let sw = null, swiped = false;
-    heroBox.addEventListener("pointerdown", (e) => { if (e.button !== 0 && e.pointerType === "mouse") return; sw = { x: e.clientX, y: e.clientY }; swiped = false; });
-    heroBox.addEventListener("pointermove", (e) => {
-      if (!sw || swiped) return;
-      const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
-      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.4) { swiped = true; paused = true; show(current + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1); setTimeout(() => { paused = false; }, ROTATE_MS); }
+  $(".hero-inner", view)?.addEventListener("click", (e) => { const d = e.target.closest("[data-dot]"); if (d) show(Number(d.dataset.dot)); });
+  if (heroBox && track && slideEls.length > 1) {
+    let drag = null, dragged = false;
+    heroBox.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      if (e.target.closest("[data-dot]")) return;
+      drag = { x: e.clientX, y: e.clientY, t: performance.now(), w: heroBox.clientWidth || 1, id: e.pointerId, on: false, dx: 0 };
+      dragged = false;
     });
-    const end = () => { sw = null; };
-    heroBox.addEventListener("pointerup", end); heroBox.addEventListener("pointercancel", end);
-    // A swipe that started on the headline or picture doesn't open the article.
-    heroBox.addEventListener("click", (e) => { if (swiped) { e.preventDefault(); e.stopPropagation(); swiped = false; } }, true);
+    heroBox.addEventListener("pointermove", (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!drag.on) {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+        if (Math.abs(dy) > Math.abs(dx)) { drag = null; return; }     // scrolling the page up or down
+        drag.on = true; dragged = true; paused = true; heroBox.classList.add("dragging");
+        try { heroBox.setPointerCapture(e.pointerId); } catch { /* fine */ }
+      }
+      // A little resistance past the first and last story.
+      const edge = (current === 0 && dx > 0) || (current === slideEls.length - 1 && dx < 0);
+      drag.dx = edge ? dx / 3 : dx;
+      place(drag.dx, false);
+      e.preventDefault();
+    });
+    const end = () => {
+      if (!drag) return;
+      const d = drag; drag = null; heroBox.classList.remove("dragging");
+      if (!d.on) return;
+      const fast = Math.abs(d.dx) / Math.max(1, performance.now() - d.t) > 0.45;
+      const far = Math.abs(d.dx) > d.w * 0.18 || (fast && Math.abs(d.dx) > 24);
+      const next = far ? current + (d.dx < 0 ? 1 : -1) : current;
+      show(Math.max(0, Math.min(slideEls.length - 1, next)));
+      setTimeout(() => { paused = false; }, ROTATE_MS);
+    };
+    heroBox.addEventListener("pointerup", end);
+    heroBox.addEventListener("pointercancel", end);
+    // A drag that started on the headline or picture doesn't open the article.
+    heroBox.addEventListener("click", (e) => { if (dragged) { e.preventDefault(); e.stopPropagation(); dragged = false; } }, true);
     heroBox.addEventListener("dragstart", (e) => e.preventDefault());
+    addEventListener("resize", () => place(0, false), { passive: true });
   }
   $(".hero-inner", view)?.addEventListener("mouseenter", () => { paused = true; });
   $(".hero-inner", view)?.addEventListener("mouseleave", () => { paused = false; });
