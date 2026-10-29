@@ -142,15 +142,13 @@ export function compsBlock(comps, data) {
   const status = top.live ? html`<span class="cf-live">Being played now</span>` : top.next ? "Next match" : top.done ? "Finished" : top.last ? "Latest result" : "Coming up";
   const pic = compBoxStyle(top.c) !== "trophy" && top.c.image_url ? picture(top.c.image_url, "", "cf-pic") : html`<div class="cf-trophy">${trophy(top.c)}</div>`;
   const focus = top.live ?? top.next ?? top.last;
-  // (The round's own heading already says "Round 1 · 4 of 6 played", so the line under the name isn't repeated.)
-  const round = focus ? roundList(top, focus) : "";
   return html`<section class="home-block">
     <div class="hb-head"><h2>Competitions</h2><a href="/competitions">All competitions ${arrow}</a></div>
     <div class="comp-feature ${rest.length ? "" : "solo"}">
       <a class="cf-main" href="${urls.competition(top.c)}">${pic}
         <div class="cf-text"><span class="cf-kicker">${status}</span><strong>${top.c.name}</strong>
-          ${round ? "" : html`<small>${top.progress}</small>`}
-          ${round}
+          <small>${top.progress}</small>
+          ${focus ? roundList(top, focus) : ""}
           <span class="cf-go">See the draw ${arrow}</span></div></a>
       ${rest.length ? html`<div class="cf-side">${rest.slice(0, 4).map((x) => html`<a class="cf-card" href="${urls.competition(x.c)}">
         <span class="cf-mini">${trophy(x.c)}</span><span><strong>${x.c.name}</strong><small>${x.live ? "Being played now" : x.next && !x.done ? `Next match ${fmtDate(x.next.row.starts_at)}` : x.progress}</small></span></a>`)}</div>` : ""}

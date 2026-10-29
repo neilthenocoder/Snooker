@@ -506,7 +506,7 @@ The league table is decided on frames won: one point for every frame.
 # 5. Handicaps
 - Handicaps are reviewed once a year by the handicap committee.
 - In handicap singles and team competitions, the player with the higher handicap starts the frame with the difference.
-- In handicap doubles, each pair starts on the total of its two handicaps.` });
+- In handicap doubles, each pair's two handicaps are added together and the pair with the higher total starts every frame on the difference between the totals (the other pair starts on 0).` });
   pages.push({ id: uuid(), title: "Rules of the Game", slug: "rules-of-the-game", summary: "The rules of snooker in brief", sort: pages.length + 1, show_in_footer: false, show_in_league: false, show_in_rules: true, gallery: [],
     body: `A short guide — placeholder text. The full rules are published by the [WPBSA](https://wpbsa.com/rules/).
 

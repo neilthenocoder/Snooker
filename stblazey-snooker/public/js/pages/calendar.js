@@ -93,7 +93,7 @@ export default async function calendar(view, { query }) {
     mount($("[data-cal]", view), html`${months.map((m) => { const days = [...byMonth.get(m)];
       return html`<section class="cal-month" id="month-${m}" data-month-section="${m}">
         <h2>${MONTHS[Number(m.slice(5)) - 1]} ${m.slice(0, 4)}</h2>
-        ${days.length ? days.map(([d, list]) => html`<div class="cal-day-group ${d === today ? "today" : d < today ? "past" : ""}">
+        ${days.length ? days.map(([d, list]) => html`<div class="cal-day-group ${d === today ? "today" : d < today ? "past" : ""}" data-day="${d}">
           <time class="cal-tile" datetime="${d}"><small>${part(d, { weekday: "short" })}</small><b>${Number(d.slice(8))}</b><span>${part(d, { month: "short" })}</span></time>
           <div class="cal-items">${list.map(item)}</div></div>`)
         : html`<div class="empty box">Nothing in ${MONTHS[Number(m.slice(5)) - 1]}${teamId ? " for this team" : ""}.</div>`}
@@ -133,18 +133,33 @@ export default async function calendar(view, { query }) {
     </div>
     <div class="cal-tools">
       <span class="cal-key"><i class="league"></i>League <i class="cup"></i>Cup${keyDates.length ? html` <i class="key"></i>Key date` : ""}${ctx.byes?.length ? html` <i class="bye"></i>Bye week` : ""}</span>
-      <button class="btn small blue" data-ics>Add to my phone calendar (.ics)</button>
+      <span class="btn-row" style="margin:0"><button type="button" class="btn small ghost" data-today>Today</button>
+      <button class="btn small blue" data-ics>Add to my phone calendar (.ics)</button></span>
     </div>
     <div data-cal></div>
   </div>`);
   draw();
-  // Open on the month asked for (or this month), without the page jumping about.
-  if (month !== months[0]) setTimeout(() => go(month, false), 0);
+  // Round 72 (Rich: "when calendar is clicked can it default to today's date?"): the page opens at today —
+  // or the next day with something on — unless a month was asked for in the address.
+  const goToday = (smooth = false) => {
+    const next = [...view.querySelectorAll("[data-day]")].find((g) => g.dataset.day >= today);
+    if (!next) return go(today.slice(0, 7), smooth);
+    month = next.dataset.day.slice(0, 7); pressed = month; strip(); centreStrip(smooth);
+    const place = (how) => window.scrollTo({ top: Math.max(0, next.getBoundingClientRect().top + window.scrollY - ($(".cal-top", view)?.getBoundingClientRect().bottom ?? 0) - 12), behavior: how });
+    lockUntil = Date.now() + (smooth ? 1200 : 600);
+    place(smooth ? "smooth" : "auto");
+    // The header gets smaller once the page has scrolled, so settle it once more after that.
+    if (!smooth) setTimeout(() => place("auto"), 250);
+    history.replaceState(null, "", `/calendar${teamId ? `?team=${teamId}` : ""}`);
+  };
+  if (query.get("month")) { if (month !== months[0]) setTimeout(() => go(month, false), 0); }
+  else setTimeout(() => goToday(false), 0);
 
   $("[data-team]", view).addEventListener("change", (e) => { teamId = e.target.value; draw(); go(month, false); });
   const onClick = (e) => {
     const mBtn = e.target.closest("[data-month]");
     if (mBtn) return go(mBtn.dataset.month);
+    if (e.target.closest("[data-today]")) return goToday(true);
     const step = e.target.closest("[data-step]");
     if (step) { const next = months[months.indexOf(month) + Number(step.dataset.step)]; if (next) go(next); return; }
     if (e.target.closest("[data-ics]")) downloadIcs(events.filter((x) => shown(x) && Date.parse(x.when) > Date.now() - 864e5), teamId ? ctx.team.get(teamId)?.name : "All matches");

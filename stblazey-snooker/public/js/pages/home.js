@@ -327,7 +327,39 @@ export async function mountLiveStrip(el, user, { mode = "filters" } = {}) {
     el.addEventListener(on, () => { paused = true; }, { passive: true });
     el.addEventListener(off, () => { paused = false; }, { passive: true });
   }
+  // Round 72 (Rich): drag the strip with the mouse to see more (fingers already swipe it). The ‹ › buttons stay.
+  // A drag that moves more than a few pixels doesn't open the card it started on.
+  let drag = null, dragged = false;
+  el.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "touch" || e.button !== 0) return;
+    const row = e.target.closest(".strip-row");
+    if (!row || e.target.closest("select, button")) return;
+    drag = { row, x: e.clientX, left: row.scrollLeft, id: e.pointerId };
+    dragged = false;
+  });
+  el.addEventListener("pointermove", (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x;
+    if (!dragged && Math.abs(dx) < 6) return;
+    if (!dragged) { dragged = true; paused = true; drag.row.classList.add("is-dragging"); try { drag.row.setPointerCapture(e.pointerId); } catch { /* fine */ } }
+    drag.row.scrollLeft = drag.left - dx;
+    e.preventDefault();
+  });
+  const endDrag = () => {
+    if (!drag) return;
+    const row = drag.row; drag = null;
+    if (!dragged) return;
+    row.classList.remove("is-dragging");
+    // Settle on the nearest card, as the arrows do.
+    const step = ($(".strip-card", row)?.offsetWidth ?? 230) + 10;
+    row.scrollTo({ left: Math.round(row.scrollLeft / step) * step, behavior: "smooth" });
+  };
+  el.addEventListener("pointerup", endDrag);
+  el.addEventListener("pointercancel", endDrag);
+  el.addEventListener("dragstart", (e) => { if (e.target.closest(".strip-row")) e.preventDefault(); });
   el.addEventListener("click", (e) => {
+    if (dragged && e.target.closest(".strip-row")) { e.preventDefault(); e.stopPropagation(); dragged = false; return; }
+    dragged = false;
     const b = e.target.closest("[data-strip-move]"); if (b) return move(Number(b.dataset.stripMove));
     const t = e.target.closest("[data-strip-mine]");
     if (t) { try { localStorage.setItem(STRIP_MINE, t.dataset.stripMine); } catch { /* not remembered */ } draw(); }

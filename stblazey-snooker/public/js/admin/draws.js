@@ -1,14 +1,13 @@
 // Admin: entrants, the draw and results for one knockout competition.
 import { html, mount, $, $$, toast, readForm, toLocalInput, fromLocalInput, fmtDate, fmtTime, confirmBox } from "../core/dom.js";
 import { table, save, remove, insertMany, loadCompetitions, replaceDraw, setWalkover } from "../core/api.js";
-import { buildBracket, makeDraw, shuffle, roundName, isEntry, walkoverSide, placeLabel, EMPTY, redrawNextRound, winnerAdvance, firstMatchLosers, drawPlan, drawNextTie, PENDING, inEntry } from "../core/bracket.js";
+import { buildBracket, makeDraw, shuffle, roundName, isEntry, walkoverSide, placeLabel, EMPTY, redrawNextRound, winnerAdvance, firstMatchLosers, drawPlan, drawNextTie, PENDING, inEntry, autoPrelims, maxPrelims, drawShape } from "../core/bracket.js";
 import { slugify } from "../core/schedule.js";
 import { panel, dataTable, urls, shortName, isActivePlayer } from "../core/components.js";
 import { navigate } from "../core/router.js";
 import { friendly } from "./crud.js";
 
-// step (round 59): 1–4 shows just that part, for "Set up a competition step by step" (admin/comp-wizard.js).
-export async function draws(el, { user, step = 0 } = {}) {
+export async function draws(el, { user } = {}) {
   const [data, teams, players, leagues, venues] = await Promise.all([
     loadCompetitions(), table("teams", "name"), table("players", "full_name"), table("leagues", "sort"), table("venues", "name"),
   ]);
@@ -26,7 +25,7 @@ export async function draws(el, { user, step = 0 } = {}) {
   const liveDone = c.draw_live?.status === "done" ? c.draw_live : null;
   const entryName = (id) => entries.find((e) => e.id === id)?.name ?? "–";
   const inHat = live ? entries.filter((e) => !live.log.some((t) => [t.a, t.b].includes(e.id))) : [];
-  const redraw = () => navigate(step ? location.pathname + location.search : `/admin/draws?c=${c.id}`, { replace: true });
+  const redraw = () => navigate(`/admin/draws?c=${c.id}`, { replace: true });
   // Only the leagues this competition is open to (all of them when none are chosen).
   const open = c.league_ids?.length ? leagues.filter((l) => c.league_ids.includes(l.id)) : leagues;
   const openIds = new Set(open.map((l) => l.id));
@@ -43,6 +42,15 @@ export async function draws(el, { user, step = 0 } = {}) {
   // Round 56 (Rich: "with the doubles competition, how do I pair up who is with who?"): a doubles entrant is a pair —
   // pick Player 1 and Player 2, and both get the pair's results and their own breaks. (Team Pairs enters teams.)
   const pairMode = c.kind === "Doubles" && !teamFirst;
+  // Round 72 (Rich: "competitions, we don't have seeds — but other leagues might"): seeds only when the competition is ticked as seeded.
+  const seeded = !!c.seeded;
+  // Round 72: how many pre-qualifier matches — worked out from the number of entrants, and can be changed.
+  const prelimsNow = autoPrelims(entries.length);
+  const shapeHtml = (n, p) => {
+    const shape = drawShape(n, p);
+    if (!shape.length) return html`<p class="muted" style="margin:0">Add at least two entrants first.</p>`;
+    return html`<ol class="draw-shape">${shape.map((r, i) => html`<li><b>${r.name}</b><span>${r.matches} match${r.matches === 1 ? "" : "es"}${i === 0 && r.byes ? html` · <em>${r.byes} straight through to ${shape[1]?.name ?? "the next round"}</em>` : r.byes ? html` · <em>${r.byes} bye${r.byes === 1 ? "" : "s"}</em>` : ""}</span></li>`)}</ol>`;
+  };
   const pickable = [
     ...(c.kind === "Singles" || pairMode ? [] : okTeams.map((t) => ({ link: `team:${t.id}`, name: t.name, sub: leagues.find((l) => l.id === t.league_id)?.name ?? "Team", group: "Teams", taken: entries.some((e) => e.team_id === t.id) }))),
     ...(c.kind === "Team" ? [] : okPlayers.map((p) => ({ link: `player:${p.id}`, name: p.full_name, sub: teams.find((t) => t.id === p.team_id)?.name ?? "No team", group: "Players", taken: entries.some((e) => inEntry(e, p.id)) }))),
@@ -55,7 +63,6 @@ export async function draws(el, { user, step = 0 } = {}) {
   const plateEntrants = (main, already = []) => firstMatchLosers(bracketOf(main)).filter((e) => !already.some((x) => sameEntrant(x, e)));
 
   mount(el, html`<div class="stack" id="draws-root">
-    ${step ? "" : html`<a class="nw-invite" href="/admin/comp_wizard?c=${c.id}&step=1"><b>🏆 Set up a competition step by step</b><span>One step at a time: the competition, the details, entries, entrants, the draw, deadlines and dates.</span></a>`}
     <div class="toolbar">
       <label style="font-weight:700">Competition
         <select data-pick>${data.competitions.map((x) => html`<option value="${x.id}" ${x.id === c.id ? "selected" : ""}>${x.name}</option>`)}</select></label>
@@ -94,28 +101,34 @@ export async function draws(el, { user, step = 0 } = {}) {
         </div>
       </form>
       ${dataTable([
-        { label: "Seed", cell: (e) => e.seed || "–", cls: "num" },
+        ...(seeded ? [{ label: "Seed", cell: (e) => e.seed || "–", cls: "num" }] : []),
         { label: "Name", cell: (e) => html`<b>${e.name}</b>` },
         { label: pairMode ? "Players" : "Linked to", cell: (e) => teams.find((t) => t.id === e.team_id)?.name ?? ([e.player_id, e.partner_id].filter(Boolean).map((id) => players.find((p) => p.id === id)?.full_name).filter(Boolean).join(" & ") || (pairMode ? html`<span class="muted">Not linked — remove and add again as a pair</span>` : "–")) },
         { label: "", cls: "right", cell: (e) => html`<button class="btn small" data-remove-entry="${e.id}">Remove</button>` },
-      ], entries, { empty: "No entrants yet." })}`, { cls: "dstep-1" })}
+      ], entries, { empty: "No entrants yet." })}`)}
 
     ${panel("2. Make the draw", html`<div class="form">
-      <p style="margin-top:0">Entrants are seeded in the order listed above (seed 1 first). When the number of entrants isn't 2, 4, 8, 16 or 32,
-        the top seeds get byes — e.g. 10 entrants = 2 first-round matches and 6 byes, leaving 8 for the quarter-finals.
-        You can move anyone (or a bye) by hand in step 4.</p>
-      <p><b>This competition's draw:</b> ${c.draw_mode === "redraw"
+      <div class="prelim-box">
+        <label class="prelim-field">Pre-qualifier matches
+          <input type="number" name="prelims" min="0" max="${maxPrelims(entries.length)}" value="${prelimsNow}" ${entries.length < 3 ? "disabled" : ""}>
+          <small class="muted">Worked out from the ${entries.length} entrant${entries.length === 1 ? "" : "s"}${prelimsNow ? ` (${entries.length} − ${entries.length - prelimsNow} = ${prelimsNow})` : ""} — change it if you need to.</small></label>
+        <div class="prelim-shape"><small class="muted">How the draw will look</small><div data-shape>${shapeHtml(entries.length, prelimsNow)}</div></div>
+      </div>
+      <p class="muted" style="margin:0">With pre-qualifiers, the players drawn last play them; everyone else goes straight into the next round (no long list of byes).
+        ${seeded ? "Seeded draw: the entrants at the bottom of the list above play the pre-qualifiers and the top seeds are kept apart." : ""}
+        You can still move anyone by hand in step 4.</p>
+      <p style="margin:0"><b>This competition's draw:</b> ${c.draw_mode === "redraw"
         ? "a fresh random draw every round (use “Draw next round” below when a round is finished)."
         : "winners follow the bracket."} Change this under Competitions → Edit.</p>
       ${hasResults ? html`<div class="notice error">Results have already been entered. Making a new draw will delete them.</div>` : ""}
       ${live ? "" : html`<div class="btn-row">
-        <button class="btn blue" data-draw="random" ${entries.length < 2 ? "disabled" : ""}>Random draw</button>
-        <button class="btn secondary" data-draw="seeded" ${entries.length < 2 ? "disabled" : ""}>Seeded draw (keep order)</button>
+        <button class="btn blue" data-draw="random" ${entries.length < 2 ? "disabled" : ""}>Make the draw (random)</button>
+        ${seeded ? html`<button class="btn secondary" data-draw="seeded" ${entries.length < 2 ? "disabled" : ""}>Seeded draw (keep order)</button>` : ""}
       </div>`}
 
       <h4 class="form-heading">Live draw<small>Make the draw in front of everyone: each press draws the next tie at random, and it appears on the public draw page, in the home page strip and as a pop-up as it happens. Starting the draw closes the entry form for this competition.</small></h4>
       ${live ? html`<div class="live-ctl">
-          <p><span class="live-dot">Live</span> <b>The draw is live.</b> Drawn by ${live.by} · witnessed by ${live.witness}. <b>${live.log.length}</b> of ${drawPlan(entries.length).length} ties drawn.</p>
+          <p><span class="live-dot">Live</span> <b>The draw is live.</b> Drawn by ${live.by} · witnessed by ${live.witness}. <b>${live.log.length}</b> of ${drawPlan(entries.length, live.prelims ?? null).length} ties drawn.</p>
           ${live.log.length ? html`<p class="live-last">Last drawn: <b>${entryName(live.log.at(-1).a ?? live.log.at(-1).b)}</b> ${live.log.at(-1).a && live.log.at(-1).b ? html`v <b>${entryName(live.log.at(-1).b)}</b>` : "— a bye"}</p>` : ""}
           <p class="muted">Still in the hat (${inHat.length}): ${inHat.map((e) => e.name).join(", ") || "nobody"}</p>
           <div class="btn-row"><button type="button" class="btn green live-next" data-live-next>Draw the next tie</button>
@@ -130,9 +143,9 @@ export async function draws(el, { user, step = 0 } = {}) {
           <div class="btn-row"><button type="button" class="btn secondary" data-save-draw-at>Save the date</button>
             <button type="button" class="btn green" data-live-start ${entries.length < 2 ? "disabled" : ""}>Start the live draw now</button>
             <a class="btn ghost" href="/draw/${c.slug}">Public draw page</a></div></div>`}
-      </div>`, { cls: "dstep-2" })}
+      </div>`)}
 
-    ${c.draw_mode === "redraw" && b.totalRounds > 1 ? html`<div class="btn-row dstep-2">${b.rounds.slice(0, -1).map((list, i) => {
+    ${c.draw_mode === "redraw" && b.totalRounds > 1 ? html`<div class="btn-row">${b.rounds.slice(0, -1).map((list, i) => {
       const done = list.every((m) => m.winner !== PENDING);
       const nextSet = b.rounds[i + 1].some((m) => m.row.entry_a || m.row.entry_b);
       return html`<button class="btn ${done && !nextSet ? "blue" : "ghost"}" data-redraw="${i + 1}" ${done ? "" : "disabled"}>
@@ -145,11 +158,12 @@ export async function draws(el, { user, step = 0 } = {}) {
       <div class="deadline-grid">${b.rounds.map((_, i) => html`<fieldset class="deadline-round"><legend>${roundName(i + 1, b.totalRounds, b)}</legend>
         <label>Play by <input type="date" name="round_${i + 1}" value="${c.round_deadlines?.[i + 1] ?? ""}"></label>
         <label>Contact by <input type="date" name="contact_${i + 1}" value="${c.round_contact?.[i + 1] ?? ""}"></label></fieldset>`)}</div>
-      <div class="btn-row form-actions"><button class="btn green">Save deadlines</button></div></form>`, { cls: "dstep-3" }) : ""}
+      <div class="btn-row form-actions"><button class="btn green">Save deadlines</button></div></form>`) : ""}
 
-    ${b.totalRounds ? panel("4. Pairings, dates & results", html`<div class="table-scroll"><table class="data results-edit">
-      <thead><tr><th>Round</th><th class="right">Home / first named</th><th class="num">Score</th><th>Away / second named</th><th>Date & time</th><th>Venue</th><th></th></tr></thead>
-      <tbody>${b.rounds.flat().map((m) => {
+    ${b.totalRounds ? panel("4. Pairings, dates & results", html`
+      <p class="muted dm-intro">Each round on its own. Type a score and <b>Save</b>, or press <b>Score live</b> to score a match frame by frame — everyone following on the website sees it as it happens. Entrants who go straight through (byes) are tucked away under each round.</p>
+      ${b.rounds.map((list, ri) => {
+        const matchRow = (m) => {
         // Who's in each slot: round 1 can be anyone or a bye; later rounds default to "the winner".
         // Each side: a team / player, a bye, or (round 41) "the winner of that match" — for draws made on paper
         // before the round before has finished ("St Neot or Mevagissey C").
@@ -168,30 +182,45 @@ export async function draws(el, { user, step = 0 } = {}) {
             ${m.round > 1 && !m.row[key] && !m.row[`bye_${side}`] ? html`<small class="muted">${isEntry(m[side]) ? b.entryById.get(m[side]).name : placeLabel(b, m, side) ?? "to be decided"}</small>` : ""}`;
         };
         const ready = isEntry(m.a) && isEntry(m.b);
-        return html`<tr data-row="${m.row.id ?? ""}" data-round="${m.round}" data-slot="${m.slot}">
-          <td class="strong">${roundName(m.round, b.totalRounds, b)}${m.row.status === "in_progress" ? html` <span class="live-dot">Live</span>` : m.row.status === "postponed" ? html` <span class="status postponed">postponed</span>` : ""}</td>
-          <td class="right">${pickSide("a")}</td>
-          <td class="num" style="white-space:nowrap">${m.isBye ? html`<span class="muted">bye</span>` : html`
+        const label = `${roundName(m.round, b.totalRounds, b)}: ${isEntry(m.a) ? b.entryById.get(m.a).name : "?"} v ${isEntry(m.b) ? b.entryById.get(m.b).name : m.isBye ? "bye" : "?"}`;
+        return html`<tr data-row="${m.row.id ?? ""}" data-round="${m.round}" data-slot="${m.slot}" data-label="${label}" class="dm ${m.isBye ? "dm-bye" : ""}">
+          <td class="dm-a">${m.row.status === "in_progress" ? html`<span class="live-dot">Live</span> ` : m.row.status === "postponed" ? html`<span class="status postponed">postponed</span> ` : ""}${pickSide("a")}</td>
+          <td class="dm-score">${m.isBye ? html`<span class="muted">bye</span>` : html`
             <input type="number" min="0" max="99" name="score_a" value="${m.row.score_a ?? ""}" style="width:58px" ${ready && !walkoverSide(m.row) ? "" : "disabled"}> –
             <input type="number" min="0" max="99" name="score_b" value="${m.row.score_b ?? ""}" style="width:58px" ${ready && !walkoverSide(m.row) ? "" : "disabled"}>
             ${ready ? html`<select name="walkover" class="wo-pick" aria-label="Walkover" title="Not played: give the match to one side">
               <option value="">No walkover</option>
               <option value="a" ${walkoverSide(m.row) === "a" ? "selected" : ""}>Walkover to ${b.entryById.get(m.a)?.name}</option>
               <option value="b" ${walkoverSide(m.row) === "b" ? "selected" : ""}>Walkover to ${b.entryById.get(m.b)?.name}</option></select>` : ""}`}</td>
-          <td>${pickSide("b")}${m.isBye ? "" : html`<label class="home-switch" title="The home player didn't contact their opponent in time: the second-named is now at home"><input type="checkbox" name="home_switched" ${m.row.home_switched ? "checked" : ""}> now at home</label>`}</td>
-          <td>${m.isBye ? "" : html`<input type="datetime-local" name="starts_at" value="${toLocalInput(m.row.starts_at)}">
+          <td class="dm-b">${pickSide("b")}${m.isBye ? "" : html`<label class="home-switch" title="The home player didn't contact their opponent in time: the second-named is now at home"><input type="checkbox" name="home_switched" ${m.row.home_switched ? "checked" : ""}> now at home</label>`}</td>
+          <td class="dm-when">${m.isBye ? "" : html`<span class="dm-l">Date & time</span><input type="datetime-local" name="starts_at" value="${toLocalInput(m.row.starts_at)}">
             ${ready && !walkoverSide(m.row) && m.row.status !== "completed" ? html`<label class="home-switch" title="Not played on the day: shows as postponed until it is rearranged"><input type="checkbox" name="postponed" ${m.row.status === "postponed" ? "checked" : ""}> postponed</label>` : ""}`}</td>
-          <td>${m.isBye ? "" : html`<select name="venue_id"><option value="">–</option>${venues.map((v) => html`<option value="${v.id}" ${v.id === m.row.venue_id ? "selected" : ""}>${v.name}</option>`)}</select>`}</td>
-          <td style="white-space:nowrap">${!m.row.id ? "" : html`<button class="btn small green" data-save-row>Save</button>
-            ${ready ? html`<a class="btn small ghost" href="/cup-scorecard/${m.row.no ?? m.row.id}">Scorecard</a>` : ""}`}</td>
+          <td class="dm-venue">${m.isBye ? "" : html`<span class="dm-l">Venue</span><select name="venue_id"><option value="">–</option>${venues.map((v) => html`<option value="${v.id}" ${v.id === m.row.venue_id ? "selected" : ""}>${v.name}</option>`)}</select>`}</td>
+          <td class="dm-act">${!m.row.id ? "" : html`<button class="btn small green" data-save-row>Save</button>
+            ${ready ? html`<a class="btn small ${m.row.status === "completed" || walkoverSide(m.row) ? "ghost" : "blue"}" href="/cup-scorecard/${m.row.no ?? m.row.id}" title="Score it frame by frame — everyone on the website sees it live">${m.row.status === "completed" ? "Scorecard" : m.row.status === "in_progress" ? "Carry on scoring live" : "Score live"}</a>` : ""}`}</td>
         </tr>`;
-      })}</tbody></table></div>
+        };
+        const real = list.filter((m) => !m.isBye), byes = list.filter((m) => m.isBye);
+        const through = byes.filter((m) => isEntry(m.winner));
+        const name = roundName(ri + 1, b.totalRounds, b);
+        const played = real.filter((m) => m.played).length;
+        return html`<section class="dm-round" data-dm-round="${ri + 1}">
+          <h4 class="dm-round-h">${name}<small>${real.length ? `${played} of ${real.length} played` : "no matches"}${c.round_deadlines?.[ri + 1] ? ` · play by ${fmtDate(c.round_deadlines[ri + 1])}` : ""}</small></h4>
+          <table class="data results-edit dm-table">
+            <tbody>${real.map(matchRow)}</tbody>
+            ${byes.length ? html`<tbody class="dm-byes" hidden>${byes.map(matchRow)}</tbody>
+            <tbody><tr class="dm-byes-toggle"><td><button type="button" class="btn small ghost" data-show-byes aria-expanded="false">${through.length
+              ? `${through.length} straight through to ${roundName(ri + 2, b.totalRounds, b)} (bye${through.length === 1 ? "" : "s"}) — show / change`
+              : `${byes.length} empty place${byes.length === 1 ? "" : "s"} — show / change`}</button>
+              ${through.length && through.length <= 40 ? html`<small class="muted dm-through">${through.map((m) => b.entryById.get(m.winner)?.name).filter(Boolean).join(", ")}</small>` : ""}</td></tr></tbody>` : ""}
+          </table></section>`;
+      })}
       <div class="btn-row save-all-row"><button type="button" class="btn green" data-save-all>Save all changes</button><small class="muted" data-dirty-count>Change as many matches as you like, then save them all at once.</small></div>
-      <p class="muted" style="padding:0 14px">Type a final score and press Save (or <b>Save all changes</b> under the table), or use <b>Scorecard</b> to score it frame by frame live (with breaks).
+      <p class="muted" style="padding:0 14px">Type a final score and press Save (or <b>Save all changes</b>), or use <b>Score live</b> to score it frame by frame live (with breaks) — on a phone or tablet at the table.
         Not played? Choose <b>Walkover to …</b> under the score, or tick <b>postponed</b> under the date — then save.
         <br><b>Drawing a round on paper before the one before it has finished?</b> Set each side to a team, <b>Bye</b>, or <b>Winner of …</b> a match
         (it shows as “St Neot or Mevagissey C” and the winner drops in by itself when that result goes in).
-        Winners move into the next round automatically. Changing a pairing by hand overrides the bracket for that match.</p>`, { cls: "dstep-4" }) : ""}
+        Winners move into the next round automatically. Changing a pairing by hand overrides the bracket for that match.</p>`) : ""}
   </div>`);
 
   const root = $("#draws-root");
@@ -212,6 +241,13 @@ export async function draws(el, { user, step = 0 } = {}) {
     for (const n of ["score_a", "score_b"]) { const box = e.target.closest("tr").querySelector(`[name=${n}]`); box.disabled = !!e.target.value; if (e.target.value) box.value = ""; }
   });
   const guard = async (fn) => { try { await fn(); } catch (err) { toast(friendly(err), "error"); } };
+  // Round 72: the number of pre-qualifier matches chosen in step 2 (the shape underneath follows it as it's typed).
+  const prelimsChosen = () => {
+    const box = $("[name=prelims]", root);
+    const n = Math.round(Number(box?.value));
+    return box && box.value !== "" && Number.isFinite(n) ? Math.max(0, Math.min(maxPrelims(entries.length), n)) : prelimsNow;
+  };
+  $("[name=prelims]", root)?.addEventListener("input", () => { const shape = $("[data-shape]", root); if (shape) mount(shape, shapeHtml(entries.length, prelimsChosen())); });
 
   // Save one row of "Pairings, dates & results". Throws with a readable message when something isn't right;
   // returns what to say when it worked. Used by each row's Save button and by Save all.
@@ -337,8 +373,8 @@ export async function draws(el, { user, step = 0 } = {}) {
       const ok = await confirmBox(`${entries.length} entrants go into the hat. Each press of “Draw the next tie” draws at random and shows it to everyone straight away — it can't be re-drawn quietly.${rows.length ? "\n\nThe draw that's there now, and any results, will be replaced." : ""}`,
         { title: `Start the ${c.name} draw?`, ok: "Start the live draw" });
       if (!ok) return;
-      await replaceDraw(c.id, makeDraw(entries.map(() => null)));
-      await save("competitions", { id: c.id, entries_open: false, draw_live: { status: "live", round: 1, by: user?.profile?.full_name || user?.email || "League official", witness, started_at: new Date().toISOString(), log: [] } });
+      await replaceDraw(c.id, makeDraw(entries.map(() => null), { prelims: prelimsChosen() }));
+      await save("competitions", { id: c.id, entries_open: false, draw_live: { status: "live", round: 1, prelims: prelimsChosen(), by: user?.profile?.full_name || user?.email || "League official", witness, started_at: new Date().toISOString(), log: [] } });
       toast("The draw is live"); return redraw();
     }
     if (t.matches("[data-live-next]")) {
@@ -392,8 +428,8 @@ export async function draws(el, { user, step = 0 } = {}) {
     }
     if (t.matches("[data-draw]")) {
       if (!confirm(hasResults ? "Make a new draw? All results for this competition will be deleted." : "Make the draw now?")) return;
-      const order = t.dataset.draw === "random" ? shuffle(entries) : entries;
-      await replaceDraw(c.id, makeDraw(order.map((x) => x.id)));
+      const order = t.dataset.draw === "random" || !seeded ? shuffle(entries) : entries;
+      await replaceDraw(c.id, makeDraw(order.map((x) => x.id), { prelims: prelimsChosen() }));
       // This draw wasn't made live; and once there is a draw, the entry form closes for this competition.
       if (c.draw_live || c.entries_open) await save("competitions", { id: c.id, draw_live: null, entries_open: false });
       toast("Draw made"); redraw();
@@ -408,6 +444,12 @@ export async function draws(el, { user, step = 0 } = {}) {
       }
       toast("Next round drawn"); redraw();
     }
+    // Round 72: the byes under each round open and close.
+    if (t.matches("[data-show-byes]")) {
+      const body = t.closest("table").querySelector(".dm-byes"), open = body.hidden;
+      body.hidden = !open; t.setAttribute("aria-expanded", String(open));
+      return;
+    }
     if (t.matches("[data-save-row]")) {
       t.disabled = true;
       try { const msg = await saveRow(t.closest("tr")); toast(msg); redraw(); }
@@ -421,7 +463,7 @@ export async function draws(el, { user, step = 0 } = {}) {
       const problems = [];
       for (const tr of changed) {
         try { await saveRow(tr); tr.classList.remove("dirty"); }
-        catch (err) { problems.push(`${tr.querySelector("td")?.textContent.trim()}: ${friendly(err)}`); tr.classList.add("row-error"); }
+        catch (err) { problems.push(`${tr.dataset.label ?? "A match"}: ${friendly(err)}`); tr.classList.add("row-error"); }
       }
       t.disabled = false;
       if (problems.length) return toast(`${changed.length - problems.length} saved. Not saved — ${problems.join(" · ")}`, "error");

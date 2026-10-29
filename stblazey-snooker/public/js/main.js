@@ -367,7 +367,7 @@ async function refreshShell() {
 setNavigator(navigate);
 setShellRefresher(refreshShell);
 
-async function renderRoute({ quiet = false } = {}) {
+async function renderRoute() {
   if (typeof cleanup === "function") cleanup();
   cleanup = null;
   document.querySelector(".edit-page")?.remove();
@@ -386,15 +386,10 @@ async function renderRoute({ quiet = false } = {}) {
   document.body.dataset.page = page;
   view.dataset.section = SECTION[page] ?? "";
   document.documentElement.dataset.section = page === "home" ? "home" : SECTION[page] ?? "";   // the menu underlines this part (calm look)
-  // A quiet refresh (coming back to the website after a long time away) keeps the page on screen while the new one
-  // is made, and draws it in one go: no blank page, no loading screen, no jump.
-  if (quiet) { view.style.minHeight = `${view.offsetHeight}px`; mount($("#side"), ""); }
-  else {
-    mount(view, "");
-    mount($("#side"), ""); $("#shell").classList.remove("has-side");
-    loaderOn();   // the black loading screen appears only if this takes more than a moment
-    trackPageView(location.pathname);
-  }
+  mount(view, "");
+  mount($("#side"), ""); $("#shell").classList.remove("has-side");
+  loaderOn();   // the black loading screen appears only if this takes more than a moment
+  trackPageView(location.pathname);
   try {
     let [mod, user, site] = await Promise.all([import(`./pages/${page}.js`), getUser(), settings()]);
     // Two-step login still to do (Security → Two-step login): every page asks for the code first.
@@ -611,11 +606,9 @@ document.addEventListener("keydown", (e) => {
 });
 
 // ── Keeping it up to date (Rich, round 53: the home-screen app showed old news until it was closed) ──
-// Round 59 (Neil: "the auto refreshing problem still persists"): the page is no longer redrawn every 5 minutes, or
-// after only 30 seconds away. While the website is open, live scores, results, the strip and notifications update on
-// their own (live updates), so nothing is redrawn under the reader. Only when someone comes back after 20 minutes or
-// more away (a phone app left open overnight) is the page fetched again — quietly, in place, where they were. Never
-// while someone is typing, in a form, in the dashboard or scoring a match.
+// People rarely close the app — they switch away and come back. So when the website comes back on screen after
+// more than 30 seconds away, and every 5 minutes while it is open, the page fetches everything again and is drawn
+// afresh where the reader was. Never while someone is typing, in a form, in the dashboard or scoring a match.
 let awayAt = 0;
 const busy = () => !!document.querySelector("input:focus, textarea:focus, select:focus, [contenteditable]:focus, dialog[open], .guide-tip")
   || document.documentElement.classList.contains("menu-open") || document.querySelector('[data-drop][aria-expanded="true"]')
@@ -624,12 +617,13 @@ async function quietRefresh() {
   if (busy()) return;
   const y = window.scrollY;
   invalidate();
-  await renderRoute({ quiet: true }).catch(() => {});
-  $("#view").style.minHeight = "";
+  await Promise.all([drawHeader(), drawFooter()]).catch(() => {});
+  await renderRoute().catch(() => {});
   window.scrollTo(0, y);
 }
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) { awayAt = Date.now(); return; }
-  if (awayAt && Date.now() - awayAt > 20 * 60e3) quietRefresh();
+  if (awayAt && Date.now() - awayAt > 30e3) quietRefresh();
   awayAt = 0;
 });
+setInterval(() => { if (!document.hidden) quietRefresh(); }, 5 * 60e3);

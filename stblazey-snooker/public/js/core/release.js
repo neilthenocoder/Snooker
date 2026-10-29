@@ -4,14 +4,18 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.52.0";
+export const SITE_VERSION = "1.51.0";
 export const CHANGES = [
-  "Pictures: 16:9 everywhere (one upload fits every place it appears); Featured news: the three stories beside the big one now match its height exactly",
-  "The website no longer redraws itself every few minutes: live scores and results update by themselves, and only after 20 minutes away is the page refreshed — quietly, in place, with no loading screen",
-  "Admin → Competitions → Set up step by step: the competition, the details, entries, entrants, the draw, deadlines, dates — one step at a time, with a checklist at the end",
-  "Home page featured competition: both names in each match left-aligned; the round line isn't repeated",
-  "Page width: content up to 1280px (was 1112px) with space either side — more room for tables and results without stretching edge to edge (the dashboard stays wider)",
-  "Picture shapes: 16:9 for the big banner pictures (home page banner, news stories, a competition's page); 4:3 for everything else (news cards, competition boxes, venues, galleries, Hall of Fame, shop, marketplace, pop-up adverts) — the upload boxes in the dashboard say which",
+  "Competitions: the number of pre-qualifier matches is worked out from the entrants (18 entrants → 2 pre-qualifiers, 16 in Round 1) and can be changed before making the draw; Admin → Draws shows how the draw will look, round by round",
+  "Rounds are named Pre-qualifier, Round 1, Round 2, Quarter-finals, Semi-finals, Final — the round after the pre-qualifier is Round 1",
+  "Admin → Draws, step 4: one block per round, each match on two lines (no scrolling sideways), and the entrants who go straight through are tucked away under a button instead of a long list of byes",
+  "No seeds unless a competition is ticked as Seeded (Admin → Competitions → Edit): the Seed column and Seeded draw button only show then (run schema.sql — version 37)",
+  "Running a competition is easier to find: a green Manage button for each competition in Admin → Competitions, an Admin bar on the competition's own page (Manage, Edit details, Score a match live) and a Score live button on every match",
+  "Handicap doubles: each pair's handicaps are added together and the pair with the higher total starts every frame on the difference (+58 − (−19) = 77); the other pair starts on 0. The scorecard shows the sum",
+  "Home page Live & upcoming strip: drag it with the mouse to see more (the ‹ › buttons stay)",
+  "News: the three stories beside the featured one are the same height as it",
+  "The ★ My Snooker button shows on computers too, not just phones",
+  "The calendar opens at today (or the next day with something on), with a Today button",
   "Nothing can be sent to the league without logging in: support requests, competition entries, CueViews and Hall of Fame memories ask you to log in first, and come back to the page afterwards (the database refuses them too — run schema.sql, version 36). Reading the website never needs a login",
   "Doubles: a pair is two players — Admin → Draws & results asks for Player 1 and Player 2 and names the pair for you; entries from the entry form keep both players. Both players get the pair's results and trophies on their own page, and on the scorecard both are filled in, each with their own breaks",
   "Help & support: a Contact the league form (/support — from Help, the footer and the account menu). People choose what it is about and it goes to the roles that look after that kind of request; they get a reference number, an email and a private link to follow it and reply (run schema.sql — version 34)",

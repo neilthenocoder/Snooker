@@ -14,15 +14,55 @@ export const entryPlayers = (e) => (e ? [e.player_id, e.partner_id].filter(Boole
 export const inEntry = (e, playerId) => !!playerId && entryPlayers(e).includes(playerId);
 export const roundsFor = (n) => Math.max(1, Math.ceil(Math.log2(Math.max(2, n))));
 
+/**
+ * Is this round a pre-qualifier? Rich, round 44: a round that is mostly byes (only a few sides have to play to get
+ * through, like this season's Team Handicap round 2). Round 72: the first round of a draw made with pre-qualifiers.
+ */
+export function isPrelimRound(bracket, round) {
+  const list = bracket?.rounds?.[round - 1];
+  if (!list?.length || round >= (bracket.totalRounds ?? 0)) return false;   // never the final
+  // Only places with someone in them count (a slot that is empty on both sides is nobody's bye).
+  const byes = list.filter((m) => m.isBye && m.winner !== EMPTY).length, real = list.filter((m) => !m.isBye).length;
+  return real > 0 && byes >= real;
+}
+
 export function roundName(round, totalRounds, bracket = null) {
   const fromEnd = totalRounds - round;
+  if (isPrelimRound(bracket, round)) return "Pre-qualifier";
   const named = ["Final", "Semi-finals", "Quarter-finals"][fromEnd];
   if (named) return named;
-  // Rich, round 44: a round that is mostly byes (only a few sides have to play to get through, like this season's
-  // Team Handicap round 2) is a "Pre-qualifier".
-  const list = bracket?.rounds?.[round - 1];
-  if (list?.length) { const byes = list.filter((m) => m.isBye).length; if (byes > list.length - byes && byes < list.length) return "Pre-qualifier"; }
-  return `Round ${round}`;
+  // Round 72 (Rich): after the pre-qualifier the numbering starts again — Pre-qualifier, Round 1, Round 2, Quarter-finals…
+  let n = 0;
+  for (let r = 1; r <= round; r++) if (!isPrelimRound(bracket, r)) n++;
+  return `Round ${n}`;
+}
+
+/**
+ * Round 72 (Rich: "choose the amount of pre-qualifiers… some way of knowing this based on entrants"):
+ * how many pre-qualifier matches a field needs so that what is left is 2, 4, 8, 16 or 32 —
+ * 18 entrants → 2 pre-qualifiers (4 players), 14 straight through, 16 in Round 1. A power of two needs none.
+ */
+export function autoPrelims(n) {
+  if (n < 3) return 0;
+  const below = 2 ** Math.floor(Math.log2(n));
+  return below === n ? 0 : n - below;
+}
+
+/** The most pre-qualifier matches a field can have (everyone plays one). */
+export const maxPrelims = (n) => Math.floor(n / 2);
+
+/**
+ * The shape of a draw in words, round by round, for n entrants with `prelims` pre-qualifier matches:
+ * [{ name: "Pre-qualifier", matches: 2, players: 4, byes: 14 }, { name: "Round 1", matches: 8, players: 16 }, …]
+ */
+export function drawShape(n, prelims = autoPrelims(n)) {
+  if (n < 2) return [];
+  const rows = makeDraw(Array.from({ length: n }, (_, i) => `e${i}`), { prelims });
+  const fake = buildBracket(Array.from({ length: n }, (_, i) => ({ id: `e${i}`, name: "" })), rows);
+  return fake.rounds.map((list, i) => {
+    const real = list.filter((m) => !m.isBye);
+    return { name: roundName(i + 1, fake.totalRounds, fake), matches: real.length, players: real.length * 2, byes: list.filter((m) => m.isBye && m.winner !== EMPTY).length };
+  }).filter((r) => r.matches);
 }
 
 /** Standard tournament seeding positions: 8 → [1,8,4,5,2,7,3,6], so seeds 1 and 2 can only meet in the final. */
@@ -36,24 +76,50 @@ function seedOrder(size) {
  * Build the match rows for a fresh draw. Entries are treated as seeds in the
  * order given (shuffle first for a random draw). When the field isn't a power
  * of two, the top seeds get the byes and are kept apart until later rounds.
+ *
+ * Round 72: `prelims` — how many pre-qualifier matches (left out: worked out from the number of entrants,
+ * see autoPrelims). The last 2 × prelims entrants in the order play them; everyone else goes straight
+ * into Round 1. If what is left isn't 2, 4, 8, 16 or 32, the top seeds get byes in Round 1 too.
  */
-export function makeDraw(entryIds) {
-  const rounds = roundsFor(entryIds.length);
+export function makeDraw(entryIds, { prelims = null } = {}) {
+  const n = entryIds.length;
+  const P = prelims == null ? autoPrelims(n) : Math.max(0, Math.min(maxPrelims(n), Math.round(Number(prelims) || 0)));
+  const main = n - P;                                   // sides in Round 1 (after the pre-qualifiers)
+  const mainRounds = roundsFor(main);
+  const M = 2 ** mainRounds;                            // Round 1's size
+  const rounds = P ? mainRounds + 1 : roundsFor(n);
   const size = 2 ** rounds;
-  const order = seedOrder(size);
   const rows = [];
-  for (let slot = 0; slot < size / 2; slot++) {
-    rows.push({ round: 1, slot, entry_a: entryIds[order[slot * 2] - 1] ?? null, entry_b: entryIds[order[slot * 2 + 1] - 1] ?? null });
+  if (!P) {
+    const order = seedOrder(size);
+    for (let slot = 0; slot < size / 2; slot++)
+      rows.push({ round: 1, slot, entry_a: entryIds[order[slot * 2] - 1] ?? null, entry_b: entryIds[order[slot * 2 + 1] - 1] ?? null });
+  } else {
+    // Round 1 (the main draw) by seed; its places are filled from the pre-qualifier round, one match per place.
+    const order = seedOrder(M), direct = n - 2 * P;
+    for (let slot = 0; slot < M; slot++) {
+      const seed = order[slot];
+      if (seed <= direct) rows.push({ round: 1, slot, entry_a: entryIds[seed - 1] ?? null, entry_b: null });
+      else if (seed <= main) { const j = seed - direct; rows.push({ round: 1, slot, entry_a: entryIds[direct + j - 1] ?? null, entry_b: entryIds[n - j] ?? null }); }
+      else rows.push({ round: 1, slot, entry_a: null, entry_b: null });
+    }
   }
   for (let round = 2; round <= rounds; round++)
     for (let slot = 0; slot < size / 2 ** round; slot++) rows.push({ round, slot, entry_a: null, entry_b: null });
-  // Entrants with a bye are written straight into round 2, so the database
-  // always knows who is in each match (captains' permissions rely on it).
-  for (const r of rows.filter((x) => x.round === 1)) {
-    const through = r.entry_a && !r.entry_b ? r.entry_a : !r.entry_a && r.entry_b ? r.entry_b : null;
-    if (!through || rounds < 2) continue;
-    const next = rows.find((x) => x.round === 2 && x.slot === Math.floor(r.slot / 2));
-    next[r.slot % 2 ? "entry_b" : "entry_a"] = through;
+  // Entrants with a bye are written straight into the next round, so the database
+  // always knows who is in each match (captains' permissions rely on it). A match with nobody
+  // in it (an empty place) gives the side it would have met a bye in the round after.
+  const at = (r, s) => rows.find((x) => x.round === r && x.slot === s);
+  const empty = new Set();   // "round:slot" with nobody in it at all
+  for (let round = 1; round < rounds; round++) {
+    for (const r of rows.filter((x) => x.round === round)) {
+      const sideEmpty = (sd) => (round === 1 ? !r[`entry_${sd}`] : empty.has(`${round - 1}:${r.slot * 2 + (sd === "b" ? 1 : 0)}`));
+      const aE = sideEmpty("a"), bE = sideEmpty("b");
+      if (aE && bE) { empty.add(`${round}:${r.slot}`); continue; }
+      const through = aE && r.entry_b ? r.entry_b : bE && r.entry_a ? r.entry_a : null;
+      if (!through) continue;
+      at(round + 1, Math.floor(r.slot / 2))[r.slot % 2 ? "entry_b" : "entry_a"] = through;
+    }
   }
   return rows;
 }
@@ -248,8 +314,8 @@ export function firstMatchLosers(bracket) {
  * only) — the same ones makeDraw() would give, spread through the bracket.
  * Returns [{ slot, sides: ["a", "b"] | ["a"] | ["b"] }].
  */
-export function drawPlan(n) {
-  const template = makeDraw(Array.from({ length: n }, (_, i) => `seat-${i}`)).filter((r) => r.round === 1);
+export function drawPlan(n, prelims = null) {
+  const template = makeDraw(Array.from({ length: n }, (_, i) => `seat-${i}`), { prelims }).filter((r) => r.round === 1);
   return template.map((r) => ({ slot: r.slot, sides: ["a", "b"].filter((s) => r[`entry_${s}`]) })).filter((t) => t.sides.length);
 }
 
@@ -275,7 +341,7 @@ export function pickRandom(list, count = 1) {
  * Returns { tie: { slot, a, b }, done } — a or b is null for a bye — or null when the draw is finished.
  */
 export function drawNextTie(entryIds, live) {
-  const plan = drawPlan(entryIds.length);
+  const plan = drawPlan(entryIds.length, live.prelims ?? null);   // round 72: the number of pre-qualifiers chosen
   const made = live.log ?? [];
   const next = plan[made.length];
   if (!next) return null;
