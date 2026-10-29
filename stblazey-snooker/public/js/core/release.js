@@ -4,8 +4,24 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.51.0";
+export const SITE_VERSION = "1.54.0";
 export const CHANGES = [
+  "Admin → Competitions → Set up step by step (Rich: “a step by step, like the news, for each comp”): the competition, the details, entries, entrants, the draw, deadlines, dates — one step at a time, with a checklist at the end",
+  "Page width: content up to 1280px (was 1128px) with space either side — more room for tables and results",
+  "Pictures: 16:9 everywhere (news, features, competitions, venues, galleries, shop, adverts) — one upload fits every place it appears; the upload boxes in the dashboard say so",
+  "Home page banner: the stories sit side by side and follow your finger (or mouse) as you drag, then settle on the next or previous one; no more fade-in — the automatic turn slides along too",
+  "Pictures are centred again (cropping from the top didn't work); phones: a little more room above the banner picture",
+  "The website no longer refreshes by itself: no more reloading every 5 minutes, and coming back after 15 minutes or more redraws the page quietly in place — no loading screen, no blank page",
+  "Loading screen: only when the website is first opened (standard), or on every page — Admin → Branding → Loading screen (run schema.sql — version 38)",
+  "Home page banner: swipe (or drag) sideways to the next or previous story, which slides in; the side-by-side banner has the headline in a third and a picture twice the size in two thirds",
+  "Phones: the white banner is tighter — the same small gap all round, a smaller Continue reading button",
+  "No zoom on pictures when the mouse is over them; pictures are cropped from the top so heads aren't cut off",
+  "Quick links smaller; the ★ My Snooker button is phones only again — on computers the black My Snooker bar on the home page glows",
+  "A bolder look: black title bars on the boxes, a red slash on headings, scores as scoreboard tiles (green for the winner, red for the loser) on the strip and the Results page, where every name is black",
+  "Player pages: Career stats (Triple Crown titles, titles, finals, highest break, centuries, frames won) and the Triple Crown — choose its three competitions in Site settings → Players",
+  "Admin: Save keeps you on the item (Save & back to the list closes it); Competitions listed under a heading for each season; the dashboard search finds every setting (logo, loading screen, banner…) and opens the page at it",
+  "Competitions: entrants numbered, with their club and venue; empty places in the draw read “choose”; the pre-qualifiers sit above the bracket, which starts with the full Round 1; a photo of the paper scorecard on every competition scorecard",
+  "Handicap competitions can give the away player extra points every frame (Bill Toms and Willie Thomas: 5 — supabase/fixes/round73-handicap-away-start.sql sets them up)",
   "Competitions: the number of pre-qualifier matches is worked out from the entrants (18 entrants → 2 pre-qualifiers, 16 in Round 1) and can be changed before making the draw; Admin → Draws shows how the draw will look, round by round",
   "Rounds are named Pre-qualifier, Round 1, Round 2, Quarter-finals, Semi-finals, Final — the round after the pre-qualifier is Round 1",
   "Admin → Draws, step 4: one block per round, each match on two lines (no scrolling sideways), and the entrants who go straight through are tucked away under a button instead of a long list of byes",

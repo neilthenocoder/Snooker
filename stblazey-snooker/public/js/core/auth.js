@@ -148,6 +148,8 @@ export const SECTION_AREA = {
   handicap_suggest: "handicaps", ads: "website", sponsor_packages: "website", downloads: "website", hall_of_fame: "website", page_settings_23: "website",
   // Round 55: the Support inbox opens for the roles a support category is given to; the categories are the Master Admin's.
   support: "support", support_categories: "master",
+  // Round 75: Set up a competition step by step
+  comp_wizard: "competitions",
 };
 
 const roleOf = (user) => user?.profile?.role;

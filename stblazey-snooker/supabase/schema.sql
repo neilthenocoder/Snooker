@@ -2946,7 +2946,35 @@ end $$;
 -- always random, and the Seed column and "Seeded draw" button are hidden.
 alter table competitions add column if not exists seeded boolean not null default false;
 
-create or replace function public.schema_version() returns int language sql immutable as $$ select 37 $$;
+-- ── Round 73 (Rich's feedback 70.7) ──────────────────────────────
+-- Competitions: a photo of the paper scorecard, as for league matches (anyone who can score the match can add it).
+alter table competition_matches add column if not exists scorecard_url text;
+create or replace function public.set_comp_scorecard_photo(mid uuid, url text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.can_edit_comp_match(mid) then
+    raise exception 'You are not allowed to change this match';
+  end if;
+  if coalesce(url, '') <> '' and not public.is_site_image(url, 'scorecards') then
+    raise exception 'That is not a scorecard photo uploaded on this website';
+  end if;
+  update competition_matches set scorecard_url = nullif(url, '') where id = mid;
+end;
+$$;
+revoke all on function public.set_comp_scorecard_photo(uuid, text) from public, anon;
+grant execute on function public.set_comp_scorecard_photo(uuid, text) to authenticated;
+
+-- Handicap competitions where the away player gets extra points on top of the handicap start
+-- (Bill Toms and Willie Thomas: 5). Set under Admin → Competitions → Edit.
+alter table competitions add column if not exists away_start int not null default 0;
+
+-- The site's own settings: the loading screen on every page, or only when the website is first opened.
+alter table settings add column if not exists loader_every_page boolean not null default false;
+
+-- The Triple Crown (Rich): which three competitions make it up — chosen in Site settings → Players.
+alter table settings add column if not exists triple_crown text not null default '';
+
+create or replace function public.schema_version() returns int language sql immutable as $$ select 38 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

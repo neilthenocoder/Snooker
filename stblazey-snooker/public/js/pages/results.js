@@ -8,6 +8,14 @@ import { setTitle, adminEdit } from "../core/router.js";
 
 const PER_PAGE = 12;   // match days shown before "Show earlier results"
 
+// Round 73 (Rich): names in black; the scores themselves coloured — green for the winner, red for the loser.
+function scoreBox(r) {
+  const parts = String(r.score ?? "").split(/\s*[–-]\s*/);
+  if (parts.length !== 2 || parts.some((x) => !/^\d+$/.test(x))) return html`<b class="rs-one">${r.score}</b>`;
+  const cls = (side) => (!r.won ? "" : r.won === side ? "w" : "l");
+  return html`<b class="rs"><i class="${cls("h")}">${parts[0]}</i><i class="${cls("a")}">${parts[1]}</i></b>`;
+}
+
 export default async function results(view, { query }) {
   const [ctx, cups] = await Promise.all([seasonContext(query.get("season")), cupResults().catch(() => [])]);
   setTitle(`Results ${ctx.season?.name ?? ""}`);
@@ -40,7 +48,7 @@ export default async function results(view, { query }) {
       </div></div>
     ${days.size ? [...days].slice(0, shown).map(([day, rows]) => panel(day === "undated" ? "Date not set" : fmtDate(day), html`<div class="res-list wide">
       ${rows.map((r) => html`<a class="res-mini" href="${r.href}"><small>${r.title}</small>
-        <span class="${r.won === "h" ? "won" : r.won ? "lost" : ""}">${r.home}</span><b>${r.score}</b><span class="${r.won === "a" ? "won" : r.won ? "lost" : ""}">${r.away}</span></a>`)}</div>`))
+        <span class="${r.won === "h" ? "won" : r.won ? "lost" : ""}">${r.home}</span>${scoreBox(r)}<span class="${r.won === "a" ? "won" : r.won ? "lost" : ""}">${r.away}</span></a>`)}</div>`))
       : html`<div class="empty box">No results yet${which ? " for this choice" : ""}.</div>`}
     ${days.size > shown ? html`<button type="button" class="btn ghost" data-more style="align-self:center">Show earlier results (${days.size - shown} more match day${days.size - shown > 1 ? "s" : ""})</button>` : ""}
     <div class="btn-row"><a class="btn secondary" href="/fixtures${query.get("season") ? `?season=${query.get("season")}` : ""}">Fixtures by team</a><a class="btn ghost" href="/calendar">Calendar</a></div>

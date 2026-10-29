@@ -12,6 +12,7 @@ import { crud } from "../admin/crud.js";
 import { setTitle, navigate, refreshShell } from "../core/router.js";
 import { mustLogin } from "./scorecard.js";
 import { draws } from "../admin/draws.js";
+import { compWizardPage } from "../admin/comp-wizard.js";
 import { mediaPage } from "../admin/picker.js";
 import { statsPage } from "../admin/stats.js";
 import { importPage } from "../admin/import.js";
@@ -53,7 +54,7 @@ const NAV = [
   ["Match nights", [["overview", "Overview"], ["results", "Results to approve"]]],
   ["Fixtures", [["fixtures", "All fixtures"], ["byes", "Bye weeks"], ["generator", "Fixture generator"], ["import", "Import from CSV"]]],
   ["League", [["leagues", "Leagues"], ["teams", "Teams"], ["players", "Players"], ["cueviews", "CueViews to approve"], ["handicaps", "Handicaps"], ["handicap_suggest", "Suggested handicaps"], ["venues", "Venues"], ["seasons", "Seasons"]]],
-  ["Competitions", [["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws, results & live scores"], ["scoreboard", "Live scoreboard"], ["awards", "Presentation awards"]]],
+  ["Competitions", [["comp_wizard", "Set up step by step"], ["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws, results & live scores"], ["scoreboard", "Live scoreboard"], ["awards", "Presentation awards"]]],
   ["People", [["accounts", "Logins"]]],
   // Rich, round 24: the long "Website" list split into groups.
   ["News", [["articles", "News"], ["approvals", "News to approve"], ["write", "Write news step by step"], ["categories", "News categories"], ["notices", "Notifications"], ["announcements", "Announcements"]]],
@@ -71,7 +72,7 @@ const NAV = [
 const SPECIAL = { overview, results, generator, draws, media: mediaPage, stats: statsPage, import: importPage, handicaps: handicapsPage, entries: entriesPage,
   roles: rolesPage, activity: activityPage, backup: backupPage, awards: awardsPage, scoreboard: scoreboardPage, emails: emailsPage, cueviews: cueviewsPage, write: newsWizardPage, approvals: newsApprovePage,
   campaigns: campaignsPage, subscribers: subscribersPage, market: marketPage, comments: commentsPage, menu: menuPage, seo: seoPage, links: linksPage, performance: performancePage, security: securityPage, versions: versionsPage, handicap_suggest: handicapSuggestPage,
-  support: supportPage, support_categories: supportCategoriesPage };
+  support: supportPage, support_categories: supportCategoriesPage, comp_wizard: compWizardPage };
 // Menu items that show a red number when something is waiting.
 const COUNTS = { players: "Players waiting to be accepted", entries: "Entries waiting for payment", cueviews: "CueViews waiting to be checked", approvals: "News waiting for your approval", market: "Adverts waiting for approval", support: "Support requests waiting for an answer" };
 const COUNT_WORD = { players: "new", entries: "waiting", cueviews: "waiting", approvals: "waiting", market: "waiting", support: "to answer" };
@@ -108,7 +109,7 @@ export default async function admin(view, { params, user, query }) {
   const nav = NAV.map(([group, items]) => [group, items.filter(([key]) => canOpenSection(user, key) && !(key === "write" && canOpenSection(user, "articles")))]).filter(([, items]) => items.length);
   // Where the dashboard opens: the first section of this login's own area (Handicaps is shared, so it isn't the landing page).
   const mine = nav.flatMap(([, items]) => items);
-  const first = (mine.find(([key]) => key !== "handicaps") ?? mine[0])[0];
+  const first = (mine.find(([key]) => key !== "handicaps" && key !== "comp_wizard") ?? mine[0])[0];
   if (!params.section && first !== "overview") return navigate(`/admin/${first}`, { replace: true });
   const section = params.section || first;
   const title = NAV.flatMap(([, items]) => items).find(([k]) => k === section)?.[1] ?? "Admin";
@@ -210,6 +211,23 @@ export default async function admin(view, { params, user, query }) {
     for (const l of leagues) push("leagues", "League", l.name, "", `/admin/leagues?edit=${l.id}`);
     for (const c of comps) push("draws", "Competition", c.name, "Draws & results", `/admin/draws?c=${c.id}`);
     for (const a of news) push("articles", "News", a.title, a.published_at ? fmtDate(a.published_at) : "", `/admin/articles?edit=${a.id}`);
+    // Round 73: every page of the dashboard, and every setting on the settings pages (Branding, Site settings…),
+    // found by its name or its explanation — "logo", "loading screen", "banner", "ticker"…
+    const groupOf = (key) => NAV.find(([, items]) => items.some(([k]) => k === key))?.[0] ?? "Dashboard";
+    for (const [key, res] of Object.entries(RESOURCES)) {
+      if (!canOpenSection(user, key)) continue;
+      out.push({ kind: "Page", label: res.label, sub: groupOf(key), href: `/admin/${key}`, key: `${res.label} ${groupOf(key)} ${res.intro ?? ""}`.toLowerCase() });
+      if (!res.single) continue;
+      let tab = "";
+      res.fields.forEach((f, i) => {
+        if (f.type === "heading" && f.tab) tab = f.tab;
+        if (f.type === "custom" || !f.label) return;
+        const label = String(f.type !== "heading" ? f.label.split(/\s[(—]/)[0].trim() || f.label : f.label).slice(0, 90);
+        const fk = f.type === "heading" ? `h${i}` : f.name;
+        out.push({ kind: f.type === "heading" ? "Settings" : "Setting", label, sub: `${res.label}${tab ? ` → ${tab}` : ""}`,
+          href: `/admin/${key}?find=${encodeURIComponent(fk)}`, key: `${f.label} ${f.help ?? ""} ${f.short ?? ""} ${res.label} ${tab}`.toLowerCase() });
+      });
+    }
     for (const f of ctx?.fixtures ?? []) push("fixtures", "Match", `${teamName(f.home_team_id)} v ${teamName(f.away_team_id)}`, `${fmtDate(f.starts_at)} · scorecard`, urls.scorecard(f));
     return out;
   };
@@ -220,13 +238,13 @@ export default async function admin(view, { params, user, query }) {
     if (find.value.trim().toLowerCase() !== q) return;   // typed on since
     const words = q.split(/\s+/);
     // Best first: a name that starts with what was typed, then a name that contains it, then the rest (a team's players…).
-    const KIND = ["Team", "League", "Competition", "Venue", "Player", "Match", "News"];
+    const KIND = ["Settings", "Setting", "Page", "Team", "League", "Competition", "Venue", "Player", "Match", "News"];
     const rank = (r) => { const l = r.label.toLowerCase(); return l.startsWith(q) ? 0 : words.every((w) => l.includes(w)) ? 1 : 2; };
     const hits = index.filter((r) => words.every((w) => r.key.includes(w)))
-      .sort((a, b) => rank(a) - rank(b) || KIND.indexOf(a.kind) - KIND.indexOf(b.kind) || a.label.localeCompare(b.label)).slice(0, 12);
+      .sort((a, b) => rank(a) - rank(b) || KIND.indexOf(a.kind) - KIND.indexOf(b.kind) || a.label.localeCompare(b.label)).slice(0, 16);
     box.hidden = false;
-    mount(box, hits.length ? html`<small class="ar-head">Players, teams, matches…</small>${hits.map((r) => html`<a href="${r.href}"><i>${r.kind}</i><span>${r.label}${r.sub ? html` <small>${r.sub}</small>` : ""}</span></a>`)}`
-      : html`<small class="ar-head">No players, teams or matches match “${q}”.</small>`);
+    mount(box, hits.length ? html`<small class="ar-head">Settings, players, teams, matches…</small>${hits.map((r) => html`<a href="${r.href}"><i>${r.kind}</i><span>${r.label}${r.sub ? html` <small>${r.sub}</small>` : ""}</span></a>`)}`
+      : html`<small class="ar-head">Nothing in the dashboard matches “${q}”.</small>`);
   };
   find.addEventListener("keydown", (e) => {
     if (e.key !== "Enter") return;
@@ -278,11 +296,16 @@ export default async function admin(view, { params, user, query }) {
       mount(body, html`${isMaster(user) ? "" : html`<div class="notice">Articles you publish go to the Master Admin to approve before they appear on the website (they show as not published until then).</div>`}<a class="nw-invite" href="/admin/write"><b>✎ Write news step by step</b><span>One question at a time: headline, category, story, quote, pictures and this week's tables.</span></a><div></div>`);
       into = body.lastElementChild;
     }
+    // Round 75 (Rich): competitions too.
+    if (section === "competitions" && !query.get("edit")) {
+      mount(body, html`<a class="nw-invite" href="/admin/comp_wizard"><b>🏆 Set up a competition step by step</b><span>One step at a time: the competition, the details, entries, entrants, the draw, deadlines and dates.</span></a><div></div>`);
+      into = body.lastElementChild;
+    }
     return crud(into, RESOURCES[section], {
       // A list can be opened already filtered, e.g. /admin/fixtures?status=approved (the Overview boxes do this).
       preset: { ...(["fixtures", "byes"].includes(section) && current ? { season_id: current.id } : {}),
         ...Object.fromEntries((RESOURCES[section].filters ?? []).filter((f) => query.get(f)).map((f) => [f, query.get(f)])) },
-      editId: query.get("edit"), user, onChange: drawCounts,
+      editId: query.get("edit"), user, onChange: drawCounts, findField: query.get("find"),
     });
   }
   mount(body, html`<div class="notice error">Unknown section.</div>`);

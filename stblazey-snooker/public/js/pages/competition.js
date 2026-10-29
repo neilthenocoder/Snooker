@@ -67,6 +67,7 @@ export default async function competition(view, { params, user }) {
       ${manage ? html`<div class="comp-admin"><div class="wrap">
         <span class="comp-admin-tag">Admin</span>
         <a class="btn small green" href="/admin/draws?c=${c.id}">Manage: entrants, draw &amp; results</a>
+        <a class="btn small ghost" href="/admin/comp_wizard?c=${c.id}&step=2">Step by step</a>
         <a class="btn small ghost" href="/admin/competitions?edit=${c.id}">Edit details</a>
         ${toScore.length ? html`<label class="comp-admin-score">Score a match live
           <select data-score-live><option value="">Choose a match…</option>${toScore.map((m) => html`<option value="/cup-scorecard/${m.row.no ?? m.row.id}">${b.entryById.get(m.a).name} v ${b.entryById.get(m.b).name}${m.row.status === "in_progress" ? " (live now)" : ""}</option>`)}</select></label>` : ""}
