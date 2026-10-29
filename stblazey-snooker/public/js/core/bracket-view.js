@@ -1,7 +1,7 @@
 // HTML for knockout competitions: the bracket "roadmap", round cards and
 // standings. The logic (who plays whom, who won) lives in bracket.js.
 import { html, fmtDate, fmtTime } from "./dom.js";
-import { roundName, isEntry, EMPTY, competitionStandings, walkoverSide, sideScore, placeLabel, isPrelimRound } from "./bracket.js";
+import { roundName, isEntry, EMPTY, competitionStandings, walkoverSide, sideScore, placeLabel } from "./bracket.js";
 import { dataTable, urls } from "./components.js";
 
 const MATCH_HEIGHT = 102; // px per first-round match; later rounds share the same height
@@ -16,8 +16,6 @@ function sideLabel(b, match, side) {
   if (match.round === 1) return "TBC";
   if (b.drawMode === "redraw") return "To be drawn";   // drawn round by round: nobody knows who meets whom yet
   const from = b.rounds[match.round - 2][match.slot * 2 + (side === "a" ? 0 : 1)];
-  // Round 73: the winner of a pre-qualifier is shown by name — "Matt Moore or Andy Sayer".
-  if (isPrelimRound(b, from.round) && isEntry(from.a) && isEntry(from.b)) return `${b.entryById.get(from.a).name} or ${b.entryById.get(from.b).name}`;
   const short = { "Quarter-finals": "QF", "Semi-finals": "SF" }[roundName(from.round, b.totalRounds, b)] ?? `R${from.round}-`;
   return `Winner ${short}${from.slot + 1}`;
 }
@@ -57,30 +55,19 @@ const deadlineOf = (deadlines, round) => deadlines?.[round] ?? deadlines?.[Strin
 /** The whole bracket, left to right, finishing with the champion. */
 export function bracketView(b, deadlines = {}) {
   if (!b.totalRounds) return html`<div class="empty">The draw hasn't been made yet.</div>`;
-  // Round 73 (Rich: "the next round should be the full last 16, not 4 + 12"): a pre-qualifier round isn't drawn as a
-  // column full of byes. Its few matches sit above the bracket, and the bracket starts at Round 1 with everyone in it
-  // (the pre-qualifier places read "A or B" until they're played).
-  const skip = b.totalRounds > 1 && isPrelimRound(b, 1) ? 1 : 0;
-  const rounds = b.rounds.slice(skip);
-  const firstRound = rounds[0].length;
+  const firstRound = b.rounds[0].length;
   const champ = b.champion ? b.entryById.get(b.champion) : null;
-  const cols = rounds.map((list, k) => {
-    const i = k + skip;
+  const cols = b.rounds.map((list, i) => {
     const isLast = i === b.rounds.length - 1;
     const slots = list.map((m) => html`<div class="br-slot">${matchBox(b, m)}</div>`);
     const body = isLast ? slots : list.filter((_, j) => j % 2 === 0).map((_, p) => html`<div class="br-pair">${slots[p * 2]}${slots[p * 2 + 1]}</div>`);
     const by = deadlineOf(deadlines, i + 1);
-    return html`<div class="br-col" style="--i:${k}"><div class="br-title">${roundName(i + 1, b.totalRounds, b)}${by ? html`<small>Play by ${fmtDate(by)}</small>` : ""}</div>
+    return html`<div class="br-col" style="--i:${i}"><div class="br-title">${roundName(i + 1, b.totalRounds, b)}${by ? html`<small>Play by ${fmtDate(by)}</small>` : ""}</div>
       <div class="br-matches" style="height:${firstRound * MATCH_HEIGHT}px">${body}</div></div>`;
   });
-  const pre = skip ? b.rounds[0].filter((m) => !m.isBye) : [];
-  const preBy = skip ? deadlineOf(deadlines, 1) : null;
-  return html`${pre.length ? html`<div class="br-prelims"><div class="br-title">${roundName(1, b.totalRounds, b)}${preBy ? html`<small>Play by ${fmtDate(preBy)}</small>` : ""}</div>
-      <p class="br-prelims-note">${pre.length} match${pre.length === 1 ? "" : "es"} to decide the last ${pre.length === 1 ? "place" : `${pre.length} places`} in ${roundName(2, b.totalRounds, b)}.</p>
-      <div class="br-prelims-row">${pre.map((m) => html`<div class="br-slot">${matchBox(b, m)}</div>`)}</div></div>` : ""}
-  <div class="bracket-wrap" data-bracket><div class="bracket">
+  return html`<div class="bracket-wrap" data-bracket><div class="bracket">
     ${cols}
-    <div class="br-col br-champion" style="--i:${rounds.length}"><div class="br-title">Champion</div>
+    <div class="br-col br-champion" style="--i:${b.rounds.length}"><div class="br-title">Champion</div>
       <div class="br-matches" style="height:${firstRound * MATCH_HEIGHT}px"><div class="br-slot">
         <div class="br-trophy ${champ ? "won" : ""}" ${champ ? html`data-entry="${champ.id}"` : ""}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V17h3v2H8v-2h3v-2.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3Zm10 4v3a2 2 0 0 0 1-1.7V7ZM6 7v1.3A2 2 0 0 0 7 10V7Zm-1 14h14v1H5Z"/></svg>
@@ -100,7 +87,7 @@ export function wireBracket(root) {
 }
 
 /** Round-by-round cards (like a fixture list), newest round first when finished. */
-export function roundCards(b, venueById, deadlines = {}, { scoreLinks = false } = {}) {
+export function roundCards(b, venueById, deadlines = {}) {
   return b.rounds.map((list, i) => {
     const real = list.filter((m) => !m.isBye);
     if (!real.length) return "";
@@ -117,7 +104,6 @@ export function roundCards(b, venueById, deadlines = {}, { scoreLinks = false } 
             <b>${sideScore(m.row, side) ?? "-"}</b></div>`;
         };
         return html`<div class="fx-card">${cell("a")}<div class="fx-v">v ${m.row.id ? html`<a class="fx-link" href="/cup-match/${m.row.no ?? m.row.id}">${m.row.status === "in_progress" ? "Live" : walkoverSide(m.row) ? "Walkover" : m.played ? "Scorecard" : "Match page"} →</a>` : ""}</div>${cell("b")}
-          ${scoreLinks && isEntry(m.a) && isEntry(m.b) && m.row.id && m.row.status !== "completed" && !walkoverSide(m.row) ? html`<a class="btn small blue fx-score-live" href="/cup-scorecard/${m.row.no ?? m.row.id}">${m.row.status === "in_progress" ? "Carry on scoring live" : "Score live"}</a>` : ""}
           <div class="fx-meta">${m.row.status === "postponed" ? html`<span class="pp">Postponed</span> · ` : ""}${m.row.starts_at ? `${m.row.status === "postponed" ? "was " : ""}${fmtDate(m.row.starts_at)} ${fmtTime(m.row.starts_at)}` : "Date TBC"}${v ? html` · <a href="${urls.venue(v)}">${v.name}</a>` : ""}${onPoints(m) ? html` · <b>${onPoints(m)}</b>` : ""}</div></div>`;
       })}</div>`;
   });

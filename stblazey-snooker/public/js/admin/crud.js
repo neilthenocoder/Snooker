@@ -184,8 +184,8 @@ function collect(form, res, editing) {
 }
 
 function formFields(res, editing, refs, rows) {
-  return res.fields.map((f, i) => {
-    if (f.type === "heading") return html`<h4 class="form-heading" data-fkey="h${i}">${f.label}${f.help ? html`<small>${f.help}</small>` : ""}</h4>`;
+  return res.fields.map((f) => {
+    if (f.type === "heading") return html`<h4 class="form-heading">${f.label}${f.help ? html`<small>${f.help}</small>` : ""}</h4>`;
     if (f.type === "custom") return html`<div class="field-label" style="grid-column:1/-1">${f.render(editing)}</div>`;
     // "Photo (square works best)" → bold "Photo", then the hint in lighter text.
     const head = f.label.split(" (")[0];
@@ -209,7 +209,7 @@ function formFields(res, editing, refs, rows) {
  *          editId   – open this row's form straight away (the "Edit this page" buttons use it),
  *          onChange – called after anything is saved or removed (the dashboard updates its counts).
  */
-export async function crud(el, res, { preset = {}, editId = null, onChange = () => {}, findField = null } = {}) {
+export async function crud(el, res, { preset = {}, editId = null, onChange = () => {} } = {}) {
   const refs = await loadRefs(res);
   let rows = [];
   let editing = null;
@@ -241,7 +241,7 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
       return { label: shortLabel(f), cell: (r) => html`${f.cellOf ? f.cellOf(r, refs) : display(f, r[name], refs)}${tag(r)}` };
     }),
     { label: "", cls: "right", cell: (r) => html`<span class="btn-row" style="justify-content:flex-end;flex-wrap:nowrap">
-      ${(res.rowActions ?? []).map((a) => html`<a class="btn small ${a.cls ?? "ghost"}" href="${a.href(r)}" ${a.title ? html`title="${a.title}"` : ""}>${a.label}</a>`)}
+      ${(res.rowActions ?? []).map((a) => html`<a class="btn small ghost" href="${a.href(r)}">${a.label}</a>`)}
       ${flagged(r) ? html`<button class="btn small green" data-unflag="${r.id}">${flag.clear}</button>${flag.reject ? html`<button class="btn small" data-reject="${r.id}">${flag.reject.label}</button>` : ""}` : ""}
       <button class="btn small secondary" data-edit="${r.id}">Edit</button>
       <button class="btn small" data-delete="${r.id}">Delete</button></span>` },
@@ -274,20 +274,10 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
         <button type="button" class="btn small ghost" data-unflag-all>${waiting > 1 ? (flag.clearAll?.(waiting) ?? `Mark all ${waiting} as checked`) : flag.clear}</button></div>` : ""}
       ${paged ? pager(list.length) : ""}
       ${!PAGE_SIZE && list.length > MAX_ROWS ? html`<div class="notice">Showing the first ${MAX_ROWS} of ${list.length} — use search or filters to narrow down.</div>` : ""}
-      ${res.groupBy && shown.length ? groupedTables(shown) : dataTable(columns, shown, { empty: "Nothing here yet — press “Add new”.", rowClass: res.rowClass })}
+      ${dataTable(columns, shown, { empty: "Nothing here yet — press “Add new”.", rowClass: res.rowClass })}
       ${paged ? pager(list.length) : ""}`);
   }
-  // Round 73 (Rich: the same competitions come round every year, so the list needs a heading for each season):
-  // a section can split its list into blocks (res.groupBy(row, refs) → the block's heading).
-  function groupedTables(list) {
-    const groups = [];
-    for (const r of list) { const g = res.groupBy(r, refs); (groups.find((x) => x.g === g) ?? groups[groups.push({ g, rows: [] }) - 1]).rows.push(r); }
-    if (res.groupSort) groups.sort((a, b) => res.groupSort(a.g, b.g));
-    return html`${groups.map(({ g, rows: rs }) => html`<section class="crud-group"><h3 class="crud-group-h">${g}<small>${rs.length}</small></h3>
-      ${dataTable(columns, rs, { rowClass: res.rowClass })}</section>`)}`;
-  }
 
-  let keepPlace = false;   // round 73: after Save the form stays where it is on the screen
   function drawForm() {
     const box = $("[data-form]", el);
     if (!editing) return mount(box, "");
@@ -322,10 +312,9 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
     } else body = res.fields.some((f) => f.type === "heading") ? html`<div class="form-pane">${boxes(pairs)}</div>` : html`<div class="grid-2">${fieldsHtml}</div>`;
     mount(box, panel(title, html`<form class="form" data-crud-form>
       ${body}
-      <div class="btn-row form-actions"><button class="btn">Save</button>${res.single ? "" : html`<button class="btn secondary" data-save-close>Save &amp; back to the list</button><button type="button" class="btn ghost" data-cancel>Back to the list</button>`}<small class="muted form-saved" data-saved-note></small></div>
+      <div class="btn-row form-actions"><button class="btn">Save</button>${res.single ? "" : html`<button type="button" class="btn ghost" data-cancel>Cancel</button>`}</div>
     </form>`));
-    if (!res.single && !keepPlace) box.scrollIntoView({ behavior: "smooth", block: "start" });
-    keepPlace = false;
+    if (!res.single) box.scrollIntoView({ behavior: "smooth", block: "start" });
     const formEl = $("[data-crud-form]", box);
     formEl.addEventListener("click", (e) => {
       const tab = e.target.closest("[data-form-tab]");
@@ -354,18 +343,6 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
   drawList();
   if (res.single) { editing = rows[0] ?? { id: 1 }; drawForm(); }
   else if (editId && rows.some((r) => r.id === editId)) { editing = rows.find((r) => r.id === editId); drawForm(); }
-  // Round 73 (Neil: "settings such as logo or loading screen don't appear when searching"): the dashboard search
-  // opens a settings page at the setting found — its tab opened, the setting scrolled to and flashed.
-  if (findField) setTimeout(() => {
-    const form = $("[data-crud-form]", el);
-    const hit = form?.querySelector(`[data-fkey="${CSS.escape(findField)}"]`) ?? form?.querySelector(`[name="${CSS.escape(findField)}"]`);
-    if (!hit) return;
-    const pane = hit.closest("[data-form-pane]");
-    if (pane?.hidden) form.querySelector(`[data-form-tab="${pane.dataset.formPane}"]`)?.click();
-    const box = hit.closest("label, .field-label, .form-sec") ?? hit;
-    box.scrollIntoView({ behavior: "smooth", block: "center" });
-    box.classList.add("find-flash"); setTimeout(() => box.classList.remove("find-flash"), 2600);
-  }, 60);
 
   // Image fields: upload / pick → put the URL in the text box → show a preview.
   const form = () => $("[data-crud-form]", el);
@@ -526,29 +503,16 @@ export async function crud(el, res, { preset = {}, editId = null, onChange = () 
     if (problem) return toast(problem, "error");
     if (res.beforeSave) row = res.beforeSave(row, refs);
     if (flag) row[flag.field] = false;   // saving a row means it has been looked at
-    // Round 73 (Rich: "after saving a news article you can't make another change — the button stays grey, then a few
-    // seconds later it goes back to the list"): Save keeps you on the item, ready for the next change;
-    // "Save & back to the list" closes it.
-    const close = e.submitter?.matches?.("[data-save-close]");
-    const btns = [...e.target.querySelectorAll("button:not([type=button])")];
-    btns.forEach((b) => { b.disabled = true; });
-    const btn = e.submitter ?? btns[0];
-    const label = btn.textContent; btn.textContent = "Saving…";
+    const btn = e.target.querySelector("button:not([type=button])");
+    btn.disabled = true;
     try {
-      const saved = await (res.save ? res.save(row) : save(res.table, row));
+      await (res.save ? res.save(row) : save(res.table, row));
       toast("Saved");
       await load();
-      if (res.single) { editing = rows[0]; keepPlace = true; drawForm(); res.afterSave?.(); }
-      else if (close) { editing = null; drawForm(); drawList(); }
-      else {
-        const id = saved?.id ?? row.id;
-        editing = (id && rows.find((r) => r.id === id)) || null;
-        keepPlace = true; drawForm(); drawList();
-        const note = $("[data-saved-note]", el);
-        if (note) note.textContent = `✓ Saved at ${new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} — carry on editing, or go back to the list.`;
-      }
+      if (res.single) { editing = rows[0]; drawForm(); res.afterSave?.(); }
+      else { editing = null; drawForm(); drawList(); }
       onChange();
-    } catch (err) { toast(friendly(err), "error"); btns.forEach((b) => { b.disabled = false; }); btn.textContent = label; }
+    } catch (err) { toast(friendly(err), "error"); btn.disabled = false; }
   });
 }
 

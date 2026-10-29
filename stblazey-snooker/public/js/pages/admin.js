@@ -53,7 +53,7 @@ const NAV = [
   ["Match nights", [["overview", "Overview"], ["results", "Results to approve"]]],
   ["Fixtures", [["fixtures", "All fixtures"], ["byes", "Bye weeks"], ["generator", "Fixture generator"], ["import", "Import from CSV"]]],
   ["League", [["leagues", "Leagues"], ["teams", "Teams"], ["players", "Players"], ["cueviews", "CueViews to approve"], ["handicaps", "Handicaps"], ["handicap_suggest", "Suggested handicaps"], ["venues", "Venues"], ["seasons", "Seasons"]]],
-  ["Competitions", [["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws, results & live scores"], ["scoreboard", "Live scoreboard"], ["awards", "Presentation awards"]]],
+  ["Competitions", [["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws & results"], ["scoreboard", "Live scoreboard"], ["awards", "Presentation awards"]]],
   ["People", [["accounts", "Logins"]]],
   // Rich, round 24: the long "Website" list split into groups.
   ["News", [["articles", "News"], ["approvals", "News to approve"], ["write", "Write news step by step"], ["categories", "News categories"], ["notices", "Notifications"], ["announcements", "Announcements"]]],
@@ -210,23 +210,6 @@ export default async function admin(view, { params, user, query }) {
     for (const l of leagues) push("leagues", "League", l.name, "", `/admin/leagues?edit=${l.id}`);
     for (const c of comps) push("draws", "Competition", c.name, "Draws & results", `/admin/draws?c=${c.id}`);
     for (const a of news) push("articles", "News", a.title, a.published_at ? fmtDate(a.published_at) : "", `/admin/articles?edit=${a.id}`);
-    // Round 73: every page of the dashboard, and every setting on the settings pages (Branding, Site settings…),
-    // found by its name or its explanation — "logo", "loading screen", "banner", "ticker"…
-    const groupOf = (key) => NAV.find(([, items]) => items.some(([k]) => k === key))?.[0] ?? "Dashboard";
-    for (const [key, res] of Object.entries(RESOURCES)) {
-      if (!canOpenSection(user, key)) continue;
-      out.push({ kind: "Page", label: res.label, sub: groupOf(key), href: `/admin/${key}`, key: `${res.label} ${groupOf(key)} ${res.intro ?? ""}`.toLowerCase() });
-      if (!res.single) continue;
-      let tab = "";
-      res.fields.forEach((f, i) => {
-        if (f.type === "heading" && f.tab) tab = f.tab;
-        if (f.type === "custom" || !f.label) return;
-        const label = String(f.type !== "heading" ? f.label.split(/\s[(—]/)[0].trim() || f.label : f.label).slice(0, 90);
-        const fk = f.type === "heading" ? `h${i}` : f.name;
-        out.push({ kind: f.type === "heading" ? "Settings" : "Setting", label, sub: `${res.label}${tab ? ` → ${tab}` : ""}`,
-          href: `/admin/${key}?find=${encodeURIComponent(fk)}`, key: `${f.label} ${f.help ?? ""} ${f.short ?? ""} ${res.label} ${tab}`.toLowerCase() });
-      });
-    }
     for (const f of ctx?.fixtures ?? []) push("fixtures", "Match", `${teamName(f.home_team_id)} v ${teamName(f.away_team_id)}`, `${fmtDate(f.starts_at)} · scorecard`, urls.scorecard(f));
     return out;
   };
@@ -237,13 +220,13 @@ export default async function admin(view, { params, user, query }) {
     if (find.value.trim().toLowerCase() !== q) return;   // typed on since
     const words = q.split(/\s+/);
     // Best first: a name that starts with what was typed, then a name that contains it, then the rest (a team's players…).
-    const KIND = ["Settings", "Setting", "Page", "Team", "League", "Competition", "Venue", "Player", "Match", "News"];
+    const KIND = ["Team", "League", "Competition", "Venue", "Player", "Match", "News"];
     const rank = (r) => { const l = r.label.toLowerCase(); return l.startsWith(q) ? 0 : words.every((w) => l.includes(w)) ? 1 : 2; };
     const hits = index.filter((r) => words.every((w) => r.key.includes(w)))
-      .sort((a, b) => rank(a) - rank(b) || KIND.indexOf(a.kind) - KIND.indexOf(b.kind) || a.label.localeCompare(b.label)).slice(0, 16);
+      .sort((a, b) => rank(a) - rank(b) || KIND.indexOf(a.kind) - KIND.indexOf(b.kind) || a.label.localeCompare(b.label)).slice(0, 12);
     box.hidden = false;
-    mount(box, hits.length ? html`<small class="ar-head">Settings, players, teams, matches…</small>${hits.map((r) => html`<a href="${r.href}"><i>${r.kind}</i><span>${r.label}${r.sub ? html` <small>${r.sub}</small>` : ""}</span></a>`)}`
-      : html`<small class="ar-head">Nothing in the dashboard matches “${q}”.</small>`);
+    mount(box, hits.length ? html`<small class="ar-head">Players, teams, matches…</small>${hits.map((r) => html`<a href="${r.href}"><i>${r.kind}</i><span>${r.label}${r.sub ? html` <small>${r.sub}</small>` : ""}</span></a>`)}`
+      : html`<small class="ar-head">No players, teams or matches match “${q}”.</small>`);
   };
   find.addEventListener("keydown", (e) => {
     if (e.key !== "Enter") return;
@@ -299,7 +282,7 @@ export default async function admin(view, { params, user, query }) {
       // A list can be opened already filtered, e.g. /admin/fixtures?status=approved (the Overview boxes do this).
       preset: { ...(["fixtures", "byes"].includes(section) && current ? { season_id: current.id } : {}),
         ...Object.fromEntries((RESOURCES[section].filters ?? []).filter((f) => query.get(f)).map((f) => [f, query.get(f)])) },
-      editId: query.get("edit"), user, onChange: drawCounts, findField: query.get("find"),
+      editId: query.get("edit"), user, onChange: drawCounts,
     });
   }
   mount(body, html`<div class="notice error">Unknown section.</div>`);

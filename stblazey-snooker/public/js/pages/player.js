@@ -1,6 +1,6 @@
 import { html, mount, $, fmtDate, paragraphs } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
-import { table, playerHistory, loadCompetitions, articles, settings } from "../core/api.js";
+import { table, playerHistory, loadCompetitions, articles } from "../core/api.js";
 import { playerRankings, frameWinner, breakPoints, EXT_PER_SEASON } from "../core/rules.js";
 import { answered } from "../core/cueview.js";
 import { buildBracket, competitionStandings, inEntry } from "../core/bracket.js";
@@ -19,9 +19,9 @@ export default async function player(view, { params, user }) {
   const p = allPlayers.find((x) => x.slug === params.id) ?? allPlayers.find((x) => x.id === params.id);
   if (!p) return notFound(view);
   if (p.slug && params.id !== p.slug) history.replaceState(null, "", `${urls.player(p)}${location.search}${location.hash}`);
-  const [ctx, seasons, leagues, playerPast, comps, news, awards, site] = await Promise.all([
+  const [ctx, seasons, leagues, playerPast, comps, news, awards] = await Promise.all([
     seasonContext(), table("seasons", "name"), table("leagues", "sort"),
-    playerHistory(p.id), loadCompetitions(), articles(), table("awards", "sort").catch(() => []), settings().catch(() => ({})),
+    playerHistory(p.id), loadCompetitions(), articles(), table("awards", "sort").catch(() => []),
   ]);
   // Form (Rich, round 25): a mark out of 10 from the last 6 matches this season.
   const form = await loadForm(ctx).then((f) => f.player(p.id)).catch(() => null);
@@ -90,29 +90,6 @@ export default async function player(view, { params, user }) {
   }
   for (const a of awards) if (a.winner_player_id === p.id) addWin(a.name, a.season_id, a.trophy_url ? a : comps.competitions.find((c) => c.id === a.competition_id) ?? a);
   const trophies = [...cabinet.values()].sort((x, y) => y.seasons.size - x.seasons.size || x.name.localeCompare(y.name));
-
-  // Round 73 (Rich: "I love the WST feature for career stats and Triple Crown"): career stats, WST style —
-  // titles, finals reached (won or runner-up), Triple Crown titles, highest break and centuries.
-  const finals = new Set([...cabinet.values()].flatMap((t) => [...t.seasons].map((sid) => `${t.name}|${sid}`)));
-  for (const c of comps.competitions) {
-    const mine = comps.entries.filter((x) => x.competition_id === c.id);
-    if (!mine.some((e) => inEntry(e, p.id))) continue;
-    const b = buildBracket(mine, comps.matches.filter((m) => m.competition_id === c.id));
-    const me = competitionStandings(b).find((r) => inEntry(r.entry, p.id));
-    if (me?.status === "Runner-up") finals.add(`${cleanName(c.name)}|${c.season_id}`);
-  }
-  for (const a of awards) if (a.runner_up_player_id === p.id) finals.add(`${cleanName(a.name)}|${a.season_id ?? a.id}`);
-  const crownNames = listItems(site.triple_crown).slice(0, 3);
-  const crownWins = (name) => cabinet.get(cleanName(name).toLowerCase())?.seasons.size ?? 0;
-  const crownThing = (name) => cabinet.get(cleanName(name).toLowerCase())?.thing ?? comps.competitions.find((c) => cleanName(c.name).toLowerCase() === cleanName(name).toLowerCase()) ?? null;
-  const careerStats = [
-    ...(crownNames.length ? [["Triple Crown titles", crownNames.reduce((n, x) => n + crownWins(x), 0)]] : []),
-    ["Titles", trophies.reduce((n, t) => n + t.seasons.size, 0)],
-    ["Finals", finals.size],
-    ["Highest break", Math.max(0, ...playerPast.breaks.map((b) => b.value)) || "–"],
-    ["Centuries", playerPast.breaks.filter((b) => b.value >= 100).length],
-    ["Frames won", seasonRows.reduce((n, r) => n + r.won, 0)],
-  ];
 
   const age = p.birth_date ? Math.floor((Date.now() - new Date(p.birth_date)) / 3.15576e10) : null;
   const teammates = allPlayers.filter((x) => x.team_id === p.team_id);
@@ -183,12 +160,6 @@ export default async function player(view, { params, user }) {
     </div>
 
     ${!gone && form?.n ? formPanel(form, { name: p.full_name.split(" ")[0] }) : ""}
-
-    <section class="career" aria-label="Career stats"><h3>Career stats</h3>
-      <dl class="career-stats">${careerStats.map(([k, v]) => html`<div><dt>${k}</dt><dd>${v}</dd></div>`)}</dl></section>
-    ${crownNames.length ? html`<section class="career crowns" aria-label="Triple Crowns"><h3>Triple Crowns</h3>
-      <ul class="crown-list">${crownNames.map((name) => html`<li class="${crownWins(name) ? "won" : ""}"><span class="crown-badge">${trophy(crownThing(name) ?? { name }, "crown-trophy")}</span>
-        <span class="crown-name">${name}</span><b class="crown-count">×${crownWins(name)}</b></li>`)}</ul></section>` : ""}
 
     ${trophies.length ? html`<section class="cabinet" aria-label="Trophies won"><h3>Trophy cabinet</h3>
       <ul>${trophies.map((t) => html`<li>${trophy(t.thing, "cab-trophy")}<span class="cab-name">${t.name}</span><b class="cab-count">×${t.seasons.size}</b></li>`)}</ul></section>` : ""}

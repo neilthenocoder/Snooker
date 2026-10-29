@@ -394,11 +394,6 @@ export const demoClient = {
       persist(); emit("fixtures", [fx]);
       return { data: null, error: null };
     }
-    if (name === "set_comp_scorecard_photo") {
-      const m = state.tables.competition_matches.find((x) => x.id === args.mid);
-      if (m) { m.scorecard_url = args.url || null; persist(); emit("competition_matches", [m]); }
-      return { data: null, error: null };
-    }
     if (name === "set_scorecard_photo") {
       const fx = state.tables.fixtures.find((f) => f.id === args.fid);
       fx.scorecard_url = args.url; persist(); emit("fixtures", [fx]);

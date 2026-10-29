@@ -81,9 +81,9 @@ export default async function home(view, { user } = {}) {
     <section class="hero hero-l-${heroLayout(site)}" style="${site.hero_image_url && heroLayout(site) !== "white" ? `--hero-img:${cssUrl(site.hero_image_url)};` : ""}${/^#[0-9a-f]{6}$/i.test(site.hero_bg ?? "") ? `--hero-bg:${site.hero_bg}` : ""}">
       ${heroLayout(site) === "big" ? html`<div class="hero-bgs" aria-hidden="true">${slides.map((a, i) => html`<div class="hero-bg ${i ? "" : "on"}" style="${a.image_url || a.circle_image_url ? `background-image:${cssUrl(a.image_url || a.circle_image_url)}` : ""}"></div>`)}</div>` : ""}
       <div class="wrap hero-inner">
-        <div class="hero-slides" data-slides><div class="hero-track" data-track>
+        <div class="hero-slides" data-slides>
           ${slides.length ? slides.map((a, i) => heroSlide(a, i === 0, heroLayout(site) === "white" && slides.length > 1 ? { at: i, of: slides.length } : null)) : html`<div class="hero-slide on"><div class="hero-text"><h2><span>${SITE.name}</span></h2><p class="hero-meta">Established ${SITE.established}</p></div></div>`}
-        </div></div>
+        </div>
         ${slides.length > 1 && heroLayout(site) !== "white" ? html`<div class="hero-dots">${slides.map((_, i) => html`<button class="${i ? "" : "on"}" data-dot="${i}" aria-label="Show article ${i + 1}"></button>`)}</div>` : ""}
       </div>
       <div class="live-strip-wrap ${["red", "yellow", "grey"].includes(site.strip_line ?? "red") ? `strip-line-${site.strip_line ?? "red"}` : ""}"><div class="wrap"><div class="live-strip" data-strip></div></div></div>
@@ -131,64 +131,13 @@ export default async function home(view, { user } = {}) {
   // Rotate the banner articles (pauses while the mouse is over it).
   const slideEls = $$(".hero-slide", view), dots = $$("[data-dot]", view);
   let current = 0, paused = false;
-  // Round 74 (Neil & Rich): the stories sit side by side on a track — no fade-in. The track follows a finger (or the
-  // mouse) as it is dragged, and lets go onto the next or previous story; the automatic turn slides it along too.
-  const track = $("[data-track]", view), heroBox = $("[data-slides]", view);
-  const place = (px = 0, animate = true) => {
-    if (!track) return;
-    track.style.transition = animate ? "transform .5s cubic-bezier(.22, .7, .2, 1)" : "none";
-    track.style.transform = `translate3d(calc(${-current * 100}% + ${px}px), 0, 0)`;
-  };
   const show = (i) => {
     current = (i + slideEls.length) % slideEls.length;
-    slideEls.forEach((s, j) => { s.classList.toggle("on", j === current); s.setAttribute("aria-hidden", String(j !== current)); });
+    slideEls.forEach((s, j) => s.classList.toggle("on", j === current));
     $$(".hero-bg", view).forEach((s, j) => s.classList.toggle("on", j === current));
     dots.forEach((d) => d.classList.toggle("on", Number(d.dataset.dot) === current));
-    place(0, true);
   };
-  place(0, false);
-  // The dots in the white card are drawn into every slide, so they're found by click instead of up front.
-  $(".hero-inner", view)?.addEventListener("click", (e) => { const d = e.target.closest("[data-dot]"); if (d) show(Number(d.dataset.dot)); });
-  if (heroBox && track && slideEls.length > 1) {
-    let drag = null, dragged = false;
-    heroBox.addEventListener("pointerdown", (e) => {
-      if (e.pointerType === "mouse" && e.button !== 0) return;
-      if (e.target.closest("[data-dot]")) return;
-      drag = { x: e.clientX, y: e.clientY, t: performance.now(), w: heroBox.clientWidth || 1, id: e.pointerId, on: false, dx: 0 };
-      dragged = false;
-    });
-    heroBox.addEventListener("pointermove", (e) => {
-      if (!drag || e.pointerId !== drag.id) return;
-      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-      if (!drag.on) {
-        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-        if (Math.abs(dy) > Math.abs(dx)) { drag = null; return; }     // scrolling the page up or down
-        drag.on = true; dragged = true; paused = true; heroBox.classList.add("dragging");
-        try { heroBox.setPointerCapture(e.pointerId); } catch { /* fine */ }
-      }
-      // A little resistance past the first and last story.
-      const edge = (current === 0 && dx > 0) || (current === slideEls.length - 1 && dx < 0);
-      drag.dx = edge ? dx / 3 : dx;
-      place(drag.dx, false);
-      e.preventDefault();
-    });
-    const end = () => {
-      if (!drag) return;
-      const d = drag; drag = null; heroBox.classList.remove("dragging");
-      if (!d.on) return;
-      const fast = Math.abs(d.dx) / Math.max(1, performance.now() - d.t) > 0.45;
-      const far = Math.abs(d.dx) > d.w * 0.18 || (fast && Math.abs(d.dx) > 24);
-      const next = far ? current + (d.dx < 0 ? 1 : -1) : current;
-      show(Math.max(0, Math.min(slideEls.length - 1, next)));
-      setTimeout(() => { paused = false; }, ROTATE_MS);
-    };
-    heroBox.addEventListener("pointerup", end);
-    heroBox.addEventListener("pointercancel", end);
-    // A drag that started on the headline or picture doesn't open the article.
-    heroBox.addEventListener("click", (e) => { if (dragged) { e.preventDefault(); e.stopPropagation(); dragged = false; } }, true);
-    heroBox.addEventListener("dragstart", (e) => e.preventDefault());
-    addEventListener("resize", () => place(0, false), { passive: true });
-  }
+  dots.forEach((d) => d.addEventListener("click", () => show(Number(d.dataset.dot))));
   $(".hero-inner", view)?.addEventListener("mouseenter", () => { paused = true; });
   $(".hero-inner", view)?.addEventListener("mouseleave", () => { paused = false; });
   const timer = slideEls.length > 1 ? setInterval(() => { if (!paused && !document.hidden) show(current + 1); }, ROTATE_MS) : null;
@@ -378,39 +327,7 @@ export async function mountLiveStrip(el, user, { mode = "filters" } = {}) {
     el.addEventListener(on, () => { paused = true; }, { passive: true });
     el.addEventListener(off, () => { paused = false; }, { passive: true });
   }
-  // Round 72 (Rich): drag the strip with the mouse to see more (fingers already swipe it). The ‹ › buttons stay.
-  // A drag that moves more than a few pixels doesn't open the card it started on.
-  let drag = null, dragged = false;
-  el.addEventListener("pointerdown", (e) => {
-    if (e.pointerType === "touch" || e.button !== 0) return;
-    const row = e.target.closest(".strip-row");
-    if (!row || e.target.closest("select, button")) return;
-    drag = { row, x: e.clientX, left: row.scrollLeft, id: e.pointerId };
-    dragged = false;
-  });
-  el.addEventListener("pointermove", (e) => {
-    if (!drag || e.pointerId !== drag.id) return;
-    const dx = e.clientX - drag.x;
-    if (!dragged && Math.abs(dx) < 6) return;
-    if (!dragged) { dragged = true; paused = true; drag.row.classList.add("is-dragging"); try { drag.row.setPointerCapture(e.pointerId); } catch { /* fine */ } }
-    drag.row.scrollLeft = drag.left - dx;
-    e.preventDefault();
-  });
-  const endDrag = () => {
-    if (!drag) return;
-    const row = drag.row; drag = null;
-    if (!dragged) return;
-    row.classList.remove("is-dragging");
-    // Settle on the nearest card, as the arrows do.
-    const step = ($(".strip-card", row)?.offsetWidth ?? 230) + 10;
-    row.scrollTo({ left: Math.round(row.scrollLeft / step) * step, behavior: "smooth" });
-  };
-  el.addEventListener("pointerup", endDrag);
-  el.addEventListener("pointercancel", endDrag);
-  el.addEventListener("dragstart", (e) => { if (e.target.closest(".strip-row")) e.preventDefault(); });
   el.addEventListener("click", (e) => {
-    if (dragged && e.target.closest(".strip-row")) { e.preventDefault(); e.stopPropagation(); dragged = false; return; }
-    dragged = false;
     const b = e.target.closest("[data-strip-move]"); if (b) return move(Number(b.dataset.stripMove));
     const t = e.target.closest("[data-strip-mine]");
     if (t) { try { localStorage.setItem(STRIP_MINE, t.dataset.stripMine); } catch { /* not remembered */ } draw(); }
@@ -556,17 +473,11 @@ async function liveStrip(user = null, mode = "filters") {
       <div class="sc-foot">${c.foot}</div></a>` : html`<a class="strip-card ${c.live ? "is-live" : ""}" href="${c.href}">
       <div class="sc-top"><span>${ukDay(c.when) === todayUK() ? "Tonight" : fmtDay(c.when)}</span><span class="sc-comp">${c.title}</span></div>
       <div class="sc-body">${side(c.a)}
-        <div class="sc-mid">${c.postponed ? html`<b>P - P</b>` : c.walkover ? html`<b>W/O</b>` : c.hasFrames || c.done ? scoreTiles(c) : html`<b class="time">${fmtTime(c.when)}</b>`}
+        <div class="sc-mid">${c.postponed ? html`<b>P - P</b>` : c.walkover ? html`<b>W/O</b>` : c.hasFrames || c.done ? html`<b>${c.score.home} - ${c.score.away}</b>` : html`<b class="time">${fmtTime(c.when)}</b>`}
           ${c.postponed ? html`<span class="sc-label postponed">Postponed</span>` : c.live ? html`<span class="live-dot">Live</span>` : c.done ? html`<span class="sc-label ${c.label ?? "completed"}">${{ pending: "Pending", walkover: "Walkover" }[c.label] ?? "Completed"}</span>` : c.hasFrames ? "" : liveSoonTag({ starts_at: c.when, status: c.status ?? "scheduled" })}</div>
         ${side(c.b)}</div>
       <div class="sc-foot">${c.walkover ? `Walkover to ${c.walkover}` : c.venue?.name ?? ""}</div>
     </a>`))}</div>`;
-}
-
-/** Round 73 (the new look): the score as two tiles, like a scoreboard — the winner's green once the match is over. */
-function scoreTiles(c) {
-  const h = Number(c.score?.home), a = Number(c.score?.away), over = c.done && h !== a;
-  return html`<b class="sc-tiles"><i class="${over ? (h > a ? "w" : "l") : ""}">${c.score.home}</i><i class="${over ? (a > h ? "w" : "l") : ""}">${c.score.away}</i></b>`;
 }
 
 /**

@@ -4,11 +4,10 @@ import { openForEntry } from "./enter.js";
 import { buildBracket, progressText, isEntry } from "../core/bracket.js";
 import { bracketView, wireBracket, roundCards, standingsTable } from "../core/bracket-view.js";
 import { breadcrumb, panel, urls, breaksBox, shortName, trophy, newsStrip } from "../core/components.js";
-import { setTitle, adminEdit, navigate } from "../core/router.js";
-import { canOpenSection } from "../core/auth.js";
+import { setTitle, adminEdit } from "../core/router.js";
 import notFound from "./not-found.js";
 
-export default async function competition(view, { params, user }) {
+export default async function competition(view, { params }) {
   const draw = async () => {
     const [data, venues, seasons, news, players, leagues] = await Promise.all([loadCompetitions(), table("venues", "name"), table("seasons", "name"), articles(), table("players", "full_name"), table("leagues", "sort")]);
     const c = data.competitions.find((x) => x.slug === params.slug);
@@ -37,10 +36,6 @@ export default async function competition(view, { params, user }) {
     const waiting = canEnter ? (await signupNames(c.id)).filter((s) => s.status === "pending") : [];
     const liveDraw = c.draw_live?.status === "live";
     view.classList.add("flush");
-    // Round 72 (Rich: "took me a while to find out how to edit a comp live… and how to add live results"):
-    // logged in as an admin, the competition's own page has the buttons to run it, and every match a Score live button.
-    const manage = canOpenSection(user, "draws");
-    const toScore = manage ? real.filter((m) => isEntry(m.a) && isEntry(m.b) && m.row.id && m.row.status !== "completed" && !m.row.walkover) : [];
 
     mount(view, html`
       <section class="comp-hero" style="${c.image_url ? `--comp-img:${cssUrl(c.image_url)}` : ""}">
@@ -64,13 +59,6 @@ export default async function competition(view, { params, user }) {
           </div>
         </div>
       </section>
-      ${manage ? html`<div class="comp-admin"><div class="wrap">
-        <span class="comp-admin-tag">Admin</span>
-        <a class="btn small green" href="/admin/draws?c=${c.id}">Manage: entrants, draw &amp; results</a>
-        <a class="btn small ghost" href="/admin/competitions?edit=${c.id}">Edit details</a>
-        ${toScore.length ? html`<label class="comp-admin-score">Score a match live
-          <select data-score-live><option value="">Choose a match…</option>${toScore.map((m) => html`<option value="/cup-scorecard/${m.row.no ?? m.row.id}">${b.entryById.get(m.a).name} v ${b.entryById.get(m.b).name}${m.row.status === "in_progress" ? " (live now)" : ""}</option>`)}</select></label>` : ""}
-      </div></div>` : ""}
       <div class="wrap" style="margin-top:30px">
         ${liveDraw ? html`<a class="live-draw-note" href="/draw/${c.slug}"><span class="live-dot">Live</span> The draw is being made right now — watch each tie as it comes out →</a>` : ""}
         ${liveDraw ? "" : panel(`${c.name} ${season?.name ?? ""} — the road to the final`, html`
@@ -82,7 +70,7 @@ export default async function competition(view, { params, user }) {
         <div class="stack">
           ${c.info ? html`<div><h3 style="margin-top:0">Competition information</h3><div class="prose" style="font-size:15px">${paragraphs(c.info)}</div></div>` : ""}
           ${panel("Standings", standingsTable(b))}
-          <div>${roundCards(b, venueById, c.round_deadlines, { scoreLinks: manage })}</div>
+          <div>${roundCards(b, venueById, c.round_deadlines)}</div>
         </div>
         <aside class="sidebar">
           ${breaksBox(`${c.name} Breaks`, breaks)}
@@ -98,7 +86,6 @@ export default async function competition(view, { params, user }) {
       </div>
       ${newsStrip("Related news", related)}`);
     wireBracket($("[data-bracket]", view) ?? document.createElement("div"));
-    $("[data-score-live]", view)?.addEventListener("change", (e) => { if (e.target.value) navigate(e.target.value); });
   };
   await draw();
   return subscribe(["competition_matches", "competitions"], draw);

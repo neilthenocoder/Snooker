@@ -4,31 +4,10 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.53.0";
+export const SITE_VERSION = "1.51.0";
 export const CHANGES = [
-  "Home page banner: the stories sit side by side and follow your finger (or mouse) as you drag, then settle on the next or previous one; no more fade-in — the automatic turn slides along too",
-  "Pictures are centred again (cropping from the top didn't work); phones: a little more room above the banner picture",
-  "The website no longer refreshes by itself: no more reloading every 5 minutes, and coming back after 15 minutes or more redraws the page quietly in place — no loading screen, no blank page",
-  "Loading screen: only when the website is first opened (standard), or on every page — Admin → Branding → Loading screen (run schema.sql — version 38)",
-  "Home page banner: swipe (or drag) sideways to the next or previous story, which slides in; the side-by-side banner has the headline in a third and a picture twice the size in two thirds",
-  "Phones: the white banner is tighter — the same small gap all round, a smaller Continue reading button",
-  "No zoom on pictures when the mouse is over them; pictures are cropped from the top so heads aren't cut off",
-  "Quick links smaller; the ★ My Snooker button is phones only again — on computers the black My Snooker bar on the home page glows",
-  "A bolder look: black title bars on the boxes, a red slash on headings, scores as scoreboard tiles (green for the winner, red for the loser) on the strip and the Results page, where every name is black",
-  "Player pages: Career stats (Triple Crown titles, titles, finals, highest break, centuries, frames won) and the Triple Crown — choose its three competitions in Site settings → Players",
-  "Admin: Save keeps you on the item (Save & back to the list closes it); Competitions listed under a heading for each season; the dashboard search finds every setting (logo, loading screen, banner…) and opens the page at it",
-  "Competitions: entrants numbered, with their club and venue; empty places in the draw read “choose”; the pre-qualifiers sit above the bracket, which starts with the full Round 1; a photo of the paper scorecard on every competition scorecard",
-  "Handicap competitions can give the away player extra points every frame (Bill Toms and Willie Thomas: 5 — supabase/fixes/round73-handicap-away-start.sql sets them up)",
-  "Competitions: the number of pre-qualifier matches is worked out from the entrants (18 entrants → 2 pre-qualifiers, 16 in Round 1) and can be changed before making the draw; Admin → Draws shows how the draw will look, round by round",
-  "Rounds are named Pre-qualifier, Round 1, Round 2, Quarter-finals, Semi-finals, Final — the round after the pre-qualifier is Round 1",
-  "Admin → Draws, step 4: one block per round, each match on two lines (no scrolling sideways), and the entrants who go straight through are tucked away under a button instead of a long list of byes",
-  "No seeds unless a competition is ticked as Seeded (Admin → Competitions → Edit): the Seed column and Seeded draw button only show then (run schema.sql — version 37)",
-  "Running a competition is easier to find: a green Manage button for each competition in Admin → Competitions, an Admin bar on the competition's own page (Manage, Edit details, Score a match live) and a Score live button on every match",
-  "Handicap doubles: each pair's handicaps are added together and the pair with the higher total starts every frame on the difference (+58 − (−19) = 77); the other pair starts on 0. The scorecard shows the sum",
-  "Home page Live & upcoming strip: drag it with the mouse to see more (the ‹ › buttons stay)",
-  "News: the three stories beside the featured one are the same height as it",
-  "The ★ My Snooker button shows on computers too, not just phones",
-  "The calendar opens at today (or the next day with something on), with a Today button",
+  "Page width: content up to 1280px (was 1112px) with space either side — more room for tables and results without stretching edge to edge (the dashboard stays wider)",
+  "Picture shapes: 16:9 for the big banner pictures (home page banner, news stories, a competition's page); 4:3 for everything else (news cards, competition boxes, venues, galleries, Hall of Fame, shop, marketplace, pop-up adverts) — the upload boxes in the dashboard say which",
   "Nothing can be sent to the league without logging in: support requests, competition entries, CueViews and Hall of Fame memories ask you to log in first, and come back to the page afterwards (the database refuses them too — run schema.sql, version 36). Reading the website never needs a login",
   "Doubles: a pair is two players — Admin → Draws & results asks for Player 1 and Player 2 and names the pair for you; entries from the entry form keep both players. Both players get the pair's results and trophies on their own page, and on the scorecard both are filled in, each with their own breaks",
   "Help & support: a Contact the league form (/support — from Help, the footer and the account menu). People choose what it is about and it goes to the roles that look after that kind of request; they get a reference number, an email and a private link to follow it and reply (run schema.sql — version 34)",

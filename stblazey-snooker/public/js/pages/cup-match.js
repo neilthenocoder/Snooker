@@ -1,11 +1,11 @@
 // Public page for one cup match: score, frames, breaks — updates live.
-import { safeHref, html, mount, fmtDate, fmtTime, fmtTimeBoth, fmtLongDate } from "../core/dom.js";
+import { html, mount, fmtDate, fmtTime, fmtTimeBoth, fmtLongDate } from "../core/dom.js";
 import { countdown, startCountdowns } from "../core/countdown.js";
 import { loadCompMatch, loadCompetitions, subscribe, table } from "../core/api.js";
 import { buildBracket, roundName, winnerSide, walkoverSide, placeLabel } from "../core/bracket.js";
 import { canEditCompMatch } from "../core/auth.js";
 import { breadcrumb, panel, dataTable, cupMatchInfo, urls, badge, handicapText, breakList } from "../core/components.js";
-import { handicapStarts, handicapMode, pairsEquation } from "../core/rules.js";
+import { handicapStarts, handicapMode } from "../core/rules.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
 import { matchChat } from "../core/comments.js";
@@ -28,16 +28,11 @@ export default async function cupMatch(view, { params, user }) {
     // Handicap competitions: who gets a head start in each frame, and how many.
     const hc = (id) => players.find((p) => p.id === id)?.handicap ?? 0;
     const sideIds = (f, s) => [f[`${s}_player_id`], f[`${s}_player2_id`]].filter(Boolean);
-    // Singles and team matches: the higher handicap starts on the difference. Doubles (round 72): the pairs' totals, and the higher pair starts on the difference.
+    // Singles and team matches: the higher handicap starts on the difference. Doubles: each pair starts on its own total.
     const mode = handicapMode(c);
-    // Round 73 (Rich): the away player's extra points in some competitions (Bill Toms, Willie Thomas: 5).
-    const awaySide = match.home_switched ? "a" : "b", awayExtra = c?.handicap ? Number(c.away_start) || 0 : 0;
     const startText = (f) => {
       const s = handicapStarts(sideIds(f, "a").map(hc), sideIds(f, "b").map(hc), mode);
-      if (awayExtra) { s[awaySide] += awayExtra; return `${nameA} ${s.a} · ${nameB} ${s.b} (incl. +${awayExtra} away)`; }
       if (mode === "each") return `${handicapText(s.a)} v ${handicapText(s.b)}`;
-      // Round 72 (Rich): doubles show the sum — "+58 − (−19) = 77" — then who starts on it (the other pair on 0).
-      if (mode === "pairs") return `${pairsEquation(sideIds(f, "a").map(hc), sideIds(f, "b").map(hc)).text} · ${s.a ? `${nameA} start on ${s.a}, ${nameB} 0` : s.b ? `${nameB} start on ${s.b}, ${nameA} 0` : "Level"}`;
       return s.a ? `${nameA} +${s.a}` : s.b ? `${nameB} +${s.b}` : "Level";
     };
     // Running totals (points, handicap starts included): they decide a handicap match that is level on frames.
@@ -71,7 +66,7 @@ export default async function cupMatch(view, { params, user }) {
         ${wo ? html`<div class="mh-foot">Walkover to <b>${wo === "a" ? nameA : nameB}</b> — the match wasn't played.</div>` : ""}
         ${venue ? html`<div class="mh-foot"><a href="${urls.venue(venue)}">${venue.name}</a></div>` : ""}
       </div>
-      <div class="btn-row">${safeHref(match.scorecard_url) ? html`<a class="btn ghost" href="${safeHref(match.scorecard_url)}" target="_blank" rel="noopener">Photo of the paper scorecard</a>` : ""}${info.a && info.b && canEditCompMatch(user, match, [info.a, info.b], players) ? html`<a class="btn" href="/cup-scorecard/${match.no ?? match.id}">${frames.length ? "Update scorecard" : "Start scoring"}</a>` : ""}
+      <div class="btn-row">${info.a && info.b && canEditCompMatch(user, match, [info.a, info.b], players) ? html`<a class="btn" href="/cup-scorecard/${match.no ?? match.id}">${frames.length ? "Update scorecard" : "Start scoring"}</a>` : ""}
         ${match.status === "completed" && info.a && info.b ? html`<button type="button" class="btn blue" data-share-card>Share the result</button>` : ""}</div>
       ${wo ? "" : panel("Frame by frame", dataTable([
         { label: "Frame", cell: (f) => f.frame_no, cls: "num" },

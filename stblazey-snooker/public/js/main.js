@@ -367,7 +367,7 @@ async function refreshShell() {
 setNavigator(navigate);
 setShellRefresher(refreshShell);
 
-async function renderRoute({ quiet = false } = {}) {
+async function renderRoute() {
   if (typeof cleanup === "function") cleanup();
   cleanup = null;
   document.querySelector(".edit-page")?.remove();
@@ -386,13 +386,9 @@ async function renderRoute({ quiet = false } = {}) {
   document.body.dataset.page = page;
   view.dataset.section = SECTION[page] ?? "";
   document.documentElement.dataset.section = page === "home" ? "home" : SECTION[page] ?? "";   // the menu underlines this part (calm look)
-  // Round 73 (Rich: "the whole website refreshing is annoying — you're in the middle of something and suddenly you get the
-  // loading screen"): the quiet refresh in the background swaps the page in place, with no blank page and no loading screen.
-  if (!quiet) {
-    mount(view, "");
-    mount($("#side"), ""); $("#shell").classList.remove("has-side");
-    loaderOn();   // the black loading screen appears only if this takes more than a moment (and, unless chosen, only when the site is first opened)
-  }
+  mount(view, "");
+  mount($("#side"), ""); $("#shell").classList.remove("has-side");
+  loaderOn();   // the black loading screen appears only if this takes more than a moment
   trackPageView(location.pathname);
   try {
     let [mod, user, site] = await Promise.all([import(`./pages/${page}.js`), getUser(), settings()]);
@@ -613,28 +609,21 @@ document.addEventListener("keydown", (e) => {
 // People rarely close the app — they switch away and come back. So when the website comes back on screen after
 // more than 30 seconds away, and every 5 minutes while it is open, the page fetches everything again and is drawn
 // afresh where the reader was. Never while someone is typing, in a form, in the dashboard or scoring a match.
-// (Round 73: only after 15 minutes away, and never on a timer — see below.)
 let awayAt = 0;
 const busy = () => !!document.querySelector("input:focus, textarea:focus, select:focus, [contenteditable]:focus, dialog[open], .guide-tip")
   || document.documentElement.classList.contains("menu-open") || document.querySelector('[data-drop][aria-expanded="true"]')
   || /^\/(admin|my|scorecard|cup-scorecard|scoreboard|marketplace\/new|login)/.test(location.pathname) || /\/edit$/.test(location.pathname);
-// Round 73: …and never while someone is using the page — only after two minutes without a click, tap, key or scroll.
-let lastUse = Date.now();
-for (const ev of ["pointerdown", "keydown", "scroll", "touchstart", "wheel"]) addEventListener(ev, () => { lastUse = Date.now(); }, { passive: true, capture: true });
-async function quietRefresh({ force = false } = {}) {
-  if (busy() || (!force && Date.now() - lastUse < 120e3)) return;
+async function quietRefresh() {
+  if (busy()) return;
   const y = window.scrollY;
   invalidate();
   await Promise.all([drawHeader(), drawFooter()]).catch(() => {});
-  await renderRoute({ quiet: true }).catch(() => {});
+  await renderRoute().catch(() => {});
   window.scrollTo(0, y);
 }
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) { awayAt = Date.now(); return; }
-  // Round 73 (Neil: "the website keeps refreshing on its own"): no more refreshing every 5 minutes, and coming back to
-  // the website only redraws the page after 15 minutes or more away — silently, in place (no loading screen, no blank
-  // page). While the site is open, live scores, results and news arrive on their own (the live updates), so nothing
-  // needs reloading under the reader's feet.
-  if (awayAt && Date.now() - awayAt > 15 * 60e3) quietRefresh({ force: true });
+  if (awayAt && Date.now() - awayAt > 30e3) quietRefresh();
   awayAt = 0;
 });
+setInterval(() => { if (!document.hidden) quietRefresh(); }, 5 * 60e3);
