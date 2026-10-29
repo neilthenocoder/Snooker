@@ -131,13 +131,33 @@ export default async function home(view, { user } = {}) {
   // Rotate the banner articles (pauses while the mouse is over it).
   const slideEls = $$(".hero-slide", view), dots = $$("[data-dot]", view);
   let current = 0, paused = false;
-  const show = (i) => {
+  const show = (i, dir = 1) => {
+    const prev = current;
     current = (i + slideEls.length) % slideEls.length;
-    slideEls.forEach((s, j) => s.classList.toggle("on", j === current));
+    // Round 70.7 (Rich): the stories slide across — in from the right going forwards, from the left going back.
+    slideEls.forEach((s, j) => { s.classList.remove("in-l", "in-r"); s.classList.toggle("on", j === current); });
+    if (prev !== current) { void slideEls[current]?.offsetWidth; slideEls[current]?.classList.add(dir < 0 ? "in-l" : "in-r"); }
     $$(".hero-bg", view).forEach((s, j) => s.classList.toggle("on", j === current));
     dots.forEach((d) => d.classList.toggle("on", Number(d.dataset.dot) === current));
   };
-  dots.forEach((d) => d.addEventListener("click", () => show(Number(d.dataset.dot))));
+  // The dots in the white card are drawn into every slide, so they're found by click instead of up front.
+  $(".hero-inner", view)?.addEventListener("click", (e) => { const d = e.target.closest("[data-dot]"); if (d) show(Number(d.dataset.dot), Number(d.dataset.dot) < current ? -1 : 1); });
+  // Round 70.7 (Rich): swipe the banner sideways (finger, or drag with the mouse) to see the next or previous story.
+  const heroBox = $(".hero-inner", view);
+  if (heroBox && slideEls.length > 1) {
+    let sw = null, swiped = false;
+    heroBox.addEventListener("pointerdown", (e) => { if (e.button !== 0 && e.pointerType === "mouse") return; sw = { x: e.clientX, y: e.clientY }; swiped = false; });
+    heroBox.addEventListener("pointermove", (e) => {
+      if (!sw || swiped) return;
+      const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.4) { swiped = true; paused = true; show(current + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1); setTimeout(() => { paused = false; }, ROTATE_MS); }
+    });
+    const end = () => { sw = null; };
+    heroBox.addEventListener("pointerup", end); heroBox.addEventListener("pointercancel", end);
+    // A swipe that started on the headline or picture doesn't open the article.
+    heroBox.addEventListener("click", (e) => { if (swiped) { e.preventDefault(); e.stopPropagation(); swiped = false; } }, true);
+    heroBox.addEventListener("dragstart", (e) => e.preventDefault());
+  }
   $(".hero-inner", view)?.addEventListener("mouseenter", () => { paused = true; });
   $(".hero-inner", view)?.addEventListener("mouseleave", () => { paused = false; });
   const timer = slideEls.length > 1 ? setInterval(() => { if (!paused && !document.hidden) show(current + 1); }, ROTATE_MS) : null;
@@ -505,11 +525,17 @@ async function liveStrip(user = null, mode = "filters") {
       <div class="sc-foot">${c.foot}</div></a>` : html`<a class="strip-card ${c.live ? "is-live" : ""}" href="${c.href}">
       <div class="sc-top"><span>${ukDay(c.when) === todayUK() ? "Tonight" : fmtDay(c.when)}</span><span class="sc-comp">${c.title}</span></div>
       <div class="sc-body">${side(c.a)}
-        <div class="sc-mid">${c.postponed ? html`<b>P - P</b>` : c.walkover ? html`<b>W/O</b>` : c.hasFrames || c.done ? html`<b>${c.score.home} - ${c.score.away}</b>` : html`<b class="time">${fmtTime(c.when)}</b>`}
+        <div class="sc-mid">${c.postponed ? html`<b>P - P</b>` : c.walkover ? html`<b>W/O</b>` : c.hasFrames || c.done ? scoreTiles(c) : html`<b class="time">${fmtTime(c.when)}</b>`}
           ${c.postponed ? html`<span class="sc-label postponed">Postponed</span>` : c.live ? html`<span class="live-dot">Live</span>` : c.done ? html`<span class="sc-label ${c.label ?? "completed"}">${{ pending: "Pending", walkover: "Walkover" }[c.label] ?? "Completed"}</span>` : c.hasFrames ? "" : liveSoonTag({ starts_at: c.when, status: c.status ?? "scheduled" })}</div>
         ${side(c.b)}</div>
       <div class="sc-foot">${c.walkover ? `Walkover to ${c.walkover}` : c.venue?.name ?? ""}</div>
     </a>`))}</div>`;
+}
+
+/** Round 73 (the new look): the score as two tiles, like a scoreboard — the winner's green once the match is over. */
+function scoreTiles(c) {
+  const h = Number(c.score?.home), a = Number(c.score?.away), over = c.done && h !== a;
+  return html`<b class="sc-tiles"><i class="${over ? (h > a ? "w" : "l") : ""}">${c.score.home}</i><i class="${over ? (a > h ? "w" : "l") : ""}">${c.score.away}</i></b>`;
 }
 
 /**

@@ -117,6 +117,9 @@ export const RESOURCES = {
       ["name", "name", (a, b) => a.name.localeCompare(b.name)],
     ],
     columns: ["trophy_url", "name", "kind", "league_ids", "season_id", "entries_open"],
+    // Round 73 (Rich): a heading for each season, newest first.
+    groupBy: (r, refs) => refs.seasons?.find((x) => x.id === r.season_id)?.name ?? "No season set",
+    groupSort: (a, b) => (a === "No season set") - (b === "No season set") || b.localeCompare(a),
     intro: "Create the competition here. Then press its green “Manage” button to add entrants, make the draw, enter results and score matches live (the same page is under Competitions → Draws & results, and there's a Manage button on the competition's own page when you're logged in). A plate competition (for those knocked out in the first round) is created from its main competition's Manage page.",
     fields: [
       { name: "name", label: "Competition name", type: "text", required: true },
@@ -125,6 +128,8 @@ export const RESOURCES = {
       { name: "kind", label: "Type", type: "select", options: ["Team", "Singles", "Doubles", "Other"], default: "Team" },
       { name: "league_ids", label: "Open to (which leagues can enter — leave empty for every league)", short: "Open to", type: "tags", ref: "leagues", empty: "All leagues" },
       { name: "handicap", label: "Handicap competition (scorecards show each player's handicap and the head start)", type: "checkbox" },
+      // Round 73 (Rich): Bill Toms and Willie Thomas — the away player gets 5 extra points on top of the handicap start.
+      { name: "away_start", label: "Away player's extra start (points on top of the handicap start, every frame — e.g. 5; 0 for none. Handicap competitions only)", short: "Away start", type: "number", default: 0, min: 0, max: 100 },
       // Round 72 (Rich): St Blazey's competitions have no seeds, so it's off unless ticked.
       { name: "seeded", label: "Seeded competition (entrants are ranked, and the draw can keep the top seeds apart). Leave unticked for a fully random draw", type: "checkbox" },
       { name: "draw_mode", label: "Draw", type: "select", options: ["bracket", "redraw"], default: "bracket",
@@ -556,6 +561,7 @@ export const RESOURCES = {
       { name: "sidebar_layout", label: "Which side a sidebar goes on", type: "select", options: ["right", "left"], default: "right", labels: { right: "Right (standard)", left: "Left" } },
       { type: "heading", label: "Loading screen", help: "The black screen with the logo pulsing in the middle. The loading logo is at the top of this page." },
       { name: "loader_show", label: "Show the loading screen", type: "checkbox", default: true },
+      { name: "loader_every_page", label: "Show it on every page (untick: only when the website is first opened — moving between pages is then instant)", short: "Every page", type: "checkbox", default: false },
       { name: "loader_seconds", label: "Show it for at least (seconds, when the site is first opened — 0 = only for as long as the page really takes to load)", short: "Seconds", type: "number", default: 0, min: 0, max: 10, step: 0.5 },
     ],
   },
@@ -611,6 +617,11 @@ export const RESOURCES = {
       { type: "heading", tab: "Captains & competitions", label: "Scorecard reminders", help: "The morning after a league match night, the captains (and vice captains) of the home team get an email if their match still has no result entered. One reminder per match. Needs the RESEND_API_KEY on Netlify, like the result emails." },
       { name: "reminders_on", label: "Email captains when a scorecard hasn't been entered by the next morning", type: "checkbox", default: true },
       { name: "reminders_both", label: "Email the away team's captains as well", type: "checkbox", default: false },
+      // Round 73 (Rich: "I love the WST career stats and Triple Crown"): the three competitions that make up the
+      // league's Triple Crown — the league to decide (Singles, Doubles, Team competition or league, probably).
+      { type: "heading", tab: "Players", label: "Player pages: the Triple Crown", help: "Every player's page shows their career stats (titles, finals, highest break, centuries) and, once three competitions are chosen here, the Triple Crown: how many times they have won each one. Type the competition's name as it is in the draw or on Presentation night (any season)." },
+      { name: "triple_crown", label: "The three Triple Crown competitions", type: "list", add: "+ Add a competition", placeholder: "e.g. Rees Singles", max: 80, wide: true,
+        suggestions: (refs) => [...new Set((refs.competitions ?? []).map((c) => c.name))].sort(), needs: ["competitions"] },
       { type: "heading", tab: "Captains & competitions", label: "Competitions: deadline warnings", help: "Players (and captains, for team competitions) are warned in their own area — and in a bar on the home page in the last week — about their cup matches as each round's deadline comes up: who is at home, and who must contact whom. The deadlines and the “contact by” dates are set for each round under Draws & results." },
       { name: "comp_warn_days", label: "Start warning this many days before a round's deadline", type: "number", default: 14, min: 1, max: 60 },
       { name: "comp_contact_rule", label: "What the away player is told when the home player hasn't been in touch by the “contact by” date", type: "textarea", placeholder: CONTACT_RULE },

@@ -49,6 +49,7 @@ function startingView() {
  *   handicap: (playerId) → number    — give this for handicap competitions: starts are worked out and checked,
  *   handicapMode: "difference" (the higher handicap starts on the difference) | "pairs" (doubles: each pair's handicaps are added
  *                 together and the higher pair starts on the difference between the totals) | "each" (old doubles rule),
+ *   extraStart: { a, b }  — extra points on top of the handicap start (round 73: the away player's 5 in some competitions),
  *   runningTotal: true shows each side's total points so far (handicap matches level on frames are decided on them),
  *   frames, minFrames, preset, playerName(id), person(id) → { name, avatar_url, club },
  *   photo: { required, url: () => string | null, pick: () => void },
@@ -87,8 +88,14 @@ export function scorecardEditor(opts) {
 
   // ── handicap starts ────────────────────────────────────────
   /** What each side starts a frame on — { a, b } — only once every player in it is known. */
-  const startOf = (f) => (hcap && slotsOf(f).every((s) => s.player_id)
-    ? handicapStarts(f.a.map((s) => hcap(s.player_id)), f.b.map((s) => hcap(s.player_id)), opts.handicapMode) : { a: 0, b: 0 });
+  // Round 73 (Rich): some competitions give the away player extra points on top of the handicap (opts.extraStart = { a, b }).
+  const extra = { a: Number(opts.extraStart?.a) || 0, b: Number(opts.extraStart?.b) || 0 };
+  const startOf = (f) => {
+    if (!hcap || !slotsOf(f).every((s) => s.player_id)) return { a: 0, b: 0 };
+    const base = handicapStarts(f.a.map((s) => hcap(s.player_id)), f.b.map((s) => hcap(s.player_id)), opts.handicapMode);
+    return { a: base.a + extra.a, b: base.b + extra.b };
+  };
+  const extraText = (side) => (extra[side] ? ` + ${extra[side]} away` : "");
   const startFor = (f, side) => startOf(f)[side];
   /** Doubles show every pair's start (even 0); otherwise only the side that gets one. */
   const showsStart = (f, side) => (eachStart || pairStart ? !!hcap && slotsOf(f).every((s) => s.player_id) : startFor(f, side) !== 0);
@@ -98,12 +105,11 @@ export function scorecardEditor(opts) {
     return `${f[side].map((s) => `${person(s.player_id).name} (${handicapText(hcap(s.player_id))})`).join(" + ")} = ${eq.sign(eq.a)}`;
   };
   const equationLine = (f) => {
-    if (!pairStart || !hcap || !slotsOf(f).every((s) => s.player_id)) return "";
+    if (!hcap || !(pairStart || extra.a || extra.b) || !slotsOf(f).every((s) => s.player_id)) return "";
     const eq = pairsEquation(f.a.map((s) => hcap(s.player_id)), f.b.map((s) => hcap(s.player_id))), st = startOf(f);
-    const who = st.a ? sides.a.name : st.b ? sides.b.name : null;
     return html`<div class="sc-equation"><b>Handicap start</b>
       <span>${sides.a.name}: ${pairSum(f, "a")}</span><span>${sides.b.name}: ${pairSum(f, "b")}</span>
-      <span class="eq-sum">${eq.text} → ${who ? html`<b>${who}</b> start every frame on <b>${st.a || st.b}</b>, ${st.a ? sides.b.name : sides.a.name} on <b>0</b>` : html`level — both start on <b>0</b>`}</span></div>`;
+      <span class="eq-sum">${eq.text}${extra.a || extra.b ? ` · +${extra.a || extra.b} for the away side` : ""} → ${sides.a.name} start every frame on <b>${st.a}</b>, ${sides.b.name} on <b>${st.b}</b></span></div>`;
   };
   const startText = (n) => (eachStart ? handicapText(n) : n);
   // A pair that starts below zero can finish a frame below zero, so doubles handicap scores may be negative.
@@ -172,7 +178,7 @@ export function scorecardEditor(opts) {
   const sideCells = (f, i, side) => html`<td class="sc-players" data-team="${sides[side].name ?? ""}">${f[side].map((slot, j) => html`<div class="sc-slot">
       ${picker(f, i, side, j)}
       <input class="sc-breaks" data-i="${i}" data-side="${side}" data-j="${j}" data-k="breaks" value="${slot.breaks}" placeholder="breaks" inputmode="numeric" aria-label="Breaks, e.g. 34, 41">
-    </div>`)}${showsStart(f, side) ? html`<small class="sc-start">starts on ${startText(startFor(f, side))}</small>` : ""}</td>
+    </div>`)}${showsStart(f, side) ? html`<small class="sc-start">starts on ${startText(startFor(f, side))}${extraText(side) ? ` (incl.${extraText(side).slice(2)})` : ""}</small>` : ""}</td>
     <td class="sc-points"><input type="number" ${pointAttrs} data-i="${i}" data-k="${side}_points" value="${f[`${side}_points`] ?? ""}" aria-label="Points"></td>`;
   const classicBody = () => html`
     ${opts.photo || opts.addPlayer ? html`<div class="sc-tools">${photoBlock()}${addPlayerButton()}</div>` : ""}
@@ -224,7 +230,7 @@ export function scorecardEditor(opts) {
     })}</div>
     ${cue}
     <label class="g-points">Frame score<input type="number" ${pointAttrs} data-i="${i}" data-k="${side}_points" value="${f[`${side}_points`] ?? ""}" placeholder="${showsStart(f, side) ? startFor(f, side) : ""}"></label>
-    ${showsStart(f, side) ? html`<div class="g-start">Starts on <b>${startText(startFor(f, side))}</b> (${pairStart ? "handicap start" : eachStart ? "the pair's handicaps added together" : "handicap"})</div>` : ""}
+    ${showsStart(f, side) ? html`<div class="g-start">Starts on <b>${startText(startFor(f, side))}</b> (${pairStart ? "handicap start" : eachStart ? "the pair's handicaps added together" : "handicap"}${extraText(side)})</div>` : ""}
     ${f[side].map((_, j) => breakChips(f, i, side, j))}
   </div>`;
   const frameStep = (i) => {

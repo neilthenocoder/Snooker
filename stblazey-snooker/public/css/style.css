@@ -5218,13 +5218,7 @@ table.dm-table, .dm-table tbody { display: block; width: 100%; }
   .feat-grid:not(.solo) .feat-card strong { -webkit-line-clamp: 2; }
 }
 
-/* The ★ My Snooker button on computers too (Rich, round 72 — it was phones only), with the same gold glow */
-.site-header .nav-icons a.nav-icon.nav-star { display: grid !important; position: relative; overflow: hidden;
-  background: linear-gradient(135deg, #fff7d1, #ffd84d) !important; border: 1px solid #e9bf2e !important; box-shadow: 0 0 0 3px rgba(255, 210, 55, .28), 0 0 14px rgba(255, 196, 0, .45); }
-.site-header .nav-icons a.nav-icon.nav-star svg { fill: var(--ink) !important; }
-.site-header .nav-icons a.nav-icon.nav-star::after { content: ""; position: absolute; top: 0; bottom: 0; left: -70%; width: 50%; transform: skewX(-20deg);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .8), transparent); animation: acctShine 4.5s ease-in-out infinite; pointer-events: none; }
-@media (prefers-reduced-motion: reduce) { .site-header .nav-icons a.nav-icon.nav-star::after { display: none; } }
+/* (Round 70.7, Rich: the ★ is back to phones only; on computers the black My Snooker bar on the home page glows instead.) */
 .dm-table tbody[hidden] { display: none !important; }
 .dm-table tr.dm td { border-bottom: 0 !important; border-top: 0 !important; }
 .dm-table .dm-when { justify-content: flex-start; }
@@ -5233,3 +5227,157 @@ table.dm-table, .dm-table tbody { display: block; width: 100%; }
 .comp-admin .btn.green { background: var(--green) !important; border-color: var(--green) !important; color: #fff !important; }
 .comp-admin .btn.ghost { background: transparent !important; color: #fff !important; border: 1px solid #777 !important; }
 .comp-admin .btn.ghost:hover { background: #fff !important; color: var(--ink) !important; }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 73 — Rich's feedback 70.7
+   ═════════════════════════════════════════════════════════════ */
+/* No grow / zoom on pictures when the mouse is over them (features, banner, news, galleries) */
+:is(.gallery-item, .hub-card, .feat-main, .feat-card, .ns-card, .hero-pic-link, .hero-circle-link, .cf-card, .news-mini, .ms-news):hover img,
+.hero-pic-link:hover, .hero-circle-link:hover, html .hero.hero-l-white .hero-pic-link:hover .hero-pic { transform: none !important; }
+:is(.feat-card, .hub-card, .ns-card):hover { transform: none !important; }
+:is(.hub-pic, .feat-main, .feat-card, .ns-card, .hero-pic-link) img, .hero-pic { transition: none !important; }
+
+/* Pictures start from the top, so heads aren't cut off (e.g. a player standing at the table) */
+img { object-position: center top; }
+.badge.logo img, img.trophy, .shield-pic, .logo img, .sponsor img, .sponsors img { object-position: center; }
+.hero-bg { background-position: center top !important; }
+.art-hero { background-position: 0 0, center top !important; }
+
+/* Banner: swipe between stories — each one slides in from the side it came from */
+.hero-inner { touch-action: pan-y; }
+.hero-slide.on.in-r { animation: heroInR .45s cubic-bezier(.2, .7, .2, 1); }
+.hero-slide.on.in-l { animation: heroInL .45s cubic-bezier(.2, .7, .2, 1); }
+@keyframes heroInR { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: none; } }
+@keyframes heroInL { from { opacity: 0; transform: translateX(-60px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .hero-slide.on.in-r, .hero-slide.on.in-l { animation: none; } }
+.hero-slide img, .hero-slide a { -webkit-user-drag: none; }
+
+/* "Headline with the picture beside it": headline one third on the left, the picture two thirds on the right */
+@media (min-width: 721px) {
+  .hero.hero-l-side .hero-slide { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 32px; }
+  .hero.hero-l-side .hero-pic-link { border: 0 !important; border-radius: 14px; box-shadow: 0 18px 40px rgba(0, 0, 0, .45); }
+  .hero.hero-l-side .hero-pic { aspect-ratio: 16 / 9; }
+  .hero.hero-l-side .hero-text h2 { font-size: clamp(24px, 2.6vw, 38px); line-height: 1.12; -webkit-line-clamp: 5; }
+  .hero.hero-l-side .hero-text h2 span { background: none; padding: 0; }
+}
+@media (max-width: 720px) {
+  .hero.hero-l-side .hero-slide { grid-template-columns: 1fr; gap: 12px; }
+  .hero.hero-l-side .hero-pic-link { display: block; order: -1; border: 0; border-radius: 12px; }
+}
+
+/* Phones, white banner: the same small gap all round the white box, a smaller button, less empty space */
+@media (max-width: 760px) {
+  .hero.hero-l-white .wrap.hero-inner { padding: 12px 12px 12px !important; }
+  .hero.hero-l-white .hero-slide { gap: 12px !important; }
+  .hero.hero-l-white .hero-pic-link { margin: 0 !important; border-radius: 12px !important; }
+  html .hero.hero-l-white .hero-text { padding: 16px 16px 14px !important; border-radius: 12px !important; }
+  .hero.hero-l-white .hero-meta { margin-bottom: 8px !important; font-size: 11.5px !important; }
+  .hero.hero-l-white .hero-text h2 { font-size: 22px !important; line-height: 1.12 !important; }
+  .hero.hero-l-white .hero-more { margin-top: 12px !important; padding: 8px 13px !important; font-size: 12.5px !important; }
+  .hero.hero-l-white .hero-dots, .hero.hero-l-white .hero-dots.in-card { margin-top: 12px !important; }
+  .hero.hero-l-white .hero-dots button { width: 10px; height: 10px; }
+}
+
+/* Quick links: smaller, so they take less room */
+html.look-calm .quick-links.ql-8 { gap: 8px !important; }
+html.look-calm .quick-links.ql-8 a { font-size: 12.5px !important; padding: 9px 11px !important; gap: 8px !important; letter-spacing: .02em !important; }
+html.look-calm .quick-links.ql-8 svg { width: 15px !important; height: 15px !important; }
+@media (max-width: 760px) { html.look-calm .quick-links.ql-8 a { font-size: 12px !important; padding: 9px 10px !important; } }
+
+/* The black My Snooker bar on the home page glows (logged in) — it's where computers find My Snooker */
+.my-snooker-btn { position: relative; overflow: hidden; border: 1px solid #e9bf2e !important;
+  box-shadow: 0 0 0 3px rgba(255, 210, 55, .25), 0 0 22px rgba(255, 196, 0, .35) !important; animation: msGlow 2.8s ease-in-out infinite; }
+.my-snooker-btn::after { content: ""; position: absolute; top: 0; bottom: 0; left: -40%; width: 30%; transform: skewX(-20deg); pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 230, 140, .28), transparent); animation: msShine 4.5s ease-in-out infinite; }
+@keyframes msGlow { 0%, 100% { box-shadow: 0 0 0 3px rgba(255, 210, 55, .22), 0 0 16px rgba(255, 196, 0, .28); } 50% { box-shadow: 0 0 0 4px rgba(255, 210, 55, .38), 0 0 30px rgba(255, 196, 0, .55); } }
+@keyframes msShine { 0%, 55% { left: -40%; } 100% { left: 130%; } }
+@media (prefers-reduced-motion: reduce) { .my-snooker-btn, .my-snooker-btn::after { animation: none; } }
+/* Admin lists split into blocks (competitions: one per season) */
+.crud-group { margin: 0 0 22px; }
+.crud-group-h { display: flex; align-items: center; gap: 10px; margin: 18px 0 10px; padding: 10px 14px; background: #111; color: #fff; border-radius: 10px; font-size: 16px; }
+.crud-group-h small { display: inline-grid; place-items: center; min-width: 26px; height: 22px; padding: 0 7px; border-radius: 11px; background: var(--red); color: #fff; font: 700 12px var(--font-body); }
+.crud-group:first-child .crud-group-h { margin-top: 0; }
+/* Dashboard search: the setting found flashes yellow */
+.find-flash { animation: findFlash 2.6s ease-out; border-radius: 8px; }
+@keyframes findFlash { 0%, 35% { background: #fff1b8; box-shadow: 0 0 0 6px #fff1b8; } 100% { background: transparent; box-shadow: 0 0 0 6px transparent; } }
+/* Competition bracket: the pre-qualifiers above the bracket instead of a column full of byes */
+.br-prelims { background: #1b1b1b; border-radius: 10px; padding: 4px 8px 12px; margin: 0 0 12px; }
+.br-prelims .br-title { text-align: left; padding: 12px 22px 4px; display: flex; gap: 12px; align-items: baseline; }
+.br-prelims .br-title small { margin: 0; }
+.br-prelims-note { color: #bbb; font-size: 13px; margin: 0 22px 6px; }
+.br-prelims-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(216px, 1fr)); }
+.br-prelims-row .br-slot { padding: 5px 14px; }
+.br-prelims-row .br-slot::before, .br-prelims-row .br-slot::after { display: none; }
+.pair-pick.is-empty { color: var(--muted); }
+
+/* Results page: every name in black; the score is two tiles — green for the winner, red for the loser */
+.res-list .res-mini span, .res-list .res-mini span.won, .res-list .res-mini span.lost, html.look-calm .res-list .res-mini span.lost { color: var(--ink) !important; }
+.res-list .res-mini span.won { font-weight: 700; }
+.res-list .res-mini span.lost { font-weight: 500; }
+.res-mini b.rs { display: inline-flex; gap: 3px; background: none !important; padding: 0 !important; }
+.res-mini b.rs i { display: inline-grid; place-items: center; min-width: 30px; height: 28px; padding: 0 6px; border-radius: 6px; font: 700 15px var(--font-head); font-style: normal; background: #1a1a1a; color: #fff; }
+.res-mini b.rs i.w { background: var(--green, #0b8a12); }
+.res-mini b.rs i.l { background: var(--red, #e8003d); }
+.res-mini b.rs-one { border-radius: 6px; }
+
+/* Player page: career stats and the Triple Crown, World Snooker style (Rich) */
+.career { border-top: 1px solid #d9d8cc; padding: 22px 0 6px; }
+.career + .career { border-top: 1px solid #d9d8cc; }
+.career h3 { margin: 0 0 16px; font-size: clamp(22px, 2.6vw, 30px); letter-spacing: .01em; }
+.career-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 18px 24px; margin: 0; }
+.career-stats div { margin: 0; }
+.career-stats dt { font-size: 12.5px; color: var(--muted); margin-bottom: 2px; }
+.career-stats dd { margin: 0; font: 700 clamp(30px, 3.4vw, 40px)/1 var(--font-head); letter-spacing: -.02em; }
+.crown-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px 24px; }
+.crown-list li { display: flex; align-items: center; gap: 12px; }
+.crown-badge { flex: none; display: grid; place-items: center; width: 64px; height: 58px; background: var(--red); clip-path: polygon(50% 0, 100% 100%, 0 100%); padding-top: 18px; }
+.crown-badge .crown-trophy { width: 26px; height: 26px; object-fit: contain; filter: brightness(0) invert(1); }
+.crown-list li:not(.won) .crown-badge { background: #b9b8ad; }
+.crown-name { font: 700 18px/1.05 var(--font-head); text-transform: uppercase; max-width: 170px; }
+.crown-count { font: 700 26px/1 var(--font-head); }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 73 — a bolder, sportier look (Neil & Rich: "add some vibe";
+   ideas from ThemeBoy's Boxseat / Varsity club themes): black title bars on the
+   boxes, scoreboard tiles for scores, a red slash on headings, a little texture.
+   Public pages only — the dashboard keeps its plain working look.
+   ═════════════════════════════════════════════════════════════ */
+:root { --vibe-dark: #0d0d0d; --vibe-stripe: repeating-linear-gradient(135deg, rgba(255, 255, 255, .035) 0 2px, transparent 2px 12px); }
+
+/* Boxes: a black title bar, white capitals, a red slash */
+html.look-calm body:not([data-page="admin"]) #view .panel { border: 0; box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 10px 26px -18px rgba(0, 0, 0, .35); }
+html.look-calm body:not([data-page="admin"]) #view .panel > .panel-head,
+html.look-calm body:not([data-page="admin"]) #side .panel > .panel-head {
+  background: var(--vibe-dark) var(--vibe-stripe) !important; color: #fff !important; padding: 13px 18px !important; border: 0 !important;
+  font: 700 15px var(--font-head) !important; letter-spacing: .06em; text-transform: uppercase; }
+html.look-calm body:not([data-page="admin"]) :is(#view, #side) .panel > .panel-head::before { width: 12px; height: 16px; border-radius: 0; background: var(--red); transform: skewX(-20deg); }
+html.look-calm body:not([data-page="admin"]) :is(#view, #side) a.panel-head::after { color: #fff; }
+html.look-calm body:not([data-page="admin"]) :is(#view, #side) a.panel-head:hover { color: #fff !important; background-color: #222 !important; }
+html.look-calm body:not([data-page="admin"]) :is(#view, #side) a.panel-head:hover::after { color: var(--red); }
+
+/* Section headings on the home page and elsewhere: the red slash */
+.hb-head h2::before { width: 12px !important; height: 20px !important; border-radius: 0 !important; transform: skewX(-20deg); }
+.hb-head h2 { letter-spacing: .01em; }
+
+/* Live & upcoming strip: scores as two scoreboard tiles; the winner's tile green, the loser's red */
+.sc-mid b.sc-tiles { display: inline-flex; gap: 4px; font: inherit; }
+.sc-mid b.sc-tiles i { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 6px; font: 700 18px var(--font-head); font-style: normal;
+  background: #1f1f1f; color: #fff; }
+html.look-calm:not(.strip-dark) .sc-mid b.sc-tiles i { background: #1f1f1f; color: #fff; }
+.sc-mid b.sc-tiles i.w { background: var(--green) !important; }
+.sc-mid b.sc-tiles i.l { background: var(--red) !important; }
+.strip-card { transition: border-color .15s, box-shadow .15s; }
+.strip-card:hover { box-shadow: inset 0 -3px 0 var(--red); }
+
+/* The black bands get a fine diagonal texture */
+.live-strip-wrap, html.look-calm.strip-dark .live-strip-wrap, .site-footer, .comp-admin { background-image: var(--vibe-stripe) !important; }
+
+/* Buttons: crisp and square-cornered, capitals */
+html.look-calm body:not([data-page="admin"]) #view .btn:not(.small) { letter-spacing: .05em; }
+
+/* Competition / news / page headers: a short red slash under the big page headings */
+html.look-calm body:not([data-page="admin"]) #view .wrap > h1:not(.sr-only)::after { content: ""; display: block; width: 46px; height: 6px; margin-top: 12px; background: var(--red); transform: skewX(-20deg); }
+/* The bracket sits on its dark background again (its round names were white on white) */
+html.look-calm .panel.bracket-panel { background: #161616 !important; }
+html.look-calm .panel.bracket-panel .bracket-hint { color: #9a9a9a; }
+.br-prelims { background: #222; margin: 8px 8px 4px; }

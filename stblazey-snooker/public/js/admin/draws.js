@@ -44,6 +44,11 @@ export async function draws(el, { user } = {}) {
   const pairMode = c.kind === "Doubles" && !teamFirst;
   // Round 72 (Rich: "competitions, we don't have seeds — but other leagues might"): seeds only when the competition is ticked as seeded.
   const seeded = !!c.seeded;
+  const clubOf = (e) => {
+    const teamIds = e.team_id ? [e.team_id] : [e.player_id, e.partner_id].filter(Boolean).map((id) => players.find((p) => p.id === id)?.team_id).filter(Boolean);
+    return [...new Set(teamIds)].map((id) => { const t = teams.find((x) => x.id === id); const v = venues.find((x) => x.id === t?.venue_id);
+      return t ? `${t.name}${v ? ` (${v.name})` : ""}` : ""; }).filter(Boolean).join(" / ");
+  };
   // Round 72: how many pre-qualifier matches — worked out from the number of entrants, and can be changed.
   const prelimsNow = autoPrelims(entries.length);
   const shapeHtml = (n, p) => {
@@ -101,9 +106,13 @@ export async function draws(el, { user } = {}) {
         </div>
       </form>
       ${dataTable([
+        // Round 73 (Rich): a number for every entrant (so it's clear how many have been added), and their club —
+        // the team they play for and its venue, to see where the home player plays.
+        { label: "#", cell: (e, i) => i + 1, cls: "num" },
         ...(seeded ? [{ label: "Seed", cell: (e) => e.seed || "–", cls: "num" }] : []),
         { label: "Name", cell: (e) => html`<b>${e.name}</b>` },
         { label: pairMode ? "Players" : "Linked to", cell: (e) => teams.find((t) => t.id === e.team_id)?.name ?? ([e.player_id, e.partner_id].filter(Boolean).map((id) => players.find((p) => p.id === id)?.full_name).filter(Boolean).join(" & ") || (pairMode ? html`<span class="muted">Not linked — remove and add again as a pair</span>` : "–")) },
+        { label: "Club (venue)", cell: (e) => clubOf(e) || html`<span class="muted">–</span>` },
         { label: "", cls: "right", cell: (e) => html`<button class="btn small" data-remove-entry="${e.id}">Remove</button>` },
       ], entries, { empty: "No entrants yet." })}`)}
 
@@ -174,9 +183,10 @@ export async function draws(el, { user } = {}) {
         const pickSide = (side) => {
           const key = side === "a" ? "entry_a" : "entry_b";
           const cur = m.row[`bye_${side}`] ? "bye" : m.row[`from_${side}`] ? `w:${m.row[`from_${side}`]}` : (m.row[key] ?? "");
-          const auto = m.round === 1 ? "Bye" : c.draw_mode === "redraw" ? "Not drawn yet" : "Winner (automatic)";
-          return html`<select name="${key}" class="pair-pick"><option value="">${auto}</option>
-            ${m.round > 1 ? html`<option value="bye" ${cur === "bye" ? "selected" : ""}>Bye</option>` : ""}
+          // Round 73 (Rich): an empty place reads as a plain line to choose from, not a name or "Bye".
+          const auto = m.round === 1 ? "—— choose ——" : c.draw_mode === "redraw" ? "—— not drawn yet ——" : "—— winner goes here ——";
+          return html`<select name="${key}" class="pair-pick ${cur ? "" : "is-empty"}"><option value="">${auto}</option>
+            <option value="bye" ${cur === "bye" ? "selected" : ""}>Bye</option>
             ${sources.length ? html`<optgroup label="Winner of a match">${sources.map((x) => html`<option value="w:${x.row.id}" ${cur === `w:${x.row.id}` ? "selected" : ""}>${sourceLabel(x)}</option>`)}</optgroup>` : ""}
             <optgroup label="${m.round > 1 ? "Team / player" : "Entrants"}">${entries.map((e) => html`<option value="${e.id}" ${cur === e.id ? "selected" : ""}>${e.name}</option>`)}</optgroup></select>
             ${m.round > 1 && !m.row[key] && !m.row[`bye_${side}`] ? html`<small class="muted">${isEntry(m[side]) ? b.entryById.get(m[side]).name : placeLabel(b, m, side) ?? "to be decided"}</small>` : ""}`;

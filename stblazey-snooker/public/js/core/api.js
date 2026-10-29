@@ -281,6 +281,12 @@ export async function seasonFrames(seasonId) {
   return selectIn("frames", "fixture_id", fixtures.map((f) => f.id));
 }
 
+/** Round 73: the photo of a competition match's paper scorecard (set_comp_scorecard_photo() in schema.sql). */
+export async function setCompScorecardPhoto(mid, url) {
+  await run(db.rpc("set_comp_scorecard_photo", { mid, url }));
+  invalidate();
+}
+
 // ── competition scorecards ───────────────────────────────────────
 /** `ref` is the match's short number (27) or its long id. */
 export async function loadCompMatch(ref) {

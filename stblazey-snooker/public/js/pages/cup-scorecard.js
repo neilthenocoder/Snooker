@@ -1,6 +1,7 @@
 // Live frame-by-frame scorecard for a cup match (singles, doubles or teams).
 import { html, mount, $, toast, confirmBox } from "../core/dom.js";
-import { loadCompMatch, loadCompetitions, saveCompScorecard, setWalkover, save, table } from "../core/api.js";
+import { loadCompMatch, loadCompetitions, saveCompScorecard, setWalkover, save, table, setCompScorecardPhoto } from "../core/api.js";
+import { uploadImage } from "../core/upload.js";
 import { buildBracket, roundName, walkoverSide } from "../core/bracket.js";
 import { canEditCompMatch, canManage } from "../core/auth.js";
 import { scorecardEditor, breaksText } from "../core/scorecard-editor.js";
@@ -69,8 +70,25 @@ export default async function cupScorecard(view, { params, user }) {
       : html`<span><b>Not played?</b> Give a walkover:</span><button type="button" class="btn small ghost" data-wo="a">to ${info.a.name}</button><button type="button" class="btn small ghost" data-wo="b">to ${info.b.name}</button>
         ${match.status === "postponed" ? html`<span class="pp-note">Postponed.</span><button type="button" class="btn small ghost" data-pp="off">Back on (rearranged)</button>`
           : ["scheduled", null, undefined].includes(match.status) ? html`<span>or</span><button type="button" class="btn small ghost" data-pp="on">Mark postponed</button>` : ""}`}</div>` : ""}
+    <input type="file" accept="image/*" capture="environment" hidden data-photo>
     <div data-editor></div>
   </div>`);
+  let editor = null;
+  function pickPhoto() {
+    const input = $("[data-photo]", view);
+    input.onchange = async () => {
+      if (!input.files[0]) return;
+      try {
+        toast("Uploading photo…");
+        const url = await uploadImage(input.files[0], { folder: "scorecards", maxSize: 2000, library: false, target: 700 * 1024 });
+        await setCompScorecardPhoto(match.id, url);
+        match.scorecard_url = url;
+        editor?.redraw();
+        toast("Scorecard photo uploaded");
+      } catch (err) { toast(err.message, "error"); }
+    };
+    input.click();
+  }
 
   $("[data-wo-bar]", view)?.addEventListener("click", async (e) => {
     // Round 38: postponed (and back on again once it has been rearranged).
@@ -94,7 +112,7 @@ export default async function cupScorecard(view, { params, user }) {
     } catch (err) { btn.disabled = false; toast(err.message, "error"); }
   });
 
-  return scorecardEditor({
+  editor = scorecardEditor({
     person: (id) => { const p = players.find((x) => x.id === id); return { name: p?.full_name ?? "A player", avatar_url: p?.avatar_url, club: team(p?.team_id)?.name }; },
     el: $("[data-editor]", view),
     subtitle: `${c.name} · ${roundName(match.round, info.bracket.totalRounds, info.bracket)}`, when: match.starts_at, venue: venues.find((v) => v.id === match.venue_id)?.name,
@@ -106,6 +124,10 @@ export default async function cupScorecard(view, { params, user }) {
     handicap: c.handicap ? (id) => players.find((p) => p.id === id)?.handicap ?? 0 : null,
     // Doubles (round 72): the pairs' handicaps are added up and the higher pair starts on the difference. A running total decides a match level on frames.
     handicapMode: handicapMode(c), runningTotal: !!c.handicap,
+    // Round 73 (Rich): Bill Toms / Willie Thomas — the away player gets extra points on top (Admin → Competitions → Edit).
+    extraStart: c.handicap && c.away_start ? (match.home_switched ? { a: c.away_start, b: 0 } : { a: 0, b: c.away_start }) : null,
+    // Round 73 (Rich): a photo of the paper scorecard, as for league matches (optional here).
+    photo: { required: false, url: () => match.scorecard_url, pick: () => pickPhoto() },
     playerName: (id) => players.find((p) => p.id === id)?.full_name ?? "A player",
     frames: bundle.frames.map(toEditor),
     actions: [
@@ -119,5 +141,6 @@ export default async function cupScorecard(view, { params, user }) {
       await saveCompScorecard(match.id, frames.map(fromEditor), breaks, action === "finish");
       if (action === "finish") navigate(canManage(user, "competitions") ? `/admin/draws?c=${c.id}` : urls.competition(c));
     },
-  }).destroy;
+  });
+  return editor.destroy;
 }

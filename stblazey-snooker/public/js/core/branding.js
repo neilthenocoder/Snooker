@@ -117,6 +117,8 @@ function brandOf(site) {
     loader: site.loading_logo_url || site.logo_url || "",
     loaderShow: site.loader_show !== false,
     loaderMs: Math.max(0, Math.min(10, Number(site.loader_seconds) || 0)) * 1000,
+    // Round 73 (Rich): the loading screen on every page, or (standard) only when the website is first opened.
+    loaderEvery: site.loader_every_page === true,
   };
 }
 
@@ -165,7 +167,7 @@ let waiting = null, firstLoad = true;
 /** Show the black loading screen if the page hasn't appeared within `delay` ms. */
 export function loaderOn(delay = 300) {
   clearTimeout(waiting);
-  if (current.loaderShow === false) return;
+  if (current.loaderShow === false || (!firstLoad && !current.loaderEvery)) return;
   waiting = setTimeout(() => document.getElementById("boot")?.classList.remove("done"), delay);
 }
 /**
