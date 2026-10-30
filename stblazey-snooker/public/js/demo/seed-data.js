@@ -47,8 +47,8 @@ export function buildSeed() {
     "Mevagissey Social Club": "Harbour-side social club with two match tables.",
     "Pelynt Social Club": "Community social club welcoming visiting teams.",
     "St Blazey Football Club": "Clubhouse snooker room at the football ground.",
-    "St Neot Social Club": "Moorland village club with a single match table.",
-    "Tregonissey Social Club": "Long-standing league venue with three tables.",
+    "St Neot Social Club": "Moorland village club.",
+    "Tregonissey Social Club": "Long-standing league venue.",
     "Gorran Haven Club": "Placeholder venue — edit in the admin dashboard.",
     "Lerryn Memorial Hall": "Placeholder venue — edit in the admin dashboard.",
   };
@@ -56,6 +56,8 @@ export function buildSeed() {
     id: uuid(), name, slug: slugify(name), description,
     address: `${name}, Placeholder Road, Cornwall`, phone: "", email: "", contact_name: "", map_url: "",
     quote: "", image_url: "", logo_url: "", gallery: [],
+    // Round 77 (Rich): tables at each club.
+    tables: /^(Luxulyan|Gorran|Lerryn)/.test(name) ? 1 : 2,
   }));
   const venueBy = (name) => venues.find((v) => v.name.startsWith(name)).id;
 
@@ -336,7 +338,7 @@ export function buildSeed() {
     feature_show: true, feature_label: "NEW", feature_text: "Try our step-by-step scorecard — log in to find out more", feature_url: "/login", feature_bg: "#0b84e0",
     latest_news_mode: "not_banner", latest_news_category: "", latest_news_ids: [], latest_news_count: 1,
     entry_intro: "Enter this season's competitions here. It takes a minute: choose your name, tick the competitions you want, then pay the entry fee by bank transfer.",
-    section_colors: true, site_look: "calm", strip_style: "light", header_style: "black", logo_light_url: "", home_style: "standard", home_sections: {}, promo_mode: "auto", promo_title: "", promo_text: "", promo_button: "", promo_url: "", hero_bg: null, strip_line: "red", sidebar_layout: "right", page_layouts: {}, font_embed: "", loader_show: true, loader_seconds: 0, loader_every_page: false, triple_crown: "",
+    section_colors: true, site_look: "calm", strip_style: "dark", header_style: "black", logo_light_url: "", home_style: "standard", home_sections: {}, promo_mode: "auto", promo_title: "", promo_text: "", promo_button: "", promo_url: "", hero_bg: null, strip_line: "red", sidebar_layout: "right", page_layouts: {}, font_embed: "", loader_show: true, loader_seconds: 0, loader_every_page: false, triple_crown: "",
     strip_result_hours: 48, strip_live_color: null, strip_soon_color: null, strip_done_color: null, strip_pending_color: null, strip_walkover_color: null, strip_postponed_color: null, reminders_on: true, reminders_both: false, side_box_mode: "results", side_box_title: "", side_box_count: 5, side_box_league: null,
     ticker_show: true, ticker_speed: "normal", ticker_pace: 3, maintenance_on: false, maintenance_text: "",
     text_sizes: {}, celebrate_breaks: "season", feature_announcements: true, feature_style: "scroll", key_dates_show: true, key_dates_count: 5,

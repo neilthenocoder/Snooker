@@ -3,8 +3,15 @@
 import { html, fmtDate, fmtTime, fmtDay, ukDay, notUKTime, zoneName, fmtAgo } from "./dom.js";
 import { isProvisional, PROVISIONAL_NOTE, frameWinner, NOT_UPDATED, isLiveSoon } from "./rules.js";
 import { formBadge as formBadgeFn, formChips as formChipsFn } from "./form.js";
-/** The picture for a player with no photo: grey in the calm look (round 43), red in the classic one. */
-export const blankAvatar = () => (document.documentElement.classList.contains("look-calm") ? "/assets/avatar-calm.svg" : "/assets/avatar.svg");
+/** The picture for a player with no photo (round 77): one of Rich's generic cartoon players — 17 men, 4 women.
+ * The same player always gets the same one (picked from their id or name), so faces don't change between pages. */
+const WOMEN = /^(abbie|abby|alice|alison|amanda|amy|angela|ann|anna|anne|becky|beth|carol|caroline|charlotte|chloe|claire|debbie|diane|donna|elaine|ella|ellie|emily|emma|gemma|hannah|helen|holly|jackie|jade|jane|janet|jenny|jess|jessica|jo|joanne|julie|karen|kate|katie|kelly|kim|laura|lauren|linda|lisa|liz|louise|lucy|lynn|mandy|margaret|maria|mary|megan|michelle|molly|nicola|nikki|paula|rachel|rebecca|reanne|reanna|sally|sam?antha|sarah|sharon|sophie|stacey|steph|stephanie|sue|susan|tina|tracey|tracy|vicky|wendy|zoe)$/i;
+export const genericAvatar = (seed = "", name = "") => {
+  let h = 0;
+  for (const ch of String(seed || name)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return WOMEN.test(String(name).trim().split(/\s+/)[0] || "") ? `/assets/players/woman-${(h % 4) + 1}.svg` : `/assets/players/man-${(h % 17) + 1}.svg`;
+};
+export const blankAvatar = (player) => genericAvatar(player?.id || player?.slug || player?.full_name || "", player?.full_name || player?.name || "");
 
 // ── URLs (one place to change the site's link structure) ──────
 // Matches, cup matches and players have short addresses (/match/2627-14, /cup-match/27, /player/sam-bolitho);
@@ -56,7 +63,7 @@ export const shortName = (league) => league.short_name || league.name.replace(/ 
 // ── primitives ────────────────────────────────────────────────
 /** A player's photo, or the default cartoon if none has been uploaded. */
 export const avatar = (player, cls = "avatar") =>
-  html`<img class="${cls}" src="${player?.avatar_url || blankAvatar()}" alt="" loading="lazy">`;
+  html`<img class="${cls}" src="${player?.avatar_url || blankAvatar(player)}" alt="" loading="lazy">`;
 
 /** Photo + name, linking to the player's page. */
 export const playerLink = (player, cls = "") =>
@@ -395,6 +402,9 @@ export function sidebar(ctx, news = [], { leagues = ctx.leagues, top = "", count
     ${leagues.map((l) => html`${breaks ? leagueBreaksBox(ctx, l) : ""}${rankings ? rankingsPanel(ctx, l, { limit: 10, scroll: true }) : ""}`)}
   </aside>`;
 }
+
+/** Round 77: the Latest Results box on its own (the home page has no side column now). */
+export const resultsBox = (ctx, box) => sideBox(ctx, [], 1, box);
 
 /**
  * The box at the top of the side column. What it shows is chosen under

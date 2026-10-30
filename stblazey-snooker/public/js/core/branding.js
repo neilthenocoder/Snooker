@@ -78,6 +78,8 @@ function brandOf(site) {
   for (const [key, [main, ink]] of Object.entries(COLOURS)) {
     const v = site[key];
     if (!isHex(v)) continue;
+    // Round 77: the old standard gold, saved before Rich chose #FFB81C, gives way to the new yellow.
+    if (key === "color_competitions" && /^#fbb61a$/i.test(v)) continue;
     vars[main] = v;
     if (ink) vars[ink] = inkOn(v);
     if (key === "color_primary") vars["--red-dark"] = darker(v);

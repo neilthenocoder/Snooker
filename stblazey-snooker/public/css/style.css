@@ -7,7 +7,7 @@
   --red: #e8003d;
   --red-dark: #c10033;
   --blue: #0088e0;
-  --yellow: #fbb61a;
+  --yellow: #FFB81C;
   --green: #0b8a12;
   --brown: #4b2019;
   --ink: #111;
@@ -18,7 +18,7 @@
   --head-row: #e6e6e0;
   --highlight: #f8dde3;
   --dark: #222;
-  --wrap: 1328px;
+  --wrap: 1472px;
   --sidebar: 360px;
   --font-head: "Space Grotesk", "Arial", sans-serif;
   --font-body: "Plus Jakarta Sans", "Open Sans", system-ui, sans-serif;
@@ -143,7 +143,7 @@ table.data tbody tr.hl .badge { width: 42px; height: 42px; font-size: 13px; }
 .top-break .avatar { width: 72px; height: 72px; }
 .top-break .value { font: 700 64px/1 var(--font-head); text-align: center; }
 .new-badge { display: inline-block; background: var(--yellow); color: #1b0e06; font-size: 11px; padding: 2px 7px; margin-left: 8px; border-radius: 3px; vertical-align: middle; animation: newPulse 1.4s ease-in-out infinite; }
-@keyframes newPulse { 50% { transform: scale(1.15); box-shadow: 0 0 12px rgba(251,182,26,.9); } }
+@keyframes newPulse { 50% { transform: scale(1.15); box-shadow: 0 0 12px rgba(255,184,28,.9); } }
 .top-break .who { grid-column: 1 / -1; text-align: center; font-weight: 700; font-size: 15px; margin-top: 4px; }
 .top-break.hl { background: var(--highlight); }
 
@@ -195,7 +195,7 @@ table.data tbody tr.hl .badge { width: 42px; height: 42px; font-size: 13px; }
 .strip-empty a { color: #fff; font-weight: 700; }
 
 /* Shield holders, player/team of the week, CueViews */
-.shield-icon { position: absolute; right: -14px; top: -10px; width: 110px; height: 110px; fill: rgba(251,182,26,.18); }
+.shield-icon { position: absolute; right: -14px; top: -10px; width: 110px; height: 110px; fill: rgba(255,184,28,.18); }
 .spotlights { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
 .spotlight { position: relative; background: #111 radial-gradient(circle at 80% 0%, #3a0010, transparent 60%); color: #fff; padding: 22px 18px 18px; display: grid; justify-items: center; text-align: center; gap: 6px; }
 .spotlight:hover { color: #fff; }
@@ -391,7 +391,7 @@ a.top-break:hover { color: inherit; background: var(--row-alt); }
 .comp-hero h1 { margin: 4px 0 8px; font-size: clamp(32px, 5vw, 54px); }
 .comp-kicker { margin: 0; color: var(--yellow); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; font-size: 13px; }
 .comp-progress { margin: 0; display: inline-block; background: var(--red); padding: 5px 12px; font-weight: 700; font-size: 14px; }
-.comp-champ { background: var(--yellow); color: #1b0e06; padding: 12px 20px; font: 700 26px/1.1 var(--font-head); text-transform: uppercase; box-shadow: 0 0 0 4px rgba(251,182,26,.3), 0 0 40px rgba(251,182,26,.45); }
+.comp-champ { background: var(--yellow); color: #1b0e06; padding: 12px 20px; font: 700 26px/1.1 var(--font-head); text-transform: uppercase; box-shadow: 0 0 0 4px rgba(255,184,28,.3), 0 0 40px rgba(255,184,28,.45); }
 .comp-champ small { display: block; font: 700 11px var(--font-body); letter-spacing: .1em; }
 .glance { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--head-row); }
 .glance div { background: #fff; padding: 14px; font-size: 13px; }
@@ -438,10 +438,10 @@ a.top-break:hover { color: inherit; background: var(--row-alt); }
 .br-meta { font-size: 11px; color: #8a8a8a; padding: 3px 10px; background: #1f1f1f; }
 .br-trophy { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; color: #8a8a8a; font: 700 18px/1.1 var(--font-head); text-transform: uppercase; padding: 18px 10px; border: 2px dashed #444; border-radius: 10px; }
 .br-trophy svg { width: 54px; height: 54px; fill: currentColor; }
-.br-trophy.won { color: var(--yellow); border: 2px solid var(--yellow); background: radial-gradient(circle at 50% 30%, rgba(251,182,26,.25), transparent 70%); animation: glow 2.4s ease-in-out infinite; }
+.br-trophy.won { color: var(--yellow); border: 2px solid var(--yellow); background: radial-gradient(circle at 50% 30%, rgba(255,184,28,.25), transparent 70%); animation: glow 2.4s ease-in-out infinite; }
 .br-trophy.lit { background: #3a2a05; }
 @keyframes brIn { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
-@keyframes glow { 50% { box-shadow: 0 0 26px rgba(251,182,26,.55); } }
+@keyframes glow { 50% { box-shadow: 0 0 26px rgba(255,184,28,.55); } }
 @media (prefers-reduced-motion: reduce) { .br-col, .br-trophy.won { animation: none; } }
 
 .status.plain { text-transform: none; }
@@ -1061,7 +1061,7 @@ table.data tbody tr.imp-row-error td { background: #fdeef1 !important; }
 .list-todo span { flex: 1 1 320px; }
 
 .shield-now { position: relative; overflow: hidden; background: #1d1d1d; color: #fff; padding: 26px 22px; display: grid; justify-items: center; text-align: center; gap: 8px; border-bottom: 5px solid var(--yellow); }
-.shield-now .shield-icon { position: absolute; right: -10px; top: -14px; width: 150px; height: 150px; fill: rgba(251,182,26,.16); }
+.shield-now .shield-icon { position: absolute; right: -10px; top: -14px; width: 150px; height: 150px; fill: rgba(255,184,28,.16); }
 .shield-now small { color: var(--yellow); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
 .shield-team { display: flex; align-items: center; gap: 14px; color: #fff; }
 .shield-team:hover { color: var(--yellow); }
@@ -1631,7 +1631,7 @@ a.sb-who:hover { color: var(--yellow); }
 .sb-cue { position: absolute; left: 0; bottom: 0; display: inline-flex; align-items: center; gap: 8px; font: 700 12px var(--font-head); text-transform: uppercase; background: var(--ball-white); color: #111; padding: 4px 10px 4px 6px; border-radius: 20px; }
 .sb-cue::before { content: ""; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: inset -2px -3px 4px rgba(0,0,0,.3), 0 0 0 1px #bbb; }
 .sb-side.b .sb-cue { left: auto; right: 0; }
-.sb-side.at-table .sb-face { border-color: var(--yellow); box-shadow: 0 0 0 4px rgba(251,182,26,.35); }
+.sb-side.at-table .sb-face { border-color: var(--yellow); box-shadow: 0 0 0 4px rgba(255,184,28,.35); }
 .sb-side.won .sb-name { color: var(--yellow); }
 .sb-mid { text-align: center; }
 .sb-frames { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,.55); padding: 10px 16px; border-radius: 6px; font-family: var(--font-head); }
@@ -2060,7 +2060,7 @@ button.team-tile:hover { box-shadow: inset 0 -4px 0 var(--red); }
 .hub-pic { aspect-ratio: 16 / 10; background: #1d1d1d; overflow: hidden; flex: none; }
 .hub-pic img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s; }
 .hub-card:hover .hub-pic img { transform: scale(1.04); }
-.hub-ph { display: block; width: 100%; height: 100%; background: #1d1d1d url("/assets/logo.svg") center / 38% no-repeat; opacity: .9; }
+.hub-ph { display: block; width: 100%; height: 100%; background: #1d1d1d url("/assets/triangle-balls.svg") center / 30% no-repeat; opacity: .9; }
 .hub-body { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px 14px; flex: 1; min-width: 0; }
 .hub-cat { font: 700 11px var(--font-head); text-transform: uppercase; letter-spacing: .09em; color: var(--red-dark); }
 .hub-body h3 { margin: 0; font-size: 19px; line-height: 1.25; text-transform: none; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
@@ -2447,7 +2447,7 @@ a.res-score.done:hover { color: #fff; filter: brightness(1.4); }
 .ns-row::-webkit-scrollbar { display: none; }
 .ns-card { position: relative; flex: 0 0 min(300px, 78vw); aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden; background: #222; color: #fff; scroll-snap-align: start; }
 .ns-card img, .ns-ph { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .45s; }
-.ns-ph { background: #1d1d1d url("/assets/logo.svg") center 38% / 34% no-repeat; }
+.ns-ph { background: #1d1d1d url("/assets/triangle-balls.svg") center 38% / 28% no-repeat; }
 .ns-card:hover img { transform: scale(1.05); }
 .ns-card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, .9) 100%); }
 .ns-text { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 14px; }
@@ -3705,7 +3705,7 @@ html.cm-locked { overflow: hidden; }
 .form-badge.none { background: #ddd; color: #555; }
 .form-badge.big { font-size: 24px; padding: 6px 14px; min-width: 70px; }
 .form-trend { font-style: normal; font-size: .62em; opacity: .95; }
-.form-chips { display: inline-flex; gap: 3px; vertical-align: middle; }
+.form-chips { display: inline-flex; gap: 5px; vertical-align: middle; }
 .fc { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 4px; font: 700 12px/1 var(--font-head); color: #fff; background: #888; text-decoration: none; flex: none; }
 a.fc:hover { color: #fff; filter: brightness(1.15); transform: translateY(-1px); }
 .fc.w { background: var(--green); }
@@ -3809,7 +3809,7 @@ a.fc:hover { color: #fff; filter: brightness(1.15); transform: translateY(-1px);
 .not-upd { color: #8a8a8a; font-style: italic; font-weight: 600; white-space: nowrap; }
 p.not-upd { margin: 0; }
 .cv-empty { display: flex; align-items: center; gap: 12px; background: #111; color: #fff; padding: 14px 18px; }
-.cv-empty span { font: 700 13px var(--font-head); text-transform: uppercase; letter-spacing: .08em; color: var(--yellow, #fbb61a); }
+.cv-empty span { font: 700 13px var(--font-head); text-transform: uppercase; letter-spacing: .08em; color: var(--yellow, #FFB81C); }
 .cv-empty .not-upd { color: #bbb; }
 .stats-empty { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #e6e6e6; padding: 16px 18px; }
 .stats-empty b { font: 700 15px var(--font-head); text-transform: uppercase; }
@@ -3972,9 +3972,9 @@ p.not-upd { margin: 0; }
 .share-card-box .muted { font-size: 13px; margin: 10px 0 0; }
 /* Round 40: Season wrapped */
 .wr-hero { background: linear-gradient(135deg, #0d0d0d, #2a0b14 60%, #0b3d1a); color: #fff; border-radius: 16px; padding: 28px 26px; }
-.wr-hero small { color: #fbb61a; font: 700 13px var(--font-head); text-transform: uppercase; letter-spacing: .08em; }
+.wr-hero small { color: #FFB81C; font: 700 13px var(--font-head); text-transform: uppercase; letter-spacing: .08em; }
 .wr-hero h1 { margin: 8px 0 14px; font-size: clamp(30px, 5vw, 52px); line-height: 1.02; color: #fff; display: block; }
-.wr-hero h1 em { font-style: normal; color: #fbb61a; }
+.wr-hero h1 em { font-style: normal; color: #FFB81C; }
 .wr-hero h1 .badge { width: 46px; height: 46px; vertical-align: middle; }
 .wr-tools { display: flex; flex-wrap: wrap; gap: 14px; }
 .wr-tools .toolbar { color: #fff; margin: 0; }
@@ -5552,3 +5552,129 @@ html, body { overflow-x: clip; }
   .hub-card .hub-meta { margin: 0 !important; padding: 0 !important; border: 0 !important; font-size: 12px !important; }
 }
 .form label.sw-move { display: flex !important; flex-direction: row; gap: 12px; } .sw-move b { font-weight: 700; } .sw-move small { margin-left: 4px; }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 77 — Rich's layout (Feedback 80): wider page, full-width home page,
+   the triangle, generic pictures and splashes of yellow
+   ═════════════════════════════════════════════════════════════ */
+/* Page width: content 1440px (24px either side), and 1536px on big screens. */
+:root { --wrap: 1488px; --tri: url("/assets/triangle.svg"); }
+@media (min-width: 1700px) { :root { --wrap: 1584px; } }
+
+/* Headings: Rich's red triangle instead of the red slash */
+.hb-head h2::before, .league-group-h::before,
+html.look-calm body:not([data-page="admin"]) :is(#view, #side) .panel-head::before {
+  width: 18px !important; height: 17px !important; border-radius: 0 !important; transform: none !important;
+  background: var(--tri) center / contain no-repeat !important; flex: none; }
+html.look-calm body:not([data-page="admin"]) #view .wrap > h1:not(.sr-only)::after {
+  width: 22px; height: 21px; transform: none; background: var(--tri) center / contain no-repeat; }
+
+/* ── The full-width home page (Rich's layout.pdf) ─────────────────────────────
+   Every block is its own section running the page width; some sit in a dark band that goes edge to edge. */
+.hz { padding-top: 44px; }
+.hz .home-block { margin: 0; }
+.hz-band { --band: #0f0f0f; background: var(--band) var(--vibe-stripe, none); color: #fff; padding: 40px 0 44px; margin-top: 44px; border-top: 4px solid var(--yellow); }
+.hz-band + .hz-band { margin-top: 0; border-top: 0; }
+.hz-band + .hz:not(.hz-band) { padding-top: 44px; }
+.hz-band .hb-head h2 { color: #fff; }
+.hz-band .hb-head a { color: var(--yellow); }
+.hz-band .hb-head a:hover { color: #fff; }
+.hb-head a { display: inline-flex; align-items: center; gap: 4px; }
+
+/* Top: quick links, the feature box, entries and key dates on the left; the latest results on the right */
+.hz-top { padding-top: 32px; }
+.hz-top-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.hz-top-grid .home-top { display: grid; gap: 14px; min-width: 0; }
+.hz-top-grid .home-top > * { margin: 0 !important; }
+.hz-top-grid .hb-head { margin-bottom: -2px !important; }
+
+/* Quick links: a row of dark cards — the icon in yellow — that slides sideways when there isn't room */
+html.look-calm .quick-links.ql-8.ql-scroll, .quick-links.ql-scroll {
+  display: flex !important; gap: 10px !important; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; padding-bottom: 2px; }
+.quick-links.ql-scroll::-webkit-scrollbar { display: none; }
+html.look-calm .quick-links.ql-8.ql-scroll a, .quick-links.ql-scroll a {
+  flex: 1 0 104px; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 18px;
+  min-height: 96px; padding: 14px 14px 12px !important; scroll-snap-align: start;
+  background: #141414 !important; color: #fff !important; border: 0 !important; border-radius: 12px; box-shadow: none;
+  font: 700 13px/1.15 var(--font-head) !important; text-transform: uppercase; letter-spacing: .03em !important; white-space: normal; text-align: left; }
+html.look-calm .quick-links.ql-8.ql-scroll a:hover, .quick-links.ql-scroll a:hover { background: #262626 !important; color: var(--yellow) !important; transform: translateY(-2px); }
+html.look-calm .quick-links.ql-8.ql-scroll svg, .quick-links.ql-scroll svg { display: block !important; width: 24px !important; height: 24px !important; fill: var(--yellow) !important; color: var(--yellow); }
+
+/* The yellow bar: entries are open */
+html.look-calm .hz-top .enter-bar { background: var(--yellow) !important; color: #1b0e06 !important; border: 0 !important; border-radius: var(--radius); }
+html.look-calm .hz-top .enter-bar b { color: #1b0e06; }
+html.look-calm .hz-top .enter-bar span { background: #1b0e06; color: #fff; }
+
+/* Latest results on the right, kept compact */
+.hz-results { min-width: 0; }
+.hz-results .panel { margin: 0; }
+.hz-results :is(.sr-row, .side-result, .res-row) { padding-top: 8px; padding-bottom: 8px; }
+
+/* Featured news: the big story and three beside it */
+@media (min-width: 861px) { .hz .feat-grid { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; } }
+.hz .feat-main { min-height: 0; }
+
+/* Live and upcoming competitions: cards in a row that slides sideways */
+.cs-row { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 8px; scrollbar-width: thin; scrollbar-color: #444 transparent; }
+.cs-card { flex: 0 0 clamp(220px, 23%, 300px); display: flex; flex-direction: column; background: #1c1c1c; color: #fff; border-radius: 12px; overflow: hidden; scroll-snap-align: start;
+  transition: transform .2s, box-shadow .2s; }
+.cs-card:hover { color: #fff; transform: translateY(-3px); box-shadow: 0 0 0 2px var(--yellow); }
+.cs-top { display: grid; place-items: center; aspect-ratio: 16 / 9; background: #262626 radial-gradient(circle at 50% 120%, rgba(255, 184, 28, .22), transparent 65%); overflow: hidden; }
+.cs-top .cs-pic { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cs-top .cs-trophy, .cs-top img.trophy { width: auto !important; height: 70% !important; max-width: 60%; object-fit: contain; }
+.cs-text { display: grid; gap: 4px; padding: 14px 16px 16px; background: #f4f2ea; color: var(--ink); flex: 1; align-content: start; }
+.cs-text strong { font: 700 17px/1.2 var(--font-head); text-transform: uppercase; }
+.cs-text small { color: var(--muted); font-size: 13px; }
+.cs-text em { font-style: normal; font-weight: 700; font-size: 13px; color: var(--red); margin-top: 6px; }
+
+/* In the spotlight: player and team of the week side by side in the band */
+.hz-spot .spotlights { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+html.look-calm .hz-spot .spotlight { background: #1c1c1c !important; padding: 22px; border-radius: 12px; }
+.hz-spot .spot-photo { width: 110px; height: 110px; }
+.hz-spot .spot-badge .badge { width: 96px; height: 96px; font-size: 26px; }
+
+/* Our teams: a grid of tiles in the band */
+.hz-teams .hb-sub { color: var(--yellow); margin: 18px 0 10px; font-size: 15px; letter-spacing: .06em; }
+.hz-teams .hb-sub:first-of-type { margin-top: 0; }
+.hz-teams .team-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+html.look-calm .hz-teams .team-tile { background: #1c1c1c !important; color: #fff !important; border: 0 !important; box-shadow: none !important; border-radius: 10px;
+  display: flex; align-items: center; justify-items: initial; gap: 12px; padding: 12px 14px; min-height: 0; }
+html.look-calm .hz-teams .team-tile:hover { background: #2a2a2a !important; color: var(--yellow) !important; }
+.hz-teams .team-tile span { color: inherit; font-weight: 700; font-size: 14px; }
+.hz-teams .team-tile .badge { width: 40px; height: 40px; font-size: 12px; flex: none; }
+
+/* More stories: four big cards, two by two */
+.story-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.story-card { display: flex; flex-direction: column; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 10px 26px -18px rgba(0, 0, 0, .35); transition: transform .2s, box-shadow .2s; }
+.story-card:hover { color: inherit; transform: translateY(-3px); box-shadow: 0 16px 30px -16px rgba(0, 0, 0, .35); }
+.story-pic { display: block; aspect-ratio: 16 / 9; background: #1d1d1d; overflow: hidden; }
+.story-pic img, .story-pic .hub-ph { width: 100%; height: 100%; object-fit: cover; display: block; }
+.story-text { display: grid; gap: 6px; padding: 16px 20px 20px; border-top: 4px solid var(--yellow); }
+.story-text small { color: var(--red-dark, var(--red)); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.story-text strong { font: 700 22px/1.2 var(--font-head); }
+.story-text em { font-style: normal; color: var(--muted); font-size: 13px; }
+
+.hz-tables { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; align-items: start; }
+
+@media (max-width: 1000px) {
+  .hz-top-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .hz { padding-top: 30px; }
+  .hz-band { margin-top: 30px; padding: 28px 0 30px; }
+  .hz-band + .hz:not(.hz-band) { padding-top: 30px; }
+  .hz-top { padding-top: 22px; }
+  html.look-calm .quick-links.ql-8.ql-scroll a, .quick-links.ql-scroll a { flex: 0 0 96px; min-height: 84px; font-size: 12px !important; padding: 12px !important; gap: 12px; }
+  .cs-card { flex-basis: 78%; }
+  .story-grid { grid-template-columns: 1fr; gap: 14px; }
+  .story-text strong { font-size: 18px; }
+  .hz .feat-main { min-height: 0; }
+  .hz-teams .team-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hz-tables { grid-template-columns: 1fr; }
+}
+.hz-features .wrap > * { max-width: 1180px; margin-left: auto; margin-right: auto; }
+@media (min-width: 900px) { .hz-spot .spotlights.four { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .hz-spot .spotlights { grid-template-columns: 1fr; } }
+html.look-calm .quick-links.ql-8.ql-scroll a, .quick-links.ql-scroll a { flex: 1 0 128px; }
+@media (min-width: 761px) { .quick-links.ql-scroll { scrollbar-width: thin !important; scrollbar-color: #bbb transparent; } }
+html.look-calm.strip-dark .live-strip .strip-head a:not(.btn) { color: var(--yellow); }

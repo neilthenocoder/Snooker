@@ -16,7 +16,7 @@
 //      b: [{ … }] }
 // ─────────────────────────────────────────────────────────────
 import { html, mount, $, toast, fmtDate, fmtTime, confirmBox, safeHref } from "./dom.js";
-import { badge, handicapText } from "./components.js";
+import { badge, handicapText, blankAvatar } from "./components.js";
 import { frameWinner, parseBreaks, breakPoints, handicapStarts, pairsEquation, RULES, EXT_PER_SEASON, MAX_BREAK } from "./rules.js";
 import { scorePad } from "./score-pad.js";
 
@@ -224,7 +224,7 @@ export function scorecardEditor(opts) {
     <div class="g-people">${f[side].map((slot) => {
       if (!slot.player_id) return html`<button type="button" class="g-person empty" data-go="players"><span class="avatar"></span><span><strong>Pick a player</strong><small>${sides[side].name}</small></span></button>`;
       const p = person(slot.player_id);
-      return html`<div class="g-person"><img class="avatar" src="${p.avatar_url || "/assets/avatar.svg"}" alt="">
+      return html`<div class="g-person"><img class="avatar" src="${p.avatar_url || blankAvatar({ id: slot.player_id, full_name: p.name })}" alt="">
         <span><strong>${p.name}${slot.ext ? html` <span class="ext-tag">Ext</span>` : ""}</strong>
           <small>${p.club || sides[side].name}${hcap ? ` · handicap ${handicapText(hcap(slot.player_id))}` : ""}</small></span></div>`;
     })}</div>

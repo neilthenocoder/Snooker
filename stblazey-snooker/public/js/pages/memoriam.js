@@ -3,7 +3,7 @@
 // a few words of tribute are optional.
 import { html, mount } from "../core/dom.js";
 import { table } from "../core/api.js";
-import { breadcrumb, urls, gallery } from "../core/components.js";
+import { breadcrumb, urls, gallery, blankAvatar } from "../core/components.js";
 import { markup } from "../core/markup.js";
 import { listItems } from "../core/list-field.js";
 import { setTitle, adminEdit } from "../core/router.js";
@@ -31,7 +31,7 @@ export default async function memoriam(view) {
     </div></section>
     <div class="wrap mem-list">
       ${list.length ? list.map((p) => html`<article class="mem-card">
-        <img src="${p.avatar_url || "/assets/avatar.svg"}" alt="" class="${p.avatar_url ? "" : "blank"}" loading="lazy">
+        <img src="${p.avatar_url || blankAvatar(p)}" alt="" class="${p.avatar_url ? "" : "blank"}" loading="lazy">
         <div><h2><a href="${urls.player(p)}">${p.full_name}</a></h2>
           <p class="mem-years">${[lifeYears(p), clubs(p)].filter(Boolean).join(" · ")}</p>
           ${p.memorial ? html`<p class="mem-words">${p.memorial}</p>` : ""}

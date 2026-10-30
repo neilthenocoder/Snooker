@@ -14,17 +14,20 @@ import { SITE } from "../config.js";
 
 /** Every block the standard home page can show: [key, name in the dashboard, shown as standard]. */
 export const HOME_SECTIONS = [
+  // Round 77 (Rich's layout): the order of his drawing — news, competitions in a dark band, the spotlight in a dark band,
+  // the featured competition, our teams in a dark band, then four more stories. (The quick links, My Snooker bar, notices
+  // and Latest results always sit at the top, beside each other.)
   ["promo", "Season & “join the league” promotion (shows by itself between seasons)", true],
   ["mysnooker", "“My Snooker” — the invitation to log in (visitors only)", true],
-  ["news", "Latest news", true],
-  ["competitions", "Competitions (the one being played as the big feature)", true],
-  ["spotlights", "Player and team of the week / month", true],
-  ["teams", "Our teams", true],
-  ["cueviews", "CueViews", true],
+  ["news", "Latest news — the big story and three beside it", true],
+  ["comp_strip", "Live and upcoming competitions — a dark band of cards that scrolls sideways", true],
+  ["spotlights", "Player and team of the week / month — a dark band", true],
+  ["competitions", "Featured competition and the others", true],
+  ["teams", "Our teams — a dark band", true],
+  ["features", "More stories — four big cards", true],
+  ["cueviews", "CueViews", false],
   ["tables", "League tables", false],
   ["shields", "Shield holders", false],
-  ["side_breaks", "Side column: highest breaks", false],
-  ["side_rankings", "Side column: player rankings", false],
 ];
 
 /** The blocks to show, in order: [{ key, on }], from the settings (missing ones take their standard). */

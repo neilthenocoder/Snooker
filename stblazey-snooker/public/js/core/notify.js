@@ -124,7 +124,7 @@ export function popup(message, { kind = "results", avatar = null, icon = null, h
   if (avatar !== null || icon) {
     const img = document.createElement("img");
     img.className = `live-pop-face ${icon ? "icon" : ""}`;
-    img.src = icon === "trophy" ? "/assets/trophy.svg" : avatar || "/assets/avatar.svg";
+    img.src = icon === "trophy" ? "/assets/trophy.svg" : avatar || "/assets/players/man-1.svg";
     img.alt = "";
     el.classList.add("with-face");
     body.append(img);

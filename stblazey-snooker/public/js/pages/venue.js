@@ -55,6 +55,7 @@ export default async function venue(view, { params }) {
         ${v.image_url ? picture(v.image_url, v.name, "venue-photo") : ""}
         <dl class="facts two-col">${contact.map(([k, x]) => html`<div><dt>${k}</dt><dd>${x}</dd></div>`)}
           <div><dt>Map</dt><dd><a href="${map.link}" target="_blank" rel="noopener">Open in Google Maps</a></dd></div>
+          ${v.tables ? html`<div><dt>Snooker tables</dt><dd>${v.tables}</dd></div>` : ""}
           ${teams.length ? html`<div><dt>Teams based here</dt><dd>${teams.map((t) => t.name).join(", ")}</dd></div>` : ""}</dl>
       </div>
       ${v.description ? html`<div><h3>About ${v.name}</h3><div class="prose">${paragraphs(v.description)}</div></div>` : ""}

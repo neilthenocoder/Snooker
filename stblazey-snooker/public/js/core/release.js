@@ -4,8 +4,15 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.55.0";
+export const SITE_VERSION = "1.56.0";
 export const CHANGES = [
+  "Home page (Rich's layout): full width, no side column — the banner, the live & upcoming matches in a dark band, quick links as a sliding row of cards with the yellow entries bar and the latest results beside them, the big story with three beside it, competitions sliding in a dark band, In the spotlight and Our teams in dark bands, the featured competition, and four more stories as big cards",
+  "Home page layout and sections can only be changed by the Master Admin (Site settings); everyone else has My Snooker — run schema.sql, version 40",
+  "Venues: how many snooker tables each club has, shown on the venue page; New season step by step only flags a clash when more of a club's teams are at home than it has tables — run supabase/fixes/round77-venue-tables.sql for Rich's numbers",
+  "Page width: content up to 1440px, and 1536px on big screens",
+  "Rich's red triangle on headings instead of the red slash; the generic triangle of balls behind news and pictures with no photo",
+  "Players with no photo get one of Rich's generic cartoon players (17 men, 4 women), the same one every time",
+  "Yellow is now #FFB81C, with splashes of it on the home page; League tables: a little space between the form letters",
   "Admin → Fixtures → New season step by step (Rich): the season, leagues, promotion and relegation (from last season's final tables and each league's Up / Down numbers), teams and venues, squads, every league's fixtures at once (drawn to keep clubs' teams apart at their venue where possible), a venue check, then “Make it the current season”",
   "Home page strip: a league result shows as soon as it goes in, even for a match played later than its date (e.g. a postponed match) — run schema.sql, version 39",
   "Our League: cards with an icon, the title and a line about it, and an arrow; Our Players: the same team cards as Fixtures; team cards end in an arrow",

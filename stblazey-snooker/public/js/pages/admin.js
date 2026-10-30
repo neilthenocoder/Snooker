@@ -222,7 +222,7 @@ export default async function admin(view, { params, user, query }) {
       let tab = "";
       res.fields.forEach((f, i) => {
         if (f.type === "heading" && f.tab) tab = f.tab;
-        if (f.type === "custom" || !f.label) return;
+        if (f.type === "custom" || !f.label || (f.master && !isMaster(user))) return;
         const label = String(f.type !== "heading" ? f.label.split(/\s[(—]/)[0].trim() || f.label : f.label).slice(0, 90);
         const fk = f.type === "heading" ? `h${i}` : f.name;
         out.push({ kind: f.type === "heading" ? "Settings" : "Setting", label, sub: `${res.label}${tab ? ` → ${tab}` : ""}`,

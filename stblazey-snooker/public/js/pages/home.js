@@ -12,7 +12,7 @@ import { deadlineWarnings, deadlineBar } from "../core/comp-deadlines.js";
 import { matchScore, shieldHolder } from "../core/rules.js";
 import { buildBracket, isEntry, walkoverSide } from "../core/bracket.js";
 import { answered, articleCueview } from "../core/cueview.js";
-import { leagueTablePanel, sidebar, panel, picture, urls, badge, avatar, articleThumb, shortName, latestNews, trophy, shieldPicture } from "../core/components.js";
+import { leagueTablePanel, sidebar, panel, picture, urls, badge, avatar, articleThumb, shortName, latestNews, trophy, shieldPicture, resultsBox } from "../core/components.js";
 import { SITE } from "../config.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import { competitionSummaries } from "./competitions.js";
@@ -62,17 +62,25 @@ export default async function home(view, { user } = {}) {
   const sections = homeSections(site);
   const on = (key) => sections.find((x) => x.key === key)?.on;
   const promoWanted = site.promo_mode === "always" || (site.promo_mode !== "never" && isOffSeason(ctx, allComps));
-  const compData = standard && on("competitions") ? await currentCompetitions().catch(() => null) : null;
+  const compData = standard && (on("competitions") || on("comp_strip")) ? await currentCompetitions().catch(() => null) : null;
+  // Round 77 (Rich's layout): the home page runs the full width — no side column. Some blocks sit in a dark band that
+  // goes edge to edge. Each block is its own section with the page width inside it.
+  const inWrap = (inner, cls = "") => (inner ? html`<section class="hz ${cls}"><div class="wrap">${inner}</div></section>` : "");
+  const inBand = (inner, cls = "") => (inner ? html`<section class="hz hz-band ${cls}"><div class="wrap">${inner}</div></section>` : "");
+  const bannerIds = slides.map((a) => a.id);
+  const featuredNews = news.filter((a) => !bannerIds.includes(a.id)).slice(0, 4);
   const block = {
-    promo: () => (promoWanted ? promoBlock(site, ctx, dates, today) : ""),
-    mysnooker: () => mySnookerPrompt(user, ctx),
-    news: () => newsBlock(news, slides.map((a) => a.id)),
-    competitions: () => (compData ? compsBlock(comps, compData) : ""),
-    spotlights: () => spotlights(ctx, site),
-    teams: () => teamsBlock(ctx),
-    cueviews: () => (site.cueviews_show !== false ? cueviewBox(ctx, news) : ""),
-    tables: () => html`${ctx.leagues.map((l) => leagueTablePanel(ctx, l, { limit: 10 }))}`,
-    shields: () => (site.shields_show !== false ? shieldsBox(ctx) : ""),
+    promo: () => inWrap(promoWanted ? promoBlock(site, ctx, dates, today) : ""),
+    mysnooker: () => inWrap(mySnookerPrompt(user, ctx)),
+    news: () => inWrap(featuredNewsBlock(featuredNews)),
+    comp_strip: () => inBand(compData ? compStrip(comps, compData) : "", "hz-comps"),
+    competitions: () => inWrap(compData ? compsBlock(comps, compData) : ""),
+    features: () => inWrap(moreStories(news.filter((a) => !bannerIds.includes(a.id) && !featuredNews.includes(a)).slice(0, 4)), "hz-features"),
+    spotlights: () => inBand(spotlights(ctx, site) ? html`<div class="hb-head"><h2>In the spotlight</h2></div>${spotlights(ctx, site)}` : "", "hz-spot"),
+    teams: () => inBand(teamsBlock(ctx), "hz-teams"),
+    cueviews: () => inWrap(site.cueviews_show !== false ? cueviewBox(ctx, news) : ""),
+    tables: () => inWrap(html`<div class="hz-tables">${ctx.leagues.map((l) => leagueTablePanel(ctx, l, { limit: 10 }))}</div>`),
+    shields: () => inWrap(site.shields_show !== false ? shieldsBox(ctx) : ""),
   };
   // The home page is the same for everyone (My Snooker is a page of its own, in the menu).
 
@@ -89,6 +97,21 @@ export default async function home(view, { user } = {}) {
       <div class="live-strip-wrap ${["red", "yellow", "grey"].includes(site.strip_line ?? "red") ? `strip-line-${site.strip_line ?? "red"}` : ""}"><div class="wrap"><div class="live-strip" data-strip></div></div></div>
     </section>
     `}
+    ${standard ? html`
+    <section class="hz hz-top"><div class="wrap"><div class="hz-top-grid">
+      <div class="home-top">
+        <div class="hb-head ql-head"><h2>Quick links</h2></div>
+        ${quickLinks(ctx)}
+        ${myBtn(user, ctx)}
+        ${featureBox(site, notices, today)}
+        ${user ? deadlineBar(deadlineWarnings(user, ctx, await currentCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] })), site)) : ""}
+        ${entering.length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${entering.map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
+        ${keyDates(site, dates, allComps.map((x) => x.c), today)}
+      </div>
+      <aside class="hz-results">${resultsBox(ctx, box)}</aside>
+    </div></div></section>
+    ${sections.filter((x) => x.on).map((x) => block[x.key]?.() ?? "")}
+    <div style="height:40px"></div>` : html`
     <div class="${personal ? "wrap ms-homepage" : "wrap layout"}" style="margin-top:${personal ? 24 : 30}px">
       <div class="stack">
         <div class="home-top">
@@ -109,7 +132,7 @@ export default async function home(view, { user } = {}) {
         ${entering.length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${entering.map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
         ${keyDates(site, dates, allComps.map((x) => x.c), today)}
         </div>
-        ${personal ? html`<div data-ms-home></div>` : standard ? html`${sections.filter((x) => x.on).map((x) => block[x.key]?.() ?? "")}` : html`
+        ${html`
         ${ctx.leagues.map((l) => leagueTablePanel(ctx, l, { limit: 10 }))}
         ${site.shields_show !== false ? shieldsBox(ctx) : ""}
         ${spotlights(ctx, site)}
@@ -121,7 +144,7 @@ export default async function home(view, { user } = {}) {
       </div>
       ${personal ? "" : sidebar(ctx, latestNews(news, site, slides.map((a) => a.id)), { count: site.latest_news_count || 1, box,
         breaks: !standard || on("side_breaks"), rankings: !standard || on("side_rankings") })}
-    </div>`);
+    </div>`}`);
 
   // The guide: the first time someone sees their own home page, or straight after "Show me around".
   maybeStartGuide({ personal, site });
@@ -247,6 +270,49 @@ const heroLayout = (site) => (["big", "text", "white"].includes(site.hero_layout
 
 /** One banner article: headline, category and date, a small "continue reading" — all linking to the article. */
 // dots (round 53, Rich): on the white banner the slider dots sit in the white card, under "Continue reading".
+/** The eight quick links (round 77: a row of cards that scrolls sideways when there's no room). */
+function quickLinks(ctx) {
+  return html`<nav class="quick-links ql-8 ql-scroll" aria-label="Quick links">
+    <a href="/fixtures">${quickIcon.fixtures}<span>Fixtures</span></a>
+    <a href="/results">${quickIcon.results}<span>Results</span></a>
+    <a href="${urls.season(ctx.season, "league-tables")}">${quickIcon.tables}<span>League tables</span></a>
+    <a href="${urls.season(ctx.season, "rankings")}">${quickIcon.rankings}<span>Rankings</span></a>
+    <a href="${urls.season(ctx.season, "breaks")}">${quickIcon.breaks}<span>Breaks</span></a>
+    <a href="/competitions">${quickIcon.competitions}<span>Competitions</span></a>
+    <a href="/calendar">${quickIcon.calendar}<span>Calendar</span></a>
+    <a href="/handicaps">${quickIcon.handicaps}<span>Handicaps</span></a>
+  </nav>`;
+}
+
+const storyPic = (a) => (a.image_url || a.circle_image_url ? html`<img src="${a.image_url || a.circle_image_url}" alt="" loading="lazy">` : html`<span class="hub-ph" aria-hidden="true"></span>`);
+/** Round 77: featured news — the big story with three beside it (as on the News page). */
+function featuredNewsBlock(list) {
+  if (!list.length) return "";
+  const [top, ...rest] = list;
+  return html`<div class="hb-head"><h2>Latest news</h2><a href="/news">All the news →</a></div>
+    <div class="feat-grid ${rest.length ? "" : "solo"}">
+      <a class="feat-main" href="${urls.article(top)}">${storyPic(top)}<span class="feat-text"><strong>${top.title}</strong><small>${top.category ?? ""} | ${fmtAgo(top.published_at)}</small></span></a>
+      ${rest.length ? html`<div class="feat-side">${rest.map((a) => html`<a class="feat-card" href="${urls.article(a)}">${storyPic(a)}
+        <span class="feat-text"><strong>${a.title}</strong><small><b>${a.category ?? ""}</b> | ${fmtAgo(a.published_at)}</small></span></a>`)}</div>` : ""}
+    </div>`;
+}
+/** Round 77: four more stories as big cards, two by two. */
+function moreStories(list) {
+  if (!list.length) return "";
+  return html`<div class="hb-head"><h2>More stories</h2><a href="/news">All the news →</a></div>
+    <div class="story-grid">${list.map((a) => html`<a class="story-card" href="${urls.article(a)}"><span class="story-pic">${storyPic(a)}</span>
+      <span class="story-text">${a.category ? html`<small>${a.category}</small>` : ""}<strong>${a.title}</strong><em>${fmtAgo(a.published_at)} →</em></span></a>`)}</div>`;
+}
+/** Round 77: this season's competitions as a row of cards in a dark band, scrolling sideways. */
+function compStrip(comps, data) {
+  if (!comps.length) return "";
+  const rank = (x) => { const p = String(x.progress ?? ""); return /being played|live/i.test(p) ? 0 : /Winner/.test(p) ? 3 : /not made|Draw not/i.test(p) ? 2 : 1; };
+  return html`<div class="hb-head"><h2>Live and upcoming competitions</h2><a href="/competitions">All competitions →</a></div>
+    <div class="cs-row">${[...comps].sort((p, q) => rank(p) - rank(q)).map(({ c, progress }) => html`<a class="cs-card" href="${urls.competition(c)}">
+      <span class="cs-top">${compBoxStyle(c) !== "trophy" && c.image_url ? picture(c.image_url, "", "cs-pic") : trophy(c, "cs-trophy")}</span>
+      <span class="cs-text"><strong>${c.name}</strong><small>${progress ?? ""}</small><em>See the draw →</em></span></a>`)}</div>`;
+}
+
 function heroSlide(a, on, dots = null) {
   return html`<div class="hero-slide ${on ? "on" : ""}">
     <div class="hero-text">

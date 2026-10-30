@@ -48,12 +48,14 @@ export async function seasonWizardPage(el, { user } = {}) {
   const activeTeams = teams.filter((t) => t.active !== false);
   const teamsOf = (leagueId) => activeTeams.filter((t) => t.league_id === leagueId);
   const venueName = (id) => venues.find((v) => v.id === id)?.name ?? "";
+  // Round 77 (Rich): a venue can hold as many matches on one night as it has tables (Admin → Venues → Snooker tables).
+  const tablesAt = (id) => Math.max(1, Number(venues.find((v) => v.id === id)?.tables) || 1);
 
   // Venue clashes: two matches at the same venue on the same night.
   const clashes = (() => {
     const by = new Map();
     for (const f of fixtures) { if (!f.venue_id || f.status === "postponed") continue; const k = `${f.venue_id}|${ukDay(f.starts_at)}`; (by.get(k) ?? by.set(k, []).get(k)).push(f); }
-    return [...by.values()].filter((list) => list.length > 1);
+    return [...by.values()].filter((list) => list.length > tablesAt(list[0].venue_id));
   })();
   const done = season ? {
     1: true,
@@ -295,7 +297,7 @@ export async function seasonWizardPage(el, { user } = {}) {
       };
       // Round 76: clubs with more than one team (Bethel A–D, Mevagissey A–C…) — the fixtures are drawn many times over with
       // the teams in a different order, and the one with the fewest nights where a venue has two matches is kept.
-      const clashCount = (list) => { const m = new Map(); let n = 0; for (const f of list) { if (!f.venue_id) continue; const k = `${f.venue_id}|${f.starts_at.slice(0, 10)}`; const c = (m.get(k) ?? 0) + 1; m.set(k, c); if (c > 1) n++; } return n; };
+      const clashCount = (list) => { const m = new Map(); let n = 0; for (const f of list) { if (!f.venue_id) continue; const k = `${f.venue_id}|${f.starts_at.slice(0, 10)}`; const c = (m.get(k) ?? 0) + 1; m.set(k, c); if (c > tablesAt(f.venue_id)) n++; } return n; };
       let out = makeAll((ts) => ts), best = clashCount(out.fixtures);
       for (let i = 0; i < 400 && best > 0; i++) { const o = makeAll(shuffle); const c = clashCount(o.fixtures); if (c < best) { out = o; best = c; } }
       // Then fewer still: Where two matches would be at the same venue on the same night (two teams from
@@ -310,7 +312,7 @@ export async function seasonWizardPage(el, { user } = {}) {
       const flip = (f) => { add(f, -1); [f.home_team_id, f.away_team_id] = [f.away_team_id, f.home_team_id]; f.venue_id = venueOf(f.home_team_id); add(f, 1); };
       // A match and its return match are turned round together, so home games stay even. Keep turning pairs round
       // while it lowers the number of clashes (a few passes are plenty).
-      const extra = (f) => (f.venue_id ? Math.max(0, (load.get(key(f.venue_id, day(f))) ?? 0) - 1) : 0);
+      const extra = (f) => (f.venue_id ? Math.max(0, (load.get(key(f.venue_id, day(f))) ?? 0) - tablesAt(f.venue_id)) : 0);
       const pairsOf = [];
       const seen = new Set();
       for (const f of out.fixtures) {
@@ -357,9 +359,9 @@ export async function seasonWizardPage(el, { user } = {}) {
   if (step === 7) {
     const tn = (id) => teams.find((t) => t.id === id)?.name ?? "?";
     mount(el, html`${head("Check the fixtures", fixtures.length ? (clashes.length
-      ? "Two matches at the same venue on the same night — usually two teams from the same club. Fine if the club has a table for each; if not, swap one of them round (it is then played at the other team's venue), or change it under All fixtures. (The fixtures were already turned round where that could avoid a clash.)"
-      : "No venue has two matches on the same night. All good.") : "No fixtures yet — make them in the step before.")}
-      ${clashes.map((list) => html`<div class="sw-clash"><p><b>${venueName(list[0].venue_id)}</b> · ${fmtDate(list[0].starts_at)}</p>
+      ? "More matches at a venue on one night than it has tables (Admin → Venues → Snooker tables) — usually teams from the same club. Swap one of them round (it is then played at the other team's venue), or change it under All fixtures. (The fixtures were already drawn to avoid this wherever they could be.)"
+      : "No venue has more matches on a night than it has tables. All good.") : "No fixtures yet — make them in the step before.")}
+      ${clashes.map((list) => html`<div class="sw-clash"><p><b>${venueName(list[0].venue_id)}</b> · ${fmtDate(list[0].starts_at)} · ${list.length} matches, ${tablesAt(list[0].venue_id)} table${tablesAt(list[0].venue_id) === 1 ? "" : "s"}</p>
         ${list.map((f) => html`<div class="sw-clash-row"><span>${tn(f.home_team_id)} v ${tn(f.away_team_id)} <small class="muted">${ctx.league.get(f.league_id)?.name ?? ""}</small></span>
           <button type="button" class="btn small ghost" data-swap="${f.id}">Swap home and away</button></div>`)}</div>`)}
       ${fixtures.length ? html`<p class="muted" style="margin-top:14px">${fixtures.length} fixtures and ${(ctx.byes ?? []).length} bye weeks this season · <a href="/admin/fixtures?season_id=${season.id}" style="color:var(--red);font-weight:700">See them all</a></p>` : ""}

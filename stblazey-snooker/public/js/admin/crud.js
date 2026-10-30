@@ -2,6 +2,7 @@
 //  GENERIC ADMIN EDITOR — one list + form engine used by every
 //  section in admin/resources.js. Nothing here is table-specific.
 // ─────────────────────────────────────────────────────────────
+import { isMaster } from "../core/auth.js";
 import { html, mount, $, toast, fmtDate, fmtTime, toLocalInput, fromLocalInput, confirmBox } from "../core/dom.js";
 import { table, save, remove, invalidate } from "../core/api.js";
 import { slugify } from "../core/schedule.js";
@@ -209,7 +210,9 @@ function formFields(res, editing, refs, rows) {
  *          editId   – open this row's form straight away (the "Edit this page" buttons use it),
  *          onChange – called after anything is saved or removed (the dashboard updates its counts).
  */
-export async function crud(el, res, { preset = {}, editId = null, onChange = () => {}, findField = null } = {}) {
+export async function crud(el, res, { preset = {}, editId = null, onChange = () => {}, findField = null, user = null } = {}) {
+  // Round 77 (Rich): some settings are the Master Admin's alone (the home page's layout) — others don't see them.
+  if (res.fields.some((f) => f.master) && !isMaster(user)) res = { ...res, fields: res.fields.filter((f) => !f.master) };
   const refs = await loadRefs(res);
   let rows = [];
   let editing = null;

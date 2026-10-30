@@ -236,7 +236,7 @@ export const RESOURCES = {
     ],
   },
   venues: {
-    label: "Venues", table: "venues", order: "name", columns: ["image_url", "name", "address", "phone"],
+    label: "Venues", table: "venues", order: "name", columns: ["image_url", "name", "tables", "address", "phone"],
     fields: [
       { name: "name", label: "Venue name", type: "text", required: true },
       { name: "slug", label: "Web address (auto)", type: "slug", from: "name" },
@@ -244,6 +244,9 @@ export const RESOURCES = {
       { name: "phone", label: "Telephone", type: "text" },
       { name: "email", label: "Email", type: "email" },
       { name: "contact_name", label: "Contact name", type: "text" },
+      // Round 77 (Rich): how many snooker tables — shown on the venue's page, and the new-season fixtures only count a
+      // clash when a venue has more matches on one night than it has tables.
+      { name: "tables", label: "Snooker tables (how many matches can be played here on the same night)", short: "Tables", type: "number", default: 1, min: 1, max: 12 },
       { name: "map_url", label: "Google Map (optional)", type: "text", help: "Leave blank to place the map from the address, or paste a Google Maps link or embed code." },
       { name: "logo_url", label: "Club emblem (leave empty to use the emblem of a team based here)", short: "Emblem", type: "image", folder: "teams", maxSize: 400 },
       { name: "image_url", label: "Main photo (16:9, e.g. 1600 × 900 — it is shown that shape)", type: "image", folder: "venues", maxSize: 1600 },
@@ -539,7 +542,7 @@ export const RESOURCES = {
         labels: { cream: "Cream — the logo on top, the main pages as rows like the desktop menu, the rest underneath (standard)", blocks: "Colour blocks — the coloured buttons on black, as before" } },
       { type: "heading", label: "Menu and section colours (Classic look)", help: "Each menu button has its own colour, and the pages in that part of the site use it for their headers." },
       { name: "color_home", label: "Home (standard: brown)", type: "color", optional: true, default: "#4b2019" },
-      { name: "color_competitions", label: "Competitions & Handicaps (standard: gold)", type: "color", optional: true, default: "#fbb61a" },
+      { name: "color_competitions", label: "Competitions & Handicaps (standard: gold)", type: "color", optional: true, default: "#FFB81C" },
       { name: "color_fixtures", label: "Fixtures (standard: green)", type: "color", optional: true, default: "#0b8a12" },
       { name: "color_league", label: "League (standard: white)", type: "color", optional: true, default: "#ffffff" },
       { name: "color_news", label: "News (standard: blue)", type: "color", optional: true, default: "#0088e0" },
@@ -568,13 +571,13 @@ export const RESOURCES = {
   settings: {
     label: "Site settings", table: "settings", order: "id", single: true, afterSave: () => refreshShell(), live: liveStripPreview,
     fields: [
-      { type: "heading", tab: "Home page", label: "Home page style and sections", help: "Standard: the home page is about news and promotion — the latest news, competitions, players and teams — and the tables and rankings live in each visitor's My Snooker page. Tick the blocks to show and number them to set their order (1 = first). The Competitions / Calendar / Handicaps / Fixtures links, the feature box and the key dates always sit at the top. Everything: the earlier home page, with every league table, the breaks and the rankings." },
-      { name: "home_style", label: "Home page style", type: "select", options: ["standard", "full"], default: "standard",
-        labels: { standard: "Standard — news and promotion, the blocks below (standard)", full: "Everything — every table, the breaks and the rankings (as before)" } },
-      { type: "heading", tab: "Home page", label: "Home page sections", help: "For the Standard style. Tick a block to show it; the number beside it sets the order (1 = first, empty = the order listed here)." },
+      { type: "heading", tab: "Home page", master: true, label: "Home page style and sections (Master Admin only)", help: "Only the Master Admin sees these, so what visitors see on the home page is in one person's hands (round 77). Standard: the home page is about news and promotion — the latest news, competitions, players and teams — and the tables and rankings live in each visitor's My Snooker page. Tick the blocks to show and number them to set their order (1 = first). The Competitions / Calendar / Handicaps / Fixtures links, the feature box and the key dates always sit at the top. Everything: the earlier home page, with every league table, the breaks and the rankings." },
+      { name: "home_style", master: true, label: "Home page style", type: "select", options: ["standard", "full"], default: "standard",
+        labels: { standard: "Standard — full width: news, competitions, players and teams, in the blocks below (standard)", full: "Everything — every table, the breaks and the rankings (as before)" } },
+      { type: "heading", tab: "Home page", master: true, label: "Home page sections", help: "For the Standard style. Tick a block to show it; the number beside it sets the order (1 = first, empty = the order listed here)." },
       ...HOME_SECTIONS.flatMap(([key, label, std], i) => [
-        { name: key, in: "home_sections", label: `Show: ${label}`, type: "checkbox", default: std },
-        { name: `${key}_pos`, in: "home_sections", label: "Order on the page", type: "number", min: 1, max: 30, placeholder: String(i + 1) },
+        { name: key, in: "home_sections", master: true, label: `Show: ${label}`, type: "checkbox", default: std },
+        { name: `${key}_pos`, in: "home_sections", master: true, label: "Order on the page", type: "number", min: 1, max: 30, placeholder: String(i + 1) },
       ]),
       // Round 48: the guided tour (core/guide.js). Kept in home_sections, so no database change is needed for it.
       { type: "heading", tab: "Home page", label: "Welcome guide", help: "A short guided tour that lights up each part of a logged-in person's My Snooker page with a note: their team, next match, the table, My Snooker settings and so on. It starts by itself the first time they open My Snooker on a phone or computer. Anyone can start it again from their account menu or the footer (“Show me around”)." },

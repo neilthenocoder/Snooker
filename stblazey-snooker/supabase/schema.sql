@@ -2995,7 +2995,29 @@ create trigger fixtures_result_at before insert or update of status on fixtures
 update fixtures set result_at = now()
  where result_at is null and status in ('submitted', 'approved') and starts_at > now() - interval '7 days';
 
-create or replace function public.schema_version() returns int language sql immutable as $$ select 39 $$;
+-- ── Round 77 (Rich): how many snooker tables each venue has ─────────────────────────────
+-- Shown on the venue's page; the new-season fixtures count a clash only when a venue has more matches on a night than tables.
+-- Round 77 (Rich's layout): the live & upcoming strip sits in a dark band as standard.
+alter table settings alter column strip_style set default 'dark';
+alter table venues add column if not exists tables int not null default 1 check (tables between 1 and 12);
+
+-- ── Round 77 (Rich): the home page that everyone sees is set by the Master Admin only ────────────
+-- Officers with Site settings can change everything else there; the home page's blocks and their order are the Master Admin's.
+create or replace function public.guard_home_layout() returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  -- (the phone menu style and the welcome guide are kept in home_sections too, but aren't the home page's layout)
+  if ((new.home_sections - 'menu_style' - 'guide_on') is distinct from (old.home_sections - 'menu_style' - 'guide_on')
+      or new.home_style is distinct from old.home_style)
+     and auth.uid() is not null and not public.is_master() then
+    raise exception 'Only the Master Admin can change the home page layout';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists settings_home_layout on settings;
+create trigger settings_home_layout before update on settings for each row execute function public.guard_home_layout();
+
+create or replace function public.schema_version() returns int language sql immutable as $$ select 40 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

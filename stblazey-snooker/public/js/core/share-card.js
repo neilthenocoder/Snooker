@@ -62,7 +62,7 @@ export async function drawResultCard(card) {
     load(document.querySelector("header .logo img")?.src || "/assets/logo.svg"), load(card.home.logo), load(card.away.logo)]);
   // Top band: the league's logo and name, the competition and the date.
   if (siteLogo) ctx.drawImage(siteLogo, 50, 30, 110, 110);
-  ctx.fillStyle = "#fbb61a"; ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#FFB81C"; ctx.textBaseline = "alphabetic";
   fitText(ctx, card.title, SIZE - 260, 50, 800, head); ctx.fillText(card.title.toUpperCase(), 190, 88);
   ctx.fillStyle = "#ddd"; ctx.font = `500 32px ${body}`; ctx.fillText(card.sub ?? "", 190, 134);
 
@@ -77,7 +77,7 @@ export async function drawResultCard(card) {
   const side = (team, cx, img, won) => {
     ctx.save();
     ctx.beginPath(); ctx.arc(cx, 440, 108, 0, Math.PI * 2); ctx.fillStyle = img ? "#fff" : "#111"; ctx.fill();
-    ctx.lineWidth = 8; ctx.strokeStyle = won ? "#fbb61a" : "rgba(255,255,255,.35)"; ctx.stroke();
+    ctx.lineWidth = 8; ctx.strokeStyle = won ? "#FFB81C" : "rgba(255,255,255,.35)"; ctx.stroke();
     if (img) { ctx.clip(); const s = 180; ctx.drawImage(img, cx - s / 2, 440 - s / 2, s, s); }
     else { ctx.fillStyle = "#fff"; ctx.font = `800 70px ${head}`; ctx.textAlign = "center"; ctx.fillText(initials(team.name), cx, 466); }
     ctx.restore();

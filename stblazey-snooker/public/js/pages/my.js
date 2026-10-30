@@ -16,7 +16,7 @@ import { buildBracket, isEntry, roundName, compScoreText, entryPlayers } from ".
 import { extCounts, EXT_PER_SEASON, POSTPONE_WEEKS, rearrangeBy, RULES } from "../core/rules.js";
 import { CUEVIEW } from "../core/cueview.js";
 import { uploadImage } from "../core/upload.js";
-import { breadcrumb, panel, dataTable, fixturesTable, urls, statusBadge, playerLink, avatar, badge, handicapTag, handicapText } from "../core/components.js";
+import { breadcrumb, panel, dataTable, fixturesTable, urls, statusBadge, playerLink, avatar, blankAvatar, badge, handicapTag, handicapText } from "../core/components.js";
 import { setTitle, navigate, refreshShell } from "../core/router.js";
 import { mustLogin } from "./scorecard.js";
 import { newsWizardPage } from "../admin/news-wizard.js";
@@ -397,7 +397,7 @@ function profileTab(el, { me, ctx, user }) {
       <a class="btn small ghost" href="${urls.player(me)}">View my public page</a></div>
     <div class="grid-2">
       <div class="field-label">Photo (shown as a circle)
-        <div class="image-field"><img class="image-preview round" data-photo-preview src="${photo || "/assets/avatar.svg"}" alt="">
+        <div class="image-field"><img class="image-preview round" data-photo-preview src="${photo || blankAvatar(me)}" alt="">
           <div class="btn-row"><label class="btn small secondary">Upload a photo<input type="file" accept="image/*" hidden data-photo></label>
             <button type="button" class="btn small ghost" data-photo-clear>Remove</button></div></div></div>
       <label>Birthday (optional)<input type="date" name="birth_date" value="${me.birth_date ?? ""}"></label>
@@ -434,7 +434,7 @@ function profileTab(el, { me, ctx, user }) {
     if (e.target.type === "file") e.target.value = "";
   });
   el.addEventListener("click", (e) => {
-    if (e.target.matches("[data-photo-clear]")) { photo = ""; $("[data-photo-preview]", el).src = "/assets/avatar.svg"; }
+    if (e.target.matches("[data-photo-clear]")) { photo = ""; $("[data-photo-preview]", el).src = blankAvatar(me); }
     if (e.target.matches("[data-remove-pic]")) { pictures.splice(Number(e.target.dataset.removePic), 1); drawPics(); }
   });
   $("[data-profile]", el).addEventListener("submit", async (e) => {

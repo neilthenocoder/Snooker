@@ -3,7 +3,7 @@
 import { html, mount, $, fmtDate, fmtAgo } from "./dom.js";
 import { table, articles, loadCompetitions, marketAds } from "./api.js";
 import { hiddenFromSearch, isHidden } from "./seo.js";
-import { urls } from "./components.js";
+import { urls, blankAvatar } from "./components.js";
 import { navigate } from "./router.js";
 import { seasonContext } from "./context.js";
 
@@ -59,7 +59,7 @@ async function buildIndex() {
   // Pages ticked "Leave out of the site search" under Admin → Website → SEO are left out (Rich, round 22).
   return [
     ...SITE_PAGES(ctx?.season).map(([title, href, sub, more]) => ({ group: "Go to", title, sub, more, href })),
-    ...players.map((p) => ({ group: "Players", title: p.full_name, sub: team.get(p.team_id)?.name ?? "", href: urls.player(p), img: p.avatar_url || "/assets/avatar.svg" })),
+    ...players.map((p) => ({ group: "Players", title: p.full_name, sub: team.get(p.team_id)?.name ?? "", href: urls.player(p), img: p.avatar_url || blankAvatar(p) })),
     ...teams.map((t) => ({ group: "Teams", title: t.name, sub: "Fixtures & results", href: urls.team(t), img: t.logo_url })),
     ...comps.competitions.map((c) => ({ group: "Competitions", title: c.name, sub: `${c.kind} competition`, href: urls.competition(c), img: c.image_url })),
     ...venues.map((v) => ({ group: "Venues", title: v.name, sub: v.address ?? "", href: urls.venue(v), img: v.image_url })),

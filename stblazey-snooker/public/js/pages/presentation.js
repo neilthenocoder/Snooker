@@ -7,7 +7,7 @@ import { seasonContext } from "../core/context.js";
 import { table, loadCompetitions } from "../core/api.js";
 import { awardSide, awardTrophy, competitionFinal } from "../core/awards.js";
 import { isCounted, matchScore, shieldHolder, shieldTable } from "../core/rules.js";
-import { breadcrumb, trophy, urls, teamLink, playerLink, panel, dataTable, shortName, badge, seasonPicker, breakTag } from "../core/components.js";
+import { breadcrumb, trophy, urls, teamLink, playerLink, panel, dataTable, shortName, badge, seasonPicker, breakTag, blankAvatar } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 
 export default async function presentation(view, { query }) {
@@ -43,7 +43,7 @@ function face(who) {
   if (!who) return html`<span class="award-face blank" aria-hidden="true"></span>`;
   if (who.own) return html`<button type="button" class="award-face" data-lightbox="${who.own}" aria-label="Open the photo of ${who.name}"><img src="${who.own}" alt="" loading="lazy"></button>`;
   if (who.team) return html`<span class="award-face emblem">${badge(who.team)}</span>`;
-  return html`<span class="award-face"><img src="${who.image || "/assets/avatar.svg"}" alt="" loading="lazy"></span>`;
+  return html`<span class="award-face"><img src="${who.image || blankAvatar({ id: who.id || who.name, full_name: who.name })}" alt="" loading="lazy"></span>`;
 }
 const person = (who, label, cls) => html`<div class="award-who ${cls} ${who ? "" : "open"}">${face(who)}
   <div><small>${label}</small>${who ? (who.href ? html`<a href="${who.href}">${who.name}</a>` : html`<strong>${who.name}</strong>`) : html`<em>To be decided</em>`}

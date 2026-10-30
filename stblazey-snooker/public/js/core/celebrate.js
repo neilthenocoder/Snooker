@@ -10,8 +10,9 @@
 //  Each visitor can switch them off for themselves (the bell → Celebrations).
 // ─────────────────────────────────────────────────────────────
 import { html, mount } from "./dom.js";
+import { genericAvatar } from "./components.js";
 
-const COLOURS = ["#e8003d", "#fbb61a", "#0b8a12", "#6b3a2a", "#0088e0", "#ff7eb6", "#111111", "#ffffff"];
+const COLOURS = ["#e8003d", "#FFB81C", "#0b8a12", "#6b3a2a", "#0088e0", "#ff7eb6", "#111111", "#ffffff"];
 const SHOW_MS = 6500;
 let open = null;
 
@@ -61,7 +62,7 @@ export function celebrate(info) {
       <button type="button" class="celebrate-x" aria-label="Close">×</button>
       <p class="celebrate-what">${info.what ?? "New highest break"}</p>
       <div class="celebrate-row ${info.trophy ? "is-trophy" : ""}">
-        <img src="${info.trophy ? info.avatar || "/assets/trophy.svg" : info.avatar || "/assets/avatar.svg"}" alt="">
+        <img src="${info.trophy ? info.avatar || "/assets/trophy.svg" : info.avatar || genericAvatar(info.name, info.name)}" alt="">
         ${info.value != null && info.value !== "" ? html`<b>${info.value}</b>` : ""}
       </div>
       <p class="celebrate-who">${info.name}</p>
