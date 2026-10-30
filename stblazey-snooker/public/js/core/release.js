@@ -4,8 +4,13 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.54.0";
+export const SITE_VERSION = "1.55.0";
 export const CHANGES = [
+  "Admin → Fixtures → New season step by step (Rich): the season, leagues, promotion and relegation (from last season's final tables and each league's Up / Down numbers), teams and venues, squads, every league's fixtures at once (drawn to keep clubs' teams apart at their venue where possible), a venue check, then “Make it the current season”",
+  "Home page strip: a league result shows as soon as it goes in, even for a match played later than its date (e.g. a postponed match) — run schema.sql, version 39",
+  "Our League: cards with an icon, the title and a line about it, and an arrow; Our Players: the same team cards as Fixtures; team cards end in an arrow",
+  "Featured competition: the round's matches read down the left edge; WhatsApp share icon redrawn; phones: compact news cards",
+  "Coming back to a page puts you where you left it; phones: the page no longer slides sideways",
   "Admin → Competitions → Set up step by step (Rich: “a step by step, like the news, for each comp”): the competition, the details, entries, entrants, the draw, deadlines, dates — one step at a time, with a checklist at the end",
   "Page width: content up to 1280px (was 1128px) with space either side — more room for tables and results",
   "Pictures: 16:9 everywhere (news, features, competitions, venues, galleries, shop, adverts) — one upload fits every place it appears; the upload boxes in the dashboard say so",

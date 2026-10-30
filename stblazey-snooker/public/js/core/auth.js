@@ -150,6 +150,8 @@ export const SECTION_AREA = {
   support: "support", support_categories: "master",
   // Round 75: Set up a competition step by step
   comp_wizard: "competitions",
+  // Round 76: Set up a new season step by step (leagues, teams and fixtures — the same people as the fixture generator)
+  season_wizard: "fixtures",
 };
 
 const roleOf = (user) => user?.profile?.role;

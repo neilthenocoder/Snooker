@@ -376,6 +376,9 @@ export async function upcomingMatches(limit = 12, hours = 48) {
     selectAll(() => db.from("fixtures").select("*").eq("status", "in_progress")),
     // Round 38: league results from the last `hours` (submitted = waiting for approval, approved = completed).
     hours > 0 ? selectAll(() => db.from("fixtures").select("*").gte("starts_at", back).lte("starts_at", now).in("status", ["submitted", "approved"]).order("starts_at", { ascending: false }).limit(30)) : [],
+    // Round 76 (Rich: a postponed match played later — Luxulyan A v Bethel A, still dated 27th Oct — didn't show):
+    // league results that went in during the last `hours`, whatever date the match has (result_at: schema.sql version 39).
+    hours > 0 ? selectAll(() => db.from("fixtures").select("*").gte("result_at", back).in("status", ["submitted", "approved"]).order("result_at", { ascending: false }).limit(30)).catch(() => []) : [],
     selectAll(() => db.from("competition_matches").select("*").gte("starts_at", since).neq("status", "postponed").order("starts_at").limit(limit)),
     selectAll(() => db.from("competition_matches").select("*").eq("status", "in_progress")).catch(() => []),
     // Round 35: cup results that went in during the last `hours`, dated or not (result_at: schema.sql version 24).
@@ -383,7 +386,7 @@ export async function upcomingMatches(limit = 12, hours = 48) {
     // Round 39 (Rich): postponed matches stay on the strip, labelled — from the results window up to a week ahead.
     selectAll(() => db.from("fixtures").select("*").eq("status", "postponed").gte("starts_at", back).lte("starts_at", ahead).order("starts_at").limit(20)).catch(() => []),
     selectAll(() => db.from("competition_matches").select("*").eq("status", "postponed").gte("starts_at", back).lte("starts_at", ahead).order("starts_at").limit(20)).catch(() => []),
-  ]).then(([f, l, r, c, cl, cr, pf, pc]) => [f, l, [...r, ...pf], [...new Map([...cr, ...cl, ...c, ...pc].map((m) => [m.id, m])).values()]]);
+  ]).then(([f, l, r, rr, c, cl, cr, pf, pc]) => [f, l, [...new Map([...r, ...rr, ...pf].map((x) => [x.id, x])).values()], [...new Map([...cr, ...cl, ...c, ...pc].map((m) => [m.id, m])).values()]]);
   const all = [...new Map([...live, ...fixtures, ...recent].map((f) => [f.id, f])).values()];
   const frames = await selectIn("frames", "fixture_id", all.map((f) => f.id));
   return { fixtures: all, comps, frames: withLegacyFrames(all, frames) };

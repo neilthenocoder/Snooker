@@ -441,7 +441,7 @@ async function liveStrip(user = null, mode = "filters") {
 
   const all = [
     ...fixtures.map((fx) => ({
-      key: `l:${fx.league_id}`, when: fx.starts_at, status: fx.status, live: fx.status === "in_progress", done: ["submitted", "approved"].includes(fx.status), doneAt: fx.starts_at,
+      key: `l:${fx.league_id}`, when: fx.starts_at, status: fx.status, live: fx.status === "in_progress", done: ["submitted", "approved"].includes(fx.status), doneAt: fx.result_at && fx.result_at > fx.starts_at ? fx.result_at : fx.starts_at,
       label: fx.status === "submitted" ? "pending" : fx.status === "approved" ? "completed" : fx.status === "postponed" ? "postponed" : null,
       postponed: fx.status === "postponed",
       title: leagues.find((l) => l.id === fx.league_id)?.name ?? "League",

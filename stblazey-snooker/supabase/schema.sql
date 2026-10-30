@@ -2974,7 +2974,28 @@ alter table settings add column if not exists loader_every_page boolean not null
 -- The Triple Crown (Rich): which three competitions make it up — chosen in Site settings → Players.
 alter table settings add column if not exists triple_crown text not null default '';
 
-create or replace function public.schema_version() returns int language sql immutable as $$ select 38 $$;
+-- ── Round 76 (Rich: a postponed match played later didn't show on the home page strip) ──────────
+-- When a league result goes in (submitted or approved), the time is kept, so the Live & upcoming strip shows it for the
+-- hours set in Site settings whatever date the match itself still has.
+alter table fixtures add column if not exists result_at timestamptz;
+create or replace function public.stamp_fixture_result() returns trigger language plpgsql as $$
+begin
+  if new.status in ('submitted', 'approved') and (tg_op = 'INSERT' or old.status not in ('submitted', 'approved')) then
+    new.result_at := now();
+  elsif new.status not in ('submitted', 'approved') then
+    new.result_at := null;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists fixtures_result_at on fixtures;
+create trigger fixtures_result_at before insert or update of status on fixtures
+  for each row execute function public.stamp_fixture_result();
+-- Results from the last week that went in before this existed count from now (so last night's shows straight away).
+update fixtures set result_at = now()
+ where result_at is null and status in ('submitted', 'approved') and starts_at > now() - interval '7 days';
+
+create or replace function public.schema_version() returns int language sql immutable as $$ select 39 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

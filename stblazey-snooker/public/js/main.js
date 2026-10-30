@@ -354,10 +354,26 @@ function holdingPage(view, site) {
 // ── routing ────────────────────────────────────────────────────
 let cleanup = null;
 
+// Round 76 (Neil): coming back to a page (the Back button, or the browser's back) puts you where you left it.
+// Each page's scroll position is kept in this tab as you leave it; going back restores it once the page has drawn.
+const SCROLL_KEY = "sbds-scroll";
+const scrollMemo = () => { try { return JSON.parse(sessionStorage.getItem(SCROLL_KEY) || "{}"); } catch { return {}; } };
+const here = () => location.pathname + location.search;
+let routing = false;      // while a page is being drawn, its scroll position isn't real yet — don't keep it
+function rememberScroll() {
+  if (routing) return;
+  try { const m = scrollMemo(); m[here()] = Math.round(window.scrollY); const keys = Object.keys(m); if (keys.length > 60) delete m[keys[0]]; sessionStorage.setItem(SCROLL_KEY, JSON.stringify(m)); } catch { /* not kept */ }
+}
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+let restoring = false;   // true while drawing a page reached with Back / Forward
+
 async function navigate(path, { replace = false } = {}) {
-  if (path !== location.pathname + location.search + location.hash)
+  if (path !== location.pathname + location.search + location.hash) {
+    if (!replace) rememberScroll();
     history[replace ? "replaceState" : "pushState"](null, "", path);
-  await renderRoute();
+  }
+  restoring = false;
+  await renderRoute({ keepPlace: replace });
 }
 
 async function refreshShell() {
@@ -367,7 +383,8 @@ async function refreshShell() {
 setNavigator(navigate);
 setShellRefresher(refreshShell);
 
-async function renderRoute({ quiet = false } = {}) {
+async function renderRoute({ quiet = false, keepPlace = false } = {}) {
+  routing = true;
   if (typeof cleanup === "function") cleanup();
   cleanup = null;
   document.querySelector(".edit-page")?.remove();
@@ -415,10 +432,18 @@ async function renderRoute({ quiet = false } = {}) {
     // "Stuck?" — search the league's rules and the rules of snooker from any scorecard (Rich, round 23).
     if (["scorecard", "cup-scorecard"].includes(page) || (page === "admin" && params.section === "scoreboard")) rulesHelpButton(); else document.querySelector(".rh-btn")?.remove();
     if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView();
-    else window.scrollTo(0, 0);
+    else if (restoring && scrollMemo()[here()] > 0) {
+      // Back on a page: put it where it was. Pictures and live parts may still be filling in, so try again as it grows.
+      const y = scrollMemo()[here()];
+      const put = () => window.scrollTo(0, Math.min(y, document.documentElement.scrollHeight - window.innerHeight));
+      put(); for (const t of [120, 350, 800]) setTimeout(() => { if (Math.abs(window.scrollY - y) > 4) put(); }, t);
+      setTimeout(() => { routing = false; }, 900);
+    } else { if (!quiet && !keepPlace) window.scrollTo(0, 0); setTimeout(() => { routing = false; }, 50); }
+    restoring = false;
     drawScrollHint();
   } catch (err) {
     console.error(err);
+    routing = false;
     mount(view, html`<div class="wrap"><div class="notice error">Something went wrong: ${err.message}</div></div>`);
   } finally { loaderOff(); window.sbdslStarted = true; }     // (the safety net in boot.js stands down)
 }
@@ -535,12 +560,18 @@ document.addEventListener("click", async (e) => {
   e.preventDefault();
   navigate(url.pathname + url.search + url.hash);
 });
-window.addEventListener("popstate", renderRoute);
+window.addEventListener("popstate", () => { restoring = true; renderRoute(); });
+// Leaving by Back: the page being left keeps its place too (for Forward), and a full reload keeps it as well.
+window.addEventListener("pagehide", rememberScroll);
+let scrollSaveTimer = null;
+window.addEventListener("scroll", () => { clearTimeout(scrollSaveTimer); scrollSaveTimer = setTimeout(rememberScroll, 250); }, { passive: true });
 document.addEventListener("change", (e) => {
   if (e.target.matches("[data-season-picker]")) navigate(`${location.pathname}?season=${e.target.value}`);
 });
 
 await Promise.all([drawHeader(), drawFooter()]);
+// A reload, or arriving with the browser's back / forward buttons, also returns to the same place.
+try { restoring = ["reload", "back_forward"].includes(performance.getEntriesByType("navigation")[0]?.type); } catch { /* top of the page */ }
 renderRoute();
 
 // Two round white buttons: "scroll down" on phones while there is more of the page below,

@@ -13,6 +13,7 @@ import { setTitle, navigate, refreshShell } from "../core/router.js";
 import { mustLogin } from "./scorecard.js";
 import { draws } from "../admin/draws.js";
 import { compWizardPage } from "../admin/comp-wizard.js";
+import { seasonWizardPage } from "../admin/season-wizard.js";
 import { mediaPage } from "../admin/picker.js";
 import { statsPage } from "../admin/stats.js";
 import { importPage } from "../admin/import.js";
@@ -52,7 +53,7 @@ let navWatch = null;
 // (see SECTION_AREA and canManage in core/auth.js — the database enforces the same).
 const NAV = [
   ["Match nights", [["overview", "Overview"], ["results", "Results to approve"]]],
-  ["Fixtures", [["fixtures", "All fixtures"], ["byes", "Bye weeks"], ["generator", "Fixture generator"], ["import", "Import from CSV"]]],
+  ["Fixtures", [["season_wizard", "New season step by step"], ["fixtures", "All fixtures"], ["byes", "Bye weeks"], ["generator", "Fixture generator"], ["import", "Import from CSV"]]],
   ["League", [["leagues", "Leagues"], ["teams", "Teams"], ["players", "Players"], ["cueviews", "CueViews to approve"], ["handicaps", "Handicaps"], ["handicap_suggest", "Suggested handicaps"], ["venues", "Venues"], ["seasons", "Seasons"]]],
   ["Competitions", [["comp_wizard", "Set up step by step"], ["competitions", "Competitions"], ["entries", "Entries to approve"], ["draws", "Draws, results & live scores"], ["scoreboard", "Live scoreboard"], ["awards", "Presentation awards"]]],
   ["People", [["accounts", "Logins"]]],
@@ -72,7 +73,7 @@ const NAV = [
 const SPECIAL = { overview, results, generator, draws, media: mediaPage, stats: statsPage, import: importPage, handicaps: handicapsPage, entries: entriesPage,
   roles: rolesPage, activity: activityPage, backup: backupPage, awards: awardsPage, scoreboard: scoreboardPage, emails: emailsPage, cueviews: cueviewsPage, write: newsWizardPage, approvals: newsApprovePage,
   campaigns: campaignsPage, subscribers: subscribersPage, market: marketPage, comments: commentsPage, menu: menuPage, seo: seoPage, links: linksPage, performance: performancePage, security: securityPage, versions: versionsPage, handicap_suggest: handicapSuggestPage,
-  support: supportPage, support_categories: supportCategoriesPage, comp_wizard: compWizardPage };
+  support: supportPage, support_categories: supportCategoriesPage, comp_wizard: compWizardPage, season_wizard: seasonWizardPage };
 // Menu items that show a red number when something is waiting.
 const COUNTS = { players: "Players waiting to be accepted", entries: "Entries waiting for payment", cueviews: "CueViews waiting to be checked", approvals: "News waiting for your approval", market: "Adverts waiting for approval", support: "Support requests waiting for an answer" };
 const COUNT_WORD = { players: "new", entries: "waiting", cueviews: "waiting", approvals: "waiting", market: "waiting", support: "to answer" };
@@ -109,7 +110,7 @@ export default async function admin(view, { params, user, query }) {
   const nav = NAV.map(([group, items]) => [group, items.filter(([key]) => canOpenSection(user, key) && !(key === "write" && canOpenSection(user, "articles")))]).filter(([, items]) => items.length);
   // Where the dashboard opens: the first section of this login's own area (Handicaps is shared, so it isn't the landing page).
   const mine = nav.flatMap(([, items]) => items);
-  const first = (mine.find(([key]) => key !== "handicaps" && key !== "comp_wizard") ?? mine[0])[0];
+  const first = (mine.find(([key]) => key !== "handicaps" && key !== "comp_wizard" && key !== "season_wizard") ?? mine[0])[0];
   if (!params.section && first !== "overview") return navigate(`/admin/${first}`, { replace: true });
   const section = params.section || first;
   const title = NAV.flatMap(([, items]) => items).find(([k]) => k === section)?.[1] ?? "Admin";
@@ -423,7 +424,8 @@ async function results(el) {
 async function generator(el) {
   const ctx = await seasonContext();
   const nextTuesday = (() => { const d = new Date(); d.setDate(d.getDate() + ((9 - d.getDay()) % 7 || 7)); return d.toISOString().slice(0, 10); })();
-  mount(el, html`<div class="notice">Creates a full round-robin for one league: every team plays every other team, home and away.
+  mount(el, html`<a class="nw-invite" href="/admin/season_wizard"><b>📅 Set up a new season step by step</b><span>The season, leagues, promotion and relegation, teams, players, every league's fixtures and a venue check — in order.</span></a>
+  <div class="notice">Creates a full round-robin for one league: every team plays every other team, home and away.
     Venues come from each home team. You can edit or postpone any fixture afterwards.
     A league with an odd number of teams gets a <b>bye week</b> for the team left without a match each night (Fixtures → Bye weeks).</div>
   <form class="form" id="gen-form"><div class="grid-2">

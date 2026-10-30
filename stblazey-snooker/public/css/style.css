@@ -5463,3 +5463,92 @@ html.look-calm .panel.bracket-panel .bracket-hint { color: #9a9a9a; }
 .cw-check li.ok .cw-mark { background: var(--ok-bg); color: var(--ok-ink); }
 .cw-check li.todo .cw-mark { background: var(--warn-bg); color: var(--warn-ink); }
 .cw-end { flex-wrap: wrap; }
+
+/* ═══ ROUND 76 — Set up a new season step by step (Admin → Fixtures) ═══ */
+.sw-rows { display: grid; gap: 8px; margin-bottom: 12px; }
+.sw-row { display: grid; grid-template-columns: minmax(180px, 2fr) repeat(4, minmax(0, 1fr)) auto; gap: 10px; align-items: end; padding: 12px 14px; border: 1px solid #eeede3; border-radius: 12px; background: #faf9f4; }
+.sw-row label { margin: 0; }
+.sw-row.team { grid-template-columns: minmax(200px, 1.4fr) minmax(0, 1fr) minmax(0, 1.4fr); align-items: center; }
+.sw-row.team.off { opacity: .6; }
+.sw-row.gen { grid-template-columns: minmax(200px, 1.4fr) minmax(0, 1.2fr) minmax(0, 1fr); align-items: center; }
+.sw-row .check { margin: 0; }
+.sw-note { color: var(--muted); font-size: 13px; align-self: center; }
+.warn-ink { color: var(--warn-ink); }
+@media (max-width: 800px) { .sw-row, .sw-row.team, .sw-row.gen { grid-template-columns: 1fr 1fr; } }
+.sw-pair { margin-bottom: 8px; }
+.sw-moves { display: grid; gap: 6px; margin-bottom: 8px; }
+.sw-move { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid #eeede3; border-radius: 10px; background: #faf9f4; font-weight: 400; cursor: pointer; }
+.sw-move input { width: 18px; height: 18px; margin: 0; }
+.sw-move .sw-pos { display: inline-grid; place-items: center; min-width: 26px; height: 26px; border-radius: 6px; background: #111; color: #fff; font: 700 13px var(--font-head); }
+.sw-move small { color: var(--muted); }
+.sw-move i { margin-left: auto; font-style: normal; font-weight: 700; font-size: 13px; }
+.sw-move i.up { color: var(--green); } .sw-move i.down { color: var(--red); }
+.sw-move.moved { opacity: .6; }
+.cw-pick.warn { border-color: #f0cd55; background: #fff8db; }
+.sw-preview { margin-top: 14px; padding: 14px 16px; border-radius: 12px; background: #f6f5ec; }
+.sw-preview p { margin: 0 0 6px; }
+.sw-clash { margin: 10px 0; padding: 12px 14px; border-radius: 12px; border: 1px solid #f5c2cb; background: #fdeef1; }
+.sw-clash p { margin: 0 0 8px; }
+.sw-clash-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid #f5c2cb; }
+
+/* ═══ ROUND 76 — Neil's design notes ═══ */
+/* Our League: cards with an icon, the title and a line about it on the left, and an arrow — the whole card is the link */
+.lg-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
+.lg-card { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 16px 16px 16px 14px;
+  background: #fff; border: 1px solid #e6e5da; border-radius: 14px; color: var(--ink); transition: border-color .15s, box-shadow .15s; overflow: hidden; }
+.lg-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--red); transform: scaleY(0); transition: transform .2s; }
+.lg-card:hover { color: var(--ink); border-color: #cfcec3; box-shadow: 0 10px 24px -16px rgba(0, 0, 0, .35); }
+.lg-card:hover::before { transform: scaleY(1); }
+.lg-ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #111; flex: none; }
+.lg-ico svg { width: 22px; height: 22px; fill: #fff; }
+.lg-card:hover .lg-ico { background: var(--red); }
+.lg-body { display: grid; gap: 3px; min-width: 0; }
+.lg-body b { font: 700 16px/1.2 var(--font-head); text-transform: uppercase; letter-spacing: .01em; }
+.lg-body small { color: var(--muted); font-size: 13.5px; line-height: 1.4; }
+.lg-go { font-style: normal; font-size: 20px; color: var(--red); transition: transform .15s; }
+.lg-card:hover .lg-go { transform: translateX(4px); }
+@media (max-width: 560px) { .lg-cards { grid-template-columns: 1fr; gap: 8px; } .lg-card { padding: 12px; gap: 12px; } .lg-ico { width: 38px; height: 38px; border-radius: 10px; } .lg-body b { font-size: 15px; } }
+
+/* Fixtures / Our Players team cards: the line to press ends in an arrow, like "Continue reading →" */
+.tile.with-emblem .tile-go::after, .team-tile::after { content: "→"; display: inline-block; margin-left: 6px; transition: transform .15s; }
+.tile.with-emblem:hover .tile-go::after, .team-tile:hover::after { transform: translateX(4px); }
+.team-tile::after { margin-left: auto; color: var(--red); font-size: 18px; font-weight: 700; }
+.tile.with-emblem .tile-go { white-space: nowrap; }
+
+/* Home page featured competition: the matches of the round read down the left edge */
+.cf-round li { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+.cf-round li span:first-child, .cf-round li span { text-align: left !important; }
+
+/* Share buttons: WhatsApp as a line drawing in the site's colours */
+.share-btn svg.stroke-ico { width: 20px; height: 20px; fill: none !important; stroke: var(--ink); stroke-width: 17; stroke-linecap: round; stroke-linejoin: round; }
+.share-btn svg.stroke-ico path { fill: none !important; }
+.share-btn:hover svg.stroke-ico { stroke: #fff; }
+
+/* Phones: the news cards are compact — a 16:9 picture beside the headline, less empty space */
+@media (max-width: 640px) {
+  .home-news { gap: 8px !important; }
+  .home-news .hub-card, .mini-cards .hub-card, .hub-list .hub-card { flex-direction: row !important; align-items: center !important; gap: 12px !important; padding: 10px !important;
+    border-radius: 12px !important; min-height: 0 !important; }
+  .home-news .hub-pic, .mini-cards .hub-pic, .hub-list .hub-pic { width: 112px !important; height: 63px !important; flex: none !important; border-radius: 8px; overflow: hidden; aspect-ratio: auto !important; }
+  .home-news .hub-body, .mini-cards .hub-body { padding: 0 !important; gap: 3px !important; min-width: 0; }
+  .home-news .hub-body h3, .mini-cards .hub-body h3 { font-size: 15px !important; line-height: 1.25 !important; margin: 0 !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .home-news .hub-cat, .mini-cards .hub-cat { font-size: 10.5px !important; }
+  .home-news .hub-meta, .mini-cards .hub-meta { margin: 0 !important; padding: 0 !important; border: 0 !important; font-size: 12px !important; }
+}
+
+/* Phones: nothing may push the page wider than the screen (it slid sideways while scrolling) */
+html, body { overflow-x: clip; }
+@supports not (overflow: clip) { html, body { overflow-x: hidden; } }
+/* (the banner's side room is no wider than the page's own edge on phones — it was 2px wider, enough to slide sideways) */
+@media (max-width: 760px) { .hero-slides { margin: 0 -12px; } .hero-track > .hero-slide { padding: 0 12px; } }
+.tile.with-emblem .tile-go::after { font-size: 15px; line-height: 0; }
+/* News page on phones: the same compact cards as the home page */
+@media (max-width: 640px) {
+  .hub-card { flex-direction: row !important; align-items: center !important; gap: 12px !important; padding: 10px !important; border-radius: 12px !important; }
+  .hub-card .hub-pic { width: 112px !important; height: 63px !important; flex: none !important; border-radius: 8px; overflow: hidden; aspect-ratio: auto !important; }
+  .hub-card .hub-body { padding: 0 !important; gap: 3px !important; min-width: 0; }
+  .hub-card .hub-body h3 { font-size: 15px !important; line-height: 1.25 !important; margin: 0 !important; }
+  .hub-card .hub-excerpt { display: none; }
+  .hub-card .hub-meta { margin: 0 !important; padding: 0 !important; border: 0 !important; font-size: 12px !important; }
+}
+.form label.sw-move { display: flex !important; flex-direction: row; gap: 12px; } .sw-move b { font-weight: 700; } .sw-move small { margin-left: 4px; }

@@ -20,8 +20,11 @@ export default async function players(view, { query }) {
       ${breadcrumb([["Home", "/"], ["Our League", "/league"], ["Our Players"]])}
       <h1>Our Players</h1>
       ${picker}
-      ${ctx.leagues.map((l) => html`<h3>${l.name}</h3><div class="cards team-tiles">${ctx.teamsIn(l.id).map((t) => html`<a class="tile team-tile" href="/players?team=${t.slug}">
-        ${badge(t)}<h4>${t.name}</h4><span>${ctx.playersOf(t.id).length} players</span></a>`)}</div>`)}
+      ${ctx.leagues.map((l) => html`<h3>${l.name}</h3><div class="cards">${ctx.teamsIn(l.id).map((t) => {
+        // Round 76 (Neil): the same cards as the Fixtures page — emblem, name, and a line to press.
+        const n = ctx.playersOf(t.id).length;
+        return html`<a class="tile with-emblem" href="/players?team=${t.slug}">${badge(t)}<span><h4>${t.name}</h4><span class="tile-go">${n} player${n === 1 ? "" : "s"}</span></span></a>`;
+      })}</div>`)}
     </div>`);
   } else {
     // Past players: anyone who has played a frame for this team but isn't in it now.
