@@ -1,6 +1,6 @@
 // Turns raw season data into lookups and calculated tables (via rules.js).
 import { loadSeason, currentSeason, settings, loadCompetitions, currentCompetitions } from "./api.js";
-import { buildBracket, winnerSide, compScoreText, roundName } from "./bracket.js";
+import { buildBracket, winnerSide, compScoreText, roundName, entryPlayers } from "./bracket.js";
 import { leagueTable, playerRankings, matchScore, isCounted, isProvisional, isNotUpdated } from "./rules.js";
 import { ukDay } from "./dom.js";
 
@@ -93,6 +93,8 @@ export async function cupResults() {
       href: `/cup-match/${m.row.no ?? m.row.id}`, won: winnerSide(m.row) === "a" ? "h" : "a",
       // Round 54: the two sides' scores and teams, for the scoreboard look of the Latest Results box.
       hs: m.row.score_a, as: m.row.score_b, aTeam: b.entryById.get(m.a)?.team_id ?? null, bTeam: b.entryById.get(m.b)?.team_id ?? null,
+      // Round 83: singles and doubles show the players' pictures (or Rich's generic cartoons) instead of initials.
+      aPlayers: entryPlayers(b.entryById.get(m.a)), bPlayers: entryPlayers(b.entryById.get(m.b)),
       // Round 38: when the result went in — a result typed in late still counts as one of the latest.
       entered: [m.row.starts_at, m.row.result_at].filter(Boolean).sort().at(-1) ?? null,
     }));

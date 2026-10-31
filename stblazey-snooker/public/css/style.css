@@ -5874,3 +5874,10 @@ html.look-calm body:not([data-page="admin"]) #view .wrap > h1:not(.sr-only):not(
   .comp-admin-score > :first-child { white-space: nowrap; }
   .comp-admin-score select { flex: 1 1 200px; min-width: 0; }
 }
+
+/* Round 83: a singles or doubles result shows the players' pictures, not initials (a pair: two, overlapping) */
+.res-av { position: relative; display: block; width: 26px; height: 26px; }
+.res-av .avatar { width: 26px !important; height: 26px !important; border-radius: 50%; object-fit: cover; display: block; margin: 0; }
+.res-av.duo .avatar { position: absolute; width: 20px !important; height: 20px !important; box-shadow: 0 0 0 2px #fff; }
+.res-av.duo .avatar:first-child { left: -2px; top: 0; }
+.res-av.duo .avatar:last-child { right: -2px; bottom: 0; }

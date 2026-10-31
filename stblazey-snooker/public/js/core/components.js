@@ -485,7 +485,12 @@ function sideBox(ctx, news, count, box) {
   const sideLine = (team, name, score, side, r) => {
     const state = r.won === side ? "won" : r.won ? "lost" : "";
     const shown = num(score) ?? (r.won === side ? "W/O" : "–");
-    return html`<span class="res-line ${state}">${badge(team ?? { name })}<em>${name}</em><b>${shown}</b></span>`;
+    // A singles or doubles side: the player's picture (two, overlapping, for a pair) instead of initials.
+    const people = r.kind === "cup" ? (side === "h" ? r.aPlayers : r.bPlayers) ?? [] : [];
+    const pic = people.length
+      ? html`<span class="res-av ${people.length > 1 ? "duo" : ""}">${people.slice(0, 2).map((id) => avatar(ctx.player.get(id) ?? { id, full_name: name }, "avatar"))}</span>`
+      : badge(team ?? { name });
+    return html`<span class="res-line ${state}">${pic}<em>${name}</em><b>${shown}</b></span>`;
   };
   const meta = (r) => html`<span class="res-meta">${tag(r)}<time>${shownDate(r) ? fmtDay(shownDate(r)) : ""}</time></span>`;
   return html`${panel(site.side_box_title || "Latest Results", rows.length
