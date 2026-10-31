@@ -4,8 +4,17 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.62.0";
+export const SITE_VERSION = "1.63.0";
 export const CHANGES = [
+  "A look of our own (Feedback 83): rounded corners everywhere — the same on cards, boxes and buttons — more space between sections, colour used as accents, and black kept to the two sliding strips",
+  "Headings: a snooker triangle rack instead of the red slash; Latest Results has a red ball instead, so it stands out",
+  "Box headings are white with a fine line under them (no more black title bars); no faded slashes on the black backgrounds",
+  "Quick links: back to white cards with a thin outline and a red icon",
+  "Live & upcoming matches: round ‹ › buttons on the strip's left and right edges, a bigger Calendar button, more room in each match, and each match reads like a scoreline — name, club badge, score, club badge, name (a team with no badge of its own shows its club's)",
+  "Key dates: the same round buttons on its edges",
+  "Live and upcoming competitions: a promo strip you swipe (or drag) yourself, with round buttons on its edges, a Live now / Under way / Coming up label on each, and a search box",
+  "In the spotlight and Our teams: white cards on the page colour instead of black bands",
+  "Phones: the menu is a frosted-glass bar fixed to the bottom of the screen — Home, Fixtures, Tables, Comps and More — with a round search button beside it; the ☰ button is gone (the dashboard, scorecards and My area keep it)",
   "Latest Results: singles and doubles results show the players' pictures (or the generic cartoon players) instead of initials — two overlapping for a pair; team results keep the team's emblem",
   "Page titles: the red slash stands up beside the title, like the section headings, instead of lying flat underneath",
   "Competition page admin bar: the Admin tag, the buttons and the “Score a match” box are all the same rounded shape",

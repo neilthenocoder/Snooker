@@ -119,8 +119,46 @@ const navLink = (item, inner) => { const { cls, style } = menuLook(item);
 const menuLink = (item, inner) => (item.color === "live"
   ? html`<a class="nav-live-btn menu-live state-idle" href="${item.href}">${inner}</a>` : navLink(item, inner));
 
+// ── Round 84 (Rich): phones get a menu bar fixed to the bottom of the screen instead of the ☰ button ──
+// A frosted-glass bar (Apple's "liquid glass") with the five places people go most — Home, Fixtures, Tables,
+// Competitions and More (the full menu) — and a round search button beside it. A pill slides to the page you're on.
+const bi = (d) => html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
+const BNAV_ICONS = {
+  home: bi("M12 3.2 3 10.4V21h6.5v-6h5v6H21V10.4Z"),
+  fixtures: bi("M4 5h16v2H4Zm0 6h16v2H4Zm0 6h10v2H4Z"),
+  league: bi("M3 4h18v16H3Zm2 2v3h14V6Zm0 5v3h4v-3Zm6 0v3h8v-3Zm-6 5v2h4v-2Zm6 0v2h8v-2Z"),
+  competitions: bi("M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v2H8v-2h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3Zm0 4H6v1a2 2 0 0 0 1 1.7Zm10 0v2.7A2 2 0 0 0 18 8V7Z"),
+  more: bi("M5 10.2a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6Zm7 0a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6Zm7 0a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6Z"),
+  search: bi("M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.8 4.8-1.4 1.4-4.8-4.8A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"),
+};
+function bottomNav(seasons) {
+  const current = seasons.find((x) => x.is_current) ?? seasons.at(-1);
+  const tables = current ? urls.season(current, "league-tables") : "/league";
+  const item = (key, href, label) => html`<a class="bnav-item" href="${href}" data-bnav="${key}"><span class="bnav-ico">${BNAV_ICONS[key]}</span><span class="bnav-label">${label}</span></a>`;
+  return html`<nav class="bnav" aria-label="Quick menu"><div class="bnav-bar"><span class="bnav-pill" aria-hidden="true"></span>
+      ${item("home", "/", "Home")}${item("fixtures", "/fixtures", "Fixtures")}${item("league", tables, "Tables")}${item("competitions", "/competitions", "Comps")}
+      <button type="button" class="bnav-item" data-bnav="more" data-menu-open aria-label="More: the full menu"><span class="bnav-ico">${BNAV_ICONS.more}</span><span class="bnav-label">More</span></button>
+    </div>
+    <button type="button" class="bnav-search" data-search-open aria-label="Search">${BNAV_ICONS.search}</button></nav>`;
+}
+/** Light up the part of the site you're in, and slide the glass pill under it. */
+function markBottomNav() {
+  const bar = $(".bnav-bar");
+  if (!bar) return;
+  const open = document.documentElement.classList.contains("menu-open");
+  const section = document.documentElement.dataset.section || "";
+  const key = open ? "more" : section === "home" ? "home" : ["fixtures", "league", "competitions"].includes(section) ? section : "";
+  let on = null;
+  for (const a of bar.querySelectorAll("[data-bnav]")) { const hit = a.dataset.bnav === key; a.classList.toggle("on", hit); if (hit) { on = a; a.setAttribute("aria-current", "page"); } else a.removeAttribute("aria-current"); }
+  if (!on || !on.offsetWidth) { bar.style.setProperty("--pill-o", "0"); return; }
+  bar.style.setProperty("--pill-x", `${on.offsetLeft}px`);
+  bar.style.setProperty("--pill-w", `${on.offsetWidth}px`);
+  bar.style.setProperty("--pill-o", "1");
+}
+window.addEventListener("resize", markBottomNav, { passive: true });
+
 async function drawHeader() {
-  const [user, site, gate] = await Promise.all([getUser(), settings(), loginGate()]);
+  const [user, site, gate, seasons] = await Promise.all([getUser(), settings(), loginGate(), table("seasons", "name").catch(() => [])]);
   applyBranding(site);
   const MENU = menuItems(site);
   // Security → custom login address: the person button can be hidden from visitors (people then log in at that address).
@@ -156,6 +194,7 @@ async function drawHeader() {
         <button type="button" class="nav-icon nav-toggle" data-menu-open aria-label="Menu" aria-expanded="false">${menuIcon}</button>
       </div>
     </div></div></header>
+    ${bottomNav(seasons)}
     <div class="menu-overlay" data-menu role="dialog" aria-modal="true" aria-label="Menu">
       <div class="menu-top"><a class="logo menu-logo" href="/" aria-label="${SITE.name} home"><img class="logo-main" src="${site.logo_url || "/assets/logo.svg"}" alt=""><img class="logo-light ${site.logo_light_url ? "" : "auto"}" src="${site.logo_light_url || site.logo_url || "/assets/logo.svg"}" alt=""></a>
         <button type="button" class="menu-x" data-menu-close aria-label="Close the menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
@@ -192,6 +231,8 @@ async function drawHeader() {
   drawBell();
   refreshLive();
   measureHeader();
+  document.documentElement.classList.add("has-bnav");
+  requestAnimationFrame(markBottomNav);
 }
 
 /**
@@ -235,8 +276,9 @@ function measureHeader() {
 window.addEventListener("resize", measureHeader, { passive: true });   // a different width can mean a different height
 const setMenu = (open) => {
   document.documentElement.classList.toggle("menu-open", open);
-  $("[data-menu-open]")?.setAttribute("aria-expanded", String(open));
+  for (const b of document.querySelectorAll("[data-menu-open]")) b.setAttribute("aria-expanded", String(open));
   if (open) closeDrops();
+  markBottomNav();
 };
 /** The account links as rows (the dropdown on a computer and the phone menu share them — drawers.js accountLinks). */
 const acctItems = (user) => html`${accountLinks(user).map((l) => (l.guide
@@ -407,6 +449,7 @@ async function renderRoute({ quiet = false, keepPlace = false } = {}) {
   document.body.dataset.page = page;
   view.dataset.section = SECTION[page] ?? "";
   document.documentElement.dataset.section = page === "home" ? "home" : SECTION[page] ?? "";   // the menu underlines this part (calm look)
+  markBottomNav();
   // Round 73 (Rich: "the whole website refreshing is annoying — you're in the middle of something and suddenly you get the
   // loading screen"): the quiet refresh in the background swaps the page in place, with no blank page and no loading screen.
   if (!quiet) {

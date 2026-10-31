@@ -38,6 +38,12 @@ const quickIcon = {
   breaks: qi("M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18Zm0 2a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm0 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z"),
 };
 
+// Round 84: the round ‹ › buttons on the left and right edges of every sliding strip (like the World Snooker Tour's).
+const chevLeft = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 5.3 8 12l6.7 6.7"/></svg>`;
+const chevRight = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.3 5.3 16 12l-6.7 6.7"/></svg>`;
+const calIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h2v2h6V2h2v2h3v17H4V4h3Zm11 8H6v9h12Zm0-4H6v2h12Z"/></svg>`;
+const searchGlass = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.8 4.8-1.4 1.4-4.8-4.8A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg>`;
+
 export default async function home(view, { user } = {}) {
   setTitle("");
   adminEdit("settings", null, { label: "Edit home page" });
@@ -249,18 +255,24 @@ export default async function home(view, { user } = {}) {
     }, FEATURE_MS);
   }
 
-  // Key dates: the ‹ › buttons appear only when the dates don't all fit, and slide the row along.
-  const kd = $("[data-kd]", view), kdRow = kd && $(".kd-row", kd);
-  const kdFit = () => kd?.classList.toggle("can-slide", kdRow.scrollWidth - kdRow.clientWidth > 4);
-  if (kd) {
-    kdFit();
-    document.fonts?.ready.then(() => kd.isConnected && kdFit());
-    window.addEventListener("resize", kdFit, { passive: true });
-    kd.addEventListener("click", (e) => { const b = e.target.closest("[data-kd-move]"); if (b) kdRow.scrollBy({ left: Number(b.dataset.kdMove) * Math.max(240, kdRow.clientWidth * 0.8), behavior: "smooth" }); });
-  }
+  // Key dates: the round ‹ › buttons on its edges appear only when the dates don't all fit, and slide the row along.
+  const stopKd = manualSlider($("[data-kd]", view), ".kd-row", "data-kd-move");
 
+  // Live and upcoming competitions (round 84): swiped by hand, the round buttons on its edges, and a search box.
+  const cs = $("[data-cs]", view);
+  const stopCs = manualSlider(cs, ".cs-row", "data-cs-move");
+  $("[data-cs-search]", view)?.addEventListener("input", (e) => {
+    const q = e.target.value.trim().toLowerCase(), cards = $$(".cs-card", cs);
+    let shown = 0;
+    for (const card of cards) { const hit = !q || q.split(/\s+/).every((w) => card.dataset.name.includes(w)); card.hidden = !hit; shown += hit; }
+    $(".cs-none", cs).hidden = shown > 0;
+    $("[data-cs-q]", cs).textContent = e.target.value.trim();
+    cs.classList.toggle("is-empty", !shown);
+    $(".cs-row", cs).scrollTo({ left: 0 });
+    cs.refreshEnds?.();
+  });
 
-  return () => { clearInterval(timer); clearInterval(featureTimer); stopStrip(); stopSquad(); window.removeEventListener("resize", kdFit); };
+  return () => { clearInterval(timer); clearInterval(featureTimer); stopStrip(); stopSquad(); stopKd(); stopCs(); };
 }
 
 
@@ -303,14 +315,63 @@ function moreStories(list) {
     <div class="story-grid">${list.map((a) => html`<a class="story-card" href="${urls.article(a)}"><span class="story-pic">${storyPic(a)}</span>
       <span class="story-text">${a.category ? html`<small>${a.category}</small>` : ""}<strong>${a.title}</strong><em>${fmtAgo(a.published_at)} →</em></span></a>`)}</div>`;
 }
-/** Round 77: this season's competitions as a row of cards in a dark band, scrolling sideways. */
+/**
+ * Live and upcoming competitions (round 84, Rich): a promo strip in the dark band that you swipe (or drag) yourself —
+ * no automatic movement. Round ‹ › buttons sit on its left and right edges, and a search box above it finds a
+ * competition by name. Live ones first, then those under way, then those still to come, finished ones last.
+ */
 function compStrip(comps, data) {
   if (!comps.length) return "";
   const rank = (x) => { const p = String(x.progress ?? ""); return /being played|live/i.test(p) ? 0 : /Winner/.test(p) ? 3 : /not made|Draw not/i.test(p) ? 2 : 1; };
-  return html`<div class="hb-head"><h2>Live and upcoming competitions</h2><a href="/competitions">All competitions →</a></div>
-    <div class="cs-row">${[...comps].sort((p, q) => rank(p) - rank(q)).map(({ c, progress }) => html`<a class="cs-card" href="${urls.competition(c)}">
-      <span class="cs-top">${compBoxStyle(c) !== "trophy" && c.image_url ? picture(c.image_url, "", "cs-pic") : trophy(c, "cs-trophy")}</span>
-      <span class="cs-text"><strong>${c.name}</strong><small>${progress ?? ""}</small><em>See the draw →</em></span></a>`)}</div>`;
+  const chip = [["live", "Live now"], ["on", "Under way"], ["soon", "Coming up"], ["done", "Finished"]];
+  return html`<div class="hb-head cs-head"><h2>Live and upcoming competitions</h2>
+      <label class="cs-search">${searchGlass}<input type="search" data-cs-search placeholder="Search competitions" aria-label="Search live and upcoming competitions" autocomplete="off"></label>
+      <a href="/competitions">All competitions →</a></div>
+    <div class="cs-view" data-cs>
+      <button type="button" class="edge-btn prev" data-cs-move="-1" aria-label="Previous competitions">${chevLeft}</button>
+      <div class="cs-row">${[...comps].sort((p, q) => rank(p) - rank(q)).map((x) => { const { c, progress } = x, [k, label] = chip[rank(x)];
+        return html`<a class="cs-card" href="${urls.competition(c)}" data-name="${`${c.name} ${c.kind ?? ""}`.toLowerCase()}">
+        <span class="cs-top">${compBoxStyle(c) !== "trophy" && c.image_url ? picture(c.image_url, "", "cs-pic") : trophy(c, "cs-trophy")}<i class="cs-chip ${k}">${label}</i></span>
+        <span class="cs-text"><strong>${c.name}</strong><small>${progress ?? ""}</small><em>See the draw →</em></span></a>`; })}</div>
+      <button type="button" class="edge-btn next" data-cs-move="1" aria-label="More competitions">${chevRight}</button>
+      <p class="cs-none" hidden>No live or upcoming competition matches “<b data-cs-q></b>”. <a href="/competitions">See every competition →</a></p>
+    </div>`;
+}
+
+/**
+ * A row that slides sideways under your own control: the ‹ › buttons move it about one screen's worth, fade out at
+ * either end, and a mouse can drag it like a finger swipes it. Returns a function that stops it.
+ */
+function manualSlider(box, rowSel, moveAttr) {
+  const row = box && $(rowSel, box);
+  if (!row) return () => {};
+  const ends = () => {
+    const can = row.scrollWidth - row.clientWidth > 4;
+    box.classList.toggle("can-slide", can);
+    box.classList.toggle("at-start", !can || row.scrollLeft <= 4);
+    box.classList.toggle("at-end", !can || row.scrollLeft + row.clientWidth >= row.scrollWidth - 4);
+  };
+  const step = () => { const card = [...row.children].find((el) => el.offsetParent !== null); return Math.max((card?.offsetWidth ?? 260) + 16, Math.floor(row.clientWidth / ((card?.offsetWidth ?? 260) + 16)) * ((card?.offsetWidth ?? 260) + 16)); };
+  box.addEventListener("click", (e) => { const b = e.target.closest(`[${moveAttr}]`); if (b) row.scrollBy({ left: Number(b.getAttribute(moveAttr)) * step(), behavior: "smooth" }); });
+  let drag = null, dragged = false;
+  row.addEventListener("pointerdown", (e) => { if (e.pointerType !== "mouse" || e.button !== 0) return; drag = { x: e.clientX, left: row.scrollLeft, id: e.pointerId }; dragged = false; });
+  row.addEventListener("pointermove", (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x;
+    if (!dragged && Math.abs(dx) < 6) return;
+    if (!dragged) { dragged = true; row.classList.add("is-dragging"); try { row.setPointerCapture(e.pointerId); } catch { /* fine */ } }
+    row.scrollLeft = drag.left - dx;
+  });
+  const end = () => { if (!drag) return; drag = null; row.classList.remove("is-dragging"); };
+  row.addEventListener("pointerup", end); row.addEventListener("pointercancel", end);
+  row.addEventListener("click", (e) => { if (dragged) { e.preventDefault(); e.stopPropagation(); dragged = false; } }, true);
+  row.addEventListener("dragstart", (e) => e.preventDefault());
+  row.addEventListener("scroll", ends, { passive: true });
+  window.addEventListener("resize", ends, { passive: true });
+  ends();
+  document.fonts?.ready.then(() => row.isConnected && ends());
+  box.refreshEnds = ends;
+  return () => window.removeEventListener("resize", ends);
 }
 
 function heroSlide(a, on, dots = null) {
@@ -383,7 +444,7 @@ function keyDates(site, dates, competitions, today) {
   const when = (d) => { const n = days(d.starts_on); return n <= 0 ? (d.ends_on && d.ends_on > today ? "On now" : "Today") : n === 1 ? "Tomorrow" : n < 14 ? `In ${n} days` : `In ${Math.round(n / 7)} weeks`; };
   return html`<section class="kd ${list.length > 1 ? "many" : "one"}" aria-label="Key dates" data-kd>
     <a class="kd-label" href="/calendar" title="See everything on the calendar">${kdIcon}<span>Key dates</span><i aria-hidden="true">Calendar →</i></a>
-    <div class="kd-row">${list.map((d) => {
+    <div class="kd-view"><div class="kd-row">${list.map((d) => {
       const comp = competitions.find((c) => c.id === d.competition_id);
       const href = safeHref(d.url) || (comp ? urls.competition(comp) : "/calendar");
       // One line under the title: how long to go, the day, the last day (if it runs on) and the details.
@@ -392,7 +453,7 @@ function keyDates(site, dates, competitions, today) {
         <time datetime="${d.starts_on}"><b>${part(d.starts_on, { day: "numeric" })}</b><span>${part(d.starts_on, { month: "short" })}</span></time>
         <div><strong>${d.title}</strong><small><em class="${days(d.starts_on) <= 1 ? "soon" : ""}">${when(d)}</em>${more}</small></div></a>`;
     })}</div>
-    ${list.length > 1 ? html`<span class="kd-nav"><button type="button" data-kd-move="-1" aria-label="Earlier key dates">‹</button><button type="button" data-kd-move="1" aria-label="More key dates">›</button></span>` : ""}
+    ${list.length > 1 ? html`<button type="button" class="edge-btn prev" data-kd-move="-1" aria-label="Earlier key dates">${chevLeft}</button><button type="button" class="edge-btn next" data-kd-move="1" aria-label="More key dates">${chevRight}</button>` : ""}</div>
   </section>`;
 }
 
@@ -607,26 +668,35 @@ async function liveStrip(user = null, mode = "filters") {
   shown.sort((x, y) => String(x.when).localeCompare(String(y.when)));
   const cards = [...live, ...results, ...shown];
 
+  // Round 84 (Rich): no ‹ › beside the calendar — round buttons sit on the strip's left and right edges instead, and
+  // the calendar is a bigger button of its own.
   const head = html`<div class="strip-head"><h3>Live & upcoming matches</h3>
-      <span class="strip-ctrl"><span class="strip-arrows"><button type="button" data-strip-move="-1" aria-label="Previous matches">‹</button><button type="button" data-strip-move="1" aria-label="Next matches">›</button></span>
-        <a href="/calendar">Calendar →</a></span></div>
+      <span class="strip-ctrl"><a class="strip-cal" href="/calendar">${calIcon}<span>Calendar</span></a></span></div>
     ${filters}${toggle ? html`<div class="strip-filters">${toggle}</div>` : ""}`;
   if (!cards.length) return html`${stripColours(site)}${filters || toggle ? head : ""}<div class="strip-empty">${mine ? `No matches coming up for ${mineLabel} just now.`
     : f.comp || f.team ? "No matches for that choice just now." : "No matches coming up."} <a href="/calendar">See the calendar</a></div>`;
-  const face = (s) => (s.player ? avatar(s.player, "avatar sc-face") : s.team ? badge(s.team) : html`<span class="badge">${s.name.slice(0, 2).toUpperCase()}</span>`);
-  const side = (s) => html`<div class="sc-side">${face(s)}<span>${s.name}</span></div>`;
+  // Round 84 (Rich): each match reads like a scoreline — name, club badge, the score (or the time), club badge, name —
+  // with the team or league in grey under each name. A team with no emblem of its own shows its club's (the venue's).
+  const clubLogo = (t) => (t && !t.logo_url ? venues.find((v) => v.id === t.venue_id)?.logo_url || "" : "");
+  const face = (s) => (s.player ? avatar(s.player, "avatar sc-face") : s.team ? badge({ ...s.team, logo_url: s.team.logo_url || clubLogo(s.team) }) : html`<span class="badge">${s.name.slice(0, 2).toUpperCase()}</span>`);
+  const subOf = (s) => (s.player?.team_id ? team.get(s.player.team_id)?.name ?? "" : "");
+  const side = (s, end) => html`<div class="sc-side ${end}">${face(s)}<span class="sc-name"><b>${s.name}</b>${subOf(s) ? html`<small>${subOf(s)}</small>` : ""}</span></div>`;
   return html`${stripColours(site)}${head}
+    <div class="strip-view">
+    <button type="button" class="edge-btn prev" data-strip-move="-1" aria-label="Previous matches">${chevLeft}</button>
     <div class="strip-row">${cards.map((c) => (c.draw ? html`<a class="strip-card is-draw ${c.live ? "is-live" : ""}" href="${c.href}">
       <div class="sc-top"><span>${ukDay(c.when) === todayUK() ? "Today" : fmtDay(c.when)}</span><span class="sc-comp">${c.title}</span></div>
       <div class="sc-draw">${c.live ? html`<span class="live-dot">Live draw</span>` : html`<b>The draw</b>`}<p>${c.text}</p></div>
       <div class="sc-foot">${c.foot}</div></a>` : html`<a class="strip-card ${c.live ? "is-live" : ""}" href="${c.href}">
       <div class="sc-top"><span>${ukDay(c.when) === todayUK() ? "Tonight" : fmtDay(c.when)}</span><span class="sc-comp">${c.title}</span></div>
-      <div class="sc-body">${side(c.a)}
+      <div class="sc-body">${side(c.a, "home")}
         <div class="sc-mid">${c.postponed ? html`<b>P - P</b>` : c.walkover ? html`<b>W/O</b>` : c.hasFrames || c.done ? scoreTiles(c) : html`<b class="time">${fmtTime(c.when)}</b>`}
           ${c.postponed ? html`<span class="sc-label postponed">Postponed</span>` : c.live ? html`<span class="live-dot">Live</span>` : c.done ? html`<span class="sc-label ${c.label ?? "completed"}">${{ pending: "Pending", walkover: "Walkover" }[c.label] ?? "Completed"}</span>` : c.hasFrames ? "" : liveSoonTag({ starts_at: c.when, status: c.status ?? "scheduled" })}</div>
-        ${side(c.b)}</div>
+        ${side(c.b, "away")}</div>
       <div class="sc-foot">${c.walkover ? `Walkover to ${c.walkover}` : c.venue?.name ?? ""}</div>
-    </a>`))}</div>`;
+    </a>`))}</div>
+    <button type="button" class="edge-btn next" data-strip-move="1" aria-label="Next matches">${chevRight}</button>
+    </div>`;
 }
 
 /** Round 73 (the new look): the score as two tiles, like a scoreboard — the winner's green once the match is over. */

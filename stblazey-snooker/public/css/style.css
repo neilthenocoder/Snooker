@@ -5881,3 +5881,303 @@ html.look-calm body:not([data-page="admin"]) #view .wrap > h1:not(.sr-only):not(
 .res-av.duo .avatar { position: absolute; width: 20px !important; height: 20px !important; box-shadow: 0 0 0 2px #fff; }
 .res-av.duo .avatar:first-child { left: -2px; top: 0; }
 .res-av.duo .avatar:last-child { right: -2px; bottom: 0; }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 84 — Feedback 83: an identity of our own.
+   Rounded like Apple, one set of corners everywhere; lots of space; colour as accents (red, green, yellow);
+   black used sparingly (the two sliding strips only, and no faded slashes on them); the snooker triangle rack
+   on headings; scorelines laid out like a sports app; a frosted-glass menu bar at the bottom on phones.
+   ═════════════════════════════════════════════════════════════ */
+:root {
+  --r-xs: 8px; --r-sm: 12px; --r: 16px; --r-lg: 20px; --r-pill: 999px; --radius: 16px;
+  --line: rgba(17, 17, 17, .09);
+  --soft-shadow: 0 1px 2px rgba(17, 17, 17, .05), 0 8px 24px -14px rgba(17, 17, 17, .22);
+  --lift-shadow: 0 2px 4px rgba(17, 17, 17, .06), 0 18px 36px -18px rgba(17, 17, 17, .35);
+  --spring: cubic-bezier(.32, .72, 0, 1);
+  --rack: url("/assets/rack.svg");
+  --ball: url("/assets/ball.svg");
+  /* No more faded slashes on the black backgrounds */
+  --vibe-stripe: none;
+}
+.live-strip-wrap, html.look-calm.strip-dark .live-strip-wrap, .site-footer, .comp-admin, .hz-band { background-image: none !important; }
+
+/* ── 1. The snooker triangle rack on every heading (instead of the red slash) ── */
+.hb-head h2::before, .league-group-h::before,
+html.look-calm body:not([data-page="admin"]) :is(#view, #side) .panel > .panel-head::before {
+  content: "" !important; flex: none; width: .95em !important; height: .95em !important; border-radius: 0 !important; transform: none !important;
+  background: var(--red) !important; -webkit-mask: var(--rack) center / contain no-repeat; mask: var(--rack) center / contain no-repeat; }
+html.look-calm body:not([data-page="admin"]) #view .wrap > h1:not(.sr-only):not(.with-emblem)::before {
+  width: .8em; height: .8em; margin: 0 .34em 0 0; vertical-align: -.04em; transform: none;
+  background: var(--red); -webkit-mask: var(--rack) center / contain no-repeat; mask: var(--rack) center / contain no-repeat; }
+/* Latest results: a solid red ball instead — it is the box people come for, so it stands out (with a gentle glow) */
+html.look-calm body:not([data-page="admin"]) :is(#view, #side) .panel > a.panel-head[href="/results"]::before {
+  -webkit-mask: var(--ball) center / contain no-repeat; mask: var(--ball) center / contain no-repeat; width: 1em !important; height: 1em !important;
+  border-radius: 50% !important; animation: ballGlow 2.6s ease-in-out infinite; }
+@keyframes ballGlow { 0%, 100% { filter: drop-shadow(0 0 0 rgba(232, 0, 61, 0)); } 50% { filter: drop-shadow(0 0 5px rgba(232, 0, 61, .55)); } }
+@media (prefers-reduced-motion: reduce) { html.look-calm body :is(#view, #side) .panel > a.panel-head[href="/results"]::before { animation: none; } }
+.hb-head { align-items: center; margin-bottom: 18px; }
+.hb-head h2 { font-size: clamp(20px, 2vw, 24px); gap: 12px; letter-spacing: .005em; }
+
+/* ── 2. Box headings: white, not black bars — a quiet title, a hairline under it ── */
+html.look-calm body:not([data-page="admin"]) #view .panel > .panel-head,
+html.look-calm body:not([data-page="admin"]) #side .panel > .panel-head {
+  background: #fff !important; color: var(--ink) !important; padding: 18px 20px 16px !important; border: 0 !important; border-bottom: 1px solid var(--line) !important;
+  font: 700 16px var(--font-head) !important; letter-spacing: .04em; gap: 12px; }
+html.look-calm body:not([data-page="admin"]) :is(#view, #side) a.panel-head::after { color: var(--muted); }
+html.look-calm body:not([data-page="admin"]) :is(#view, #side) a.panel-head:hover { color: var(--ink) !important; background-color: #fafaf8 !important; }
+html.look-calm body:not([data-page="admin"]) :is(#view, #side) a.panel-head:hover::after { color: var(--red); }
+html.look-calm body:not([data-page="admin"]) #view .panel { border: 1px solid var(--line); box-shadow: var(--soft-shadow); }
+
+/* ── 3. One set of corners everywhere (public pages) ── */
+html.look-calm body:not([data-page="admin"]) :is(.panel, .hub-card, .story-card, .feat-main, .feat-card, .spotlight, .team-tile, .tile, .lg-card, .cf-main, .cf-card,
+  .kd, .feature-box, .enter-bar, .my-snooker-btn, .ms-invite, .notice, .person-card, .comp-feature .cf-hero, .sponsors a, .shield-row, .cv-chip, .award-card) { border-radius: var(--r); }
+html.look-calm body:not([data-page="admin"]) :is(.feat-main, .feat-card, .story-card, .hub-card, .cf-main, .kd, .enter-bar, .feature-box) { overflow: hidden; }
+html.look-calm body:not([data-page="admin"]) #view .btn,
+html.look-calm body:not([data-page="admin"]) .site-footer .btn,
+html.look-calm body:not([data-page="admin"]) :is(.cf-all, .cf-go, .hero-more, .nav-login, .nav-live-btn, .res-sum-btn, .strip-stats, .back-link, .share-btn, .share-page) { border-radius: var(--r-pill) !important; }
+html.look-calm body:not([data-page="admin"]) :is(#view, #side) .btn-bar { border-radius: var(--r); margin-top: 10px; }
+html.look-calm body:not([data-page="admin"]) :is(#view, .search-box, .drawer) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) { border-radius: var(--r-sm); }
+html.look-calm body:not([data-page="admin"]) :is(.badge:not(.logo)) { border-radius: 50%; }
+
+/* ── 4. Quick links: back to the white cards with a thin outline and a red icon (Rich's screenshot) ── */
+html.look-calm .quick-links.ql-8.ql-scroll, html .quick-links.ql-scroll { display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px !important; padding: 2px 0 0; }
+html.look-calm .quick-links.ql-8.ql-scroll a, html .quick-links.ql-scroll a {
+  flex-direction: row; align-items: center; justify-content: flex-start; gap: 14px; min-height: 52px; padding: 0 18px !important;
+  background: #fff !important; color: var(--ink) !important; border: 1px solid #1f1f1f !important; border-radius: var(--r-sm); box-shadow: none;
+  font: 700 14px/1.2 var(--font-head) !important; letter-spacing: .03em !important; text-transform: uppercase;
+  transition: border-color .18s, color .18s, box-shadow .18s, transform .18s var(--spring); }
+html.look-calm .quick-links.ql-8.ql-scroll a:hover, html .quick-links.ql-scroll a:hover {
+  background: #fff !important; color: var(--red) !important; border-color: var(--red) !important; transform: translateY(-2px); box-shadow: 0 10px 22px -14px rgba(232, 0, 61, .55); }
+html.look-calm .quick-links.ql-8.ql-scroll svg, html .quick-links.ql-scroll svg { width: 18px !important; height: 18px !important; fill: var(--red) !important; flex: none; }
+@media (max-width: 760px) {
+  html.look-calm .quick-links.ql-8.ql-scroll, html .quick-links.ql-scroll { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px !important; }
+  html.look-calm .quick-links.ql-8.ql-scroll a, html .quick-links.ql-scroll a { min-height: 48px; padding: 0 14px !important; gap: 10px; font-size: 13px !important; letter-spacing: .02em !important; border-radius: var(--r-sm); }
+}
+
+/* ── 5. Lots of space between the home page's sections; black only where it earns its place ── */
+.hz { padding-top: 56px; }
+.hz-top { padding-top: 40px; }
+.hz-top-grid { gap: 32px; }
+.hz-top-grid .home-top { gap: 18px; }
+.hz-band { padding: 48px 0 52px; margin-top: 56px; border-top: 0; }
+/* In the spotlight and Our teams come out of the black: white cards on the page's own colour */
+.hz-band:is(.hz-spot, .hz-teams) { --band: transparent; background: transparent !important; color: var(--ink); padding: 0; margin-top: 0; }
+.hz-band:is(.hz-spot, .hz-teams) > .wrap { padding-top: 56px; }
+.hz-band:is(.hz-spot, .hz-teams) .hb-head h2 { color: var(--ink); }
+.hz-band:is(.hz-spot, .hz-teams) .hb-head a { color: var(--red); }
+.hz-band:is(.hz-spot, .hz-teams) .hb-head a:hover { color: var(--ink); }
+html.look-calm .hz-spot .spotlight { background: #fff !important; color: var(--ink) !important; border: 1px solid var(--line); box-shadow: var(--soft-shadow); border-radius: var(--r-lg); }
+html.look-calm .hz-spot .spotlight:hover { box-shadow: var(--lift-shadow); }
+.hz-spot .spotlight :is(strong, p) { color: var(--ink); }
+.hz-spot .spotlight small, .hz-spot .spot-score small { color: var(--muted) !important; }
+.hz-spot .spot-badge .badge { background: #f1f0ec; color: var(--ink); }
+.hz-teams .hb-sub { color: var(--muted); font-size: 13px; letter-spacing: .08em; margin: 24px 0 12px; }
+html.look-calm .hz-teams .team-tile { background: #fff !important; color: var(--ink) !important; border: 1px solid var(--line) !important; border-radius: var(--r) !important; padding: 14px 16px; }
+html.look-calm .hz-teams .team-tile:hover { background: #fff !important; color: var(--red) !important; border-color: rgba(232, 0, 61, .35) !important; box-shadow: var(--soft-shadow) !important; }
+.hz-teams .team-tile .badge:not(.logo) { background: #f1f0ec; color: var(--ink); }
+.hz-band + .hz:not(.hz-band) { padding-top: 56px; }
+
+/* ── 6. Round ‹ › buttons on the left and right edges of every sliding strip (like the World Snooker Tour) ── */
+.edge-btn { position: absolute; top: 50%; z-index: 4; width: 46px; height: 46px; margin: 0; padding: 0; display: grid; place-items: center;
+  border: 0 !important; border-radius: 50% !important; background: #fff !important; color: var(--ink) !important; cursor: pointer;
+  box-shadow: 0 8px 22px -6px rgba(0, 0, 0, .35), 0 0 0 1px rgba(0, 0, 0, .06) !important;
+  transform: translateY(-50%); transition: opacity .25s, transform .3s var(--spring), color .15s; }
+.edge-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.edge-btn:hover { color: var(--red) !important; transform: translateY(-50%) scale(1.07); }
+.edge-btn:active { transform: translateY(-50%) scale(.94); }
+.edge-btn:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+.edge-btn.prev { left: -14px; }
+.edge-btn.next { right: -14px; }
+/* (the strips that you move yourself: the button at an end fades away; with nothing to slide, none show) */
+:is(.cs-view, .kd):not(.can-slide) .edge-btn,
+:is(.cs-view, .kd).at-start .edge-btn.prev, :is(.cs-view, .kd).at-end .edge-btn.next { opacity: 0; pointer-events: none; transform: translateY(-50%) scale(.8); }
+@media (max-width: 760px) {
+  .edge-btn { width: 38px; height: 38px; }
+  .edge-btn svg { width: 19px; height: 19px; }
+  .edge-btn.prev { left: -6px; }
+  .edge-btn.next { right: -6px; }
+}
+
+/* ── 7. Live & upcoming matches: a bigger calendar button, and each match laid out like a scoreline ── */
+.live-strip-wrap { padding: 28px 0 30px !important; }
+.live-strip .strip-head { align-items: center; margin-bottom: 14px; gap: 16px; }
+.live-strip .strip-head h3 { font-size: 18px; letter-spacing: .02em; }
+.live-strip .strip-ctrl { gap: 10px; }
+.strip-arrows { display: none !important; }
+html .live-strip a.strip-cal { display: inline-flex; align-items: center; gap: 8px; height: 42px; margin: 0; padding: 0 18px 0 14px; border-radius: var(--r-pill);
+  background: #fff; color: var(--ink) !important; font: 700 14px/1 var(--font-head); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .12); transition: background .18s, color .18s, transform .2s var(--spring); }
+.live-strip a.strip-cal svg { width: 18px; height: 18px; fill: var(--red); transition: fill .18s; }
+html .live-strip a.strip-cal:hover { background: var(--red); color: #fff !important; transform: translateY(-1px); }
+.live-strip a.strip-cal:hover svg { fill: #fff; }
+.live-strip .strip-filters { margin-bottom: 16px; }
+.strip-view { position: relative; }
+.live-strip .strip-row { gap: 16px; padding: 4px 2px 6px; scrollbar-width: none; scroll-padding-left: 2px; }
+.live-strip .strip-row::-webkit-scrollbar { display: none; }
+html.look-calm .live-strip .strip-card, html.look-calm.strip-dark .live-strip .strip-card, .live-strip .strip-card {
+  flex: 0 0 400px; display: flex; flex-direction: column; gap: 14px; padding: 18px 20px 16px; border: 0 !important; border-radius: var(--r-lg);
+  background: #fff; color: var(--ink); font-size: 13px; box-shadow: 0 1px 2px rgba(0, 0, 0, .08) !important; transition: transform .25s var(--spring), box-shadow .25s; }
+html.look-calm .live-strip .strip-card:hover, html.look-calm.strip-dark .live-strip .strip-card:hover { background: #fff; color: var(--ink); transform: translateY(-3px); box-shadow: 0 16px 30px -16px rgba(0, 0, 0, .55) !important; }
+html.look-calm .live-strip .strip-card.is-live { box-shadow: inset 0 0 0 2px var(--strip-live, var(--live-green)) !important; }
+html.look-calm .live-strip .strip-card.is-draw { box-shadow: inset 0 0 0 2px var(--yellow) !important; }
+html.look-calm .live-strip .sc-top, html.look-calm.strip-dark .live-strip .sc-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; color: var(--muted); font-size: 12.5px; }
+.live-strip .sc-top > span:first-child { color: var(--ink); font-weight: 700; white-space: nowrap; }
+.live-strip .sc-body { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; margin: 0; align-items: center; }
+.live-strip .sc-side { flex-direction: row; align-items: center; gap: 8px; min-width: 0; font-weight: 400; }
+.live-strip .sc-side.home { flex-direction: row-reverse; text-align: right; }
+.live-strip .sc-side.away { text-align: left; }
+.live-strip .sc-name { display: grid; gap: 2px; min-width: 0; }
+.live-strip .sc-name b { font: 700 14px/1.2 var(--font-head); color: var(--ink); overflow-wrap: break-word; hyphens: manual; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.live-strip .sc-name small { color: var(--muted); font-size: 11.5px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.live-strip .sc-side .badge, .live-strip .sc-side .avatar { flex: none; width: 30px !important; height: 30px !important; font-size: 10px; }
+html.look-calm .live-strip .sc-side .badge:not(.logo), html.look-calm.strip-dark .live-strip .strip-card .badge:not(.logo) { background: #f1f0ec; color: var(--ink); border-radius: 50%; }
+.live-strip .sc-side .badge.logo { background: transparent; border-radius: 6px; }
+.live-strip .sc-side .badge.logo img { object-fit: contain; }
+.live-strip .sc-side .avatar { border-radius: 50%; object-fit: cover; }
+.live-strip .sc-mid { gap: 6px; min-width: 68px; }
+/* the score: one dark box split down the middle, like a scoreboard */
+.live-strip .sc-mid b.sc-tiles { display: inline-flex; gap: 0; border-radius: var(--r-xs); overflow: hidden; background: #161616; }
+.live-strip .sc-mid b.sc-tiles i { min-width: 34px; height: 36px; padding: 0 8px; border-radius: 0; background: transparent; color: #fff; font: 700 19px var(--font-head); font-style: normal; }
+html.look-calm:not(.strip-dark) .live-strip .sc-mid b.sc-tiles i { background: transparent; }
+.live-strip .sc-mid b.sc-tiles i + i { box-shadow: inset 1px 0 0 rgba(255, 255, 255, .28); }
+.live-strip .sc-mid b.sc-tiles i.w { background: var(--green) !important; }
+.live-strip .sc-mid b.sc-tiles i.l { background: var(--red) !important; }
+html.look-calm .live-strip .sc-mid b.time, html.look-calm.strip-dark .live-strip .sc-mid b.time { border: 0; padding: 0; font: 700 19px/1.1 var(--font-head); color: var(--ink); letter-spacing: .01em; }
+.live-strip .sc-mid > b:not(.sc-tiles):not(.time) { font: 700 17px var(--font-head); color: var(--ink); }
+html.look-calm .live-strip .sc-foot, html.look-calm.strip-dark .live-strip .sc-foot { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); color: #7a7a7a; font-size: 12px; text-align: center; }
+.live-strip .sc-draw { color: var(--ink); }
+.live-strip .strip-empty { color: #d0d0d0; }
+@media (max-width: 760px) {
+  .live-strip-wrap { padding: 22px 0 24px !important; }
+  html.look-calm .live-strip .strip-card, html.look-calm.strip-dark .live-strip .strip-card, .live-strip .strip-card { flex-basis: min(86vw, 360px); padding: 16px 16px 14px; }
+  /* (narrow cards: each club badge sits just above its name, both leaning in towards the score) */
+  .live-strip .sc-side, .live-strip .sc-side.home { flex-direction: column; gap: 6px; }
+  .live-strip .sc-side.home { align-items: flex-end; }
+  .live-strip .sc-side.away { align-items: flex-start; }
+  .live-strip .sc-name b { font-size: 14px; }
+  .live-strip .strip-head { flex-wrap: nowrap; }
+  .live-strip .strip-head h3 { font-size: 16px; }
+  html .live-strip a.strip-cal { height: 40px; padding: 0 14px 0 12px; font-size: 13px; }
+}
+
+/* ── 8. Key dates: the round buttons on its edges too ── */
+.kd { position: relative; grid-template-columns: auto minmax(0, 1fr); box-shadow: var(--soft-shadow); border: 1px solid var(--line); overflow: visible !important; }
+.kd-label { border-radius: var(--r) 0 0 var(--r); }
+.kd-view { position: relative; min-width: 0; }
+.kd-view .kd-row { border-radius: 0 var(--r) var(--r) 0; }
+.kd-nav { display: none !important; }
+.kd .edge-btn { width: 36px; height: 36px; }
+.kd .edge-btn svg { width: 17px; height: 17px; }
+.kd .edge-btn.prev { left: 6px; }
+.kd .edge-btn.next { right: 6px; }
+.kd-item time { border-radius: var(--r-xs); }
+@media (max-width: 760px) {
+  .kd { grid-template-columns: minmax(0, 1fr); }
+  .kd-label { border-radius: var(--r) var(--r) 0 0; }
+  .kd-view .kd-row { border-radius: 0 0 var(--r) var(--r); }
+  .kd.can-slide .kd-nav { display: none !important; }
+}
+
+/* ── 9. Live and upcoming competitions: a promo strip you swipe yourself, with a search box ── */
+.hz-comps { background: #0f0f0f !important; }
+.hz-comps .cs-head { flex-wrap: wrap; row-gap: 14px; }
+.hz-comps .cs-head h2 { margin-right: auto; }
+.cs-search { position: relative; display: flex; align-items: center; width: min(340px, 100%); height: 46px; margin: 0; padding: 0 16px 0 44px; border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .16); transition: background .2s, border-color .2s, box-shadow .2s; cursor: text; }
+.cs-search svg { position: absolute; left: 16px; top: 50%; width: 18px; height: 18px; transform: translateY(-50%); fill: #a3a3a3; pointer-events: none; }
+.cs-search input { width: 100%; min-width: 0; height: 100%; padding: 0; border: 0 !important; background: transparent !important; color: #fff; font: 500 16px var(--font-body); outline: none; box-shadow: none !important; border-radius: 0 !important; }
+.cs-search input::placeholder { color: #9d9d9d; }
+.cs-search input::-webkit-search-cancel-button { filter: invert(1); opacity: .6; }
+.cs-search:focus-within { background: rgba(255, 255, 255, .13); border-color: var(--yellow); box-shadow: 0 0 0 4px rgba(255, 184, 28, .18); }
+.cs-view { position: relative; }
+.hz-comps .cs-row { display: flex !important; gap: 18px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-left: 2px;
+  scrollbar-width: none; padding: 6px 2px 8px; grid-template-columns: none; }
+.hz-comps .cs-row::-webkit-scrollbar { display: none; }
+.hz-comps .cs-row.is-dragging { scroll-snap-type: none; cursor: grabbing; user-select: none; }
+.hz-comps .cs-row.is-dragging a { pointer-events: none; }
+@media (hover: hover) and (pointer: fine) { .hz-comps .cs-row { cursor: grab; } }
+.hz-comps .cs-card { flex: 0 0 304px; border-radius: var(--r-lg); scroll-snap-align: start; background: #1c1c1c; transition: transform .3s var(--spring), box-shadow .3s; }
+.hz-comps .cs-card[hidden] { display: none; }
+.hz-comps .cs-card:hover { transform: translateY(-4px); box-shadow: 0 0 0 2px var(--yellow), 0 22px 40px -22px rgba(0, 0, 0, .8); }
+.hz-comps .cs-top { position: relative; height: 172px; }
+.hz-comps .cs-top .cs-pic { height: 172px; }
+.hz-comps .cs-top .cs-trophy, .hz-comps .cs-top img.trophy { height: 118px !important; }
+.cs-chip { position: absolute; top: 12px; left: 12px; padding: 6px 11px; border-radius: var(--r-pill); font: 700 11px/1 var(--font-head); font-style: normal; letter-spacing: .06em; text-transform: uppercase;
+  background: rgba(255, 255, 255, .92); color: var(--ink); box-shadow: 0 2px 8px rgba(0, 0, 0, .25); }
+.cs-chip.live { background: var(--live-green); color: #fff; }
+.cs-chip.live::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 6px 1px 0; border-radius: 50%; background: #fff; animation: csPulse 1.4s ease-in-out infinite; }
+.cs-chip.on { background: var(--yellow); color: #1b0e06; }
+.cs-chip.done { background: rgba(0, 0, 0, .55); color: #fff; }
+@keyframes csPulse { 50% { opacity: .3; } }
+.hz-comps .cs-text { padding: 18px 20px 20px; gap: 6px; background: #f6f4ee; }
+.hz-comps .cs-text strong { font-size: 18px; }
+.hz-comps .cs-text small { font-size: 13.5px; }
+.hz-comps .cs-text em { margin-top: 8px; font-size: 14px; }
+.cs-none { margin: 0; padding: 40px 0 24px; color: #bdbdbd; font-size: 15px; text-align: center; }
+.cs-none b { color: #fff; }
+.cs-none a { color: var(--yellow); font-weight: 700; white-space: nowrap; }
+.hz-comps .edge-btn { margin-top: -30px; }
+@media (max-width: 760px) {
+  .hz-comps .cs-head h2 { flex: 1 1 auto; }
+  .hz-comps .cs-head .cs-search { order: 3; width: 100%; }
+  .hz-comps .cs-card { flex-basis: 78%; }
+  .hz-comps .cs-top, .hz-comps .cs-top .cs-pic { height: 140px; }
+  .hz-comps .cs-top .cs-trophy, .hz-comps .cs-top img.trophy { height: 96px !important; }
+  .hz-comps .cs-text strong { font-size: 16px; }
+}
+
+/* ── 10. Latest results: more room in each result ── */
+.hz-results .res-sb, #side .res-sb { padding: 16px 18px 14px 18px !important; gap: 8px; }
+.res-meta time { color: var(--muted); }
+
+/* ── 11. Phones: the menu lives at the bottom of the screen — frosted glass, like Apple's tab bars ── */
+.bnav { display: none; }
+@media (max-width: 900px) {
+  html.has-bnav body:not(:is([data-page="admin"], [data-page="scorecard"], [data-page="cup-scorecard"], [data-page="my"], [data-page="login"])) {
+    --bnav-space: calc(86px + env(safe-area-inset-bottom)); padding-bottom: var(--bnav-space); }
+  html.has-bnav body:not(:is([data-page="admin"], [data-page="scorecard"], [data-page="cup-scorecard"], [data-page="my"], [data-page="login"])) .bnav {
+    display: flex; position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 110; gap: 10px; align-items: stretch; pointer-events: none;
+    animation: bnavIn .6s var(--spring) both; }
+  html.has-bnav body:not(:is([data-page="admin"], [data-page="scorecard"], [data-page="cup-scorecard"], [data-page="my"], [data-page="login"])) .site-header :is(.nav-toggle, .nav-search) { display: none !important; }
+  .bnav > * { pointer-events: auto; }
+  .bnav-bar, .bnav-search {
+    background: rgba(255, 255, 255, .86); -webkit-backdrop-filter: blur(28px) saturate(190%); backdrop-filter: blur(28px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, .75);
+    box-shadow: 0 12px 32px -10px rgba(0, 0, 0, .35), 0 2px 6px rgba(0, 0, 0, .08), inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 -1px 1px rgba(0, 0, 0, .04); }
+  .bnav-bar { position: relative; flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 5px; border-radius: 32px; }
+  .bnav-pill { position: absolute; top: 5px; bottom: 5px; left: 0; width: var(--pill-w, 0); border-radius: 27px; opacity: var(--pill-o, 0);
+    transform: translateX(var(--pill-x, 0)); background: rgba(17, 17, 17, .075); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), inset 0 0 0 1px rgba(17, 17, 17, .04);
+    transition: transform .55s var(--spring), width .55s var(--spring), opacity .25s; pointer-events: none; }
+  .bnav-item { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; height: 56px; padding: 0;
+    border: 0; border-radius: 27px; background: none; color: #3b3b3b; font: 600 11px/1 var(--font-body); letter-spacing: .01em; text-transform: none; cursor: pointer;
+    -webkit-tap-highlight-color: transparent; transition: color .2s, transform .35s var(--spring); }
+  .bnav-item:hover { color: var(--ink); }
+  .bnav-ico { display: grid; place-items: center; }
+  .bnav-ico svg { width: 23px; height: 23px; fill: currentColor; transition: transform .35s var(--spring); }
+  .bnav-label { white-space: nowrap; }
+  .bnav-item.on { color: var(--red); }
+  .bnav-item.on .bnav-label { font-weight: 700; }
+  .bnav-item.on .bnav-ico svg { transform: scale(1.08); }
+  .bnav-item:active { transform: scale(.88); }
+  .bnav-search { flex: none; width: 68px; height: auto; aspect-ratio: 1; display: grid; place-items: center; padding: 0; border-radius: 50%; color: var(--ink); cursor: pointer;
+    -webkit-tap-highlight-color: transparent; transition: transform .35s var(--spring); }
+  .bnav-search svg { width: 26px; height: 26px; fill: currentColor; }
+  .bnav-search:active { transform: scale(.9); }
+  @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) { .bnav-bar, .bnav-search { background: rgba(255, 255, 255, .96); } }
+  /* everything else that sits at the bottom of the screen moves up above the bar */
+  html.has-bnav body { --bnav-lift: var(--bnav-space, 0px); }
+  html.has-bnav .scroll-down.round-btn { display: none !important; }
+  html.has-bnav .to-top.round-btn { bottom: calc(16px + var(--bnav-lift)); }
+  html.has-bnav :is(.edit-page, .squad-box, .live-pops, .toasts, .a2hs-bar) { bottom: calc(14px + var(--bnav-lift)) !important; }
+  html.has-bnav .tw-menu { bottom: calc(66px + var(--bnav-lift)); }
+  html.has-bnav .site-footer { padding-bottom: 28px; }
+}
+@media (max-width: 360px) { .bnav-item { font-size: 10px; } .bnav-search { width: 60px; } }
+@keyframes bnavIn { from { opacity: 0; transform: translateY(24px) scale(.96); } }
+@media (prefers-reduced-motion: reduce) { .bnav, .bnav-pill, .bnav-item, .bnav-search, .edge-btn, .cs-card, .strip-card { animation: none !important; transition: none !important; } }
+@media print { .bnav, .edge-btn { display: none !important; } }
+@media (min-width: 761px) { .strip-view .edge-btn.prev { left: -22px; } .strip-view .edge-btn.next { right: -22px; } }
+/* (the phone menu's buttons and the small "Enter now" / "Log in" buttons take the same rounded shape) */
+html.look-calm .menu-overlay .btn, html.look-calm .menu-overlay .menu-login { border-radius: var(--r-pill) !important; }
+html.look-calm body:not([data-page="admin"]) :is(.enter-bar span, .ms-invite .btn, .my-snooker-btn i, .feature-new, .kd-item time) { border-radius: var(--r-xs); }
+html.look-calm body:not([data-page="admin"]) :is(.enter-bar span, .ms-invite a.btn) { border-radius: var(--r-pill) !important; }
