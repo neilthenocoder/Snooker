@@ -5823,3 +5823,34 @@ body.tw-on { padding-bottom: 110px; }
 /* Round 80: words from the dashboard are locked in editing mode — a "no" cursor, and they fade a little */
 body.tw-on #view .tw-lock { cursor: not-allowed; opacity: .55; }
 body.tw-on #view .tw-ed { outline: 1px dashed rgba(255, 184, 28, .55); }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 81 — a standard, slimmer menu bar; the menu's close button; one look for a loss
+   ═════════════════════════════════════════════════════════════ */
+/* Menu bar: a smaller logo and less padding, so more of the page shows (was 96px tall on a computer, now 72px) */
+:root { --nav-h: 46px; }
+.site-header .wrap { padding-top: 12px !important; padding-bottom: 12px !important; }
+.site-header .logo img, .site-header.stuck .logo img { height: var(--nav-h) !important; }
+.site-header .nav-icon { width: 42px !important; height: 42px !important; }
+.site-header .nav-icon svg { width: 20px; height: 20px; }
+.site-header .nav-login, .site-header .nav-live-btn, .site-header .nav-account { height: 42px !important; min-height: 0 !important; }
+.site-header .nav-login, .site-header .nav-live-btn { padding-top: 0 !important; padding-bottom: 0 !important; font-size: 15px; }
+@media (max-width: 900px) {
+  :root { --nav-h: 38px; }
+  .site-header .wrap { padding-top: 9px !important; padding-bottom: 9px !important; }
+  .site-header .nav-icon { width: 38px !important; height: 38px !important; }
+  .site-header .nav-icon svg { width: 19px; height: 19px; }
+  .site-header .nav-login, .site-header .nav-live-btn, .site-header .nav-account { height: 38px !important; font-size: 13.5px; }
+}
+@media (max-width: 350px) { .site-header .nav-icon { width: 34px !important; height: 34px !important; } }
+
+/* The phone menu's close button: a drawn ✕, centred, the same size and place as the menu button it replaces */
+.menu-top { min-height: 56px; }
+.menu-x, .drawer-x { width: 38px; height: 38px; padding: 0; font-size: 0; line-height: 0; display: grid; place-items: center; flex: none; }
+.menu-x svg, .drawer-x svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; display: block; }
+.menu-top .menu-logo img { height: 38px !important; width: auto; }
+
+/* Wins and losses look the same everywhere (Neil): a solid green box for a win, a solid red one for a loss —
+   like the scores on the live & upcoming strip. */
+.res-line.won b, .res-num.won, .wl.won, .tally.win, .cf-g-line.won b, .cf-main .cf-round li.cf-game .won b { background: var(--green) !important; color: #fff !important; }
+.res-line.lost b, .res-num.lost, .wl.lost, .tally.loss, .cf-g-line.lost b, .cf-main .cf-round li.cf-game .lost b, .fc.l, .ms-form a.l { background: var(--red) !important; color: #fff !important; }

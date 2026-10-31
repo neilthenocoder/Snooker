@@ -37,7 +37,7 @@ function drawer(name, title, body) {
   el.className = `drawer-wrap drawer-${name}`;
   mount(el, html`<div class="drawer-shade" data-drawer-close></div>
     <aside class="drawer" role="dialog" aria-modal="true" aria-label="${title}" tabindex="-1">
-      <header class="drawer-head"><h2>${title}</h2><button type="button" class="drawer-x" data-drawer-close aria-label="Close">×</button></header>
+      <header class="drawer-head"><h2>${title}</h2><button type="button" class="drawer-x" data-drawer-close aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
       <div class="drawer-body">${body}</div>
     </aside>`);
   document.body.append(el);

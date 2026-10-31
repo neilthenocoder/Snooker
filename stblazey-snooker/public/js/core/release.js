@@ -4,8 +4,11 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.59.0";
+export const SITE_VERSION = "1.60.0";
 export const CHANGES = [
+  "A standard, slimmer menu bar: a smaller logo and less padding (72px tall on a computer instead of 96px, 58px on a phone), so more of the page shows",
+  "Phone menu: the close button is a proper drawn ✕, centred in its circle (and the same in the side panels)",
+  "Wins and losses look the same everywhere: a solid green box for a win, a solid red one for a loss — like the live & upcoming strip",
   "Edit the wording on this page: names, headlines, results, dates and article text come from the dashboard, so they're locked here (faded, with a note to change them in the dashboard) — only the site's own wording can be clicked",
   "Master Admin: the Edit button now offers “Edit in the dashboard” or “Edit the wording on this page” — click any heading, line or button and type, then Save. A change applies to that kind of page everywhere (e.g. every team page); “Put this page back as it was” undoes them. Words only — the layout and styling stay as they are. Run schema.sql, version 42",
   "Site settings: saving no longer fails with “null value in column triple_crown” (e.g. after choosing the Everything home page) — run schema.sql, version 41",
