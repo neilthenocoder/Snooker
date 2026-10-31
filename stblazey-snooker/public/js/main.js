@@ -6,7 +6,9 @@
 import { SITE, DEMO_MODE } from "./config.js";
 import { html, mount, $, ukDay, toast, safeHref } from "./core/dom.js";
 import { applyBranding, loaderOn, loaderOff, layoutFor, TICKER_PX } from "./core/branding.js";
-import { getUser, signOut, mySnookerOn, mySnookerHome, canOpenSection } from "./core/auth.js";
+import { getUser, signOut, mySnookerOn, mySnookerHome, canOpenSection, isMaster } from "./core/auth.js";
+import { applyPageText, startTextEditing } from "./core/page-text.js";
+let stopPageText = () => {};   // round 79: undoes applyPageText() when the page changes
 import { seasonContext, sideBoxData } from "./core/context.js";
 import { sidebar, crumbs, zoneNote } from "./core/components.js";
 import { openAccount, openNotifications, closeDrawer, accountLinks, roleLabel, initials } from "./core/drawers.js";
@@ -387,6 +389,8 @@ async function renderRoute({ quiet = false, keepPlace = false } = {}) {
   routing = true;
   if (typeof cleanup === "function") cleanup();
   cleanup = null;
+  stopPageText(); stopPageText = () => {};
+  document.querySelector(".tw-bar")?.remove(); document.querySelector(".tw-menu")?.remove(); document.body.classList.remove("tw-on");
   document.querySelector(".edit-page")?.remove();
   const view = $("#view");
   view.className = "";
@@ -428,7 +432,9 @@ async function renderRoute({ quiet = false, keepPlace = false } = {}) {
     if (!["admin", "login", "my", "scorecard", "cup-scorecard", "unsubscribe", "not-found", "market-edit"].includes(page)) placeAds(view, page, params).catch(() => {});
     // Pop-up adverts (home page) and the newsletter sign-up (Admin → Website → Pop-up adverts / Newsletter).
     if (!["admin", "login", "my", "scorecard", "cup-scorecard", "unsubscribe", "not-found"].includes(page)) { showPopups(page, site, user); offerInstall(); }
-    drawEditButton(user, page);
+    // Round 79: the Master Admin's changes to the wording (Edit → "Edit the wording on this page").
+    if (!["admin", "scorecard", "cup-scorecard", "login", "my"].includes(page)) stopPageText = applyPageText(view, page, site);
+    drawEditButton(user, page, site);
     // "Stuck?" — search the league's rules and the rules of snooker from any scorecard (Rich, round 23).
     if (["scorecard", "cup-scorecard"].includes(page) || (page === "admin" && params.section === "scoreboard")) rulesHelpButton(); else document.querySelector(".rh-btn")?.remove();
     if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView();
@@ -448,16 +454,47 @@ async function renderRoute({ quiet = false, keepPlace = false } = {}) {
   } finally { loaderOff(); window.sbdslStarted = true; }     // (the safety net in boot.js stands down)
 }
 
-/** Admins and officers get an "Edit this page" button that opens the right part of the dashboard. */
-function drawEditButton(user, page) {
+/**
+ * Admins and officers get an "Edit this page" button that opens the right part of the dashboard.
+ * Round 79 (Neil): for the Master Admin it opens a small choice — the dashboard, or the wording on this page.
+ */
+function drawEditButton(user, page, site) {
   document.querySelector(".edit-page")?.remove();
+  document.querySelector(".tw-menu")?.remove();
   const target = takeEditTarget();
-  if (!target || !user || ["admin", "scorecard", "cup-scorecard", "login", "my"].includes(page) || !canOpenSection(user, target.section)) return;
-  const a = document.createElement("a");
-  a.className = "edit-page";
-  a.href = target.href;
-  mount(a, html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.2V21h3.8L17.9 9.9l-3.8-3.8Zm17.7-10.4a1 1 0 0 0 0-1.4l-2.1-2.1a1 1 0 0 0-1.4 0l-1.7 1.7 3.8 3.8Z"/></svg><span>${target.label ?? "Edit this page"}</span>`);
-  document.body.append(a);
+  if (!user || ["admin", "scorecard", "cup-scorecard", "login", "my"].includes(page)) return;
+  const master = isMaster(user);
+  const dash = target && canOpenSection(user, target.section) ? target : null;
+  if (!dash && !master) return;
+  const pen = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.2V21h3.8L17.9 9.9l-3.8-3.8Zm17.7-10.4a1 1 0 0 0 0-1.4l-2.1-2.1a1 1 0 0 0-1.4 0l-1.7 1.7 3.8 3.8Z"/></svg>`;
+  if (!master) {
+    const a = document.createElement("a");
+    a.className = "edit-page";
+    a.href = dash.href;
+    mount(a, html`${pen}<span>${dash.label ?? "Edit this page"}</span>`);
+    document.body.append(a);
+    return;
+  }
+  const btn = document.createElement("button");
+  btn.type = "button"; btn.className = "edit-page"; btn.setAttribute("aria-haspopup", "true"); btn.setAttribute("aria-expanded", "false");
+  mount(btn, html`${pen}<span>${dash?.label ?? "Edit this page"}</span>`);
+  const menu = document.createElement("div");
+  menu.className = "tw-menu"; menu.hidden = true;
+  mount(menu, html`${dash ? html`<a href="${dash.href}" data-tw-dash><b>Edit in the dashboard</b><small>${dash.label ?? "This page's settings"}</small></a>` : ""}
+    <button type="button" data-tw-start><b>Edit the wording on this page</b><small>Click any heading, line or button and type</small></button>`);
+  const close = () => { menu.hidden = true; btn.setAttribute("aria-expanded", "false"); };
+  btn.addEventListener("click", (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; btn.setAttribute("aria-expanded", String(!menu.hidden)); });
+  menu.addEventListener("click", (e) => {
+    if (e.target.closest("[data-tw-dash]")) { close(); return; }
+    if (e.target.closest("[data-tw-start]")) {
+      close(); btn.hidden = true;
+      stopPageText(); stopPageText = () => {};
+      startTextEditing($("#view"), page, site, { done: () => renderRoute({ quiet: true, keepPlace: true }) });
+    }
+  });
+  const away = (e) => { if (!menu.isConnected) return document.removeEventListener("click", away); if (!menu.hidden && !e.target.closest(".tw-menu, .edit-page")) close(); };
+  document.addEventListener("click", away);
+  document.body.append(btn, menu);
 }
 
 /** Full-size picture viewer for galleries. */

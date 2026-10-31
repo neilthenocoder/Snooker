@@ -4,8 +4,17 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.56.0";
+export const SITE_VERSION = "1.59.0";
 export const CHANGES = [
+  "Edit the wording on this page: names, headlines, results, dates and article text come from the dashboard, so they're locked here (faded, with a note to change them in the dashboard) — only the site's own wording can be clicked",
+  "Master Admin: the Edit button now offers “Edit in the dashboard” or “Edit the wording on this page” — click any heading, line or button and type, then Save. A change applies to that kind of page everywhere (e.g. every team page); “Put this page back as it was” undoes them. Words only — the layout and styling stay as they are. Run schema.sql, version 42",
+  "Site settings: saving no longer fails with “null value in column triple_crown” (e.g. after choosing the Everything home page) — run schema.sql, version 41",
+  "Home page: quick links in two rows of four (no sliding, and a card is no longer cut off when it lifts); the Latest Results box is as tall as the left side and scrolls inside — no empty gap",
+  "Live and upcoming competitions: a grid of cards instead of a sliding row, the yellow edge shows in full on hover",
+  "Featured competition redesigned: the trophy and name on the left, this round's matches as small scoreboards on the right, the other three competitions beside it with All competitions",
+  "Latest Results: a “Short summary” button under every result — league and competition — instead of the ⌄",
+  "The red slash is back on headings; no arrows on team cards; a new share icon; the triangle of balls behind pictures has no logo in it",
+  "Player pictures: the first name decides a man or a woman first (one of Rich's “man” pictures was a woman — now in the women's set)",
   "Home page (Rich's layout): full width, no side column — the banner, the live & upcoming matches in a dark band, quick links as a sliding row of cards with the yellow entries bar and the latest results beside them, the big story with three beside it, competitions sliding in a dark band, In the spotlight and Our teams in dark bands, the featured competition, and four more stories as big cards",
   "Home page layout and sections can only be changed by the Master Admin (Site settings); everyone else has My Snooker — run schema.sql, version 40",
   "Venues: how many snooker tables each club has, shown on the venue page; New season step by step only flags a clash when more of a club's teams are at home than it has tables — run supabase/fixes/round77-venue-tables.sql for Rich's numbers",

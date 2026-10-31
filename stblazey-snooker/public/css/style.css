@@ -5346,7 +5346,7 @@ html.look-calm body:not([data-page="admin"]) :is(#view, #side) a.panel-head:hove
 html.look-calm body:not([data-page="admin"]) :is(#view, #side) a.panel-head:hover::after { color: var(--red); }
 
 /* Section headings on the home page and elsewhere: the red slash */
-.hb-head h2::before { width: 12px !important; height: 20px !important; border-radius: 0 !important; transform: skewX(-20deg); }
+.hb-head h2::before, .league-group-h::before { width: 12px !important; height: 20px !important; border-radius: 0 !important; transform: skewX(-20deg); }
 .hb-head h2 { letter-spacing: .01em; }
 
 /* Live & upcoming strip: scores as two scoreboard tiles; the winner's tile green, the loser's red */
@@ -5561,13 +5561,7 @@ html, body { overflow-x: clip; }
 :root { --wrap: 1488px; --tri: url("/assets/triangle.svg"); }
 @media (min-width: 1700px) { :root { --wrap: 1584px; } }
 
-/* Headings: Rich's red triangle instead of the red slash */
-.hb-head h2::before, .league-group-h::before,
-html.look-calm body:not([data-page="admin"]) :is(#view, #side) .panel-head::before {
-  width: 18px !important; height: 17px !important; border-radius: 0 !important; transform: none !important;
-  background: var(--tri) center / contain no-repeat !important; flex: none; }
-html.look-calm body:not([data-page="admin"]) #view .wrap > h1:not(.sr-only)::after {
-  width: 22px; height: 21px; transform: none; background: var(--tri) center / contain no-repeat; }
+/* Headings keep the red slash (Neil, round 78: "I like the old red slash"). */
 
 /* ── The full-width home page (Rich's layout.pdf) ─────────────────────────────
    Every block is its own section running the page width; some sit in a dark band that goes edge to edge. */
@@ -5678,3 +5672,154 @@ html.look-calm .hz-teams .team-tile:hover { background: #2a2a2a !important; colo
 html.look-calm .quick-links.ql-8.ql-scroll a, .quick-links.ql-scroll a { flex: 1 0 128px; }
 @media (min-width: 761px) { .quick-links.ql-scroll { scrollbar-width: thin !important; scrollbar-color: #bbb transparent; } }
 html.look-calm.strip-dark .live-strip .strip-head a:not(.btn) { color: var(--yellow); }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 78 — Neil's Feedback 81
+   ═════════════════════════════════════════════════════════════ */
+/* Latest results: a small "Short summary" button under every result (league and competition) instead of the ⌄ */
+.res-sb { padding-right: 16px !important; }
+.res-sb .res-toggle { display: none; }
+.res-sum-btn { justify-self: start; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; padding: 4px 6px 4px 10px; border: 1.5px solid #dcdad0; border-radius: 999px;
+  font: 700 11.5px/1 var(--font-body); text-transform: uppercase; letter-spacing: .04em; color: #555; background: #fff; transition: background .2s, color .2s, border-color .2s; }
+.res-sum-btn svg { width: 15px; height: 15px; fill: currentColor; transition: transform .25s; }
+.res-sb:hover .res-sum-btn { border-color: var(--ink); color: var(--ink); }
+.res-sum-btn .rs-close { display: none; }
+.res-card.open .res-sum-btn { background: var(--ink); border-color: var(--ink); color: #fff; }
+.res-card.open .res-sum-btn .rs-open { display: none; }
+.res-card.open .res-sum-btn .rs-close { display: inline; }
+.res-card.open .res-sum-btn svg { transform: rotate(180deg); }
+/* The share icon (Neil's line drawing) — drawn in the colour of the button's text, like the WhatsApp one */
+svg.share-ico { fill: none !important; stroke: currentColor; stroke-width: 16; stroke-linecap: round; stroke-linejoin: round; }
+.share-page svg.share-ico { width: 17px; height: 17px; stroke: var(--red); }
+.share-btn svg.share-ico { stroke: var(--ink); stroke-width: 17; }
+.share-btn:hover svg.share-ico { stroke: #fff; }
+/* Team cards: no arrow — they lift and change colour when pointed at (Neil, round 78) */
+.team-tile::after, html.look-calm .tile.with-emblem .tile-go::after, .tile.with-emblem .tile-go::after { content: none !important; display: none !important; }
+
+/* Quick links: eight cards in two rows of four — no sliding (Neil, round 78). On a phone, two rows of four smaller cards. */
+html.look-calm .quick-links.ql-8.ql-scroll, .quick-links.ql-scroll {
+  display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px !important; overflow: visible !important; padding: 4px 0 0; }
+html.look-calm .quick-links.ql-8.ql-scroll a, .quick-links.ql-scroll a { flex: none; min-width: 0; min-height: 88px; }
+html.look-calm .quick-links.ql-8.ql-scroll a span, .quick-links.ql-scroll a span { overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  html.look-calm .quick-links.ql-8.ql-scroll, .quick-links.ql-scroll { gap: 6px !important; }
+  html.look-calm .quick-links.ql-8.ql-scroll a, .quick-links.ql-scroll a { min-height: 72px; padding: 9px 8px !important; gap: 8px; font-size: 10.5px !important; letter-spacing: 0 !important; border-radius: 10px; }
+  html.look-calm .quick-links.ql-8.ql-scroll svg, .quick-links.ql-scroll svg { width: 20px !important; height: 20px !important; }
+}
+
+/* The top of the home page: the latest results box is as tall as the left side and scrolls inside, so there's no gap */
+@media (min-width: 1001px) {
+  .hz-top-grid { align-items: stretch; }
+  .hz-results { position: relative; min-height: 470px; }
+  .hz-results > .panel { position: absolute; inset: 0 0 50px; display: flex; flex-direction: column; overflow: hidden; }
+  .hz-results > .panel > .res-list { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #ccc transparent; }
+  .hz-results > .btn-bar { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; }
+}
+
+/* Live and upcoming competitions: a grid — no sliding — and the yellow edge shows in full when a card lifts */
+.cs-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; overflow: visible; padding: 4px 0 0; }
+.cs-card { flex: none; }
+.cs-top { aspect-ratio: auto; height: 130px; }
+.cs-top .cs-trophy, .cs-top img.trophy { height: 96px !important; }
+.cs-top .cs-pic { height: 130px; }
+@media (max-width: 760px) {
+  .cs-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .cs-top, .cs-top .cs-pic { height: 92px; }
+  .cs-top .cs-trophy, .cs-top img.trophy { height: 66px !important; }
+  .cs-text { padding: 10px 12px 12px; }
+  .cs-text strong { font-size: 14px; }
+  .cs-text small { font-size: 12px; }
+}
+
+/* Team cards lift a little when pointed at */
+.team-tile, .tile.with-emblem { transition: transform .18s, box-shadow .18s, background .18s, color .18s; }
+.team-tile:hover, .tile.with-emblem:hover { transform: translateY(-2px); }
+
+/* The featured competition (redesigned, round 78): the trophy and name on the left, this round's matches as small
+   scoreboards on the right, two by two. The other competitions sit beside it with "All competitions" under them. */
+.hz .comp-feature { grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+.hz .comp-feature.solo { grid-template-columns: 1fr; }
+.cf-main { display: grid; grid-template-rows: none; min-height: 0; border-radius: 14px; }
+.cf-main.with-round { grid-template-columns: minmax(240px, 300px) minmax(0, 1fr); }
+.cf-hero { display: flex; flex-direction: column; background: #0c0c0c radial-gradient(circle at 50% 30%, rgba(255, 184, 28, .2), transparent 62%); }
+.cf-hero .cf-trophy { flex: 1; min-height: 170px; padding: 24px 0 0; background: none; }
+.cf-hero .cf-trophy .trophy { width: 120px; height: 140px; }
+.cf-hero .cf-pic { width: 100%; aspect-ratio: 16 / 9; height: auto; }
+.cf-hero .cf-text { padding: 18px 22px 22px; gap: 6px; border-top: 3px solid var(--yellow); }
+.cf-go { display: inline-flex; align-self: start; gap: 6px; margin-top: 10px; padding: 8px 14px; border-radius: 999px; background: var(--red); color: #fff; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+.cf-main:hover .cf-go { background: #fff; color: var(--ink); }
+.cf-main .cf-round { margin: 0; padding: 22px; display: grid; align-content: start; gap: 12px; background: #161616; }
+.cf-main .cf-round-h { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 0; color: #fff; font-size: 14px; }
+.cf-main .cf-round-h i { font-style: normal; color: var(--yellow); font-size: 12px; }
+.cf-games { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.cf-game { display: grid; gap: 6px; padding: 10px 12px 12px; border-radius: 10px; background: rgba(255, 255, 255, .06); border-left: 3px solid rgba(255, 255, 255, .15); }
+.cf-game.done { border-left-color: var(--yellow); }
+.cf-game.live { border-left-color: var(--live-green, #19c35a); }
+.cf-g-top { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #9d9d9d; }
+.cf-g-top .cf-live { font-style: normal; }
+.cf-g-line { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; font-size: 14px; color: #e8e8e8; }
+.cf-g-line em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-g-line b { min-width: 26px; padding: 2px 7px; border-radius: 5px; text-align: center; font-size: 13px; background: rgba(255, 255, 255, .1); color: #fff; }
+.cf-g-line b:empty { visibility: hidden; }
+.cf-g-line.won em { font-weight: 700; color: #fff; }
+.cf-g-line.won b { background: var(--win, #1f8a3b); }
+.cf-g-line.lost em { color: #9d9d9d; }
+.cf-g-line.lost b { background: rgba(196, 17, 47, .35); color: #ffd6dc; }
+.cf-main .cf-round-more { color: #9d9d9d; }
+.hz .cf-side { display: flex; flex-direction: column; gap: 10px; }
+.hz .cf-card { flex: 1; grid-template-columns: 52px minmax(0, 1fr) auto; border-radius: 12px; padding: 14px 16px; border-left: 4px solid var(--yellow); }
+.cf-card-go { font-style: normal; color: var(--muted); transition: transform .15s, color .15s; }
+.cf-card:hover .cf-card-go { transform: translateX(3px); color: var(--ink); }
+.cf-all { display: block; padding: 12px 16px; border-radius: 12px; background: var(--ink); color: #fff; font: 700 13px var(--font-head); text-transform: uppercase; letter-spacing: .05em; text-align: center; }
+.cf-all:hover { background: var(--red); color: #fff; }
+@media (max-width: 1100px) { .cf-main.with-round { grid-template-columns: 1fr; } .cf-hero .cf-trophy { min-height: 140px; } }
+@media (max-width: 760px) {
+  .hz .comp-feature { grid-template-columns: 1fr; }
+  .cf-games { grid-template-columns: 1fr; }
+  .cf-main .cf-round { padding: 16px; }
+}
+/* (the older one-line match rows mustn't reach the new scoreboards) */
+.cf-main .cf-round li.cf-game { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; align-items: stretch; font-size: 14px; }
+.cf-main .cf-round li.cf-game span { text-align: left !important; overflow: visible; white-space: normal; }
+.cf-main .cf-round .cf-g-line { display: grid !important; grid-template-columns: minmax(0, 1fr) auto; }
+.cf-main .cf-round .cf-g-line em { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-main .cf-round li.cf-game b { min-width: 26px; padding: 2px 7px; border-radius: 5px; font-size: 13px; background: rgba(255, 255, 255, .1); color: #fff; }
+.cf-main .cf-round li.cf-game .won b { background: var(--win, #1f8a3b); color: #fff; }
+.cf-main .cf-round li.cf-game .lost b { background: rgba(196, 17, 47, .35); color: #ffd6dc; }
+
+/* ═══ ROUND 79 — the Master Admin changes the wording on a page, on the page (Edit → Edit the wording) ═══ */
+button.edit-page { cursor: pointer; }
+.tw-menu { position: fixed; left: 14px; bottom: 66px; z-index: 45; display: grid; min-width: 270px; background: #111; border: 2px solid var(--yellow); border-radius: 14px; overflow: hidden;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .4); }
+.tw-menu[hidden] { display: none; }
+.tw-menu a, .tw-menu button { display: grid; gap: 2px; padding: 12px 16px; border: 0; background: none; color: #fff; text-align: left; font: inherit; cursor: pointer; }
+.tw-menu a + button { border-top: 1px solid #2a2a2a; }
+.tw-menu b { font: 700 14px var(--font-head); text-transform: uppercase; letter-spacing: .03em; }
+.tw-menu small { color: #a9a9a9; font-size: 12.5px; }
+.tw-menu a:hover, .tw-menu button:hover { background: #222; color: var(--yellow); }
+/* While editing: every piece of wording shows where it is; the one being typed in is clearly marked */
+body.tw-on #view .tw-ed { outline: 1px dashed transparent; outline-offset: 2px; cursor: text; transition: outline-color .12s, background-color .12s; }
+body.tw-on #view .tw-ed:hover { outline-color: rgba(255, 184, 28, .95); background-color: rgba(255, 184, 28, .12); }
+body.tw-on #view .tw-ed.tw-changed { outline: 1px solid var(--yellow); }
+body.tw-on #view .tw-now { outline: 2px solid var(--yellow) !important; background-color: rgba(255, 184, 28, .18); cursor: text; caret-color: var(--red); }
+body.tw-on #view a, body.tw-on #view button { cursor: text; }
+body.tw-on { padding-bottom: 110px; }
+.tw-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; background: #111; color: #fff; border-top: 3px solid var(--yellow); box-shadow: 0 -10px 30px rgba(0, 0, 0, .3); }
+.tw-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; max-width: var(--wrap); margin: 0 auto; padding: 12px 24px; }
+.tw-in p { margin: 0; display: grid; gap: 2px; font-size: 13px; color: #bdbdbd; }
+.tw-in p b { color: #fff; font: 700 15px var(--font-head); text-transform: uppercase; letter-spacing: .03em; }
+.tw-btns { display: flex; gap: 8px; flex: none; }
+.tw-bar .btn.ghost { color: #fff; border-color: #555; background: transparent; }
+.tw-bar .btn.ghost:hover { border-color: #fff; }
+.tw-bar [data-tw="save"] { background: var(--yellow); color: #1b0e06; }
+.tw-bar [data-tw="save"] i { font-style: normal; }
+@media (max-width: 760px) {
+  .tw-in { flex-direction: column; align-items: stretch; padding: 10px 14px; gap: 8px; }
+  .tw-in p span { display: none; }
+  .tw-btns { flex-wrap: wrap; }
+  .tw-btns .btn { flex: 1; }
+  body.tw-on { padding-bottom: 150px; }
+}
+/* Round 80: words from the dashboard are locked in editing mode — a "no" cursor, and they fade a little */
+body.tw-on #view .tw-lock { cursor: not-allowed; opacity: .55; }
+body.tw-on #view .tw-ed { outline: 1px dashed rgba(255, 184, 28, .55); }

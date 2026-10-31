@@ -173,7 +173,8 @@ function collect(form, res, editing) {
     else if (f.type === "datetime") v = fromLocalInput(v);
     else if (["gallery", "tags"].includes(f.type)) v = JSON.parse(v || "[]");
     else if (f.type === "appicon") v = JSON.parse(v || "{}");
-    else if (f.type !== "checkbox" && v === "") v = null;
+    // Round 78: an empty list is saved as "" (its column can't be empty — "null value in column triple_crown").
+    else if (f.type !== "checkbox" && v === "") v = f.type === "list" ? "" : null;
     if (f.type === "password" && !v) continue;
     if (f.in) row[f.in] = { ...(editing[f.in] ?? {}), ...(row[f.in] ?? {}), [f.name]: v ?? "" };
     else row[f.name] = v;

@@ -2973,6 +2973,8 @@ alter table settings add column if not exists loader_every_page boolean not null
 
 -- The Triple Crown (Rich): which three competitions make it up — chosen in Site settings → Players.
 alter table settings add column if not exists triple_crown text not null default '';
+-- Round 78: an empty list saved as nothing mustn't stop Site settings saving ("null value in column triple_crown").
+alter table settings alter column triple_crown drop not null;
 
 -- ── Round 76 (Rich: a postponed match played later didn't show on the home page strip) ──────────
 -- When a league result goes in (submitted or approved), the time is kept, so the Live & upcoming strip shows it for the
@@ -3003,13 +3005,17 @@ alter table venues add column if not exists tables int not null default 1 check 
 
 -- ── Round 77 (Rich): the home page that everyone sees is set by the Master Admin only ────────────
 -- Officers with Site settings can change everything else there; the home page's blocks and their order are the Master Admin's.
+-- Round 79 (Neil): the Master Admin can change the wording on any page, on the page itself (Edit → Edit the wording).
+-- Each change is kept here as "page|tag|the original words" → the new words.
+alter table settings add column if not exists page_text jsonb not null default '{}'::jsonb;
 create or replace function public.guard_home_layout() returns trigger language plpgsql security definer set search_path = public as $$
 begin
   -- (the phone menu style and the welcome guide are kept in home_sections too, but aren't the home page's layout)
   if ((new.home_sections - 'menu_style' - 'guide_on') is distinct from (old.home_sections - 'menu_style' - 'guide_on')
-      or new.home_style is distinct from old.home_style)
+      or new.home_style is distinct from old.home_style
+      or new.page_text is distinct from old.page_text)
      and auth.uid() is not null and not public.is_master() then
-    raise exception 'Only the Master Admin can change the home page layout';
+    raise exception 'Only the Master Admin can change the home page layout or the wording on the pages';
   end if;
   return new;
 end;
@@ -3017,7 +3023,7 @@ $$;
 drop trigger if exists settings_home_layout on settings;
 create trigger settings_home_layout before update on settings for each row execute function public.guard_home_layout();
 
-create or replace function public.schema_version() returns int language sql immutable as $$ select 40 $$;
+create or replace function public.schema_version() returns int language sql immutable as $$ select 42 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

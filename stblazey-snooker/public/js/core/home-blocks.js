@@ -8,7 +8,7 @@
 // ─────────────────────────────────────────────────────────────
 import { html, fmtDate, fmtLongDate, fmtTime, fmtDay, safeHref, fmtAgo } from "./dom.js";
 import { urls, badge, trophy, picture, compBoxStyle } from "./components.js";
-import { buildBracket, roundName, compScoreText } from "./bracket.js";
+import { buildBracket, roundName, compScoreText, winnerSide } from "./bracket.js";
 import { mySnookerOn, mySnookerSetUp } from "./auth.js";
 import { SITE } from "../config.js";
 
@@ -115,9 +115,18 @@ function roundList(x, focus) {
   const order = (m) => (m.row.status === "in_progress" ? 0 : m.played ? 1 : 2);
   const list = [...ms].sort((p, q) => order(p) - order(q) || (order(p) === 1 ? String(q.row.result_at ?? q.row.starts_at ?? "").localeCompare(String(p.row.result_at ?? p.row.starts_at ?? ""))
     : String(p.row.starts_at ?? "9").localeCompare(String(q.row.starts_at ?? "9"))));
-  return html`<div class="cf-round"><span class="cf-round-h">${roundName(focus.round, x.b.totalRounds, x.b)} · ${played} of ${ms.length} played</span>
-    <ul>${list.slice(0, 6).map((m) => html`<li class="${m.played ? "done" : ""}"><span>${x.name(m.a)}</span>
-      <b>${m.row.status === "in_progress" ? "Live" : m.played ? compScoreText(m.row, "–") : m.row.starts_at ? fmtDay(m.row.starts_at) : "v"}</b><span>${x.name(m.b)}</span></li>`)}</ul>
+  // Round 78 (Neil: "not giving me the vibe… unbalanced"): each match is a small scoreboard like the Latest Results —
+  // both names on the left, their scores lined up on the right, the winner in bold; a date or "Live" on top.
+  const num = (v) => (v === null || v === undefined || v === "" ? "" : v);
+  const game = (m) => {
+    const live = m.row.status === "in_progress", w = m.played ? winnerSide(m.row) : null;
+    const side = (id, sc, me) => html`<span class="cf-g-line ${w ? (w === me ? "won" : "lost") : ""}"><em>${x.name(id)}</em><b>${m.played || live ? num(sc) : ""}</b></span>`;
+    return html`<li class="cf-game ${m.played ? "done" : ""} ${live ? "live" : ""}">
+      <span class="cf-g-top">${live ? html`<i class="cf-live">● Live</i>` : m.played ? "Result" : m.row.starts_at ? `${fmtDay(m.row.starts_at)}${fmtTime(m.row.starts_at) ? ` · ${fmtTime(m.row.starts_at)}` : ""}` : "To be arranged"}</span>
+      ${side(m.a, m.row.score_a, "a")}${side(m.b, m.row.score_b, "b")}</li>`;
+  };
+  return html`<div class="cf-round"><span class="cf-round-h">${roundName(focus.round, x.b.totalRounds, x.b)} <i>${played} of ${ms.length} played</i></span>
+    <ul class="cf-games">${list.slice(0, 6).map(game)}</ul>
     ${list.length > 6 ? html`<small class="cf-round-more">and ${list.length - 6} more in this round</small>` : ""}</div>`;
 }
 
@@ -148,13 +157,15 @@ export function compsBlock(comps, data) {
   return html`<section class="home-block">
     <div class="hb-head"><h2>Competitions</h2><a href="/competitions">All competitions ${arrow}</a></div>
     <div class="comp-feature ${rest.length ? "" : "solo"}">
-      <a class="cf-main" href="${urls.competition(top.c)}">${pic}
-        <div class="cf-text"><span class="cf-kicker">${status}</span><strong>${top.c.name}</strong>
-          <small>${top.progress}</small>
-          ${focus ? roundList(top, focus) : ""}
-          <span class="cf-go">See the draw ${arrow}</span></div></a>
-      ${rest.length ? html`<div class="cf-side">${rest.slice(0, 4).map((x) => html`<a class="cf-card" href="${urls.competition(x.c)}">
-        <span class="cf-mini">${trophy(x.c)}</span><span><strong>${x.c.name}</strong><small>${x.live ? "Being played now" : x.next && !x.done ? `Next match ${fmtDate(x.next.row.starts_at)}` : x.progress}</small></span></a>`)}</div>` : ""}
+      <a class="cf-main ${focus && roundList(top, focus) ? "with-round" : ""}" href="${urls.competition(top.c)}">
+        <div class="cf-hero">${pic}
+          <div class="cf-text"><span class="cf-kicker">${status}</span><strong>${top.c.name}</strong>
+            <small>${top.progress}</small>
+            <span class="cf-go">See the draw ${arrow}</span></div></div>
+        ${focus ? roundList(top, focus) : ""}</a>
+      ${rest.length ? html`<div class="cf-side">${rest.slice(0, 3).map((x) => html`<a class="cf-card" href="${urls.competition(x.c)}">
+        <span class="cf-mini">${trophy(x.c)}</span><span><strong>${x.c.name}</strong><small>${x.live ? "Being played now" : x.next && !x.done ? `Next match ${fmtDate(x.next.row.starts_at)}` : x.progress}</small></span><i class="cf-card-go" aria-hidden="true">${arrow}</i></a>`)}
+        <a class="cf-all" href="/competitions">All competitions ${arrow}</a></div>` : ""}
     </div>
   </section>`;
 }

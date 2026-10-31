@@ -3,13 +3,19 @@
 import { html, fmtDate, fmtTime, fmtDay, ukDay, notUKTime, zoneName, fmtAgo } from "./dom.js";
 import { isProvisional, PROVISIONAL_NOTE, frameWinner, NOT_UPDATED, isLiveSoon } from "./rules.js";
 import { formBadge as formBadgeFn, formChips as formChipsFn } from "./form.js";
-/** The picture for a player with no photo (round 77): one of Rich's generic cartoon players — 17 men, 4 women.
- * The same player always gets the same one (picked from their id or name), so faces don't change between pages. */
-const WOMEN = /^(abbie|abby|alice|alison|amanda|amy|angela|ann|anna|anne|becky|beth|carol|caroline|charlotte|chloe|claire|debbie|diane|donna|elaine|ella|ellie|emily|emma|gemma|hannah|helen|holly|jackie|jade|jane|janet|jenny|jess|jessica|jo|joanne|julie|karen|kate|katie|kelly|kim|laura|lauren|linda|lisa|liz|louise|lucy|lynn|mandy|margaret|maria|mary|megan|michelle|molly|nicola|nikki|paula|rachel|rebecca|reanne|reanna|sally|sam?antha|sarah|sharon|sophie|stacey|steph|stephanie|sue|susan|tina|tracey|tracy|vicky|wendy|zoe)$/i;
+/** The picture for a player with no photo (round 77): one of Rich's generic cartoon players.
+ * Round 78 (Neil: "look at the player's name first"): the first name decides a man or a woman, then the player's id
+ * picks one of those at random — the same one every time. (Rich's "man-17" is a woman, so it's woman-5 now.)
+ * A name that could be either (Sam, Jo, Alex…) gets a man unless it's on the women's list. */
+const MEN_PICS = 16, WOMEN_PICS = 5;
+const WOMEN = new Set(("abbie abby abigail ada adele agnes aimee alexandra alice alicia alison amanda amber amelia amy andrea angela angie ann anna anne annette annie april audrey ava barbara beatrice becky belinda beth bethany betty beverley bev brenda bridget brooke caitlin carla carly carol carole caroline carolyn cassie catherine cath cathy charlene charlotte chelsea cheryl chloe christina christine claire clare colleen courtney crystal daisy dawn debbie deborah debra denise diana diane dianne donna doreen doris dorothy eileen elaine eleanor elena elizabeth ella ellen ellie eloise elsie emily emma erica esther eve evelyn faye fiona florence frances freya gail gemma georgia georgina geraldine gillian gill gina gladys glenda gloria grace hannah harriet hazel heather heidi helen hilary holly imogen irene isabel isabella isabelle isla jackie jacqueline jade jan jane janet janice jasmine jayne jean jeanette jemma jenna jennifer jenny jess jessica jill joan joanna joanne jodie josephine joy joyce judith judy julia julie june karen kate katherine kathleen kathryn kathy katie katy kay kayleigh kelly kerry kim kimberley kirsty laura lauren leah lesley lilian lily linda lindsay lindsey lisa liz lizzie lois lorna lorraine louise lucy lydia lynda lynn lynne maddie madison maggie mandy margaret maria marian marie marilyn marion martha mary maureen megan melanie melissa mia michelle millie miriam molly monica nancy naomi natalie natasha nicola nicole nikki nina norma olivia paige pam pamela patricia paula pauline penny phoebe phyllis polly poppy rachel rachael rebecca rhiannon rita rosa rose rosemary rosie ruby ruth sally samantha sandra sara sarah scarlett shannon sharon sheila shirley sian sonia sophia sophie stacey stella steph stephanie sue susan suzanne sylvia tamsin tanya tara teresa theresa tina tonia tracey tracy valerie vanessa vera veronica vicky victoria violet wendy yvonne zoe zara").split(" "));
+const firstName = (name) => String(name ?? "").trim().split(/\s+/)[0].toLowerCase().replace(/[^a-z]/g, "");
+export const isWomansName = (name) => WOMEN.has(firstName(name));
 export const genericAvatar = (seed = "", name = "") => {
-  let h = 0;
-  for (const ch of String(seed || name)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  return WOMEN.test(String(name).trim().split(/\s+/)[0] || "") ? `/assets/players/woman-${(h % 4) + 1}.svg` : `/assets/players/man-${(h % 17) + 1}.svg`;
+  let h = 2166136261;                                   // FNV-1a, so the pictures spread out evenly
+  for (const ch of String(seed || name)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0;
+  return isWomansName(name) ? `/assets/players/woman-${(h % WOMEN_PICS) + 1}.svg` : `/assets/players/man-${(h % MEN_PICS) + 1}.svg`;
 };
 export const blankAvatar = (player) => genericAvatar(player?.id || player?.slug || player?.full_name || "", player?.full_name || player?.name || "");
 
@@ -129,7 +135,8 @@ export const outcomeTag = (what, text = null) => (["won", "lost", "drawn"].inclu
  */
 export const crumbs = { trail: false };
 const backArrow = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 5.3 8 12l6.7 6.7 1.4-1.4L10.8 12l5.3-5.3Z"/></svg>`;
-const sharePageIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16a3 3 0 0 0-2.4 1.2l-6.7-3.4a3 3 0 0 0 0-1.6l6.7-3.4A3 3 0 1 0 15 7l-6.7 3.4a3 3 0 1 0 0 3.2L15 17a3 3 0 1 0 3-1Z"/></svg>`;
+// Round 78 (Neil): the share icon as a line drawing, like the WhatsApp one.
+const sharePageIcon = html`<svg class="stroke-ico share-ico" viewBox="0 0 256 256" aria-hidden="true"><circle cx="64" cy="128" r="32"/><circle cx="176" cy="200" r="32"/><circle cx="176" cy="56" r="32"/><line x1="149.09" y1="73.3" x2="90.91" y2="110.7"/><line x1="90.91" y1="145.3" x2="149.09" y2="182.7"/></svg>`;
 export function breadcrumb(items) {
   if (!crumbs.trail) {
     // Round 44 (Rich: "back button on some league pages not working"): never point back at the page you are on.
@@ -445,8 +452,18 @@ function sideBox(ctx, news, count, box) {
   // every frame, the best break, the venue and a link to the full scorecard.
   // Rich, round 24: a press on a result (the ⌄ or anywhere on the row) opens a short summary under it — who won the most
   // frames, the best break, the venue — with a button to the full match statistics. It opens and closes smoothly.
-  const more = (r) => {
-    if (!r.fx) return "";
+  const more = (r, i) => {
+    if (!r.fx) {
+      // Round 78 (Neil): competition results get a short summary too — who won, the round, the date.
+      const hi = Math.max(Number(r.hs) || 0, Number(r.as) || 0), lo = Math.min(Number(r.hs) || 0, Number(r.as) || 0);
+      return html`<div class="res-more" id="res-cup-${r.id ?? i}"><div class="res-more-in">
+        <p class="res-facts">${r.winner ? html`<b>${r.winner}</b> won${r.hs != null && r.as != null ? ` ${hi}–${lo}` : ""}` : html`<b>${r.score ?? ""}</b>`}</p>
+        <ul class="res-bits">
+          <li>${r.title}${r.round ? ` · ${r.round}` : ""}</li>
+          ${shownDate(r) ? html`<li>Played ${fmtDate(shownDate(r))}</li>` : ""}
+        </ul>
+        <a class="btn small res-go" href="${r.href}">View the match →</a></div></div>`;
+    }
     const frames = ctx.framesOf(r.fx.id), brk = ctx.breaksOf(r.fx.id).sort((a, b) => b.value - a.value)[0];
     const wins = new Map();
     for (const fr of frames) { const w = frameWinner(fr); if (w) { const id = fr[`${w}_player_id`]; wins.set(id, (wins.get(id) ?? 0) + 1); } }
@@ -472,12 +489,11 @@ function sideBox(ctx, news, count, box) {
   };
   const meta = (r) => html`<span class="res-meta">${tag(r)}<time>${shownDate(r) ? fmtDay(shownDate(r)) : ""}</time></span>`;
   return html`${panel(site.side_box_title || "Latest Results", rows.length
-      ? html`<div class="res-list res-sb-list">${rows.map((r) => (r.fx ? html`<div class="res-card res-sb-card ${r.kind}">
-          <button type="button" class="res-sb" data-res-more aria-expanded="false" aria-controls="res-${r.fx.id}">${meta(r)}
-            ${sideLine(r.homeTeam, r.home, r.hs, "h", r)}${sideLine(r.awayTeam, r.away, r.as, "a", r)}
-            <span class="res-toggle" aria-hidden="true">${chevron}</span></button>${more(r)}</div>`
-        : html`<a class="res-sb res-sb-card ${r.kind}" href="${r.href}">${meta(r)}
-            ${sideLine(ctx.team.get(r.aTeam), r.home, r.hs, "h", r)}${sideLine(ctx.team.get(r.bTeam), r.away, r.as, "a", r)}</a>`))}</div>`
+      ? html`<div class="res-list res-sb-list">${rows.map((r, i) => html`<div class="res-card res-sb-card ${r.kind}">
+          <button type="button" class="res-sb" data-res-more aria-expanded="false" aria-controls="${r.fx ? `res-${r.fx.id}` : `res-cup-${r.id ?? i}`}">${meta(r)}
+            ${r.fx ? html`${sideLine(r.homeTeam, r.home, r.hs, "h", r)}${sideLine(r.awayTeam, r.away, r.as, "a", r)}`
+              : html`${sideLine(ctx.team.get(r.aTeam), r.home, r.hs, "h", r)}${sideLine(ctx.team.get(r.bTeam), r.away, r.as, "a", r)}`}
+            <span class="res-sum-btn" aria-hidden="true"><span class="rs-open">Short summary</span><span class="rs-close">Hide summary</span>${chevron}</span></button>${more(r, i)}</div>`)}</div>`
       : html`<div class="empty">No results yet.</div>`, { color: "green", href: "/results" })}
     <a class="btn-bar green" href="/results">See all results</a>`;
 }
@@ -623,6 +639,6 @@ export function shareBar(title, path) {
   // Round 76 (Neil): WhatsApp as a line drawing (the phone in a speech bubble), drawn in the site's own colours like the rest.
   const wa = html`<svg class="stroke-ico" viewBox="0 0 256 256" aria-hidden="true"><path d="M72,104a32,32,0,0,1,32-32l16,32-12.32,18.47a48.19,48.19,0,0,0,25.85,25.85L152,136l32,16a32,32,0,0,1-32,32A80,80,0,0,1,72,104Z"/><path d="M79.93,211.11a96,96,0,1,0-35-35h0L32.42,213.46a8,8,0,0,0,10.12,10.12l37.39-12.47Z"/></svg>`;
   const btn = (kind, label) => html`<button type="button" class="share-btn ${kind}" data-share="${kind}" data-share-title="${title}" data-share-path="${path}" aria-label="${label}" title="${label}">
-    ${kind === "whatsapp" ? wa : html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${shareIcon[kind]}"/></svg>`}</button>`;
+    ${kind === "whatsapp" ? wa : kind === "share" ? sharePageIcon : html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${shareIcon[kind]}"/></svg>`}</button>`;
   return html`<div class="share-bar"><span>Share</span>${btn("share", "Share this")}${btn("link", "Copy the link")}${btn("whatsapp", "Share on WhatsApp")}${btn("facebook", "Share on Facebook")}${btn("x", "Share on X")}${btn("email", "Send by email")}</div>`;
 }

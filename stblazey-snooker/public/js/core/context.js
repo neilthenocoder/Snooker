@@ -1,6 +1,6 @@
 // Turns raw season data into lookups and calculated tables (via rules.js).
 import { loadSeason, currentSeason, settings, loadCompetitions, currentCompetitions } from "./api.js";
-import { buildBracket, winnerSide, compScoreText } from "./bracket.js";
+import { buildBracket, winnerSide, compScoreText, roundName } from "./bracket.js";
 import { leagueTable, playerRankings, matchScore, isCounted, isProvisional, isNotUpdated } from "./rules.js";
 import { ukDay } from "./dom.js";
 
@@ -84,7 +84,11 @@ export async function cupResults() {
   return data.competitions.flatMap((c) => {
     const b = buildBracket(data.entries.filter((e) => e.competition_id === c.id), data.matches.filter((m) => m.competition_id === c.id));
     const name = (id) => b.entryById.get(id)?.name ?? "?";
+    const roundOf = new Map(b.rounds.flatMap((r, i) => r.map((m) => [m, i])));
     return b.rounds.flat().filter((m) => m.played && !m.isBye).map((m) => ({
+      // Round 78: what the short summary under a competition result needs.
+      id: m.row.id, round: roundName(roundOf.get(m) ?? 0, b.rounds.length, b), winner: winnerSide(m.row) === "a" ? name(m.a) : name(m.b),
+      handicap: c.handicap === true, starts_at: m.row.starts_at ?? null,
       when: m.row.starts_at ?? m.row.result_at, title: c.name, season_id: c.season_id, home: name(m.a), away: name(m.b), score: compScoreText(m.row, " – "),
       href: `/cup-match/${m.row.no ?? m.row.id}`, won: winnerSide(m.row) === "a" ? "h" : "a",
       // Round 54: the two sides' scores and teams, for the scoreboard look of the Latest Results box.
