@@ -4,8 +4,10 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.60.0";
+export const SITE_VERSION = "1.61.0";
 export const CHANGES = [
+  "Page titles: the red slash stands up beside the title, like the section headings, instead of lying flat underneath",
+  "Competition page admin bar: the Admin tag, the buttons and the “Score a match” box are all the same rounded shape",
   "A standard, slimmer menu bar: a smaller logo and less padding (72px tall on a computer instead of 96px, 58px on a phone), so more of the page shows",
   "Phone menu: the close button is a proper drawn ✕, centred in its circle (and the same in the side panels)",
   "Wins and losses look the same everywhere: a solid green box for a win, a solid red one for a loss — like the live & upcoming strip",

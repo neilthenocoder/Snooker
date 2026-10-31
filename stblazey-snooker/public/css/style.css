@@ -5854,3 +5854,23 @@ body.tw-on #view .tw-ed { outline: 1px dashed rgba(255, 184, 28, .55); }
    like the scores on the live & upcoming strip. */
 .res-line.won b, .res-num.won, .wl.won, .tally.win, .cf-g-line.won b, .cf-main .cf-round li.cf-game .won b { background: var(--green) !important; color: #fff !important; }
 .res-line.lost b, .res-num.lost, .wl.lost, .tally.loss, .cf-g-line.lost b, .cf-main .cf-round li.cf-game .lost b, .fc.l, .ms-form a.l { background: var(--red) !important; color: #fff !important; }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 82 — the page title's slash stands up beside it; one set of shapes across the site
+   ═════════════════════════════════════════════════════════════ */
+/* Page titles: the red slash stands up beside the title, like the section headings — not lying flat underneath */
+html.look-calm body:not([data-page="admin"]) #view .wrap > h1:not(.sr-only)::after { content: none !important; display: none !important; }
+html.look-calm body:not([data-page="admin"]) #view .wrap > h1:not(.sr-only):not(.with-emblem)::before {
+  content: ""; display: inline-block; width: .34em; height: .78em; margin: 0 .36em .02em .06em; vertical-align: -.02em;
+  background: var(--red); transform: skewX(-20deg); }
+
+/* The admin bar on a competition's page (Neil): the Admin tag, its buttons and the match box all one shape —
+   a pill, like the Back and Share buttons above it. (The rest of the site keeps its shapes.) */
+.comp-admin .comp-admin-tag, .comp-admin .btn { border-radius: 999px !important; }
+.comp-admin .comp-admin-tag { padding: 6px 14px; }
+.comp-admin select { border-radius: 999px; padding-left: 16px; }
+@media (max-width: 600px) {
+  .comp-admin-score { flex-wrap: wrap; width: 100%; margin-left: 0; gap: 6px 10px; }
+  .comp-admin-score > :first-child { white-space: nowrap; }
+  .comp-admin-score select { flex: 1 1 200px; min-width: 0; }
+}
