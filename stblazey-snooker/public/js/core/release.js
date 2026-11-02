@@ -4,8 +4,11 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.69.0";
+export const SITE_VERSION = "1.70.0";
 export const CHANGES = [
+  "Home page top: the quick links, the My Snooker invitation (now between the quick links and the feature box) and the feature box sit at their natural height — no more stretched, half-empty cards",
+  "My Snooker invitation: the site's own red button for Log in",
+  "Cut-corner buttons: the two square corners have a slight rounding",
   "Section headings inside pages (e.g. This season) no longer have the chalk underline",
   "Corners are back to the site's own rounding (12px cards and boxes, round pills on chips, tabs and filters); buttons keep their subtle cut corners",
   "Capitals and letter spacing are back to how the site had them (headlines, card titles, team names and headings as before); the lighter font weights from 1.65 stay",

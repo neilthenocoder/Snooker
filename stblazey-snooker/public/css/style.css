@@ -6454,3 +6454,43 @@ html.look-calm body:not([data-page="admin"]) :is(.nav-login, .menu-login, .menu-
 /* Round 90: no chalk underline under section headings */
 body:not([data-page="home"]):not([data-page="admin"]) #view :is(.league-group-h, .hb-head h2, .wrap > h2:not(.sr-only), .wrap > section > h2:not(.sr-only))::after { content: none !important; display: none !important; }
 body:not([data-page="home"]):not([data-page="admin"]) #view :is(.league-group-h, .hb-head h2, .wrap > h2:not(.sr-only), .wrap > section > h2:not(.sr-only)) { padding-bottom: 0; }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 91 — the top of the home page, balanced; softer sharp corners on the cut buttons
+   ═════════════════════════════════════════════════════════════ */
+/* The left column stacks at its natural height — nothing is stretched to match the Latest results box */
+.hz-top-grid .home-top { align-content: start; grid-auto-rows: auto; }
+@media (min-width: 1001px) { .hz-results { min-height: 420px; } }
+html.look-calm .quick-links.ql-8.ql-scroll a, html .quick-links.ql-scroll a { height: 52px; min-height: 52px; }
+@media (max-width: 760px) { html.look-calm .quick-links.ql-8.ql-scroll a, html .quick-links.ql-scroll a { height: 48px; min-height: 48px; } }
+
+/* The feature box ("Try our step-by-step scorecard"): one comfortable line, the same height as the cards around it */
+html.look-calm .hz-top .feature-box { min-height: 56px; height: auto; padding: 14px 20px !important; display: flex; align-items: center; gap: 14px; font-size: 15px; line-height: 1.35; }
+html.look-calm .hz-top .feature-box .feature-text { flex: 1; min-width: 0; }
+html.look-calm .hz-top .feature-box .feature-go { flex: none; font-size: 18px; }
+
+/* My Snooker invitation: between the quick links and the feature box, with the site's own button */
+.hz-top .ms-invite { grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 16px 20px; border: 1px solid var(--line); border-left: 4px solid var(--red) !important;
+  background: #fff; color: var(--ink); transition: box-shadow .18s, border-color .18s; }
+.hz-top .ms-invite:hover { color: var(--ink); box-shadow: var(--soft-shadow); }
+.hz-top .ms-invite-star { font-size: 22px; line-height: 1; color: var(--red); }
+.hz-top .ms-invite b { font-size: 15px; line-height: 1.25; }
+.hz-top .ms-invite small { font-size: 13.5px; line-height: 1.45; margin-top: 3px; }
+html.look-calm body:not([data-page="admin"]) .ms-invite > i {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 42px; padding: 0 20px; background: var(--red); color: #fff;
+  font: 700 14px/1 var(--font-head); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; clip-path: var(--table-cut); border-radius: 0 var(--soft-corner) 0 var(--soft-corner); transition: background .18s; }
+html.look-calm body:not([data-page="admin"]) .ms-invite:hover > i { background: var(--red-dark, #c10033); }
+.ms-invite > i svg { width: 16px; height: 16px; fill: currentColor; }
+@media (max-width: 560px) { .hz-top .ms-invite { grid-template-columns: auto minmax(0, 1fr); } html.look-calm body:not([data-page="admin"]) .ms-invite > i { grid-column: 1 / -1; width: 100%; } }
+
+/* Cut-corner buttons: the two square corners get a slight rounding, so the shape feels relaxed rather than sharp */
+:root { --soft-corner: 5px; }
+.btn, .hero-more, .cf-go, .cf-all, .nav-login, .strip-stats, .enter-bar span, .menu-login,
+html.look-calm body:not([data-page="admin"]) #view :is(.btn, .hero-more, .cf-go, .cf-all, .strip-stats, .enter-bar span, .live-strip a.strip-cal),
+html.look-calm body:not([data-page="admin"]) :is(.nav-login, .menu-login, .menu-overlay .btn, #view .btn-bar, #side .btn-bar, .back-link, .share-page, .share-btn, .league-jump a, .hub-tabs a, .pick-go),
+html.look-calm .menu-overlay .menu-login, .live-strip a.strip-cal {
+  border-radius: 0 var(--soft-corner) 0 var(--soft-corner) !important; }
+html.look-calm body:not([data-page="admin"]) :is(#view, #side) .btn-bar::before,
+html.look-calm body:not([data-page="admin"]) :is(.back-link, .share-page, .share-btn, .league-jump a, .hub-tabs a, .pick-go)::before { border-radius: 0 calc(var(--soft-corner) - 1px) 0 calc(var(--soft-corner) - 1px); }
+.btn.small, .strip-stats, .cf-go { --soft-corner: 4px; }
+@media (max-width: 560px) { .hz-top .ms-invite { align-items: start; gap: 12px 14px; padding: 16px; } .hz-top .ms-invite-star { margin-top: 1px; } html.look-calm body:not([data-page="admin"]) .ms-invite > i { margin-top: 4px; } }

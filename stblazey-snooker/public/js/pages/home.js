@@ -77,7 +77,7 @@ export default async function home(view, { user } = {}) {
   const featuredNews = news.filter((a) => !bannerIds.includes(a.id)).slice(0, 4);
   const block = {
     promo: () => inWrap(promoWanted ? promoBlock(site, ctx, dates, today) : ""),
-    mysnooker: () => inWrap(mySnookerPrompt(user, ctx)),
+    mysnooker: () => "",      // round 91: drawn at the top, under the quick links
     news: () => inWrap(featuredNewsBlock(featuredNews)),
     comp_strip: () => inBand(compData ? compStrip(comps, compData) : "", "hz-comps"),
     competitions: () => inWrap(compData ? compsBlock(comps, compData) : ""),
@@ -109,6 +109,7 @@ export default async function home(view, { user } = {}) {
         <div class="hb-head ql-head"><h2>Quick links</h2></div>
         ${quickLinks(ctx)}
         ${myBtn(user, ctx)}
+        ${/* Round 91 (Neil): the My Snooker invitation sits between the quick links and the feature box */ on("mysnooker") ? mySnookerPrompt(user, ctx) : ""}
         ${featureBox(site, notices, today)}
         ${user ? deadlineBar(deadlineWarnings(user, ctx, await currentCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] })), site)) : ""}
         ${entering.length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${entering.map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
