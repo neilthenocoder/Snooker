@@ -680,7 +680,14 @@ async function liveStrip(user = null, mode = "filters") {
   const clubLogo = (t) => (t && !t.logo_url ? venues.find((v) => v.id === t.venue_id)?.logo_url || "" : "");
   const face = (s) => (s.player ? avatar(s.player, "avatar sc-face") : s.team ? badge({ ...s.team, logo_url: s.team.logo_url || clubLogo(s.team) }) : html`<span class="badge">${s.name.slice(0, 2).toUpperCase()}</span>`);
   const subOf = (s) => (s.player?.team_id ? team.get(s.player.team_id)?.name ?? "" : "");
-  const side = (s, end) => html`<div class="sc-side ${end}">${face(s)}<span class="sc-name"><b>${s.name}</b>${subOf(s) ? html`<small>${subOf(s)}</small>` : ""}</span></div>`;
+  // Round 85: each side also carries its own score, so on a phone (narrow cards, two and a half to a screen) the card
+  // reads as two rows — badge, name, score — like a scoreboard. Computers keep the score in the middle.
+  const rowScore = (c, k) => {
+    if (c.postponed || c.walkover || !(c.hasFrames || c.done)) return "";
+    const h = Number(c.score?.home), a = Number(c.score?.away), mine = k === "home" ? h : a, theirs = k === "home" ? a : h, over = c.done && h !== a;
+    return html`<b class="sc-row-score ${over ? (mine > theirs ? "w" : "l") : ""}">${k === "home" ? c.score.home : c.score.away}</b>`;
+  };
+  const side = (s, end, c) => html`<div class="sc-side ${end}">${face(s)}<span class="sc-name"><b>${s.name}</b>${subOf(s) ? html`<small>${subOf(s)}</small>` : ""}</span>${rowScore(c, end)}</div>`;
   return html`${stripColours(site)}${head}
     <div class="strip-view">
     <button type="button" class="edge-btn prev" data-strip-move="-1" aria-label="Previous matches">${chevLeft}</button>
@@ -689,10 +696,10 @@ async function liveStrip(user = null, mode = "filters") {
       <div class="sc-draw">${c.live ? html`<span class="live-dot">Live draw</span>` : html`<b>The draw</b>`}<p>${c.text}</p></div>
       <div class="sc-foot">${c.foot}</div></a>` : html`<a class="strip-card ${c.live ? "is-live" : ""}" href="${c.href}">
       <div class="sc-top"><span>${ukDay(c.when) === todayUK() ? "Tonight" : fmtDay(c.when)}</span><span class="sc-comp">${c.title}</span></div>
-      <div class="sc-body">${side(c.a, "home")}
+      <div class="sc-body ${c.hasFrames || c.done ? "has-score" : ""}">${side(c.a, "home", c)}
         <div class="sc-mid">${c.postponed ? html`<b>P - P</b>` : c.walkover ? html`<b>W/O</b>` : c.hasFrames || c.done ? scoreTiles(c) : html`<b class="time">${fmtTime(c.when)}</b>`}
           ${c.postponed ? html`<span class="sc-label postponed">Postponed</span>` : c.live ? html`<span class="live-dot">Live</span>` : c.done ? html`<span class="sc-label ${c.label ?? "completed"}">${{ pending: "Pending", walkover: "Walkover" }[c.label] ?? "Completed"}</span>` : c.hasFrames ? "" : liveSoonTag({ starts_at: c.when, status: c.status ?? "scheduled" })}</div>
-        ${side(c.b, "away")}</div>
+        ${side(c.b, "away", c)}</div>
       <div class="sc-foot">${c.walkover ? `Walkover to ${c.walkover}` : c.venue?.name ?? ""}</div>
     </a>`))}</div>
     <button type="button" class="edge-btn next" data-strip-move="1" aria-label="Next matches">${chevRight}</button>

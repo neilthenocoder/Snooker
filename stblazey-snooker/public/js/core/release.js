@@ -4,8 +4,20 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.63.0";
+export const SITE_VERSION = "1.65.0";
 export const CHANGES = [
+  "Type: bold capitals only for page titles, section headings, the menu, buttons and small labels; card titles are semi-bold in normal case; dates, venues and categories are medium grey; scores and times stay heavy",
+  "Capitals: news headlines (the banner too), card titles, team names and secondary controls (Short summary, View the fixtures) are written as typed, so they read faster",
+  "Colour: red is the brand, green means live or a win, yellow is kept for the one promotion (Entries are open) — the other yellow lines and labels are now red or grey, and Key dates is white",
+  "Spacing: one scale across the site — 56px between sections (40px on phones), 24px inside, 16px between cards, 8px between chips",
+  "Phones: a shorter home page — In the spotlight, Our teams and More stories slide sideways instead of stacking, Latest results shows the newest three, and the featured competition drops the list the strip above already shows",
+  "The star button in the top bar is gone: My Snooker is in your menu, on the home page and in the phone shortcuts",
+  "Corners (Feedback 84): crisp, not bubbly — 4px on cards and boxes, 2–3px on chips and inputs; only true circles are round (photos, badges, the round arrows), like the balls on the table",
+  "Buttons are cut like a snooker table: a small chamfer on every corner (8px, 5px on small buttons)",
+  "Headings: a double triangle (rounder outside, tighter inside); section headings inside a page get a faint chalk mark underneath instead",
+  "Live & upcoming matches: dark scoreboard cards, narrower and taller, with a red (green when live) mark along the top; on phones two and a half cards fit the screen, each a small scoreboard — badge, name and score in two rows",
+  "Cards that lift when pointed at have no arrow, and their icon sits at the top by the title; white buttons (See all results, Back, Share, the page tabs) have a fine border and lift like the team cards",
+  "Phones: a solid menu bar at the bottom (Home, Fixtures, Tables, Comps, More — More opens the full menu), with shortcuts above it — your account, Following, Matches, My Snooker and Search — that tuck away while you scroll down",
   "A look of our own (Feedback 83): rounded corners everywhere — the same on cards, boxes and buttons — more space between sections, colour used as accents, and black kept to the two sliding strips",
   "Headings: a snooker triangle rack instead of the red slash; Latest Results has a red ball instead, so it stands out",
   "Box headings are white with a fine line under them (no more black title bars); no faded slashes on the black backgrounds",

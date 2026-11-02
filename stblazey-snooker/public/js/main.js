@@ -130,18 +130,41 @@ const BNAV_ICONS = {
   competitions: bi("M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v2H8v-2h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3Zm0 4H6v1a2 2 0 0 0 1 1.7Zm10 0v2.7A2 2 0 0 0 18 8V7Z"),
   more: bi("M5 10.2a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6Zm7 0a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6Zm7 0a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6Z"),
   search: bi("M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.8 4.8-1.4 1.4-4.8-4.8A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"),
+  menu: bi("M3 6h18v2H3Zm0 5h18v2H3Zm0 5h18v2H3Z"),
 };
-function bottomNav(seasons) {
+// Round 85 (Neil, like the Premier League app): a solid bar fixed to the bottom — nothing shows through it — with
+// Home, Fixtures, Tables, Comps and More (the full menu). Above it, a row of shortcuts: your account (a circle), Following,
+// Matches, My Snooker and Search. The shortcuts tuck away behind the bar while you scroll down the page and come back
+// when you scroll up (or press the little handle).
+const TRAY_ICONS = {
+  person: bi("M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2a8 8 0 0 1 6.3 12.9c-1.3-1.8-3.6-2.9-6.3-2.9s-5 1.1-6.3 2.9A8 8 0 0 1 12 4Zm0 2.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm0 9.5c2 0 3.7.8 4.8 2.2a8 8 0 0 1-9.6 0c1.1-1.4 2.8-2.2 4.8-2.2Z"),
+  following: bi("M9 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm0-2a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm-7 11c0-3.3 3.1-6 7-6s7 2.7 7 6v1h-2v-1c0-2.1-2.2-4-5-4s-5 1.9-5 4v1H2Zm15.5-9.3 3.3-3.3 1.4 1.4-4.7 4.7-2.6-2.6 1.4-1.4Z"),
+  matches: bi("M4 5h2v2H4Zm4 0h12v2H8Zm-4 6h2v2H4Zm4 0h12v2H8Zm-4 6h2v2H4Zm4 0h12v2H8Z"),
+  star: bi("m12 2.5 2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5-4.9-4.5 6.6-.8Z"),
+};
+function bottomNav(seasons, user) {
   const current = seasons.find((x) => x.is_current) ?? seasons.at(-1);
   const tables = current ? urls.season(current, "league-tables") : "/league";
   const item = (key, href, label) => html`<a class="bnav-item" href="${href}" data-bnav="${key}"><span class="bnav-ico">${BNAV_ICONS[key]}</span><span class="bnav-label">${label}</span></a>`;
-  return html`<nav class="bnav" aria-label="Quick menu"><div class="bnav-bar"><span class="bnav-pill" aria-hidden="true"></span>
-      ${item("home", "/", "Home")}${item("fixtures", "/fixtures", "Fixtures")}${item("league", tables, "Tables")}${item("competitions", "/competitions", "Comps")}
-      <button type="button" class="bnav-item" data-bnav="more" data-menu-open aria-label="More: the full menu"><span class="bnav-ico">${BNAV_ICONS.more}</span><span class="bnav-label">More</span></button>
+  const chip = (href, icon, label) => html`<a class="bnav-chip" href="${href}">${icon}<span>${label}</span></a>`;
+  const name = user?.profile?.full_name || user?.email || "";
+  return html`<nav class="bnav" aria-label="Quick menu">
+    <div class="bnav-tray">
+      <button type="button" class="bnav-handle" data-bnav-tray aria-label="Show or hide the shortcuts" aria-expanded="true"></button>
+      <div class="bnav-chips">
+        <button type="button" class="bnav-me ${user ? "in" : ""}" data-account-open aria-label="${user ? `Your menu: ${name}` : "Log in"}">${user ? html`<b>${initials(name)}</b>` : TRAY_ICONS.person}</button>
+        ${chip("/my/snooker", TRAY_ICONS.following, "Following")}
+        ${chip("/live", TRAY_ICONS.matches, "Matches")}
+        ${chip("/mysnooker", TRAY_ICONS.star, "My Snooker")}
+        <button type="button" class="bnav-chip" data-search-open>${BNAV_ICONS.search}<span>Search</span></button>
+      </div>
     </div>
-    <button type="button" class="bnav-search" data-search-open aria-label="Search">${BNAV_ICONS.search}</button></nav>`;
+    <div class="bnav-bar"><span class="bnav-line" aria-hidden="true"></span>
+      ${item("home", "/", "Home")}${item("fixtures", "/fixtures", "Fixtures")}${item("league", tables, "Tables")}${item("competitions", "/competitions", "Comps")}
+      <button type="button" class="bnav-item" data-bnav="more" data-menu-open aria-label="More: the full menu"><span class="bnav-ico">${BNAV_ICONS.menu}</span><span class="bnav-label">More</span></button>
+    </div></nav>`;
 }
-/** Light up the part of the site you're in, and slide the glass pill under it. */
+/** Light up the part of the site you're in, and slide the red line over it. */
 function markBottomNav() {
   const bar = $(".bnav-bar");
   if (!bar) return;
@@ -150,11 +173,29 @@ function markBottomNav() {
   const key = open ? "more" : section === "home" ? "home" : ["fixtures", "league", "competitions"].includes(section) ? section : "";
   let on = null;
   for (const a of bar.querySelectorAll("[data-bnav]")) { const hit = a.dataset.bnav === key; a.classList.toggle("on", hit); if (hit) { on = a; a.setAttribute("aria-current", "page"); } else a.removeAttribute("aria-current"); }
-  if (!on || !on.offsetWidth) { bar.style.setProperty("--pill-o", "0"); return; }
-  bar.style.setProperty("--pill-x", `${on.offsetLeft}px`);
-  bar.style.setProperty("--pill-w", `${on.offsetWidth}px`);
-  bar.style.setProperty("--pill-o", "1");
+  if (!on || !on.offsetWidth) { bar.style.setProperty("--line-o", "0"); return; }
+  bar.style.setProperty("--line-x", `${on.offsetLeft + on.offsetWidth / 2 - 14}px`);
+  bar.style.setProperty("--line-o", "1");
 }
+/** The shortcuts above the bar: away while scrolling down, back when scrolling up, at the top, or from the handle. */
+let trayY = window.scrollY, trayPinned = null;
+const setTray = (show) => {
+  document.documentElement.classList.toggle("bnav-tucked", !show);
+  $("[data-bnav-tray]")?.setAttribute("aria-expanded", String(show));
+};
+window.addEventListener("scroll", () => {
+  const y = window.scrollY, dy = y - trayY;
+  if (Math.abs(dy) < 6) return;
+  trayY = y;
+  if (trayPinned !== null && Math.abs(dy) < 60) return;
+  trayPinned = null;
+  setTray(y < 80 || dy < 0);
+}, { passive: true });
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("[data-bnav-tray]")) return;
+  const show = document.documentElement.classList.contains("bnav-tucked");
+  trayPinned = show; setTray(show);
+});
 window.addEventListener("resize", markBottomNav, { passive: true });
 
 async function drawHeader() {
@@ -188,13 +229,13 @@ async function drawHeader() {
             <button type="button" class="acct-item acct-out" data-logout><span class="acct-ico">${logoutIcon}</span><span><b>Log out</b></span></button>
           </div></div>`
           : noLogin ? "" : html`<button type="button" class="nav-login" data-account-open>Log in</button>`}
-        ${user ? html`<a class="nav-icon nav-star" href="/mysnooker" aria-label="My Snooker" title="My Snooker">${starIcon}</a>` : ""}
+        ${/* Round 86: no star here — logged-in people reach My Snooker from their menu, the home page and the phone's shortcuts. */ ""}
         <button type="button" class="nav-icon nav-bell" data-bell aria-label="Notifications" title="Notifications">${bell}</button>
         <button type="button" class="nav-icon nav-search" data-search-open aria-label="Search" title="Search">${searchIcon}</button>
         <button type="button" class="nav-icon nav-toggle" data-menu-open aria-label="Menu" aria-expanded="false">${menuIcon}</button>
       </div>
     </div></div></header>
-    ${bottomNav(seasons)}
+    ${bottomNav(seasons, user)}
     <div class="menu-overlay" data-menu role="dialog" aria-modal="true" aria-label="Menu">
       <div class="menu-top"><a class="logo menu-logo" href="/" aria-label="${SITE.name} home"><img class="logo-main" src="${site.logo_url || "/assets/logo.svg"}" alt=""><img class="logo-light ${site.logo_light_url ? "" : "auto"}" src="${site.logo_light_url || site.logo_url || "/assets/logo.svg"}" alt=""></a>
         <button type="button" class="menu-x" data-menu-close aria-label="Close the menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>

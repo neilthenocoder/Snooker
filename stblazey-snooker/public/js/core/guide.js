@@ -27,12 +27,12 @@ function steps(personal) {
     { at: ".live-strip", title: "Live and upcoming", text: "Tonight's matches and what's coming up. Press your team's name above the cards to see only your matches. A green card is being played now: press it to follow it live." },
     { at: ".quick-links", title: "The rest of the league", text: "Competitions, the calendar, handicaps and every team's fixtures are always here." },
     { at: ".nav-toggle", title: "The menu", text: "Every page of the website is in here: fixtures, tables, competitions, news, and <b>More</b>." },
-    { at: ".bnav-bar", title: "The menu", text: "Home, fixtures, the league tables and competitions are always at the bottom of the screen. <b>More</b> opens every other page." },
+    { at: ".bnav-bar", title: "The menu", text: "Home, fixtures, the league tables and competitions are always at the bottom of the screen. <b>More</b> opens the full menu." },
     { at: ".nav-more", title: "More pages", text: "The calendar, results, handicaps, players and the rest are all under <b>More</b>." },
     { at: ".nav-acct", title: "Your menu", text: "Everything for your login is here: My Snooker, its settings, your profile, your password and Log out. To see this guide again, press <b>Help</b> at the bottom of any page." },
     { at: ".nav-bell", title: "Notifications", text: "League news and alerts. Choose which ones you get in here." },
     { at: ".nav-search", title: "Search", text: "Find any player, team, venue or news story." },
-    { at: ".bnav-search", title: "Search", text: "Find any player, team, venue or news story." },
+    { at: ".bnav-chips", title: "Shortcuts", text: "Your account, who you follow, the matches, My Snooker and Search. They tuck away while you scroll down and come back when you scroll up." },
     { title: "One more thing: Follow", text: "On any team or player page, press <b>☆ Follow</b> to add them to My Snooker. Need this guide again? <b>Help</b> is at the bottom of every page. Enjoy the snooker!" },
   ];
   const all = [
@@ -43,11 +43,11 @@ function steps(personal) {
     { at: ".strip-filters", title: "Just one league, or one team", text: "Choose a league, a competition or a team here to see only their matches. Pick a team and you can open its stats." },
     { at: ".ms-invite", title: "My Snooker", text: "Log in for <b>My Snooker</b>: your own page with your team's table, fixtures, results, rankings and breaks, in the order you choose." },
     { at: ".nav-toggle", title: "The menu", text: "Every page of the website is in here: fixtures, tables, competitions, news, and <b>More</b>." },
-    { at: ".bnav-bar", title: "The menu", text: "Home, fixtures, the league tables and competitions are always at the bottom of the screen. <b>More</b> opens every other page." },
+    { at: ".bnav-bar", title: "The menu", text: "Home, fixtures, the league tables and competitions are always at the bottom of the screen. <b>More</b> opens the full menu." },
     { at: ".nav-more", title: "More pages", text: "The calendar, results, handicaps, players and the rest are all under <b>More</b>." },
     { at: ".nav-login", title: "Log in", text: "Players, captains and officers log in here, and the home page becomes your own. Your login comes from the league secretary." },
     { at: ".nav-search", title: "Search", text: "Find any player, team, venue or news story." },
-    { at: ".bnav-search", title: "Search", text: "Find any player, team, venue or news story." },
+    { at: ".bnav-chips", title: "Shortcuts", text: "Your account, who you follow, the matches, My Snooker and Search. They tuck away while you scroll down and come back when you scroll up." },
   ];
   return personal ? mine : all;
 }
