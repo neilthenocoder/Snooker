@@ -4,8 +4,10 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.70.0";
+export const SITE_VERSION = "1.71.0";
 export const CHANGES = [
+  "Live & upcoming matches: the cards are back to their wide scoreline shape — name, badge, time (or score), badge, name — in the dark colours",
+  "Phones: no banner on the home page — the live & upcoming matches come straight under the menu bar, in the same scoreline cards (one and a peek of the next)",
   "Home page top: the quick links, the My Snooker invitation (now between the quick links and the feature box) and the feature box sit at their natural height — no more stretched, half-empty cards",
   "My Snooker invitation: the site's own red button for Log in",
   "Cut-corner buttons: the two square corners have a slight rounding",

@@ -6494,3 +6494,71 @@ html.look-calm body:not([data-page="admin"]) :is(#view, #side) .btn-bar::before,
 html.look-calm body:not([data-page="admin"]) :is(.back-link, .share-page, .share-btn, .league-jump a, .hub-tabs a, .pick-go)::before { border-radius: 0 calc(var(--soft-corner) - 1px) 0 calc(var(--soft-corner) - 1px); }
 .btn.small, .strip-stats, .cf-go { --soft-corner: 4px; }
 @media (max-width: 560px) { .hz-top .ms-invite { align-items: start; gap: 12px 14px; padding: 16px; } .hz-top .ms-invite-star { margin-top: 1px; } html.look-calm body:not([data-page="admin"]) .ms-invite > i { margin-top: 4px; } }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 92 — the match cards go back to their wide scoreline shape (name · badge · time · badge · name)
+   in the dark colours; phones lose the banner so the matches lead the home page.
+   ═════════════════════════════════════════════════════════════ */
+@media (min-width: 761px) {
+  html.look-calm .live-strip .strip-card, html.look-calm.strip-dark .live-strip .strip-card, .live-strip .strip-card {
+    flex: 0 0 480px; gap: 14px; padding: 20px 24px 16px; border-radius: 18px !important; }
+  .live-strip .sc-body { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 16px; align-items: center; }
+  .live-strip .sc-side, .live-strip .sc-side.home, .live-strip .sc-side.away { flex-direction: row; align-items: center; gap: 10px; }
+  .live-strip .sc-side.home { flex-direction: row-reverse; text-align: right; }
+  .live-strip .sc-side.away { text-align: left; }
+  .live-strip .sc-name { justify-items: inherit; }
+  .live-strip .sc-side.home .sc-name { justify-items: end; }
+  .live-strip .sc-side.away .sc-name { justify-items: start; }
+  .live-strip .sc-name b { font-size: 16px; line-height: 1.2; }
+  .live-strip .sc-side .badge, .live-strip .sc-side .avatar { width: 34px !important; height: 34px !important; font-size: 10.5px; }
+  .live-strip .sc-mid { margin: 0; min-width: 72px; }
+  html.look-calm .live-strip .sc-mid b.time, html.look-calm.strip-dark .live-strip .sc-mid b.time { padding: 0; border: 0; font-size: 24px; }
+  html.look-calm .live-strip .sc-foot, html.look-calm.strip-dark .live-strip .sc-foot { padding-top: 14px; font-size: 13px; }
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  html.look-calm .live-strip .strip-card, html.look-calm.strip-dark .live-strip .strip-card, .live-strip .strip-card { flex-basis: 420px; }
+}
+
+/* Phones: no banner — the live & upcoming matches are the first thing under the menu bar */
+@media (max-width: 760px) {
+  body[data-page="home"] .hero { background: #2b2b2b !important; min-height: 0 !important; padding: 0 !important; }
+  body[data-page="home"] .hero :is(.hero-inner, .hero-bgs) { display: none !important; }
+  body[data-page="home"] .hero .live-strip-wrap { border-top: 0 !important; padding: 20px 0 22px !important; margin: 0 !important; }
+  body[data-page="home"] .live-strip .strip-head { margin-bottom: 12px; }
+  body[data-page="home"] .live-strip .strip-head h3 { font-size: 17px; line-height: 1.2; }
+  body[data-page="home"] .live-strip .strip-filters { margin-bottom: 14px; gap: 8px; }
+  /* phone cards: a touch more air inside, the date in white, the competition under it */
+  html.look-calm .live-strip .strip-card, html.look-calm.strip-dark .live-strip .strip-card, .live-strip .strip-card { border-radius: 14px !important; padding: 14px 12px 12px; }
+}
+/* Phones: the same scoreline shape, one card and a peek of the next (the narrow two-and-a-half cards were too cramped) */
+@media (max-width: 760px) {
+  html.look-calm .live-strip .strip-card, html.look-calm.strip-dark .live-strip .strip-card, .live-strip .strip-card { flex: 0 0 86%; padding: 16px 14px 12px; gap: 12px; }
+  html.look-calm .live-strip .sc-top, html.look-calm.strip-dark .live-strip .sc-top { flex-direction: row; align-items: baseline; justify-content: space-between; font-size: 12px; gap: 10px; }
+  .live-strip .sc-comp { text-align: right; font-size: 12px; max-width: 60%; }
+  .live-strip .sc-body { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: center; }
+  .live-strip .sc-side, .live-strip .sc-side.home, .live-strip .sc-side.away { flex-direction: row; align-items: center; gap: 8px; }
+  .live-strip .sc-side.home { flex-direction: row-reverse; text-align: right; }
+  .live-strip .sc-side.home .sc-name { justify-items: end; }
+  .live-strip .sc-side.away .sc-name { justify-items: start; }
+  .live-strip .sc-side.home { order: 0; } .live-strip .sc-side.away { order: 0; } .live-strip .sc-mid { order: 0; justify-self: center; align-items: center; }
+  .live-strip .sc-side .badge, .live-strip .sc-side .avatar { width: 28px !important; height: 28px !important; font-size: 9px; }
+  .live-strip .sc-name b { font-size: 14px; overflow-wrap: normal; hyphens: manual; }
+  .live-strip .sc-row-score { display: none !important; }
+  .live-strip .sc-body.has-score .sc-mid b.sc-tiles { display: inline-flex; }
+  html.look-calm .live-strip .sc-mid b.time, html.look-calm.strip-dark .live-strip .sc-mid b.time { padding: 0; border: 0; font-size: 20px; }
+  html.look-calm .live-strip .sc-foot, html.look-calm.strip-dark .live-strip .sc-foot { text-align: center; font-size: 12px; padding-top: 10px; }
+  .live-strip .edge-btn { width: 34px; height: 34px; }
+}
+@media (max-width: 760px) {
+  .live-strip .sc-side, .live-strip .sc-side.home, .live-strip .sc-side.away { flex-direction: column; align-items: center; text-align: center; gap: 6px; }
+  .live-strip .sc-side.home .sc-name, .live-strip .sc-side.away .sc-name { justify-items: center; }
+  .live-strip .sc-name b { font-size: 14px; overflow-wrap: anywhere; }
+  .live-strip .sc-side .badge, .live-strip .sc-side .avatar { width: 34px !important; height: 34px !important; font-size: 10px; }
+  /* swiping is natural here and the next card peeks in, so the round arrows step aside rather than cover the names */
+  .live-strip .edge-btn { display: none; }
+}
+/* (phones: the matches are the hero now — a heading with the weight of a hero) */
+@media (max-width: 760px) {
+  body[data-page="home"] .hero .live-strip-wrap { padding: 24px 0 26px !important; }
+  body[data-page="home"] .live-strip .strip-head h3 { font-size: 22px; line-height: 1.1; }
+}
