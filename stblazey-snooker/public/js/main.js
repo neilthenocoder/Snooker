@@ -152,7 +152,7 @@ function bottomNav(seasons, user) {
     <div class="bnav-tray">
       <button type="button" class="bnav-handle" data-bnav-tray aria-label="Show or hide the shortcuts" aria-expanded="true"></button>
       <div class="bnav-chips">
-        <button type="button" class="bnav-me ${user ? "in" : ""}" data-account-open aria-label="${user ? `Your menu: ${name}` : "Log in"}">${user ? html`<b>${initials(name)}</b>` : TRAY_ICONS.person}</button>
+        <button type="button" class="bnav-me ${user ? "in" : ""}" data-account-open aria-label="${user ? `Your menu: ${name}` : "Log in"}">${TRAY_ICONS.person}</button>
         ${chip("/my/snooker", TRAY_ICONS.following, "Following")}
         ${chip("/live", TRAY_ICONS.matches, "Matches")}
         ${chip("/mysnooker", TRAY_ICONS.star, "My Snooker")}

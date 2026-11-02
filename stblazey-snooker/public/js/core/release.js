@@ -4,8 +4,19 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.65.0";
+export const SITE_VERSION = "1.69.0";
 export const CHANGES = [
+  "Section headings inside pages (e.g. This season) no longer have the chalk underline",
+  "Corners are back to the site's own rounding (12px cards and boxes, round pills on chips, tabs and filters); buttons keep their subtle cut corners",
+  "Capitals and letter spacing are back to how the site had them (headlines, card titles, team names and headings as before); the lighter font weights from 1.65 stay",
+  "Softer corners all over: 10px on cards and boxes, 14px on big panels, 8px on chips and inputs (circles stay circles)",
+  "Buttons: the subtle cut moves to the top-left and bottom-right corners",
+  "The heading triangles sit closer to their headings",
+  "Menu bar: LIVE, Log in and the account button (e.g. Admin) are all the same height",
+  "Live & upcoming matches: the small red mark on top of each card is gone — only a live match has its green line (and a draw its yellow one)",
+  "Phones: the account button above the bottom menu shows a person icon (filled red when you're logged in) instead of your initials",
+  "Buttons: a subtle cut on two opposite corners (top right and bottom left) instead of all four — 6px, 4px on small buttons",
+  "White buttons (See all results, Back, Share, the page tabs and the other full-width links) take the same cut, with their fine border following it; See all results now has the buttons' lettering",
   "Type: bold capitals only for page titles, section headings, the menu, buttons and small labels; card titles are semi-bold in normal case; dates, venues and categories are medium grey; scores and times stay heavy",
   "Capitals: news headlines (the banner too), card titles, team names and secondary controls (Short summary, View the fixtures) are written as typed, so they read faster",
   "Colour: red is the brand, green means live or a win, yellow is kept for the one promotion (Entries are open) — the other yellow lines and labels are now red or grey, and Key dates is white",
