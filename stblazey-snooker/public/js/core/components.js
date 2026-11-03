@@ -84,6 +84,20 @@ export function badge(team) {
   return html`<span class="badge">${initials}</span>`;
 }
 
+/**
+ * Round 98: the crest wall — each league a card with a green header and its team count, its teams as club crests
+ * with a line under each name. Used on the home page (Our teams), Fixtures and Our Players.
+ * opts.href(team) → the link; opts.note(team) → the line under the name.
+ */
+export function leagueCrests(ctx, { href = (t) => urls.team(t), note = () => "" } = {}) {
+  const groups = ctx.leagues.map((l) => ({ l, teams: ctx.teamsIn(l.id).slice().sort((a, b) => a.name.localeCompare(b.name)) })).filter((g) => g.teams.length);
+  if (!groups.length) return "";
+  return html`<div class="bz-teams">${groups.map(({ l, teams }) => html`<section class="bz-league">
+    <header class="bz-league-head"><h3>${l.name}</h3><span>${teams.length} teams</span></header>
+    <div class="bz-crests">${teams.map((t) => html`<a class="bz-crest" href="${href(t)}"><span class="bz-crest-badge">${badge(t)}</span><b>${t.name}</b>${note(t) ? html`<small>${note(t)}</small>` : ""}</a>`)}</div>
+  </section>`)}</div>`;
+}
+
 /** A league's or venue's emblem (or its initials when none has been uploaded). */
 export const emblem = (thing, cls = "") => (thing ? html`<span class="emblem ${cls}">${badge({ name: thing.name, logo_url: thing.logo_url })}</span>` : "");
 

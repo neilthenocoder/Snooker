@@ -121,7 +121,7 @@ export async function articles() {
 // If the database hasn't been updated yet (no word_count), the list falls back to fetching everything, as before.
 const ARTICLE_LIST = ["id", "title", "slug", "category", "more_categories", "excerpt", "image_url", "circle_image_url", "published_at", "is_published",
   "featured", "hub_featured", "breaking", "awaiting_approval", "created_by", "author", "player_ids", "league_id", "competition_id", "week_ending",
-  "cueview", "cueview_name", "cueview_extra", "cueview_featured", "video_url", "social_image_url", "social_description", "word_count"].join(",");
+  "cueview", "cueview_name", "cueview_extra", "cueview_featured", "video_url", "social_image_url", "social_description", "word_count", "story_on", "story_title"].join(",");
 /** Every article without its long text (cached until the next write). */
 export function articleList() {
   if (!cache.has("articles:list")) cache.set("articles:list", selectAll(() => db.from("articles").select(ARTICLE_LIST).order("published_at"))

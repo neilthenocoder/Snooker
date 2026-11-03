@@ -4,8 +4,11 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.84.0";
+export const SITE_VERSION = "1.85.0";
 export const CHANGES = [
+  "Stories (like the Premier League app): circles at the top of the home page — press one to read the whole article in place, move between stories with the arrows, a swipe or the arrow keys. Chosen in Admin → News (Show as a story, Story heading) — run schema.sql, version 43",
+  "Fixtures and Our Players use the home page's crest wall: each league a card with a green header, its teams as club crests",
+  "Phones: the My Snooker card is gone from the home page for logged-in people (it's in the shortcuts above the menu bar); the featured competition stacks as one green block with even spacing",
   "Home page story: no white space above the picture — it fills the top of the card",
   "My Snooker, the feature box and the new Competitions card under the quick links are all the same height, with less padding",
   "The featured competition is back under the competitions strip; a Competitions card at the top of the page takes you straight to it",

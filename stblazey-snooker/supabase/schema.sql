@@ -3023,7 +3023,12 @@ $$;
 drop trigger if exists settings_home_layout on settings;
 create trigger settings_home_layout before update on settings for each row execute function public.guard_home_layout();
 
-create or replace function public.schema_version() returns int language sql immutable as $$ select 42 $$;
+-- ── Round 98 (Neil): Stories — the circles at the top of the home page ─────────────────────────
+-- A news article shows as a story when "Show as a story" is ticked (Admin → News); its short heading goes under the circle.
+alter table articles add column if not exists story_on boolean not null default false;
+alter table articles add column if not exists story_title text;
+
+create or replace function public.schema_version() returns int language sql immutable as $$ select 43 $$;
 grant execute on function public.schema_version() to anon, authenticated;
 
 -- Tell the website's data service about the new tables, columns and functions straight away.

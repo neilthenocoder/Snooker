@@ -2,7 +2,7 @@
 import { html, mount, $ } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { teamPlayerHistory } from "../core/api.js";
-import { breadcrumb, badge, urls, personCard as playerCard, isActivePlayer } from "../core/components.js";
+import { breadcrumb, badge, urls, personCard as playerCard, isActivePlayer, leagueCrests } from "../core/components.js";
 import { setTitle, navigate, adminEdit } from "../core/router.js";
 
 export default async function players(view, { query }) {
@@ -20,11 +20,7 @@ export default async function players(view, { query }) {
       ${breadcrumb([["Home", "/"], ["Our League", "/league"], ["Our Players"]])}
       <h1>Our Players</h1>
       ${picker}
-      ${ctx.leagues.map((l) => html`<h3>${l.name}</h3><div class="cards">${ctx.teamsIn(l.id).map((t) => {
-        // Round 76 (Neil): the same cards as the Fixtures page — emblem, name, and a line to press.
-        const n = ctx.playersOf(t.id).length;
-        return html`<a class="tile with-emblem" href="/players?team=${t.slug}">${badge(t)}<span><h4>${t.name}</h4><span class="tile-go">${n} player${n === 1 ? "" : "s"}</span></span></a>`;
-      })}</div>`)}
+      ${/* Round 98: the same crest wall as the home page's Our teams */ leagueCrests(ctx, { href: (t) => `/players?team=${t.slug}`, note: (t) => { const n = ctx.playersOf(t.id).length; return `${n} player${n === 1 ? "" : "s"}`; } })}
     </div>`);
   } else {
     // Past players: anyone who has played a frame for this team but isn't in it now.

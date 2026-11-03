@@ -19,6 +19,8 @@ import { competitionSummaries } from "./competitions.js";
 import { loadForm, formBadge, formChips } from "../core/form.js";
 import { liveSoonTag, compBoxStyle } from "../core/components.js";
 import { homeSections, isOffSeason, promoBlock, mySnookerPrompt, newsBlock, compsBlock, teamsBlock } from "../core/home-blocks.js";
+import { leagueCrests } from "../core/components.js";
+import { storyList, storiesRow, mountStories } from "../core/stories.js";
 
 const ROTATE_MS = 7000;      // banner: time each article is shown
 const CAROUSEL_MS = 4500;    // live strip: time before it moves on one card
@@ -100,6 +102,7 @@ export default async function home(view, { user } = {}) {
     ${/* Round 93 (Baize): the top of the home page is two panels side by side — Matchday (tonight's matches, on the
        table green) and the featured story. Where they meet at the top, a corner pocket is cut into each, so together
        they make one middle pocket. On a phone they stack, Matchday first. */ ""}
+    ${storiesRow(storyList(news))}
     <section class="bz-top"><div class="wrap bz-top-grid">
       <div class="bz-matchday">
         <div class="bz-md-head"><p class="bz-md-date">${new Date().toLocaleDateString("en-GB", { timeZone: "Europe/London", weekday: "long", day: "numeric", month: "long" })}</p><h1 class="bz-md-title">Matchday</h1></div>
@@ -235,6 +238,9 @@ export default async function home(view, { user } = {}) {
   $(".hero-inner", view)?.addEventListener("mouseleave", () => { paused = false; });
   const timer = slideEls.length > 1 ? setInterval(() => { if (!paused && !document.hidden) show(current + 1); }, ROTATE_MS) : null;
 
+  // Round 98: stories — the circles open the story viewer.
+  const stopStories = mountStories($(".bz-stories", view), storyList(news));
+
   // Live & upcoming matches strip, updated live — with the league / competition and team filters (round 52).
   const stopStrip = await mountLiveStrip($("[data-strip]", view), user, { mode: "filters", layout: "list" });
 
@@ -310,7 +316,7 @@ export default async function home(view, { user } = {}) {
     cs.refreshEnds?.();
   });
 
-  return () => { clearInterval(timer); clearInterval(featureTimer); stopStrip(); stopSquad(); stopKd(); stopCs(); window.removeEventListener("resize", fitResults); };
+  return () => { clearInterval(timer); clearInterval(featureTimer); stopStrip(); stopSquad(); stopKd(); stopCs(); stopStories(); window.removeEventListener("resize", fitResults); };
 }
 
 
@@ -450,16 +456,9 @@ function newsCards(list) {
 }
 /** Round 94: Our teams — one card per league, its teams in two columns with their emblems. */
 function teamsCards(ctx) {
-  // Round 96 (Neil: "a bit generic"): a crest wall — each league a card with a green header, its teams as crests
-  // with the name and home venue under them.
-  const groups = ctx.leagues.map((l) => ({ l, teams: ctx.teamsIn(l.id).slice().sort((a, b) => a.name.localeCompare(b.name)) })).filter((g) => g.teams.length);
-  if (!groups.length) return "";
-  const venueOf = (t) => ctx.venue?.get?.(t.venue_id)?.name ?? "";
-  return html`<div class="hb-head"><h2>Our teams</h2><a href="/fixtures">Fixtures and results</a></div>
-    <div class="bz-teams">${groups.map(({ l, teams }) => html`<section class="bz-league">
-      <header class="bz-league-head"><h3>${l.name}</h3><span>${teams.length} teams</span></header>
-      <div class="bz-crests">${teams.map((t) => html`<a class="bz-crest" href="${urls.team(t)}"><span class="bz-crest-badge">${badge(t)}</span><b>${t.name}</b>${venueOf(t) ? html`<small>${venueOf(t)}</small>` : ""}</a>`)}</div>
-    </section>`)}</div>`;
+  // Round 96/98: the crest wall (shared with Fixtures and Our Players — components.js leagueCrests).
+  const wall = leagueCrests(ctx, { note: (t) => ctx.venue?.get?.(t.venue_id)?.name ?? "" });
+  return wall ? html`<div class="hb-head"><h2>Our teams</h2><a href="/fixtures">Fixtures and results</a></div>${wall}` : "";
 }
 
 function heroSlide(a, on, dots = null) {

@@ -188,6 +188,7 @@ export function buildSeed() {
     cueview: {}, cueview_name: "", cueview_extra: "", cueview_featured: false,
     show_breaks: false, show_results: false, show_standings: false, featured: i < 4 || category === "Match Reports",
     author: "", video_url: "", hub_featured: i < 2, more_categories: [],
+    story_on: i < 6, story_title: ["Luxulyan clean up", "Bethel hold firm", "Rees Singles", "Team Handicap", "Shootout", "Bill Toms"][i] ?? "",
   }));
   // One article sits under two tabs of the News page.
   articles[2].more_categories = ["Match Reports"];
