@@ -7072,3 +7072,33 @@ html.look-calm body:not([data-page="admin"]) :is(.comp-kicker, .comp-kind, .cf-k
 }
 .bz-dots button.on, .hero-dots.bz-dots button.on { width: 28px !important; background: transparent !important; border: 0 !important; }
 .hero-dots.bz-dots button { border: 0 !important; background: transparent !important; }
+
+/* ═══ ROUND 97 ═══ */
+/* The story card: no space above the picture; the slides line up exactly with the card */
+.bz-story.hero-inner { padding: 0 !important; margin: 0 !important; }
+.bz-story .hero-slides { margin: 0 !important; padding: 0 !important; }
+.bz-story .hero-track > .hero-slide { padding: 0 !important; margin: 0 !important; }
+
+/* The cards under the quick links all one height: My Snooker, the feature box and Competitions */
+html body .hz-top a.my-snooker-btn, .hz-top .bz-link-card, html.look-calm .hz-top .feature-box { min-height: 64px; box-sizing: border-box; }
+html body .hz-top a.my-snooker-btn { padding: 10px 20px !important; gap: 14px !important; align-items: center; }
+html body .hz-top a.my-snooker-btn > svg { width: 40px !important; height: 40px !important; padding: 10px !important; }
+html body .hz-top a.my-snooker-btn b { font-size: 17px !important; }
+html.look-calm .hz-top .feature-box { padding: 10px 20px !important; }
+.bz-link-card { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 10px 20px; background: #FFFFFF; border: 1px solid var(--line); border-radius: var(--r-sm); color: var(--ink); transition: border-color .15s; }
+.bz-link-card:hover { color: var(--ink); border-color: var(--hover-line); }
+.bz-link-card:hover b { color: var(--red-dark, #C10033); }
+.bz-link-card .ql-tile { width: 40px; height: 40px; border-radius: 10px; background: var(--brass); color: #FFFFFF; display: grid; place-items: center; }
+.bz-link-card .ql-tile svg { width: 20px; height: 20px; }
+.bz-link-card b { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; }
+.bz-link-card > span:not(.ql-tile) { font-size: 15px; color: var(--muted); min-width: 0; }
+.bz-link-card i svg { display: block; width: 20px; height: 20px; color: var(--muted); }
+@media (max-width: 760px) {
+  .bz-link-card { grid-template-columns: auto minmax(0, 1fr) auto; row-gap: 2px; padding: 10px 14px; }
+  .bz-link-card > span:not(.ql-tile) { grid-column: 2; grid-row: 2; font-size: 13.5px; }
+  .bz-link-card b { grid-column: 2; }
+  .bz-link-card .ql-tile { grid-row: 1 / span 2; }
+  .bz-link-card i { grid-column: 3; grid-row: 1 / span 2; }
+}
+/* the competitions section the card jumps to: clear of the menu bar */
+.bz-anchor { scroll-margin-top: calc(var(--header-h, 80px) + 24px); }

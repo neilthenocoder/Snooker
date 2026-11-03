@@ -83,7 +83,9 @@ export default async function home(view, { user } = {}) {
     comp_strip: () => inBand(compData ? compStrip(comps, compData) : "", "hz-comps"),
     // Round 94: the design has no featured-competition block, no "More stories" and no spotlight band — the
     // competitions strip, the news cards and the Our teams lists cover them. (Their settings are kept, unused.)
-    competitions: () => "",
+    // Round 97 (Neil): the featured competition is back, under the competitions strip; the card at the top of the
+    // page ("Competitions") jumps down to it.
+    competitions: () => inWrap(compData ? html`<div id="home-competitions" class="bz-anchor">${compsBlock(comps, compData)}</div>` : "", "bz-comps-feature"),
     // Round 96 (Neil): More stories is back — four more stories as cards in the same style as Latest news.
     features: () => inWrap(moreStoryCards(news.filter((a) => !bannerIds.includes(a.id)).slice(3, 7)), "bz-more-sec"),
     spotlights: () => "",
@@ -119,6 +121,7 @@ export default async function home(view, { user } = {}) {
         ${myBtn(user, ctx)}
         ${/* Round 91 (Neil): the My Snooker invitation sits between the quick links and the feature box */ on("mysnooker") ? mySnookerPrompt(user, ctx) : ""}
         ${featureBox(site, notices, today)}
+        ${compData && comps.length && on("competitions") ? html`<a class="bz-link-card" href="#home-competitions"><span class="ql-tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/></svg></span><b>Competitions</b><span>This season's cups: the latest results, the draws and what's next</span><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></i></a>` : ""}
         ${user ? deadlineBar(deadlineWarnings(user, ctx, await currentCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] })), site)) : ""}
         ${entering.length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${entering.map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
         ${keyDates(site, dates, allComps.map((x) => x.c), today)}
@@ -277,6 +280,13 @@ export default async function home(view, { user } = {}) {
     let shown = cards.length;
     while (shown > 2 && box.getBoundingClientRect().height > room + 1) { cards[--shown].style.display = "none"; }
   };
+  // Round 97: the Competitions card at the top glides down to the competitions section (the menu bar stays clear of it).
+  $(".bz-link-card", view)?.addEventListener("click", (e) => {
+    const to = $("#home-competitions", view);
+    if (!to) return;
+    e.preventDefault(); e.stopPropagation();
+    to.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  });
   fitResults();
   document.fonts?.ready.then(() => view.isConnected && fitResults());
   setTimeout(fitResults, 600);
@@ -423,7 +433,7 @@ function storySlide(a, on) {
   </div>`;
 }
 
-const DESIGN_ORDER = ["promo", "news", "comp_strip", "teams", "features"];
+const DESIGN_ORDER = ["promo", "news", "comp_strip", "competitions", "teams", "features"];
 /** Round 96: More stories — four cards in a row, the Latest news card style. */
 function moreStoryCards(list) {
   if (!list.length) return "";

@@ -4,8 +4,11 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.83.0";
+export const SITE_VERSION = "1.84.0";
 export const CHANGES = [
+  "Home page story: no white space above the picture — it fills the top of the card",
+  "My Snooker, the feature box and the new Competitions card under the quick links are all the same height, with less padding",
+  "The featured competition is back under the competitions strip; a Competitions card at the top of the page takes you straight to it",
   "Home page story: the picture fills the card at 16:9; the card's top-right and bottom-left corners are cut, answering Matchday's; the slider dots are bigger targets so a click or tap changes the story",
   "Latest results shows as many results as fit beside the left column, so the two sides end level (no gap)",
   "More stories is back: four more stories as cards, in the Latest news style; news pictures are 16:9",
