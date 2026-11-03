@@ -16,9 +16,9 @@ import notFound from "./not-found.js";
 
 // The parts of a season that have a page for each league: [heading, what a league's tile says, title of a league's page].
 const BY_LEAGUE = {
-  breaks: ["Breaks", "Click here to view all the breaks", (l) => `${l.name} Breaks`],
-  rankings: ["Rankings", "Click here to view the rankings", (l) => `${l.name} Player Rankings`],
-  "league-tables": ["League Tables", "Click here to view the league table", (l) => `${l.name} Table`],
+  breaks: ["Breaks", "View all the breaks", (l) => `${l.name} Breaks`],
+  rankings: ["Rankings", "View the rankings", (l) => `${l.name} Player Rankings`],
+  "league-tables": ["League Tables", "View the league table", (l) => `${l.name} Table`],
 };
 const big = (title, line, href, note = "") => html`<a class="tile tall season-tile" href="${href}"><h4>${title}</h4><span class="tile-go">${line}</span>${note ? html`<p>${note}</p>` : ""}</a>`;
 const crumbs = (...rest) => breadcrumb([["Home", "/"], ["Our League", "/league"], ...rest]);
@@ -50,7 +50,7 @@ function list(view, all, current) {
     ${crumbs(["Seasons"])}
     <h1>Seasons</h1>
     ${all.length ? html`<div class="cards season-cards">${[...all].reverse().map((s) => html`<a class="tile season-tile" href="${urls.season(s)}">
-      <h4>${s.name}</h4><span class="tile-go">Click here to view</span>${s.id === current?.id ? html`<p><span class="status in_progress">This season</span></p>` : ""}</a>`)}</div>`
+      <h4>${s.name}</h4><span class="tile-go">View the season</span>${s.id === current?.id ? html`<p><span class="status in_progress">This season</span></p>` : ""}</a>`)}</div>`
       : html`<div class="empty box">No seasons yet.</div>`}
     <a class="btn-bar" href="/archive">Season archive &amp; roll of honour: champions, top players and highest breaks</a>
   </div>`);
@@ -74,7 +74,7 @@ function hub(view, ctx, season, current) {
   mount(view, html`<div class="wrap">
     ${crumbs(["Seasons", "/seasons"], [title])}
     <h1>${title}</h1>
-    <div class="cards season-hub">${tiles.map(([t, note, href]) => big(t, "Click here to view", href, note))}</div>
+    <div class="cards season-hub">${tiles.map(([t, note, href]) => big(t, "View", href, note))}</div>
   </div>`);
 }
 

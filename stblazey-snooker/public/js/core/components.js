@@ -185,7 +185,7 @@ export const breakList = (list) => (list.length ? html`<span class="brk-list">${
 export const topPoints = (r, top) => (r === top && Number(r.pts) > 0 ? html`<span class="lt-pts">${r.pts}</span>` : r.pts);
 
 export const tile = (title, text, href, cls = "") =>
-  html`<a class="tile ${cls}" href="${href}"><h4>${title}</h4><span class="tile-go">Click here to view</span>${text ? html`<p>${text}</p>` : ""}</a>`;
+  html`<a class="tile ${cls}" href="${href}"><h4>${title}</h4><span class="tile-go">View</span>${text ? html`<p>${text}</p>` : ""}</a>`;
 
 /** The small round picture for an article (its circle image, or its main image). */
 /** The longest headline (Rich, round 22): the home page banner keeps a headline to three lines. */
@@ -428,7 +428,7 @@ function sideBox(ctx, news, count, box) {
   if (mode === "news") {
     const latest = news.slice(0, Math.max(1, count));
     return html`${panel(site.side_box_title || "Latest News", latest.length ? html`<div>${latest.map(newsMini)}</div>` : "", { color: "blue", href: "/news" })}
-      <a class="btn-bar" href="/news">Click here to go to the news hub</a>`;
+      <a class="btn-bar" href="/news">All the news</a>`;
   }
   const league = mode === "cup" ? [] : ctx.fixtures
     .filter((f) => ctx.hasResult(f) && f.status !== "in_progress" && (!site.side_box_league || f.league_id === site.side_box_league))

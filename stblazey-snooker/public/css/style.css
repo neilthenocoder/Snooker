@@ -6874,3 +6874,142 @@ html.look-calm .site-footer .socials a, .site-footer .socials a { width: auto !i
 .bz-slide-pic, .bz-slide-text { min-width: 0; max-width: 100%; }
 .bz-slide-pic img { max-width: 100%; }
 @media (max-width: 760px) { .md-list .md-row:nth-child(n+5) { display: none; } }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 94 — the home page exactly as designed: no pockets; Matchday takes the cut corner on every screen;
+   the story's photo at a fixed height; Latest results at its natural height; news as three cards;
+   Our teams as one card per league.
+   ═════════════════════════════════════════════════════════════ */
+.bz-matchday, .bz-story { -webkit-mask: none !important; mask: none !important; }
+.bz-matchday { --mcut: 20px; border-radius: 0 var(--r-lg) 0 var(--r-lg);
+  clip-path: polygon(0 var(--mcut), var(--mcut) 0, 100% 0, 100% calc(100% - var(--mcut)), calc(100% - var(--mcut)) 100%, 0 100%); }
+@media (max-width: 760px) { .bz-matchday { --mcut: 16px; } }
+.bz-md-head { padding-right: 0; }
+
+/* the featured story: photo 360px tall, then the words; the dots sit at the foot */
+.bz-story .hero-slides, .bz-story .hero-track { align-items: stretch !important; }
+.bz-slide-pic { flex: none !important; height: 360px; min-height: 0 !important; max-height: none !important; }
+.bz-slide-text { flex: 1; padding-bottom: 56px; }
+@media (max-width: 760px) { .bz-slide-pic { height: 210px; } .bz-slide-text { padding-bottom: 44px; } }
+
+/* Latest results: a card at its natural height (the four newest), See all results inside its foot */
+@media (min-width: 1001px) {
+  .hz-top-grid { align-items: start !important; }
+  .hz-results { position: static !important; min-height: 0 !important; }
+  .hz-results > .panel { position: static !important; inset: auto !important; display: block !important; overflow: hidden; }
+  .hz-results > .panel > .res-list { overflow: visible !important; max-height: none !important; }
+  html.look-calm body:not([data-page="admin"]) #view .hz-results > .btn-bar { position: relative !important; }
+}
+.hz-results .res-list > .res-card:nth-child(n+5) { display: none; }
+.hz-results .res-card { border-left: 0 !important; }
+.hz-results { background: #FFFFFF; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; padding-bottom: 20px; }
+.hz-results > .panel { border: 0 !important; border-radius: 0 !important; margin: 0 !important; }
+html.look-calm body:not([data-page="admin"]) #view .hz-results > .btn-bar { margin: 4px 22px 0 !important; }
+
+/* Latest news: three cards */
+.bz-news { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.bz-news-card { display: flex; flex-direction: column; background: #FFFFFF; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; color: var(--ink); transition: border-color .15s; }
+.bz-news-card:hover { color: var(--ink); border-color: var(--hover-line); }
+.bz-news-card:hover strong { color: var(--red-dark, #C10033); }
+.bz-news-pic { display: block; height: 210px; background: #DCE3DD; overflow: hidden; }
+.bz-news-pic img, .bz-news-pic .hub-ph { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bz-news-text { display: grid; gap: 8px; padding: 18px 20px 22px; }
+.bz-news-cat { font-size: 14px; font-weight: 700; color: var(--red-dark, #C10033); }
+.bz-news-text strong { font-size: 20px; line-height: 1.25; font-weight: 800; letter-spacing: -0.015em; transition: color .15s; }
+.bz-news-text small { font-size: 14px; font-weight: 500; color: var(--muted); }
+
+/* Our teams: one card per league, two columns of teams */
+.bz-teams { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; }
+.bz-league { background: #FFFFFF; border: 1px solid var(--line); border-radius: var(--r); padding: 20px 22px; }
+.bz-league h3 { margin: 0 0 12px !important; font-size: 17px !important; }
+.bz-team-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 16px; }
+.bz-team-list a { display: flex; align-items: center; gap: 10px; padding: 8px 0; color: var(--ink); font-weight: 600; font-size: 15px; min-width: 0; }
+.bz-team-list a:hover { color: var(--red-dark, #C10033); }
+.bz-team-list .badge { width: 30px !important; height: 30px !important; font-size: 10px; margin: 0 !important; }
+.bz-team-list span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* section rhythm as designed: 72px between sections on computers, 40px on phones */
+.hz { padding-top: 72px; }
+.hz.hz-top { padding-top: 56px; }
+.hz-band.hz-comps > .wrap { padding-top: 72px; }
+@media (max-width: 1000px) { .bz-news { grid-template-columns: repeat(2, minmax(0, 1fr)); } .bz-teams { grid-template-columns: 1fr; } }
+@media (max-width: 760px) {
+  .hz, .hz.hz-top, .hz-band.hz-comps > .wrap { padding-top: 40px; }
+  .bz-news { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; gap: 10px; margin: 0 -16px; padding: 0 16px 4px; }
+  .bz-news::-webkit-scrollbar { display: none; }
+  .bz-news-card { flex: 0 0 78%; scroll-snap-align: start; scroll-margin-left: 16px; }
+  .bz-news-pic { height: 170px; }
+  .bz-news-text strong { font-size: 18px; }
+  .bz-league { padding: 18px 16px; }
+}
+/* the round arrows keep their place when pointed at (the "cards never move" rule mustn't drop them out of line) */
+html.look-calm body:not([data-page="admin"]) #view button.edge-btn:hover { transform: translateY(-50%) scale(1.06) !important; }
+html.look-calm body:not([data-page="admin"]) #view button.edge-btn:active { transform: translateY(-50%) scale(.94) !important; }
+html.look-calm body:not([data-page="admin"]) :is(.cs-view, .kd):is(.at-start) .edge-btn.prev:hover,
+html.look-calm body:not([data-page="admin"]) :is(.cs-view, .kd):is(.at-end) .edge-btn.next:hover { transform: translateY(-50%) scale(.8) !important; }
+.hz-comps .cs-row { scroll-snap-type: x proximity; }
+html.look-calm body:not([data-page="admin"]) #view .hz-results > .panel { border: 0 !important; border-radius: 0 !important; }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 95 — Baize on every page: the table green instead of black on every dark surface, the triangle on every
+   page title, one card style for tiles, sentence-case labels, and one button set.
+   ═════════════════════════════════════════════════════════════ */
+/* Page titles: the double triangle on every page (not over photo heroes) */
+html.look-calm body:not([data-page="admin"]) #view h1:not(.sr-only):not(.with-emblem):not(.bz-md-title):not(:is(.comp-hero, .art-hero, .sb, .wr-hero, .sponsor-head, .match-hero, .pres-hero, .draw-hero, .nf-hero) h1)::before {
+  content: ""; display: inline-block; width: .9em; height: .9em; margin: 0 .18em 0 0; vertical-align: -.08em; transform: none;
+  background: var(--red); -webkit-mask: var(--rack) center / contain no-repeat; mask: var(--rack) center / contain no-repeat; }
+
+/* Dark surfaces: the table green, never black */
+.art-hero, .comp-hero, .sponsor-head, .hof-card.big, .live-draw-note, .sb, .wr-hero, .draw-hero, .pres-hero { background-color: var(--baize) !important; }
+.sponsor-head, .hof-card.big, .live-draw-note { color: #FFFFFF; border-radius: var(--r) !important; }
+.sponsor-head :is(small, .kicker, span) { color: var(--chalk) !important; }
+html.look-calm .panel.bracket-panel, .panel.bracket-panel { background: var(--baize-deep) !important; }
+.br-prelims { background: rgba(255, 255, 255, .06) !important; border-radius: var(--r-sm); }
+.br-match { background: rgba(255, 255, 255, .08) !important; border-radius: 10px !important; }
+.match-hero { background: var(--baize) !important; border-radius: var(--r) !important; overflow: hidden; }
+.match-hero .mh-band { background: var(--baize-deep) !important; }
+.match-hero :is(.mh-side, .mh-side strong, .mh-side b, h2) { text-transform: none !important; letter-spacing: -0.01em !important; }
+.wr-card.wr-black { background: var(--baize) !important; }
+.feat-main, .hub-pic, .story-pic { background-color: var(--baize) !important; }
+.art-hero::after, .comp-hero::after { background-image: linear-gradient(180deg, rgba(11, 69, 48, 0) 35%, rgba(11, 69, 48, .85) 100%); }
+
+/* Related news under an article: white cards on the page, not a black band */
+.news-strip { background: transparent !important; color: var(--ink) !important; border-top: 1px solid var(--line); }
+.news-strip h2 { color: var(--ink) !important; }
+.news-strip header a { color: var(--red-dark, #C10033) !important; }
+.ns-card { background: var(--baize) !important; border-radius: var(--r) !important; }
+.ns-card::after { background: linear-gradient(180deg, rgba(11, 69, 48, 0) 30%, rgba(11, 69, 48, .92) 100%) !important; }
+.ns-card:hover img { transform: none !important; }
+
+/* Form guide and other spotlight cards: white cards, like the home page */
+html.look-calm body:not([data-page="admin"]) #view .spotlight { background: #FFFFFF !important; color: var(--ink) !important; border: 1px solid var(--line) !important; }
+html.look-calm body:not([data-page="admin"]) #view .spotlight :is(strong, p) { color: var(--ink) !important; }
+html.look-calm body:not([data-page="admin"]) #view .spotlight small { color: var(--muted) !important; }
+.spot-label { border-radius: var(--r-xs); text-transform: none !important; letter-spacing: 0 !important; }
+
+/* Tiles (seasons, league tables, rankings, breaks, venues, teams): a white card read from the left */
+html.look-calm body:not([data-page="admin"]) #view .tile { text-align: left; padding: 20px 22px; min-height: 0; background: #FFFFFF; box-shadow: none !important; }
+html.look-calm body:not([data-page="admin"]) #view .tile h4 { font-size: 18px !important; margin: 0 0 6px; text-transform: none !important; letter-spacing: -0.01em !important; font-weight: 800 !important; }
+html.look-calm body:not([data-page="admin"]) #view .tile p { margin: 6px 0 0; font-size: 14px; color: var(--muted); }
+html.look-calm body:not([data-page="admin"]) #view .tile-go { display: inline; padding: 0 !important; background: none !important; color: var(--red-dark, #C10033) !important; font: 700 14px var(--font-head) !important; text-transform: none !important; letter-spacing: 0 !important; }
+html.look-calm body:not([data-page="admin"]) #view .tile-go::after { content: none !important; }
+
+/* Buttons: red for the main action; the other filled buttons are table green (no black buttons) */
+html.look-calm body:not([data-page="admin"]) :is(#view, #side, .drawer) :is(.btn.green, .btn.blue, .btn.secondary, .btn.dark) { background: var(--baize) !important; color: #FFFFFF !important; border-color: var(--baize) !important; }
+html.look-calm body:not([data-page="admin"]) :is(#view, #side, .drawer) :is(.btn.green, .btn.blue, .btn.secondary, .btn.dark):hover { background: var(--baize-deep) !important; }
+html.look-calm body:not([data-page="admin"]) #view .btn.ghost { background: #FFFFFF !important; color: var(--ink) !important; border: 1px solid var(--line) !important; }
+
+/* Small labels in sentence case (the old all-caps kickers) */
+html.look-calm body:not([data-page="admin"]) :is(.comp-kicker, .comp-kind, .cf-kicker, .hof-cat, .promo-kicker, .pop-kicker, .ms-kicker, .countdown small, .facts dt, .comp-facts dt, .honours dt,
+  .glance-tile small, .crown-name, .comp-champ, .sb-name, .sb-result, .notice-tag, .cal-tag, .art-cats a, .mn-preview > span, .next-match small, .meet-when, .cal-tile small, .live-pop-tag, .wr-card small, .wr-hero small, .sponsor-head small) {
+  text-transform: none !important; letter-spacing: 0 !important; }
+.status, .sc-label, .res-tag { text-transform: none !important; letter-spacing: 0 !important; }
+
+/* Calendar: the date tiles and the cup line in the system's colours */
+.cal-day, .cal-date { background: var(--baize) !important; color: #FFFFFF !important; border-radius: 10px !important; }
+.wr-hero { background-image: radial-gradient(circle at 85% 20%, rgba(255, 210, 120, .18), transparent 55%) !important; }
+.hof-pic { background-image: linear-gradient(135deg, var(--baize), var(--baize-deep)) !important; }
+.feat-card img, .feat-main img, .hub-pic img { background-color: var(--baize) !important; }
+.cal-tile { background: var(--baize) !important; color: #FFFFFF !important; border-radius: 10px !important; }
+.cal-tile :is(span, small, b) { color: inherit !important; }
+.comp-kicker::first-letter, .cf-kicker::first-letter, .hof-cat::first-letter, .promo-kicker::first-letter, .ms-kicker::first-letter { text-transform: uppercase; }

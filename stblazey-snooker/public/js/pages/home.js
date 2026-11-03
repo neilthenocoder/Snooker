@@ -78,12 +78,15 @@ export default async function home(view, { user } = {}) {
   const block = {
     promo: () => inWrap(promoWanted ? promoBlock(site, ctx, dates, today) : ""),
     mysnooker: () => "",      // round 91: drawn at the top, under the quick links
-    news: () => inWrap(featuredNewsBlock(featuredNews)),
+    // Round 94 (the approved home page design): three news cards side by side.
+    news: () => inWrap(newsCards(news.filter((a) => !bannerIds.includes(a.id)).slice(0, 3))),
     comp_strip: () => inBand(compData ? compStrip(comps, compData) : "", "hz-comps"),
-    competitions: () => inWrap(compData ? compsBlock(comps, compData) : ""),
-    features: () => inWrap(moreStories(news.filter((a) => !bannerIds.includes(a.id) && !featuredNews.includes(a)).slice(0, 4)), "hz-features"),
-    spotlights: () => inBand(spotlights(ctx, site) ? html`<div class="hb-head"><h2>In the spotlight</h2></div>${spotlights(ctx, site)}` : "", "hz-spot"),
-    teams: () => inBand(teamsBlock(ctx), "hz-teams"),
+    // Round 94: the design has no featured-competition block, no "More stories" and no spotlight band — the
+    // competitions strip, the news cards and the Our teams lists cover them. (Their settings are kept, unused.)
+    competitions: () => "",
+    features: () => "",
+    spotlights: () => "",
+    teams: () => inWrap(teamsCards(ctx), "bz-teams-sec"),
     cueviews: () => inWrap(site.cueviews_show !== false ? cueviewBox(ctx, news) : ""),
     tables: () => inWrap(html`<div class="hz-tables">${ctx.leagues.map((l) => leagueTablePanel(ctx, l, { limit: 10 }))}</div>`),
     shields: () => inWrap(site.shields_show !== false ? shieldsBox(ctx) : ""),
@@ -121,7 +124,8 @@ export default async function home(view, { user } = {}) {
       </div>
       <aside class="hz-results">${resultsBox(ctx, box)}</aside>
     </div></div></section>
-    ${sections.filter((x) => x.on).map((x) => block[x.key]?.() ?? "")}
+    ${/* Round 94: the design's order — news, competitions, teams — then anything else switched on */
+      [...sections.filter((x) => x.on)].sort((a, b) => (DESIGN_ORDER.indexOf(a.key) + 1 || 99) - (DESIGN_ORDER.indexOf(b.key) + 1 || 99)).map((x) => block[x.key]?.() ?? "")}
     <div style="height:40px"></div>` : html`
     <div class="${personal ? "wrap ms-homepage" : "wrap layout"}" style="margin-top:${personal ? 24 : 30}px">
       <div class="stack">
@@ -398,6 +402,23 @@ function storySlide(a, on) {
       <a class="btn bz-read" href="${urls.article(a)}">Continue reading</a>
     </div>
   </div>`;
+}
+
+const DESIGN_ORDER = ["promo", "news", "comp_strip", "teams"];
+/** Round 94: latest news as three cards — picture, category, headline, when. */
+function newsCards(list) {
+  if (!list.length) return "";
+  return html`<div class="hb-head"><h2>Latest news</h2><a href="/news">All the news</a></div>
+    <div class="bz-news">${list.map((a) => html`<a class="bz-news-card" href="${urls.article(a)}"><span class="bz-news-pic">${storyPic(a)}</span>
+      <span class="bz-news-text">${a.category ? html`<span class="bz-news-cat">${a.category}</span>` : ""}<strong>${a.title}</strong><small>${fmtAgo(a.published_at)}</small></span></a>`)}</div>`;
+}
+/** Round 94: Our teams — one card per league, its teams in two columns with their emblems. */
+function teamsCards(ctx) {
+  const groups = ctx.leagues.map((l) => ({ l, teams: ctx.teamsIn(l.id).slice().sort((a, b) => a.name.localeCompare(b.name)) })).filter((g) => g.teams.length);
+  if (!groups.length) return "";
+  return html`<div class="hb-head"><h2>Our teams</h2><a href="/fixtures">Fixtures and results</a></div>
+    <div class="bz-teams">${groups.map(({ l, teams }) => html`<div class="bz-league"><h3>${l.name}</h3>
+      <div class="bz-team-list">${teams.map((t) => html`<a href="${urls.team(t)}">${badge(t)}<span>${t.name}</span></a>`)}</div></div>`)}</div>`;
 }
 
 function heroSlide(a, on, dots = null) {
@@ -700,7 +721,7 @@ async function liveStrip(user = null, mode = "filters", layout = "strip") {
   if (layout === "list") {
     const clubLogo = (t) => (t && !t.logo_url ? venues.find((v) => v.id === t.venue_id)?.logo_url || "" : "");
     const crest = (sd) => (sd.player ? avatar(sd.player, "avatar md-face") : sd.team ? badge({ ...sd.team, logo_url: sd.team.logo_url || clubLogo(sd.team) }) : html`<span class="badge">${sd.name.slice(0, 2).toUpperCase()}</span>`);
-    const LIST_MAX = 6;
+    const LIST_MAX = 5;
     const rows = cards.slice(0, LIST_MAX);
     const dayOf = (c) => (ukDay(c.when) === todayUK() ? "Tonight" : fmtDay(c.when));
     const filtersRow = filters || toggle ? html`<div class="md-filters">${filters}${toggle ? html`<div class="strip-filters">${toggle}</div>` : ""}</div>` : "";

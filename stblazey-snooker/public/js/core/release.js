@@ -4,8 +4,14 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.80.0";
+export const SITE_VERSION = "1.82.0";
 export const CHANGES = [
+  "Baize on every page: the table green replaces the remaining black areas (article and competition headers, the bracket, match scoreboard, live scoreboard, sponsor header, Hall of Fame, Season wrapped, related news, calendar dates)",
+  "Every page title has the double triangle; seasons, tables, rankings, breaks and venue tiles are left-aligned white cards with a plain View link instead of the black Click here to view button",
+  "Filled buttons other than the red main action are table green (no black buttons); small labels in sentence case",
+  "Home page now follows the approved design exactly: Matchday with the cut corner (no pockets), the story photo at a fixed height, Latest results at its natural height with See all results inside it, news as three cards, competitions, then Our teams as one card per league",
+  "The featured competition, More stories and In the spotlight blocks are off the home page (their settings are kept)",
+  "Live and upcoming competitions: the round ‹ › buttons no longer jump when pointed at",
   "New design system (Baize): one typeface, Hanken Grotesk — Space Grotesk removed everywhere; headings in sentence case with grey descriptions under them",
   "Colour: the table green replaces black as the dark colour; a cool cloth-grey page, white cards; red only for buttons and losses, green for live and wins, brass for trophies",
   "Home page: Matchday (tonight's matches as a scoreline list on the green) beside the featured story with a Continue reading button; a corner pocket in each panel makes one pocket where they meet. On phones Matchday leads, with the button's cut corner instead",
