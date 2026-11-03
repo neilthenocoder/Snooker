@@ -4,8 +4,12 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.82.0";
+export const SITE_VERSION = "1.83.0";
 export const CHANGES = [
+  "Home page story: the picture fills the card at 16:9; the card's top-right and bottom-left corners are cut, answering Matchday's; the slider dots are bigger targets so a click or tap changes the story",
+  "Latest results shows as many results as fit beside the left column, so the two sides end level (no gap)",
+  "More stories is back: four more stories as cards, in the Latest news style; news pictures are 16:9",
+  "Our teams: a crest wall — each league a card with a green header, its teams as crests with their home venue",
   "Baize on every page: the table green replaces the remaining black areas (article and competition headers, the bracket, match scoreboard, live scoreboard, sponsor header, Hall of Fame, Season wrapped, related news, calendar dates)",
   "Every page title has the double triangle; seasons, tables, rankings, breaks and venue tiles are left-aligned white cards with a plain View link instead of the black Click here to view button",
   "Filled buttons other than the red main action are table green (no black buttons); small labels in sentence case",

@@ -7013,3 +7013,62 @@ html.look-calm body:not([data-page="admin"]) :is(.comp-kicker, .comp-kind, .cf-k
 .cal-tile { background: var(--baize) !important; color: #FFFFFF !important; border-radius: 10px !important; }
 .cal-tile :is(span, small, b) { color: inherit !important; }
 .comp-kicker::first-letter, .cf-kicker::first-letter, .hof-cat::first-letter, .promo-kicker::first-letter, .ms-kicker::first-letter { text-transform: uppercase; }
+
+/* ═════════════════════════════════════════════════════════════
+   ROUND 96 — the hero story card, 16:9 pictures, Latest results level with the left column, More stories back,
+   Our teams as a crest wall.
+   ═════════════════════════════════════════════════════════════ */
+/* The featured story: the picture fills the card at 16:9; the card's top-right and bottom-left corners are cut,
+   answering Matchday's top-left and bottom-right */
+.bz-story { --scut: 20px; border: 0 !important; border-radius: var(--r-lg) 0 var(--r-lg) 0 !important;
+  clip-path: polygon(0 0, calc(100% - var(--scut)) 0, 100% var(--scut), 100% 100%, var(--scut) 100%, 0 calc(100% - var(--scut))); }
+.bz-slide-pic { height: auto !important; aspect-ratio: 16 / 9; width: 100%; }
+.bz-slide-pic img, .bz-slide-pic .hub-ph { width: 100% !important; height: 100% !important; max-width: none !important; object-fit: cover !important; display: block; }
+.bz-slide-text { padding-bottom: 60px; }
+/* the slider dots: each a 28px target round a small visible mark, so a tap or click lands */
+.bz-dots { gap: 0 !important; right: 28px; bottom: 26px; }
+.bz-dots button { position: relative; width: 28px !important; height: 28px !important; background: transparent !important; border-radius: 0 !important; }
+.bz-dots button::before { content: ""; position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; border-radius: 4px; background: #C9CEC8; transform: translate(-50%, -50%); transition: width .25s, background .25s; }
+.bz-dots button.on::before { width: 22px; background: var(--red); }
+.bz-dots button:hover::before { background: var(--muted); }
+.bz-dots button.on:hover::before { background: var(--red); }
+.bz-dots button:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
+@media (max-width: 760px) { .bz-story { --scut: 16px; border-radius: var(--r) 0 var(--r) 0 !important; } .bz-slide-pic { height: auto !important; } }
+
+/* News pictures at 16:9, the frame too */
+.bz-news-pic { height: auto !important; aspect-ratio: 16 / 9; }
+.bz-news-pic img, .bz-news-pic .hub-ph { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+@media (max-width: 760px) { .bz-news-pic { height: auto !important; } }
+
+/* Latest results: the box ends level with the left column (home.js hides the results that don't fit) */
+@media (min-width: 1001px) { .hz-results .res-list > .res-card:nth-child(n+5) { display: block; } }
+
+/* More stories: four cards in a row */
+.bz-more { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+.bz-more .bz-news-text strong { font-size: 18px; }
+@media (max-width: 1000px) { .bz-more { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Our teams: a crest wall */
+.bz-league { padding: 0 !important; overflow: hidden; }
+.bz-league-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 22px; background: var(--baize); color: #FFFFFF; }
+.bz-league-head h3 { margin: 0 !important; color: #FFFFFF !important; font-size: 18px !important; }
+.bz-league-head span { font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, .78); }
+.bz-crests { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; padding: 16px; }
+.bz-crest { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px 8px 14px; border: 1px solid var(--line-soft); border-radius: var(--r-sm); background: #FFFFFF; color: var(--ink); text-align: center; transition: border-color .15s; }
+.bz-crest:hover { border-color: var(--hover-line); color: var(--ink); }
+.bz-crest:hover b { color: var(--red-dark, #C10033); }
+.bz-crest-badge { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 6px; border-radius: 50%; background: var(--cloth); }
+.bz-crest-badge .badge { width: 52px !important; height: 52px !important; margin: 0 !important; font-size: 15px; }
+.bz-crest-badge .badge:not(.logo) { background: transparent !important; }
+.bz-crest b { font-size: 15px; font-weight: 700; line-height: 1.2; transition: color .15s; }
+.bz-crest small { font-size: 12.5px; line-height: 1.3; color: var(--muted); }
+@media (max-width: 760px) {
+  .bz-crests { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 12px; }
+  .bz-crest { padding: 12px 4px 10px; }
+  .bz-crest-badge { width: 52px; height: 52px; }
+  .bz-crest-badge .badge { width: 42px !important; height: 42px !important; }
+  .bz-crest b { font-size: 13.5px; }
+  .bz-crest small { display: none; }
+}
+.bz-dots button.on, .hero-dots.bz-dots button.on { width: 28px !important; background: transparent !important; border: 0 !important; }
+.hero-dots.bz-dots button { border: 0 !important; background: transparent !important; }

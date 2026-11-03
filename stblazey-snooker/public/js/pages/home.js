@@ -84,7 +84,8 @@ export default async function home(view, { user } = {}) {
     // Round 94: the design has no featured-competition block, no "More stories" and no spotlight band — the
     // competitions strip, the news cards and the Our teams lists cover them. (Their settings are kept, unused.)
     competitions: () => "",
-    features: () => "",
+    // Round 96 (Neil): More stories is back — four more stories as cards in the same style as Latest news.
+    features: () => inWrap(moreStoryCards(news.filter((a) => !bannerIds.includes(a.id)).slice(3, 7)), "bz-more-sec"),
     spotlights: () => "",
     teams: () => inWrap(teamsCards(ctx), "bz-teams-sec"),
     cueviews: () => inWrap(site.cueviews_show !== false ? cueviewBox(ctx, news) : ""),
@@ -264,6 +265,24 @@ export default async function home(view, { user } = {}) {
     }, FEATURE_MS);
   }
 
+  // Round 96 (Neil: "a big gap"): on a computer the Latest results box shows as many results as fit beside the left
+  // column (at least two), so the two sides end level. Phones show three (the stylesheet).
+  const fitResults = () => {
+    const left = $(".hz-top-grid .home-top", view), box = $(".hz-results", view);
+    if (!left || !box) return;
+    const cards = $$(".res-list > .res-card", box);
+    cards.forEach((c) => { c.style.display = ""; });
+    if (!window.matchMedia("(min-width: 1001px)").matches) return;
+    const room = left.getBoundingClientRect().height;
+    let shown = cards.length;
+    while (shown > 2 && box.getBoundingClientRect().height > room + 1) { cards[--shown].style.display = "none"; }
+  };
+  fitResults();
+  document.fonts?.ready.then(() => view.isConnected && fitResults());
+  setTimeout(fitResults, 600);
+  window.addEventListener("resize", fitResults, { passive: true });
+  view.addEventListener("click", (e) => { if (e.target.closest(".res-sum-btn, [data-res-more]")) requestAnimationFrame(fitResults); });
+
   // Key dates: the round ‹ › buttons on its edges appear only when the dates don't all fit, and slide the row along.
   const stopKd = manualSlider($("[data-kd]", view), ".kd-row", "data-kd-move");
 
@@ -281,7 +300,7 @@ export default async function home(view, { user } = {}) {
     cs.refreshEnds?.();
   });
 
-  return () => { clearInterval(timer); clearInterval(featureTimer); stopStrip(); stopSquad(); stopKd(); stopCs(); };
+  return () => { clearInterval(timer); clearInterval(featureTimer); stopStrip(); stopSquad(); stopKd(); stopCs(); window.removeEventListener("resize", fitResults); };
 }
 
 
@@ -404,7 +423,14 @@ function storySlide(a, on) {
   </div>`;
 }
 
-const DESIGN_ORDER = ["promo", "news", "comp_strip", "teams"];
+const DESIGN_ORDER = ["promo", "news", "comp_strip", "teams", "features"];
+/** Round 96: More stories — four cards in a row, the Latest news card style. */
+function moreStoryCards(list) {
+  if (!list.length) return "";
+  return html`<div class="hb-head"><h2>More stories</h2><a href="/news">All the news</a></div>
+    <div class="bz-news bz-more">${list.map((a) => html`<a class="bz-news-card" href="${urls.article(a)}"><span class="bz-news-pic">${storyPic(a)}</span>
+      <span class="bz-news-text">${a.category ? html`<span class="bz-news-cat">${a.category}</span>` : ""}<strong>${a.title}</strong><small>${fmtAgo(a.published_at)}</small></span></a>`)}</div>`;
+}
 /** Round 94: latest news as three cards — picture, category, headline, when. */
 function newsCards(list) {
   if (!list.length) return "";
@@ -414,11 +440,16 @@ function newsCards(list) {
 }
 /** Round 94: Our teams — one card per league, its teams in two columns with their emblems. */
 function teamsCards(ctx) {
+  // Round 96 (Neil: "a bit generic"): a crest wall — each league a card with a green header, its teams as crests
+  // with the name and home venue under them.
   const groups = ctx.leagues.map((l) => ({ l, teams: ctx.teamsIn(l.id).slice().sort((a, b) => a.name.localeCompare(b.name)) })).filter((g) => g.teams.length);
   if (!groups.length) return "";
+  const venueOf = (t) => ctx.venue?.get?.(t.venue_id)?.name ?? "";
   return html`<div class="hb-head"><h2>Our teams</h2><a href="/fixtures">Fixtures and results</a></div>
-    <div class="bz-teams">${groups.map(({ l, teams }) => html`<div class="bz-league"><h3>${l.name}</h3>
-      <div class="bz-team-list">${teams.map((t) => html`<a href="${urls.team(t)}">${badge(t)}<span>${t.name}</span></a>`)}</div></div>`)}</div>`;
+    <div class="bz-teams">${groups.map(({ l, teams }) => html`<section class="bz-league">
+      <header class="bz-league-head"><h3>${l.name}</h3><span>${teams.length} teams</span></header>
+      <div class="bz-crests">${teams.map((t) => html`<a class="bz-crest" href="${urls.team(t)}"><span class="bz-crest-badge">${badge(t)}</span><b>${t.name}</b>${venueOf(t) ? html`<small>${venueOf(t)}</small>` : ""}</a>`)}</div>
+    </section>`)}</div>`;
 }
 
 function heroSlide(a, on, dots = null) {
