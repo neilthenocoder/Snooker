@@ -25,17 +25,17 @@ const CAROUSEL_MS = 4500;    // live strip: time before it moves on one card
 const FEATURE_MS = 6000;     // feature box (when it shows one message at a time): time each one is shown
 
 // The four quick links under the hero: one slim row (see the v13 block in style.css).
-const qi = (d) => html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
+// Round 93 (Baize): line icons, drawn in chalk cream on small baize-green tiles.
+const qi = (d) => html`<span class="ql-tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg></span>`;
 const quickIcon = {
-  competitions: qi("M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v2H8v-2h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3Zm0 4H6v1a2 2 0 0 0 1 1.7Zm10 0v2.7A2 2 0 0 0 18 8V7Z"),
-  calendar: qi("M7 2h2v2h6V2h2v2h3v17H4V4h3Zm11 8H6v9h12Zm0-4H6v2h12Z"),
-  handicaps: qi("M4 7h3V4h2v3h3v2H9v3H7V9H4Zm9 9h7v2h-7Zm4.6-11.5 1.6 1.2-11 14.6-1.6-1.2Z"),
-  fixtures: qi("M4 5h16v2H4Zm0 6h16v2H4Zm0 6h10v2H4Z"),
-  // Round 53 (Rich): League tables, Rankings, Breaks — "as important as the 4 buttons" — and Results, so there are two even rows.
-  results: qi("M4 4h16v16H4Zm2 2v12h12V6Zm2 2h3v3H8Zm5 1h3v1h-3Zm-5 4h3v3H8Zm5 1h3v1h-3Z"),
-  tables: qi("M3 4h18v16H3Zm2 2v3h14V6Zm0 5v3h4v-3Zm6 0v3h8v-3Zm-6 5v2h4v-2Zm6 0v2h8v-2Z"),
-  rankings: qi("M4 20V10h4v10Zm6 0V4h4v16Zm6 0v-7h4v7Z"),
-  breaks: qi("M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18Zm0 2a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm0 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z"),
+  fixtures: qi("M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"),
+  results: qi("M9 4h6v3H9zM7 5H5v16h14V5h-2M9 12h6M9 16h4"),
+  tables: qi("M4 5h16v14H4zM4 10h16M4 15h16M10 5v14"),
+  rankings: qi("M5 20V12M12 20V5M19 20v-6"),
+  breaks: qi("M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"),
+  competitions: qi("M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"),
+  calendar: qi("M4 6h16v14H4zM4 10h16M9 3v4M15 3v4"),
+  handicaps: qi("M5 9h6M8 6v6M13 17h6M18 5 6 19"),
 };
 
 // Round 84: the round ‹ › buttons on the left and right edges of every sliding strip (like the World Snooker Tour's).
@@ -91,18 +91,22 @@ export default async function home(view, { user } = {}) {
   // The home page is the same for everyone (My Snooker is a page of its own, in the menu).
 
   mount(view, html`
-    ${personal ? html`<section class="hero hero-personal"><div class="live-strip-wrap ${["red", "yellow", "grey"].includes(site.strip_line ?? "red") ? `strip-line-${site.strip_line ?? "red"}` : ""}"><div class="wrap"><div class="live-strip" data-strip></div></div></div></section>` : html`
-    <section class="hero hero-l-${heroLayout(site)}" style="${site.hero_image_url && heroLayout(site) !== "white" ? `--hero-img:${cssUrl(site.hero_image_url)};` : ""}${/^#[0-9a-f]{6}$/i.test(site.hero_bg ?? "") ? `--hero-bg:${site.hero_bg}` : ""}">
-      ${heroLayout(site) === "big" ? html`<div class="hero-bgs" aria-hidden="true">${slides.map((a, i) => html`<div class="hero-bg ${i ? "" : "on"}" style="${a.image_url || a.circle_image_url ? `background-image:${cssUrl(a.image_url || a.circle_image_url)}` : ""}"></div>`)}</div>` : ""}
-      <div class="wrap hero-inner">
-        <div class="hero-slides" data-slides><div class="hero-track" data-track>
-          ${slides.length ? slides.map((a, i) => heroSlide(a, i === 0, heroLayout(site) === "white" && slides.length > 1 ? { at: i, of: slides.length } : null)) : html`<div class="hero-slide on"><div class="hero-text"><h2><span>${SITE.name}</span></h2><p class="hero-meta">Established ${SITE.established}</p></div></div>`}
-        </div></div>
-        ${slides.length > 1 && heroLayout(site) !== "white" ? html`<div class="hero-dots">${slides.map((_, i) => html`<button class="${i ? "" : "on"}" data-dot="${i}" aria-label="Show article ${i + 1}"></button>`)}</div>` : ""}
+    ${/* Round 93 (Baize): the top of the home page is two panels side by side — Matchday (tonight's matches, on the
+       table green) and the featured story. Where they meet at the top, a corner pocket is cut into each, so together
+       they make one middle pocket. On a phone they stack, Matchday first. */ ""}
+    <section class="bz-top"><div class="wrap bz-top-grid">
+      <div class="bz-matchday">
+        <div class="bz-md-head"><p class="bz-md-date">${new Date().toLocaleDateString("en-GB", { timeZone: "Europe/London", weekday: "long", day: "numeric", month: "long" })}</p><h1 class="bz-md-title">Matchday</h1></div>
+        <div class="live-strip bz-list" data-strip></div>
+        <div class="bz-md-foot"><a class="bz-md-cal" href="/calendar">${calIcon}<span>Calendar</span></a><a class="bz-md-all" href="/fixtures">All fixtures and results</a></div>
       </div>
-      <div class="live-strip-wrap ${["red", "yellow", "grey"].includes(site.strip_line ?? "red") ? `strip-line-${site.strip_line ?? "red"}` : ""}"><div class="wrap"><div class="live-strip" data-strip></div></div></div>
-    </section>
-    `}
+      <div class="bz-story hero-inner">
+        <div class="hero-slides" data-slides><div class="hero-track" data-track>
+          ${slides.length ? slides.map((a, i) => storySlide(a, i === 0)) : html`<div class="hero-slide bz-slide on"><div class="bz-slide-text"><h2 class="bz-slide-title">${SITE.name}</h2><p class="bz-slide-meta">Established ${SITE.established}</p></div></div>`}
+        </div></div>
+        ${slides.length > 1 ? html`<div class="hero-dots bz-dots">${slides.map((_, i) => html`<button class="${i ? "" : "on"}" data-dot="${i}" aria-label="Show story ${i + 1}"></button>`)}</div>` : ""}
+      </div>
+    </div></section>
     ${standard ? html`
     <section class="hz hz-top"><div class="wrap"><div class="hz-top-grid">
       <div class="home-top">
@@ -224,7 +228,7 @@ export default async function home(view, { user } = {}) {
   const timer = slideEls.length > 1 ? setInterval(() => { if (!paused && !document.hidden) show(current + 1); }, ROTATE_MS) : null;
 
   // Live & upcoming matches strip, updated live — with the league / competition and team filters (round 52).
-  const stopStrip = await mountLiveStrip($("[data-strip]", view), user, { mode: "filters" });
+  const stopStrip = await mountLiveStrip($("[data-strip]", view), user, { mode: "filters", layout: "list" });
 
   // The feature box: scrolling like the ticker (at the ticker's speed), or one message at a time.
   const feature = $("[data-feature]", view);
@@ -321,6 +325,13 @@ function moreStories(list) {
  * no automatic movement. Round ‹ › buttons sit on its left and right edges, and a search box above it finds a
  * competition by name. Live ones first, then those under way, then those still to come, finished ones last.
  */
+/** Round 93: how far a competition has got, drawn as a cue (the shaft fills, the blue tip leads). */
+function cue(progress) {
+  const m = String(progress ?? "").match(/(\d+)\s+of\s+(\d+)/i);
+  if (!m || !Number(m[2])) return "";
+  const pct = Math.max(3, Math.min(100, Math.round((Number(m[1]) / Number(m[2])) * 100)));
+  return html`<span class="bz-cue" aria-hidden="true"><i style="width:${pct}%"></i><b></b></span>`;
+}
 function compStrip(comps, data) {
   if (!comps.length) return "";
   const rank = (x) => { const p = String(x.progress ?? ""); return /being played|live/i.test(p) ? 0 : /Winner/.test(p) ? 3 : /not made|Draw not/i.test(p) ? 2 : 1; };
@@ -333,7 +344,7 @@ function compStrip(comps, data) {
       <div class="cs-row">${[...comps].sort((p, q) => rank(p) - rank(q)).map((x) => { const { c, progress } = x, [k, label] = chip[rank(x)];
         return html`<a class="cs-card" href="${urls.competition(c)}" data-name="${`${c.name} ${c.kind ?? ""}`.toLowerCase()}">
         <span class="cs-top">${compBoxStyle(c) !== "trophy" && c.image_url ? picture(c.image_url, "", "cs-pic") : trophy(c, "cs-trophy")}<i class="cs-chip ${k}">${label}</i></span>
-        <span class="cs-text"><strong>${c.name}</strong><small>${progress ?? ""}</small><em>See the draw →</em></span></a>`; })}</div>
+        <span class="cs-text"><strong>${c.name}</strong><small>${progress ?? ""}</small>${cue(progress)}<em>See the draw</em></span></a>`; })}</div>
       <button type="button" class="edge-btn next" data-cs-move="1" aria-label="More competitions">${chevRight}</button>
       <p class="cs-none" hidden>No live or upcoming competition matches “<b data-cs-q></b>”. <a href="/competitions">See every competition →</a></p>
     </div>`;
@@ -373,6 +384,20 @@ function manualSlider(box, rowSel, moveAttr) {
   document.fonts?.ready.then(() => row.isConnected && ends());
   box.refreshEnds = ends;
   return () => window.removeEventListener("resize", ends);
+}
+
+/** Round 93: one featured story — its picture, category, headline, when, and a Continue reading button. */
+function storySlide(a, on) {
+  const pic = a.image_url || a.circle_image_url;
+  return html`<div class="hero-slide bz-slide ${on ? "on" : ""}">
+    <a class="bz-slide-pic" href="${urls.article(a)}" aria-hidden="true" tabindex="-1">${pic ? html`<img src="${pic}" alt="">` : html`<span class="hub-ph"></span>`}</a>
+    <div class="bz-slide-text">
+      ${a.category ? html`<span class="bz-slide-cat">${a.category}</span>` : ""}
+      <h2 class="bz-slide-title"><a href="${urls.article(a)}">${a.title}</a></h2>
+      <p class="bz-slide-meta"><time datetime="${a.published_at ?? ""}" title="${fmtDate(a.published_at)}">${fmtAgo(a.published_at)}</time></p>
+      <a class="btn bz-read" href="${urls.article(a)}">Continue reading</a>
+    </div>
+  </div>`;
 }
 
 function heroSlide(a, on, dots = null) {
@@ -443,18 +468,19 @@ function keyDates(site, dates, competitions, today) {
   const part = (iso, opts) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { timeZone: "UTC", ...opts });
   const days = (iso) => Math.round((Date.parse(`${iso}T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) / 864e5);
   const when = (d) => { const n = days(d.starts_on); return n <= 0 ? (d.ends_on && d.ends_on > today ? "On now" : "Today") : n === 1 ? "Tomorrow" : n < 14 ? `In ${n} days` : `In ${Math.round(n / 7)} weeks`; };
-  return html`<section class="kd ${list.length > 1 ? "many" : "one"}" aria-label="Key dates" data-kd>
-    <a class="kd-label" href="/calendar" title="See everything on the calendar">${kdIcon}<span>Key dates</span><i aria-hidden="true">Calendar →</i></a>
-    <div class="kd-view"><div class="kd-row">${list.map((d) => {
+  // Round 93 (Baize): a card with the dates one under another — the day in a small tile, the title, the details,
+  // and how long to go (red when it's within a day).
+  return html`<section class="kd bz-kd" aria-label="Key dates">
+    <div class="bz-kd-head"><h3>Key dates</h3><a href="/calendar">Open the calendar</a></div>
+    ${list.map((d) => {
       const comp = competitions.find((c) => c.id === d.competition_id);
       const href = safeHref(d.url) || (comp ? urls.competition(comp) : "/calendar");
-      // One line under the title: how long to go, the day, the last day (if it runs on) and the details.
-      const more = [part(d.starts_on, { weekday: "short" }), d.ends_on && d.ends_on !== d.starts_on ? `until ${part(d.ends_on, { weekday: "short", day: "numeric", month: "short" }).replace(",", "")}` : "", d.details ?? ""].filter(Boolean).join(" · ");
-      return html`<a class="kd-item" href="${href}" ${/^https?:\/\//.test(href) ? html`target="_blank" rel="noopener"` : ""} title="${d.title} — ${when(d)}${more ? `, ${more}` : ""}">
+      const more = [part(d.starts_on, { weekday: "long" }), d.ends_on && d.ends_on !== d.starts_on ? `until ${part(d.ends_on, { weekday: "short", day: "numeric", month: "short" }).replace(",", "")}` : "", d.details ?? ""].filter(Boolean).join(", ");
+      return html`<a class="bz-kd-row" href="${href}" ${/^https?:\/\//.test(href) ? html`target="_blank" rel="noopener"` : ""}>
         <time datetime="${d.starts_on}"><b>${part(d.starts_on, { day: "numeric" })}</b><span>${part(d.starts_on, { month: "short" })}</span></time>
-        <div><strong>${d.title}</strong><small><em class="${days(d.starts_on) <= 1 ? "soon" : ""}">${when(d)}</em>${more}</small></div></a>`;
-    })}</div>
-    ${list.length > 1 ? html`<button type="button" class="edge-btn prev" data-kd-move="-1" aria-label="Earlier key dates">${chevLeft}</button><button type="button" class="edge-btn next" data-kd-move="1" aria-label="More key dates">${chevRight}</button>` : ""}</div>
+        <span class="bz-kd-text"><strong>${d.title}</strong>${more ? html`<small>${more}</small>` : ""}</span>
+        <em class="${days(d.starts_on) <= 1 ? "soon" : ""}">${when(d)}</em></a>`;
+    })}
   </section>`;
 }
 
@@ -488,8 +514,8 @@ const setStripFilter = (v) => { try { localStorage.setItem(STRIP_FILTER, JSON.st
  * mode "filters" (the home page): League / competition and Team dropdowns; choosing a team offers "View team stats".
  * mode "mine" (My Snooker): the All | my team switch. Returns a function that stops it.
  */
-export async function mountLiveStrip(el, user, { mode = "filters" } = {}) {
-  const draw = async () => mount(el, await liveStrip(user, mode));
+export async function mountLiveStrip(el, user, { mode = "filters", layout = "strip" } = {}) {
+  const draw = async () => mount(el, await liveStrip(user, mode, layout));
   await draw();
   const unsubscribe = subscribe(["fixtures", "frames", "competition_matches", "competitions", "live_matches"], draw);
   let paused = false;
@@ -553,7 +579,7 @@ export async function mountLiveStrip(el, user, { mode = "filters" } = {}) {
   return () => { clearInterval(carousel); unsubscribe(); };
 }
 
-async function liveStrip(user = null, mode = "filters") {
+async function liveStrip(user = null, mode = "filters", layout = "strip") {
   // Round 38 (Rich): how long results stay on the strip, and the colours of its Live / Live soon / Completed / Pending /
   // Walkover / Postponed (round 39)
   // labels, are set under Admin → Site settings → "Home page: Live & upcoming strip".
@@ -668,6 +694,29 @@ async function liveStrip(user = null, mode = "filters") {
   }
   shown.sort((x, y) => String(x.when).localeCompare(String(y.when)));
   const cards = [...live, ...results, ...shown];
+
+  // Round 93 (Baize): on the home page the matches are a list inside the green Matchday panel — each row a scoreline
+  // (name, club badge, score or time, club badge, name) with the league or competition and the venue under it.
+  if (layout === "list") {
+    const clubLogo = (t) => (t && !t.logo_url ? venues.find((v) => v.id === t.venue_id)?.logo_url || "" : "");
+    const crest = (sd) => (sd.player ? avatar(sd.player, "avatar md-face") : sd.team ? badge({ ...sd.team, logo_url: sd.team.logo_url || clubLogo(sd.team) }) : html`<span class="badge">${sd.name.slice(0, 2).toUpperCase()}</span>`);
+    const LIST_MAX = 6;
+    const rows = cards.slice(0, LIST_MAX);
+    const dayOf = (c) => (ukDay(c.when) === todayUK() ? "Tonight" : fmtDay(c.when));
+    const filtersRow = filters || toggle ? html`<div class="md-filters">${filters}${toggle ? html`<div class="strip-filters">${toggle}</div>` : ""}</div>` : "";
+    if (!rows.length) return html`${stripColours(site)}${filtersRow}<div class="md-list md-empty"><p>${mine ? `No matches coming up for ${mineLabel} just now.` : f.comp || f.team ? "No matches for that choice just now." : "No matches coming up."}</p><a href="/calendar">See the calendar</a></div>`;
+    return html`${stripColours(site)}${filtersRow}
+      <div class="md-list">${rows.map((c) => (c.draw ? html`<a class="md-row is-draw ${c.live ? "is-live" : ""}" href="${c.href}">
+          <span class="md-draw"><b>${c.live ? "Live draw" : "The draw"}: ${c.title}</b><span>${c.text}</span></span>
+          <span class="md-meta">${dayOf(c)}, ${c.foot}</span></a>`
+        : html`<a class="md-row ${c.live ? "is-live" : ""}" href="${c.href}">
+          <span class="md-side home"><b>${c.a.name}</b>${crest(c.a)}</span>
+          <span class="md-mid">${c.postponed ? html`<b class="md-word">P - P</b>` : c.walkover ? html`<b class="md-word">W/O</b>` : c.hasFrames || c.done ? scoreTiles(c) : html`<b class="md-time">${fmtTime(c.when)}</b>`}</span>
+          <span class="md-side away">${crest(c.b)}<b>${c.b.name}</b></span>
+          <span class="md-meta">${c.live ? html`<span class="md-live">Live now</span>` : c.postponed ? html`<span class="md-flag">Postponed</span>` : c.done ? html`<span class="md-flag">${{ pending: "Pending", walkover: "Walkover" }[c.label] ?? "Result"}</span>` : c.hasFrames ? "" : liveSoonTag({ starts_at: c.when, status: c.status ?? "scheduled" })}<span>${dayOf(c)}, ${c.title}${c.walkover ? `, walkover to ${c.walkover}` : c.venue?.name ? `, ${c.venue.name}` : ""}</span></span>
+        </a>`))}</div>
+      ${cards.length > LIST_MAX ? html`<a class="md-more" href="/calendar">${cards.length - LIST_MAX} more on the calendar</a>` : ""}`;
+  }
 
   // Round 84 (Rich): no ‹ › beside the calendar — round buttons sit on the strip's left and right edges instead, and
   // the calendar is a bigger button of its own.

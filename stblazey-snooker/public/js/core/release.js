@@ -4,8 +4,15 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.71.0";
+export const SITE_VERSION = "1.80.0";
 export const CHANGES = [
+  "New design system (Baize): one typeface, Hanken Grotesk — Space Grotesk removed everywhere; headings in sentence case with grey descriptions under them",
+  "Colour: the table green replaces black as the dark colour; a cool cloth-grey page, white cards; red only for buttons and losses, green for live and wins, brass for trophies",
+  "Home page: Matchday (tonight's matches as a scoreline list on the green) beside the featured story with a Continue reading button; a corner pocket in each panel makes one pocket where they meet. On phones Matchday leads, with the button's cut corner instead",
+  "Quick links: icons on small green chalk tiles, a soft border, the team cards' hover; key dates as a list that fills the column beside Latest results",
+  "Cards never move when pointed at (no more shaking): only the border and text turn red",
+  "Competitions: light cards, brass trophies, progress drawn as a cue; the featured competition on the table green",
+  "Menu bar: white and quiet; footer: one hashtag, plain icons, grey links, a small copyright line",
   "Live & upcoming matches: the cards are back to their wide scoreline shape — name, badge, time (or score), badge, name — in the dark colours",
   "Phones: no banner on the home page — the live & upcoming matches come straight under the menu bar, in the same scoreline cards (one and a peek of the next)",
   "Home page top: the quick links, the My Snooker invitation (now between the quick links and the feature box) and the feature box sit at their natural height — no more stretched, half-empty cards",

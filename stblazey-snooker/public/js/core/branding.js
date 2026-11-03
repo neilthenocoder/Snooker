@@ -8,8 +8,9 @@ const CACHE = "sbdsl-brand";
 
 /** Fonts offered in Admin → Branding (all free from Google Fonts). The first of each is the standard one. */
 export const FONTS = {
-  head: ["Space Grotesk", "Oswald", "Bebas Neue", "Barlow Condensed", "Montserrat", "Poppins", "Archivo", "Roboto Condensed", "Teko", "Anton"],
-  body: ["Space Grotesk", "Questrial", "Inter", "Open Sans", "Roboto", "Lato", "Nunito", "Source Sans 3", "Plus Jakarta Sans", "Poppins", "Montserrat"],
+  // Round 93 (Baize): Hanken Grotesk is the one typeface of the site (the stylesheet holds every page to it).
+  head: ["Hanken Grotesk", "Oswald", "Bebas Neue", "Barlow Condensed", "Montserrat", "Poppins", "Archivo", "Roboto Condensed", "Teko", "Anton"],
+  body: ["Hanken Grotesk", "Questrial", "Inter", "Open Sans", "Roboto", "Lato", "Nunito", "Source Sans 3", "Plus Jakarta Sans", "Poppins", "Montserrat"],
 };
 
 /** The parts of the site that can each have their own page layout (Admin → Branding → Page layout). */
@@ -113,7 +114,8 @@ function brandOf(site) {
     look: site.site_look === "classic" ? "classic" : "calm",
     // Round 45 (Rich): the Live & upcoming strip light or black, and the header black or grey (calm look only).
     strip: site.strip_style === "dark" ? "dark" : "light",
-    header: ["grey", "light"].includes(site.header_style) ? site.header_style : "black",
+    // Round 93 (Baize): the menu bar is always the white one — the green and red are kept for the page itself.
+    header: "light",
     // Round 50: the phone menu, cream (standard) or the colour blocks from before.
     menu: site.home_sections?.menu_style === "blocks" ? "blocks" : "cream",
     loader: site.loading_logo_url || site.logo_url || "",
