@@ -26,7 +26,7 @@ const COLOURS = {
   color_league: ["--nav-league", "--nav-league-ink"],
   color_news: ["--nav-news", "--nav-news-ink"],
   color_login: ["--nav-login", "--nav-login-ink"],
-  color_background: ["--brand-bg"],
+  // Round 102 (Rich): the page background is the design's own again, no longer a setting.
 };
 
 /**
@@ -128,8 +128,6 @@ function brandOf(site) {
     loaderMs: Math.max(0, Math.min(10, Number(site.loader_seconds) || 0)) * 1000,
     // Round 73 (Rich): the loading screen on every page, or (standard) only when the website is first opened.
     loaderEvery: site.loader_every_page === true,
-    // Round 101: light or dark for someone who hasn't chosen with the sun/moon switch (Admin → Branding → Light and dark).
-    theme: ["light", "dark"].includes(site.home_sections?.default_theme) ? site.home_sections.default_theme : "device",
   };
 }
 
@@ -144,14 +142,7 @@ export function paint(brand) {
   for (const name of [...Object.values(COLOURS).flat(), "--red-dark", "--page-bg", "--brand-bg", "--brand-red-text", "--brand-yellow", "--brand-green", "--brand-login", "--brand-login-ink", "--font-head", "--font-body", "--font-sans", "--fs-h1-fluid", ...TEXT_SIZES.map((t) => t[3])]) root.style.removeProperty(name);
   // "important", so the choices win over the stylesheet's own standard values.
   for (const [name, value] of Object.entries(brand.vars ?? {})) root.style.setProperty(name, value, "important");
-  // The website's standard light or dark, for anyone who hasn't pressed the sun or moon themselves.
-  let own = null;
-  try { own = localStorage.getItem("sb-theme"); } catch { /* fine */ }
-  if (own !== "light" && own !== "dark") {
-    const t = brand.theme === "light" || brand.theme === "dark" ? brand.theme : window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    root.dataset.theme = t;
-    for (const b of document.querySelectorAll("[data-theme-set]")) b.setAttribute("aria-pressed", String(b.dataset.themeSet === t));
-  }
+  root.dataset.theme = "light";   // round 102: always light
   root.classList.toggle("sidebar-left", brand.sidebar === "left");
   root.classList.toggle("section-colors", brand.sections !== false);
   root.classList.toggle("look-calm", brand.look !== "classic");

@@ -821,9 +821,11 @@ html.sb-navover:not(.sb-navsolid) .sb-logo-light { display: none !important; }
 .sb-quick { padding: var(--space-24); }
 .sb-quick h2 { margin: 0 0 var(--space-16); font-size: 26px; letter-spacing: -0.01em; }
 .sb-quick__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); gap: var(--space-12); }
-.sb-quick__item { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 16px 0 12px; border-radius: var(--radius-pill); background: var(--soft); color: var(--ink); font-size: 15px; font-weight: 700; text-decoration: none; }
+.sb-quick__item { display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 16px 0 8px; border-radius: var(--radius-pill); background: var(--soft); color: var(--ink); font-size: 15px; font-weight: 700; text-decoration: none; }
 .sb-quick__item:hover { color: var(--ink); background: var(--line); }
-.sb-quick__dot { flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--dot); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .14); }
+.sb-quick__ico { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); color: var(--red); }
+.sb-quick__ico .ql-tile { display: contents; }
+.sb-quick__ico svg { width: 18px; height: 18px; fill: none; stroke: currentColor; }
 @media (max-width: 760px) { .sb-quick__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sb-quick__item { font-size: 14px; } }
 
 /* ── Top stories and the big story card (full-width banner) ── */
@@ -947,10 +949,18 @@ html.sb-navover:not(.sb-navsolid) .sb-logo-light { display: none !important; }
 .sb-compsec--yellow .sb-spotlight__round { border-left: 1px solid var(--line); }
 @media (max-width: 760px) { .sb-compsec--yellow .sb-spotlight__round { border-left: 0; border-top: 1px solid var(--line); } }
 .sb-compsec--yellow .sb-spotlight__hero { justify-content: flex-start; }
-.sb-compsec--yellow .sb-spotlight__trophy { display: none; }
+.sb-compsec--yellow .sb-spotlight__trophy:not(.has-img) { display: none; }
 .sb-compsec--yellow .sb-spotlight__text { margin-top: 0; }
 html.sb-has-quick .sb-find { display: none; }
 /* Breadcrumbs (Home › Admin › Branding): small rounded pills */
 html body:not(#sb) :is(.breadcrumb, .admin-crumbs) a { border-radius: var(--radius-pill) !important; clip-path: none !important; background: var(--surface); border: 1px solid var(--line); color: var(--ink); }
 html body:not(#sb) :is(.breadcrumb, .admin-crumbs) a:hover { background: var(--soft); color: var(--ink); }
 html body:not(#sb) :is(.breadcrumb, .admin-crumbs) a::before { display: none !important; }
+
+/* Round 102 — the thin red line: only under the menu once the full-width banner page has scrolled */
+html.sb-navover.sb-navsolid .sb-header { border-bottom: 2px solid var(--red); }
+/* The cups' own trophy pictures (Admin → Competitions), where one has been uploaded */
+.sb-spot__icon.has-img { background: none !important; }
+.sb-spot__icon img.sb-trophy-img { width: 100%; height: 100%; object-fit: contain; }
+.sb-spotlight__trophy.has-img { width: 96px; height: 96px; background: none !important; border-radius: 0; }
+.sb-spotlight__trophy img.sb-trophy-img { width: 100%; height: 100%; object-fit: contain; }

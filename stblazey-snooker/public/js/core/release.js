@@ -4,8 +4,12 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.87.0";
+export const SITE_VERSION = "1.87.1";
 export const CHANGES = [
+  "The website is always light: the sun/moon switch and the light/dark setting are gone, and the page background is the design's own again (no longer a Branding setting)",
+  "The thin red line is now only under the menu on the full-width banner page once it has scrolled; the line along the top of the match strip (and its setting) is gone",
+  "Competitions on the home page show each cup's own trophy picture where one has been uploaded",
+  "Quick links have their icons back instead of coloured balls",
   "Everything home page in Rich's design: the full-width photo banner with the menu and the match strip on top of it, Quick links, the league table and Next up, My Snooker, Top stories with a big story card, Victory and Rees rankings, the Breaks podium (1st, 2nd, 3rd), the Runabout Shield holders, and Competitions in yellow",
   "The full-width banner can be chosen for the Standard page too (Admin → Site settings → Banner layout)",
   "League tables on the home page: places moved since last week, the leader on green, promotion and relegation places marked (P, R) and shaded, and the key — as before",

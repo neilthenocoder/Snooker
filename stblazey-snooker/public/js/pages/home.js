@@ -71,6 +71,8 @@ const ICON = {
 const sbDay = (iso) => (iso ? new Date(iso).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }).replace(",", "") : "");
 const initialsOf = (name = "") => name.replace(/[^A-Za-z0-9 ]/g, " ").split(/\s+/).filter(Boolean).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
 const pic = (a) => a.image_url || a.circle_image_url || "";
+/** A cup's own trophy picture (Admin → Competitions), or the trophy icon until one is uploaded. */
+const cupTrophy = (c, size = 22) => (c?.trophy_url ? html`<img class="sb-trophy-img" src="${c.trophy_url}" alt="" loading="lazy">` : sbIcon(ICON.trophy, size));
 /** A team's emblem (its own, else its club's — the venue's), or its initials until it has one. */
 const crestOf = (ctx, t) => { const logo = t?.logo_url || ctx.venue?.get?.(t?.venue_id)?.logo_url || "";
   return logo ? html`<span class="sb-crest"><img src="${logo}" alt="" loading="lazy"></span>` : html`<span class="sb-crest sb-crest--initials" aria-hidden="true">${initialsOf(t?.name ?? "")}</span>`; };
@@ -128,7 +130,7 @@ export default async function home(view, { user } = {}) {
 
     ${notices.length ? html`<div class="sb-container sb-notices">${notices}</div>` : ""}
 
-    ${everything ? section(sbQuickLinks(ctx, site), "sb-section--quick") : ""}
+    ${everything ? section(sbQuickLinks(ctx), "sb-section--quick") : ""}
 
     ${section(html`<div class="sb-split">
       ${tableCard(ctx)}
@@ -292,13 +294,14 @@ const storyCard = (a) => html`<a class="sb-storycard" href="${urls.article(a)}">
   </span></a>`;
 
 /** Quick links (Rich's design): the pages that used to be under "More", each with a coloured dot. */
-const DOTS = ["#1B8047", "#E8003D", "#15201B", "#7A4B2A", "#F2B92B", "#FFFFFF", "#2F6FE0", "#F27BA6"];
-function sbQuickLinks(ctx, site) {
-  const links = [["Fixtures", "/fixtures"], ["Results", "/results"], ["League tables", urls.season(ctx.season, "league-tables")], ["Rankings", urls.season(ctx.season, "rankings")],
-    ["Breaks", urls.season(ctx.season, "breaks")], ["Competitions", "/competitions"], ["Calendar", "/calendar"], ["Handicaps", "/handicaps"],
-    ...menuMore(site).filter((l) => !["/results", "/calendar", "/handicaps"].includes(l.href)).map((l) => [l.label, l.href])].slice(0, 12);
+function sbQuickLinks(ctx) {
+  // Round 102 (Rich): the icons from the earlier quick links, not coloured balls.
+  const links = [["Fixtures", "/fixtures", quickIcon.fixtures], ["Results", "/results", quickIcon.results], ["League tables", urls.season(ctx.season, "league-tables"), quickIcon.tables],
+    ["Rankings", urls.season(ctx.season, "rankings"), quickIcon.rankings], ["Breaks", urls.season(ctx.season, "breaks"), quickIcon.breaks], ["Competitions", "/competitions", quickIcon.competitions],
+    ["Calendar", "/calendar", quickIcon.calendar], ["Handicaps", "/handicaps", quickIcon.handicaps], ["Our players", "/players", sbIcon("M12 4a4 4 0 1 0 0 8a4 4 0 1 0 0-8M4 21a8 8 0 0 1 16 0", 20)],
+    ["Form guide", "/form", sbIcon("M3 17l6-6 4 4 8-8M15 7h6v6", 20)], ["Live scoreboard", "/scoreboard", sbIcon("M3 6h18v12H3ZM12 6v12M7 10v4M15.5 10h2v4h-2", 20)], ["Hall of Fame", "/hall-of-fame", sbIcon(ICON.star, 20)]];
   return html`<div class="sb-card sb-quick"><h2>Quick links</h2>
-    <div class="sb-quick__grid">${links.map(([label, href], i) => html`<a class="sb-quick__item" href="${href}"><span class="sb-quick__dot" style="--dot:${DOTS[i % DOTS.length]}" aria-hidden="true"></span><span>${label}</span></a>`)}</div></div>`;
+    <div class="sb-quick__grid">${links.map(([label, href, icon]) => html`<a class="sb-quick__item" href="${href}"><span class="sb-quick__ico" aria-hidden="true">${icon}</span><span>${label}</span></a>`)}</div></div>`;
 }
 
 /** Victory Rankings · Rees Rankings · Breaks (Rich's design): the leader on green, the breaks podium in gold, silver and bronze. */
@@ -440,7 +443,7 @@ function competitionsBlock(comps, data, { yellow = false } = {}) {
     <div class="sb-comps">
       <div class="sb-spotlight">
         <div class="sb-spotlight__hero">
-          <span class="sb-spotlight__trophy">${sbIcon(ICON.trophy, 30)}</span>
+          <span class="sb-spotlight__trophy ${topCup.c.trophy_url ? "has-img" : ""}">${cupTrophy(topCup.c, 30)}</span>
           <div class="sb-spotlight__text"><span class="sb-spotlight__label">${label}</span>
             <a class="sb-spotlight__title" href="${urls.competition(topCup.c)}">${topCup.c.name}</a>
             <span class="sb-spotlight__sub">${topCup.progress ?? ""}</span></div>
@@ -451,7 +454,7 @@ function competitionsBlock(comps, data, { yellow = false } = {}) {
       ${ordered.length ? html`<div class="sb-comps__side">
         <div class="sb-comps__list">${ordered.map((x) => { const s = status(x), p = pct(x.progress);
           return html`<a class="sb-spot" href="${urls.competition(x.c)}" data-seg-pane="all ${s === "live" ? "on" : s}">
-            <span class="sb-spot__icon ${s === "done" || s === "on" || s === "live" ? "is-brass" : ""}">${sbIcon(ICON.trophy, 22)}</span>
+            <span class="sb-spot__icon ${x.c.trophy_url ? "has-img" : s === "done" || s === "on" || s === "live" ? "is-brass" : ""}">${cupTrophy(x.c)}</span>
             <span class="sb-spot__text"><span class="sb-comp__name">${x.c.name}</span><span class="sb-meta">${meta(x)}</span>
               ${p !== null && !x.done ? html`<span class="sb-cue" style="--pct:${Math.max(3, p)}%" aria-hidden="true"><span class="sb-cue__fill"></span><span class="sb-cue__tip"></span></span>` : ""}</span>
             ${s === "live" ? html`<span class="sb-chip">Live</span>` : ""}
@@ -962,8 +965,7 @@ async function liveStrip(user = null, mode = "filters", layout = "strip") {
     const empty = sbStripTab === "live"
       ? html`<p class="sb-strip__empty"><b>No matches are live right now.</b> ${next ? `The next is ${next.a.name} v ${next.b.name}, ${when(next)} at ${fmtTime(next.when)}.` : ""} <a href="/calendar">See the calendar</a></p>`
       : html`<p class="sb-strip__empty">No matches here just now. <a href="/calendar">See the calendar</a></p>`;
-    const lineColour = { red: "var(--red)", yellow: "var(--yellow)", grey: "#5B6660" }[site.strip_line];
-    return html`${stripColours(site)}${lineColour ? html`<style>.sb-strip{box-shadow:inset 0 3px 0 ${lineColour}}</style>` : ""}<div class="sb-strip__head">
+    return html`${stripColours(site)}<div class="sb-strip__head">
         <h2 id="sb-strip-h">Live and upcoming matches</h2>
         <div class="sb-seg sb-seg--arena sb-seg--pick" role="group" aria-label="Which matches">${tab("all", "All")}${tab("live", `Live · ${live.length}`)}${tab("upcoming", "Upcoming")}${tab("results", "Results")}</div>
         <div class="sb-strip__ctrl">

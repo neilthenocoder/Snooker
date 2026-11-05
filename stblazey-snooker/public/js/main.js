@@ -273,7 +273,6 @@ async function drawHeader() {
       </nav>
       <div class="sb-header__actions">
         ${liveItem ? html`<a class="sb-btn sb-btn--live sb-livebtn state-idle" data-live-btn href="${liveItem.href}"><span class="sb-dot" aria-hidden="true"></span><span>Live</span></a>` : ""}
-        <span class="sb-hide-phone">${themeToggle()}</span>
         ${user ? html`<div class="nav-drop-wrap sb-acct-wrap"><button type="button" class="sb-acct" data-drop="acct" aria-expanded="false" aria-haspopup="true" aria-label="${role} menu: ${name}" title="${name}">
             <span class="sb-acct__initials">${initials(name)}</span><span class="sb-acct__word">${role}</span><svg class="sb-icon sb-acct__chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
           <div class="sb-drop" data-drop-panel="acct" hidden>
@@ -314,7 +313,6 @@ async function drawHeader() {
         <hr class="sbd__rule">
         <div class="sbd__foot">
           <div class="sbd__social">${socials.map(([key, label, icon]) => html`<a href="${safeHref(site[key])}" target="_blank" rel="noopener" aria-label="${label}"><svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></a>`)}</div>
-          ${themeToggle()}
         </div>
       </div>
     </div>`);

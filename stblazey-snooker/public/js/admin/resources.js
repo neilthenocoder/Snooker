@@ -523,7 +523,7 @@ export const RESOURCES = {
     fields: [
       { type: "heading", label: "Logos" },
       { name: "logo_url", label: "Main logo (SVG or PNG — shown top left, at the height of the menu)", type: "image", folder: "branding", maxSize: 400 },
-      { name: "logo_light_url", label: "Logo for light mode (a dark version of the logo for the white menu bar — leave empty and the main logo is shown darkened). The main logo above is used in dark mode and on the full-width banner", type: "image", folder: "branding", maxSize: 400 },
+      { name: "logo_light_url", label: "Logo for light mode (a dark version of the logo for the white menu bar — leave empty and the main logo is shown darkened). The main logo above is used on the full-width banner and other dark backgrounds", type: "image", folder: "branding", maxSize: 400 },
       { name: "loading_logo_url", label: "Loading logo (pulses in the middle of the black loading screen — leave empty to use the main logo)", type: "image", folder: "branding", maxSize: 600 },
       { name: "favicon_url", label: "Favicon (the little browser-tab icon — square; kept as a PNG so every browser shows it. Leave empty to use the app icon below)", type: "image", folder: "branding", maxSize: 128, format: "png" },
       { type: "heading", label: "App icon (phone home screen and installed app)", help: "What a phone shows when someone adds the website to their home screen, and a computer for the installed app. Upload one square picture — the badge on its own, 512 × 512 or bigger; PNG or SVG with a clear background is best — and the four sizes phones and browsers ask for are made from it. Choose the background colour first: iPhones and round Android icons fill the space around the badge with it. Phones that already added the site may keep the old icon until it is removed and added again." },
@@ -532,12 +532,8 @@ export const RESOURCES = {
       // Round 101 (Rich: "check that everything in the admin panel works as I change any setting"): the old Calm/Classic
       // looks, the strip and header styles and the colour-block phone menu belong to the earlier designs and are gone;
       // these are the settings the design system reads. (Nothing in the database changes — the old values are just unused.)
-      { type: "heading", label: "Light and dark", help: "Visitors switch between light and dark with the sun and moon in the menu (and in the phone menu). This is what someone sees before they choose. The match strip and the footer stay dark either way." },
-      { name: "default_theme", in: "home_sections", label: "Standard for visitors who haven't chosen", type: "select", options: ["light", "dark", "device"], default: "light",
-        labels: { light: "Light (standard)", dark: "Dark", device: "Follow the visitor's phone or computer setting" } },
-      { type: "heading", label: "Colours", help: "Leave a colour on “standard” to keep the design's own. Every one shows across the website as soon as you press Save (the page background in light mode only — dark mode keeps its own)." },
+      { type: "heading", label: "Colours", help: "Leave a colour on “standard” to keep the design's own. Every one shows across the website as soon as you press Save." },
       { name: "color_primary", label: "Main colour (standard: red #E8003D — buttons, the menu pill for the page you're on, links)", type: "color", optional: true, default: "#e8003d" },
-      { name: "color_background", label: "Page background in light mode (standard: #F3F4F1)", type: "color", optional: true, default: "#f3f4f1" },
       { name: "color_competitions", label: "Yellow highlights (standard: #F2B92B — Continue reading, competitions and the top break on the Everything home page)", type: "color", optional: true, default: "#f2b92b" },
       { name: "color_fixtures", label: "Live and win green (standard: #1B8047 — the Live button, the leader in the tables, a won frame)", type: "color", optional: true, default: "#1b8047" },
       { name: "color_login", label: "Log in button (standard: the main colour)", type: "color", optional: true, default: "#e8003d" },
@@ -644,8 +640,6 @@ export const RESOURCES = {
       { name: "strip_walkover_color", label: "“Walkover” label (standard: red)", type: "color", optional: true, default: "#c4112f" },
       { name: "strip_postponed_color", label: "“Postponed” label — shown from the match's date until a week ahead (standard: red)", type: "color", optional: true, default: "#c4112f" },
       { type: "custom", render: () => stripPreview() },
-      { name: "strip_line", label: "A thin line along the top of the strip", type: "select", options: ["none", "red", "yellow", "grey"], default: "red",
-        labels: { none: "None", red: "Red — the main colour (standard)", yellow: "Yellow", grey: "Grey" } },
       { type: "heading", tab: "Strip & results", label: "Side column: top box", help: "The box at the top of the side column on the home page and other pages with a sidebar. It has a button to the full results page (/results)." },
       { name: "side_box_mode", label: "Show", type: "select", options: ["results", "league", "cup", "news", "off"], default: "results",
         labels: { results: "Latest league and competition results together (standard)", league: "Latest league results only", cup: "Latest competition results only", news: "Latest news (as it used to be — set up in the Latest News box section above)", off: "Nothing" } },
