@@ -9,7 +9,7 @@ import { openForEntry } from "./enter.js";
 import { seasonContext, sideBoxData } from "../core/context.js";
 import { articles, settings, upcomingMatches, loadCompetitions, subscribe, table, liveMatches, currentCompetitions } from "../core/api.js";
 import { deadlineWarnings, deadlineBar } from "../core/comp-deadlines.js";
-import { matchScore, shieldHolder } from "../core/rules.js";
+import { matchScore, shieldHolder, isLiveNow, isAwaitingResult } from "../core/rules.js";
 import { buildBracket, isEntry, walkoverSide, roundName, winnerSide } from "../core/bracket.js";
 import { answered, articleCueview } from "../core/cueview.js";
 import { leagueTablePanel, rankingsPanel, sidebar, panel, picture, urls, badge, avatar, articleThumb, shortName, latestNews, trophy, shieldPicture, resultsBox } from "../core/components.js";
@@ -69,6 +69,9 @@ const ICON = {
 const sbDay = (iso) => (iso ? new Date(iso).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }).replace(",", "") : "");
 const initialsOf = (name = "") => name.replace(/[^A-Za-z0-9 ]/g, " ").split(/\s+/).filter(Boolean).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
 const pic = (a) => a.image_url || a.circle_image_url || "";
+/** A team's emblem (its own, else its club's — the venue's), or its initials until it has one. */
+const crestOf = (ctx, t) => { const logo = t?.logo_url || ctx.venue?.get?.(t?.venue_id)?.logo_url || "";
+  return logo ? html`<span class="sb-crest"><img src="${logo}" alt="" loading="lazy"></span>` : html`<span class="sb-crest sb-crest--initials" aria-hidden="true">${initialsOf(t?.name ?? "")}</span>`; };
 const photo = (a, cls = "") => (pic(a) ? html`<img class="${cls}" src="${pic(a)}" alt="" loading="lazy">` : html`<span class="sb-ph ${cls}" aria-hidden="true"></span>`);
 
 export default async function home(view, { user } = {}) {
@@ -240,7 +243,7 @@ function tableCard(ctx) {
         <caption class="sr-only">${l.name} table</caption>
         <thead><tr><th class="sb-c" scope="col">Pos</th><th scope="col">Team</th><th class="sb-c" scope="col" title="Played">P</th><th class="sb-c" scope="col" title="Won">W</th><th class="sb-c" scope="col" title="Lost">L</th><th class="sb-c" scope="col" title="Frames for">F</th><th class="sb-c" scope="col" title="Frames against">A</th><th class="sb-c" scope="col" title="Points">Pts</th></tr></thead>
         <tbody>${ctx.standings(l.id).slice(0, 10).map((r) => html`<tr>
-          <td class="sb-c">${pos(r)}</td><td class="sb-table__team"><a href="${urls.team(r.team)}">${r.team.name}</a></td>
+          <td class="sb-c">${pos(r)}</td><td class="sb-table__team"><a class="sb-teamcell" href="${urls.team(r.team)}">${crestOf(ctx, r.team)}<span>${r.team.name}</span></a></td>
           <td class="sb-c">${r.p}</td><td class="sb-c">${r.w}</td><td class="sb-c">${r.l}</td><td class="sb-c">${r.f}</td><td class="sb-c">${r.a}</td><td class="sb-c sb-table__key">${r.pts}</td></tr>`)}</tbody>
       </table></div>
       <div class="sb-card-foot"><a class="sb-btn sb-btn--outline sb-btn--lg" href="${urls.standings(l)}">Full table</a></div>
@@ -262,7 +265,7 @@ function nextUp(ctx) {
   return html`<div class="sb-card sb-split__side">
     <div class="sb-card-head"><h2>Next up</h2><span class="sb-chip sb-chip--date sb-num">${sbDay(coming[0].starts_at)}${times.length === 1 ? ` · ${times[0]}` : ""}</span></div>
     <div class="sb-next">${groups.map(({ l, list }) => html`<div class="sb-fixture-group"><span class="sb-meta">${l.name}</span>
-      ${list.map((f) => html`<a class="sb-fixture" href="${urls.match(f)}"><span>${name(f.home_team_id)}</span><span class="sb-v">${times.length === 1 ? "v" : fmtTime(f.starts_at)}</span><span>${name(f.away_team_id)}</span></a>`)}</div>`)}</div>
+      ${list.map((f) => html`<a class="sb-fixture" href="${urls.match(f)}"><span><span>${name(f.home_team_id)}</span>${crestOf(ctx, ctx.team.get(f.home_team_id))}</span><span class="sb-v">${times.length === 1 ? "v" : fmtTime(f.starts_at)}</span><span>${crestOf(ctx, ctx.team.get(f.away_team_id))}<span>${name(f.away_team_id)}</span></span></a>`)}</div>`)}</div>
     <div class="sb-card-foot"><a class="sb-link" href="/fixtures">All fixtures ${sbIcon(ICON.arrow, 16)}</a></div>
   </div>`;
 }
@@ -694,8 +697,11 @@ async function liveStrip(user = null, mode = "filters", layout = "strip") {
 
   const all = [
     ...fixtures.map((fx) => ({
-      key: `l:${fx.league_id}`, when: fx.starts_at, status: fx.status, live: fx.status === "in_progress", done: ["submitted", "approved"].includes(fx.status), doneAt: fx.result_at && fx.result_at > fx.starts_at ? fx.result_at : fx.starts_at,
-      label: fx.status === "submitted" ? "pending" : fx.status === "approved" ? "completed" : fx.status === "postponed" ? "postponed" : null,
+      ...(() => { const sc = matchScore(framesBy.get(fx.id)), played = (Number(sc.home) || 0) + (Number(sc.away) || 0);
+        const live = isLiveNow(fx, Date.now(), played), stale = fx.status === "in_progress" && !live;
+        // Round 99: an "in progress" match whose night is over (or whose frames are all played) is a result waiting to be submitted, not live.
+        return { live, done: stale || ["submitted", "approved"].includes(fx.status), label: stale || fx.status === "submitted" ? "pending" : fx.status === "approved" ? "completed" : fx.status === "postponed" ? "postponed" : null }; })(),
+      key: `l:${fx.league_id}`, when: fx.starts_at, status: fx.status, doneAt: fx.result_at && fx.result_at > fx.starts_at ? fx.result_at : fx.starts_at,
       postponed: fx.status === "postponed",
       title: leagues.find((l) => l.id === fx.league_id)?.name ?? "League",
       a: { name: team.get(fx.home_team_id)?.name ?? "?", team: team.get(fx.home_team_id) },
@@ -713,7 +719,7 @@ async function liveStrip(user = null, mode = "filters", layout = "strip") {
       const who = (id) => { const e = compData.entries.find((x) => x.id === id); return { name: e.name, team: team.get(e.team_id), player: players.find((p) => p.id === e.player_id) }; };
       return {
         // A result typed in with no date goes by the time it went in (result_at); a match being scored, by now.
-        key: `c:${c.id}`, when: m.starts_at ?? m.result_at ?? new Date().toISOString(), status: m.status, live: m.status === "in_progress", done: m.status === "completed", title: c.name, cup: true,
+        key: `c:${c.id}`, when: m.starts_at ?? m.result_at ?? new Date().toISOString(), status: m.status, live: isLiveNow(m), done: m.status === "completed" || isAwaitingResult(m), title: c.name, cup: true,
         doneAt: m.result_at ?? m.starts_at, label: m.status === "completed" ? (walkoverSide(m) ? "walkover" : "completed") : m.status === "postponed" ? "postponed" : null,
         postponed: m.status === "postponed",
         a: who(bm.a), b: who(bm.b),
@@ -802,17 +808,18 @@ async function liveStrip(user = null, mode = "filters", layout = "strip") {
     const clubLogo = (t) => (t && !t.logo_url ? venues.find((v) => v.id === t.venue_id)?.logo_url || "" : "");
     const circle = (sd) => { const logo = sd.player?.avatar_url || sd.team?.logo_url || clubLogo(sd.team);
       return logo ? html`<span class="sb-initials sb-initials--pic"><img src="${logo}" alt=""></span>` : html`<span class="sb-initials" aria-hidden="true">${initialsOf(sd.name)}</span>`; };
-    const upcoming = shown.filter((c) => !c.live), sets = { live, upcoming, results: [...results].reverse() };
-    if (!sets[sbStripTab]?.length) sbStripTab = live.length ? "live" : upcoming.length ? "upcoming" : "results";
+    const upcoming = shown.filter((c) => !c.live), sets = { all: cards, live, upcoming, results: [...results].reverse() };
+    // Round 100 (Neil): everything shows first, under "All"; Live, Upcoming and Results then narrow it down.
+    if (!sbStripTab || !sets[sbStripTab]?.length) sbStripTab = "all";
     const list = sets[sbStripTab] ?? [];
-    const tab = (key, label) => (sets[key].length || key !== "live" ? html`<button type="button" data-strip-tab="${key}" aria-pressed="${String(sbStripTab === key)}">${label}</button>` : "");
+    const tab = (key, label) => (sets[key].length || !["live", "results"].includes(key) ? html`<button type="button" data-strip-tab="${key}" aria-pressed="${String(sbStripTab === key)}">${label}</button>` : "");
     const when = (c) => (ukDay(c.when) === todayUK() ? (c.done ? "Today" : "Tonight") : sbDay(c.when));
     const card = (c) => (c.draw ? html`<a class="sb-match ${c.live ? "sb-match--live" : ""}" href="${c.href}">
         <span class="sb-match__top"><span>${c.title}</span>${c.live ? html`<span class="sb-live-tag">Live draw</span>` : html`<span class="sb-when-tag">${when(c)}</span>`}</span>
         <span class="sb-match__draw"><b>The draw</b><span>${c.text}</span></span>
         <span class="sb-match__venue">${c.foot.replace(" →", "")}</span></a>`
       : html`<a class="sb-match ${c.live ? "sb-match--live" : ""}" href="${c.href}">
-        <span class="sb-match__top"><span class="sb-match__league">${c.title}</span>${c.live ? html`<span class="sb-live-tag">Live</span>` : c.postponed ? html`<span class="sb-when-tag">Postponed</span>` : c.done ? html`<span class="sb-when-tag">${{ pending: "Pending", walkover: "Walkover" }[c.label] ?? "Result"} · ${when(c)}</span>` : html`<span class="sb-when-tag">${when(c)}</span>`}</span>
+        <span class="sb-match__top"><span class="sb-match__league">${c.title}</span>${c.live ? html`<span class="sb-live-tag">Live</span>` : c.postponed ? html`<span class="sb-when-tag">Postponed</span>` : c.done ? html`<span class="sb-when-tag">${{ pending: "Awaiting result", walkover: "Walkover" }[c.label] ?? "Result"} · ${when(c)}</span>` : html`<span class="sb-when-tag">${when(c)}</span>`}</span>
         <span class="sb-match__teams">
           <span class="sb-match__team ${c.done && Number(c.score?.home) > Number(c.score?.away) ? "is-win" : ""}">${circle(c.a)}<span>${c.a.name}</span></span>
           ${c.postponed ? html`<span class="sb-match__time">P–P</span>` : c.walkover ? html`<span class="sb-match__time">W/O</span>` : c.hasFrames || c.done ? html`<span class="sb-score" aria-label="${c.score.home} – ${c.score.away}"><span>${c.score.home}</span><span>${c.score.away}</span></span>` : html`<span class="sb-match__time">${fmtTime(c.when)}</span>`}
@@ -821,7 +828,7 @@ async function liveStrip(user = null, mode = "filters", layout = "strip") {
         <span class="sb-match__venue">${c.walkover ? `Walkover to ${c.walkover}` : c.venue?.name || " "}</span></a>`);
     return html`<div class="sb-strip__head">
         <h2 id="sb-strip-h">Live and upcoming matches</h2>
-        <div class="sb-seg sb-seg--arena" role="group" aria-label="Which matches">${tab("live", `Live · ${live.length}`)}${tab("upcoming", "Upcoming")}${tab("results", "Results")}</div>
+        <div class="sb-seg sb-seg--arena" role="group" aria-label="Which matches">${tab("all", "All")}${tab("live", `Live · ${live.length}`)}${tab("upcoming", "Upcoming")}${tab("results", "Results")}</div>
         <div class="sb-strip__ctrl">
           <button type="button" class="sb-icon-btn sb-icon-btn--arena" data-strip-move="-1" aria-label="Previous matches">${sbIcon(ICON.left)}</button>
           <button type="button" class="sb-icon-btn sb-icon-btn--arena-solid" data-strip-move="1" aria-label="Next matches">${sbIcon(ICON.right)}</button>

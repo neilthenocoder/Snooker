@@ -4,7 +4,7 @@ import { seasonContext } from "../core/context.js";
 import { loadFixture, headToHead, subscribe, setMatchPhotos, fixtureBoards } from "../core/api.js";
 import { onTable } from "../core/live-score.js";
 import { uploadImage } from "../core/upload.js";
-import { matchScore, frameWinner, breakPoints, isShieldMatch, RULES } from "../core/rules.js";
+import { matchScore, frameWinner, breakPoints, isShieldMatch, RULES, isLiveNow } from "../core/rules.js";
 import { canEditFixture, canAddMatchPhotos, MATCH_PHOTO_LIMIT } from "../core/auth.js";
 import { breadcrumb, panel, dataTable, resultsList, statusBadge, urls, teamLink, playerLink, badge, gallery, outcomeTag, breakTag, breakList, liveSoonTag } from "../core/components.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
@@ -98,7 +98,7 @@ export default async function match(view, { params, user }) {
         <div class="mh-body">
           <a class="mh-side ${won("home") ? "won" : lost("home") ? "lost" : ""}" href="${home ? urls.team(home) : "#"}">${badge(home)}<span>${home?.name}</span></a>
           <div class="mh-score"><b class="${won("home") ? "won" : lost("home") ? "lost" : ""}">${played ? score.home : "–"}</b><i>:</i><b class="${won("away") ? "won" : lost("away") ? "lost" : ""}">${played ? score.away : "–"}</b>
-            ${fx.status === "in_progress" ? html`<span class="live-dot">Live</span>` : played ? html`<small>${fx.status === "approved" ? "Final" : fx.status.replace("_", " ")}</small>` : ctx.notUpdated?.(fx) ? html`<small class="not-upd">Not updated yet</small>` : html`<small>${fmtTime(fx.starts_at)}</small>${liveSoonTag(fx)}`}</div>
+            ${isLiveNow(fx, Date.now(), (Number(score.home) || 0) + (Number(score.away) || 0)) ? html`<span class="live-dot">Live</span>` : fx.status === "in_progress" && played ? html`<small>Awaiting result</small>` : played ? html`<small>${fx.status === "approved" ? "Final" : fx.status.replace("_", " ")}</small>` : ctx.notUpdated?.(fx) ? html`<small class="not-upd">Not updated yet</small>` : html`<small>${fmtTime(fx.starts_at)}</small>${liveSoonTag(fx)}`}</div>
           <a class="mh-side ${won("away") ? "won" : lost("away") ? "lost" : ""}" href="${away ? urls.team(away) : "#"}">${badge(away)}<span>${away?.name}</span></a>
         </div>
         ${!played && !["in_progress", "postponed"].includes(fx.status) && !ctx.notUpdated?.(fx) ? countdown(fx.starts_at) : ""}

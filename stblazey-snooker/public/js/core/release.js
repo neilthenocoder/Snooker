@@ -4,8 +4,12 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.86.0";
+export const SITE_VERSION = "1.86.1";
 export const CHANGES = [
+  "A match left “in progress” after its night is over (or with every frame played) no longer shows as Live — on the strip, the Live button, the Live page and the match page it says “Awaiting result” until the captain submits",
+  "Match strip: an “All” tab first, then Live, Upcoming and Results",
+  "The league's own logo is back in the menu bar; club emblems beside every team in the home page's league table and Next up",
+  "Back, Share and the other outline buttons on every page are plain round pills; no cut corners left on cards or buttons; the Log in panel's close button shows in both themes; the page width is the same 1280px on every page and very wide screens no longer stretch the banners",
   "New design system across the whole website and the dashboard: Inter, Rich's red, every button and card rounded, and a light / dark switch (the sun and moon in the menu bar; in the phone menu too). The match strip and footer stay dark",
   "Menu bar on one line on a computer — Home, Fixtures, League, Competitions, News, then Live, light/dark, Log in, the bell and search. The old More pages are in “Find your way around” above the footer",
   "Phones: More opens a menu that slides in from the left instead of covering the whole screen; the top bar and the bar at the bottom are unchanged",

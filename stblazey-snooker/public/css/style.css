@@ -6147,7 +6147,7 @@ html.look-calm body:not([data-page="admin"]) :is(.enter-bar span, .ms-invite a.b
 /* ── 1. Buttons: the snooker-table cut. 8px on a normal button (about a fifth of its height), 5px on small ones ── */
 .btn, .hero-more, .cf-go, .cf-all, .nav-login, .strip-stats, .enter-bar span, .menu-login, .live-strip a.strip-cal, .feature-go, a.my-snooker-btn i,
 html.look-calm body:not([data-page="admin"]) #view .btn, html.look-calm .menu-overlay .btn, html.look-calm .menu-overlay .menu-login {
-  border-radius: 0 !important; clip-path: none; }
+   clip-path: none; }
 .btn.small, .strip-stats, .enter-bar span, .cf-go { --cut: 5px; }
 .btn:focus-visible, .hero-more:focus-visible, .cf-all:focus-visible, .nav-login:focus-visible, .live-strip a.strip-cal:focus-visible { outline: 2px solid currentColor; outline-offset: -5px; }
 
@@ -6403,7 +6403,7 @@ html body:not([data-page="admin"]) .ms-invite b { font-weight: 700 !important; }
 html.look-calm body:not([data-page="admin"]) :is(#view, #side) .btn-bar,
 html.look-calm body:not([data-page="admin"]) :is(.back-link, .share-page, .share-btn, .league-jump a, .hub-tabs a, .pick-go) {
   --edge: rgba(17, 17, 17, .14); --face: #fff; --inner-cut: calc(var(--cut) - .6px);
-  position: relative; isolation: isolate; border: 0 !important; border-radius: 0 !important; background: var(--edge) !important; clip-path: none; }
+  position: relative; isolation: isolate; border: 0 !important;  background: var(--edge) !important; clip-path: none; }
 html.look-calm body:not([data-page="admin"]) :is(#view, #side) .btn-bar::before,
 html.look-calm body:not([data-page="admin"]) :is(.back-link, .share-page, .share-btn, .league-jump a, .hub-tabs a, .pick-go)::before {
   content: ""; position: absolute; inset: 1px; z-index: -1; background: var(--face); transition: background .18s;
@@ -6450,7 +6450,7 @@ html.look-calm body:not([data-page="admin"]) #view .wrap > h1:not(.sr-only):not(
 /* Round 89: the cut-corner buttons keep their cut (no pill rounding on them) */
 html.look-calm body:not([data-page="admin"]) #view :is(.btn, .hero-more, .cf-go, .cf-all, .strip-stats, .enter-bar span, .live-strip a.strip-cal),
 html.look-calm body:not([data-page="admin"]) :is(.nav-login, .menu-login, .menu-overlay .btn, #view .btn-bar, #side .btn-bar, .back-link, .share-page, .share-btn, .league-jump a, .hub-tabs a, .pick-go),
-.btn, .hero-more, .cf-go, .cf-all, .nav-login, .strip-stats, .enter-bar span, .menu-login { border-radius: 0 !important; }
+.btn, .hero-more, .cf-go, .cf-all, .nav-login, .strip-stats, .enter-bar span, .menu-login {  }
 /* Round 90: no chalk underline under section headings */
 body:not([data-page="home"]):not([data-page="admin"]) #view :is(.league-group-h, .hb-head h2, .wrap > h2:not(.sr-only), .wrap > section > h2:not(.sr-only))::after { content: none !important; display: none !important; }
 body:not([data-page="home"]):not([data-page="admin"]) #view :is(.league-group-h, .hb-head h2, .wrap > h2:not(.sr-only), .wrap > section > h2:not(.sr-only)) { padding-bottom: 0; }
@@ -6478,7 +6478,7 @@ html.look-calm .hz-top .feature-box .feature-go { flex: none; font-size: 18px; }
 .hz-top .ms-invite small { font-size: 13.5px; line-height: 1.45; margin-top: 3px; }
 html.look-calm body:not([data-page="admin"]) .ms-invite > i {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 42px; padding: 0 20px; background: var(--red); color: #fff;
-  font: 700 14px/1 var(--font-head); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; clip-path: none; border-radius: 0 var(--soft-corner) 0 var(--soft-corner); transition: background .18s; }
+  font: 700 14px/1 var(--font-head); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; clip-path: none; border-radius: var(--r); transition: background .18s; }
 html.look-calm body:not([data-page="admin"]) .ms-invite:hover > i { background: var(--red-dark, #c10033); }
 .ms-invite > i svg { width: 16px; height: 16px; fill: currentColor; }
 @media (max-width: 560px) { .hz-top .ms-invite { grid-template-columns: auto minmax(0, 1fr); } html.look-calm body:not([data-page="admin"]) .ms-invite > i { grid-column: 1 / -1; width: 100%; } }
@@ -6489,9 +6489,9 @@ html.look-calm body:not([data-page="admin"]) .ms-invite:hover > i { background: 
 html.look-calm body:not([data-page="admin"]) #view :is(.btn, .hero-more, .cf-go, .cf-all, .strip-stats, .enter-bar span, .live-strip a.strip-cal),
 html.look-calm body:not([data-page="admin"]) :is(.nav-login, .menu-login, .menu-overlay .btn, #view .btn-bar, #side .btn-bar, .back-link, .share-page, .share-btn, .league-jump a, .hub-tabs a, .pick-go),
 html.look-calm .menu-overlay .menu-login, .live-strip a.strip-cal {
-  border-radius: 0 var(--soft-corner) 0 var(--soft-corner) !important; }
+   }
 html.look-calm body:not([data-page="admin"]) :is(#view, #side) .btn-bar::before,
-html.look-calm body:not([data-page="admin"]) :is(.back-link, .share-page, .share-btn, .league-jump a, .hub-tabs a, .pick-go)::before { border-radius: 0 calc(var(--soft-corner) - 1px) 0 calc(var(--soft-corner) - 1px); }
+html.look-calm body:not([data-page="admin"]) :is(.back-link, .share-page, .share-btn, .league-jump a, .hub-tabs a, .pick-go)::before {  }
 .btn.small, .strip-stats, .cf-go { --soft-corner: 4px; }
 @media (max-width: 560px) { .hz-top .ms-invite { align-items: start; gap: 12px 14px; padding: 16px; } .hz-top .ms-invite-star { margin-top: 1px; } html.look-calm body:not([data-page="admin"]) .ms-invite > i { margin-top: 4px; } }
 
@@ -6836,7 +6836,7 @@ html.look-calm .site-footer .socials a, .site-footer .socials a { width: auto !i
   .bz-top .wrap { padding-left: 12px; padding-right: 12px; }
   .bz-top-grid { gap: 16px; }
   /* once per page: Matchday takes the button's table-corner cut instead of the pockets */
-  .bz-matchday { -webkit-mask: none; mask: none; --mcut: 16px; border-radius: 0 var(--r-lg) 0 var(--r-lg);
+  .bz-matchday { -webkit-mask: none; mask: none; --mcut: 16px; border-radius: var(--r);
     clip-path: none;
     padding: 22px 14px 12px; gap: 14px; }
   .bz-md-head { padding: 0 4px; }
@@ -6881,7 +6881,7 @@ html.look-calm .site-footer .socials a, .site-footer .socials a { width: auto !i
    Our teams as one card per league.
    ═════════════════════════════════════════════════════════════ */
 .bz-matchday, .bz-story { -webkit-mask: none !important; mask: none !important; }
-.bz-matchday { --mcut: 20px; border-radius: 0 var(--r-lg) 0 var(--r-lg);
+.bz-matchday { --mcut: 20px; border-radius: var(--r);
   clip-path: none; }
 @media (max-width: 760px) { .bz-matchday { --mcut: 16px; } }
 .bz-md-head { padding-right: 0; }
@@ -7020,7 +7020,7 @@ html.look-calm body:not([data-page="admin"]) :is(.comp-kicker, .comp-kind, .cf-k
    ═════════════════════════════════════════════════════════════ */
 /* The featured story: the picture fills the card at 16:9; the card's top-right and bottom-left corners are cut,
    answering Matchday's top-left and bottom-right */
-.bz-story { --scut: 20px; border: 0 !important; border-radius: var(--r-lg) 0 var(--r-lg) 0 !important;
+.bz-story { --scut: 20px; border: 0 !important; border-radius: var(--r) !important;
   clip-path: none; }
 .bz-slide-pic { height: auto !important; aspect-ratio: 16 / 9; width: 100%; }
 .bz-slide-pic img, .bz-slide-pic .hub-ph { width: 100% !important; height: 100% !important; max-width: none !important; object-fit: cover !important; display: block; }
@@ -7033,7 +7033,7 @@ html.look-calm body:not([data-page="admin"]) :is(.comp-kicker, .comp-kind, .cf-k
 .bz-dots button:hover::before { background: var(--muted); }
 .bz-dots button.on:hover::before { background: var(--red); }
 .bz-dots button:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
-@media (max-width: 760px) { .bz-story { --scut: 16px; border-radius: var(--r) 0 var(--r) 0 !important; } .bz-slide-pic { height: auto !important; } }
+@media (max-width: 760px) { .bz-story { --scut: 16px; border-radius: var(--r) !important; } .bz-slide-pic { height: auto !important; } }
 
 /* News pictures at 16:9, the frame too */
 .bz-news-pic { height: auto !important; aspect-ratio: 16 / 9; }

@@ -627,3 +627,56 @@ body[data-page="home"] main#view { padding: 0; }
 .sb-legacy .hb-head h2, .sb-legacy h2 { font-size: 26px; }
 
 @media (max-width: 760px) { .sb-section, .sb-section--first { padding-top: var(--space-40); } }
+
+/* ── 5. Round 100 fixes ────────────────────────────────────────────────────────────── */
+/* The league's own logo in the menu bar, as before: no red tile behind it, at the old height. */
+.sb-header .sb-brand__mark, .sbd__brand .sb-brand__mark { background: none !important; border-radius: 0; width: auto; height: 52px; overflow: visible; }
+.sb-header .sb-brand__mark img, .sbd__brand .sb-brand__mark img { width: auto; height: 100%; max-width: 160px; object-fit: contain; }
+.sbd__brand .sb-brand__mark { height: 40px; }
+@media (max-width: 900px) { .sb-header .sb-brand__mark { height: 44px; } }
+
+/* The back, share and other outline links on every page: one plain pill — surface, a hairline, no layered corners.
+   (:not(#sb) lifts these above the older layered-corner rules.) */
+html body:not(#sb) :is(#view, #side) .btn-bar,
+html body:not(#sb) :is(.back-link, .share-page, .share-btn, .league-jump a, .hub-tabs a, .pick-go) {
+  background: var(--surface) !important; border: 1px solid var(--line) !important; border-radius: var(--radius-pill) !important;
+  clip-path: none !important; box-shadow: none !important; color: var(--ink) !important; overflow: visible; isolation: auto; }
+html body:not(#sb) :is(#view, #side) .btn-bar::before,
+html body:not(#sb) :is(.back-link, .share-page, .share-btn, .league-jump a, .hub-tabs a, .pick-go)::before { content: none !important; display: none !important; }
+html body:not(#sb) :is(#view, #side) .btn-bar:hover,
+html body:not(#sb) :is(.back-link, .share-page, .share-btn, .league-jump a, .hub-tabs a, .pick-go):hover { background: var(--soft) !important; border-color: var(--ink-muted) !important; color: var(--ink) !important; }
+html body:not(#sb) :is(.hub-tabs a, .league-jump a):is(.on, [aria-current="page"], [aria-pressed="true"]) { background: var(--ink) !important; border-color: var(--ink) !important; color: var(--bg) !important; }
+/* …and every other button on the inner pages: no cut or layered corners anywhere */
+html body:not(#sb) :is(#view, #side, dialog, .drawer) :is(.btn, button.btn, a.btn) { border-radius: var(--radius-pill) !important; clip-path: none !important; }
+html body:not(#sb) :is(#view, #side, dialog, .drawer) :is(.btn, button.btn, a.btn)::before { clip-path: none !important; border-radius: var(--radius-pill) !important; }
+
+/* The close button on the side panels (log in, notifications): white on their dark header, in both themes */
+html body .drawer-head .drawer-x { color: #FFFFFF !important; border: 1px solid rgba(255, 255, 255, .4) !important; background: transparent !important; border-radius: var(--radius-round) !important; }
+html body .drawer-head .drawer-x svg { stroke: #FFFFFF; }
+html body .drawer-head .drawer-x:hover { background: #FFFFFF !important; color: #15201B !important; }
+html body .drawer-head .drawer-x:hover svg { stroke: #15201B; }
+
+/* One standard width on very wide screens: every page's content sits in the 1280px container, centred.
+   Full-width bands (the match strip, the footer) keep their colour edge to edge; what is inside them does not stretch. */
+.site-footer .wrap { max-width: calc(var(--container) + 2 * var(--gutter)); }
+.demo-banner, #ticker { width: 100%; }
+
+/* Club emblems on the home page (the league table, Next up) */
+.sb-crest { flex: none; width: 28px; height: 28px; border-radius: var(--radius-round); display: inline-grid; place-items: center; overflow: hidden; background: #FFFFFF; border: 1px solid var(--line); }
+.sb-crest img { width: 100%; height: 100%; object-fit: contain; }
+.sb-crest--initials { background: var(--soft); color: var(--ink); font-size: 10px; font-weight: 800; }
+.sb-teamcell { display: inline-flex; align-items: center; gap: 10px; }
+.sb-fixture .sb-crest { width: 24px; height: 24px; }
+.sb-fixture > span:first-child, .sb-fixture > span:last-child { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.sb-fixture > span:first-child { justify-content: flex-end; }
+/* The page width: the same 1280px of content everywhere (the menu bar, the home page and every other page line up) */
+.sb-container, .sb-header__inner, .sb-strip__inner, .sb-partners__inner, .sb-footer__inner { max-width: calc(var(--container) + 2 * var(--gutter)); }
+/* Very wide screens: the photo banners at the top of a page stop at the page width too, as rounded cards */
+@media (min-width: 1500px) {
+  #view :is(.comp-hero, .art-hero, .draw-hero, .pres-hero) { max-width: calc(var(--container) + 2 * var(--gutter) - 2 * var(--gutter)); margin-left: auto !important; margin-right: auto !important; border-radius: var(--radius-22) !important; overflow: hidden; margin-top: 24px; }
+}
+/* Next up gets enough room for the emblems beside the names */
+.sb-split__main { flex: 1.65 1 560px; }
+.sb-split__side { flex: 1 1 400px; }
+.sb-fixture { font-size: 14px; padding: 10px; gap: 8px; }
+.sb-fixture > span:first-child > span:first-child, .sb-fixture > span:last-child > span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

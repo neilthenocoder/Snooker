@@ -221,12 +221,29 @@ export const LIVE_SOON_MINUTES = 60;
  * `matches` are fixtures / competition matches with starts_at and status;
  * `ukDay(iso)` gives the UK calendar day (passed in to keep this file DOM-free).
  */
+/**
+ * Round 99 (Neil: "a match that ended still shows live"): a match counts as live only while it can really be on.
+ * Captains sometimes leave a scorecard "in progress" and never press Submit, so the status alone isn't enough:
+ * it stops being live once every frame has a result, or LIVE_WINDOW_HOURS after it started.
+ * framesPlayed / framesTotal are optional (cup matches and scoreboards don't pass them).
+ */
+export const LIVE_WINDOW_HOURS = 5;
+export function isLiveNow(m, now = Date.now(), framesPlayed = null, framesTotal = RULES.framesPerMatch) {
+  if (m?.status !== "in_progress") return false;
+  if (framesPlayed !== null && framesTotal && framesPlayed >= framesTotal) return false;
+  const start = Date.parse(m.started_at ?? m.starts_at ?? "");
+  return !Number.isFinite(start) || now - start < LIVE_WINDOW_HOURS * 3600e3;
+}
+/** In progress but no longer live: the night is over and the captain hasn't submitted the scorecard yet. */
+export const isAwaitingResult = (m, now = Date.now(), framesPlayed = null, framesTotal = RULES.framesPerMatch) =>
+  m?.status === "in_progress" && !isLiveNow(m, now, framesPlayed, framesTotal);
+
 export function liveState(matches, now, ukDay) {
-  if (matches.some((m) => m.status === "in_progress")) return "live";      // being played — with or without a date
-  const active = matches.filter((m) => !["postponed"].includes(m.status) && m.starts_at);
+  if (matches.some((m) => isLiveNow(m, now))) return "live";      // being played now (a stale "in progress" doesn't count)
+  const active = matches.filter((m) => !["postponed", "in_progress", "submitted", "approved", "completed"].includes(m.status) && m.starts_at);
   const today = ukDay(new Date(now).toISOString());
   const tonight = active.filter((m) => ukDay(m.starts_at) === today);
-  if (tonight.some((m) => now >= Date.parse(m.starts_at))) return "live";
+  if (tonight.some((m) => now >= Date.parse(m.starts_at) && now - Date.parse(m.starts_at) < LIVE_WINDOW_HOURS * 3600e3)) return "live";
   if (tonight.some((m) => Date.parse(m.starts_at) - now <= LIVE_SOON_MINUTES * 60e3)) return "soon";
   return "idle";
 }

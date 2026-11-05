@@ -3,7 +3,7 @@ import { seasonContext } from "../core/context.js";
 import { subscribe, table, liveMatches } from "../core/api.js";
 import { sideName, matchLabel, onTable as isOnTable } from "../core/live-score.js";
 import { breadcrumb, panel, dataTable, statusBadge, urls } from "../core/components.js";
-import { frameWinner } from "../core/rules.js";
+import { frameWinner, isLiveNow } from "../core/rules.js";
 import { setTitle, adminEdit } from "../core/router.js";
 
 export default async function live(view) {
@@ -14,7 +14,7 @@ export default async function live(view) {
     const onTable = boards.filter((m) => isOnTable(m));
     const liveDraws = competitions.filter((c) => c.draw_live?.status === "live");
     const today = todayUK();
-    const games = ctx.fixtures.filter((f) => f.status === "in_progress" || ukDay(f.starts_at) === today);
+    const games = ctx.fixtures.filter((f) => isLiveNow(f) || ukDay(f.starts_at) === today);
     const name = (id) => ctx.player.get(id)?.full_name ?? "–";
     // A player's name with any breaks they made in that frame: "Gary Lobb · 125 break".
     const who = (fx, f, side) => {
@@ -34,7 +34,7 @@ export default async function live(view) {
           <a class="running" href="${urls.match(fx)}">
             <div><small>${home?.name}</small>${s.home}</div><div class="dash">–</div><div><small>${away?.name}</small>${s.away}</div>
           </a>
-          <div style="text-align:center;padding-bottom:10px">${fx.status === "in_progress" ? html`<span class="live-dot">Live</span>` : statusBadge(fx.status)} <span class="muted">${fmtTime(fx.starts_at)}</span></div>
+          <div style="text-align:center;padding-bottom:10px">${isLiveNow(fx, Date.now(), (Number(s.home) || 0) + (Number(s.away) || 0)) ? html`<span class="live-dot">Live</span>` : fx.status === "in_progress" ? html`<span class="muted">Awaiting result</span>` : statusBadge(fx.status)} <span class="muted">${fmtTime(fx.starts_at)}</span></div>
           ${dataTable([
             { label: "#", cell: (f) => f.frame_no, cls: "num" },
             { label: "Home", cell: (f) => who(fx, f, "home"), cls: "right live-name" },
