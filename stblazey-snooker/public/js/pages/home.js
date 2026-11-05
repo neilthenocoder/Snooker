@@ -82,7 +82,8 @@ export default async function home(view, { user } = {}) {
   setTitle("");
   adminEdit("settings", null, { label: "Edit home page" });
   const [ctx, news, allComps, site] = await Promise.all([seasonContext(), articles(), competitionSummaries({ current: true }), settings()]);
-  if (site.player_of_week_show || site.team_of_week_show || site.player_of_month_show || site.team_of_month_show) ctx.form = await loadForm(ctx).catch(() => null);
+  // Form: for player and team of the week, and (round 104) the Form card on the Everything page.
+  if (site.home_style === "full" || site.player_of_week_show || site.team_of_week_show || site.player_of_month_show || site.team_of_month_show) ctx.form = await loadForm(ctx).catch(() => null);
   const today = todayUK();
   const dates = await table("key_dates", "starts_on").catch(() => []);
   const entering = openForEntry(allComps.map((x) => x.c));
@@ -158,7 +159,7 @@ export default async function home(view, { user } = {}) {
   const root = document.documentElement;
   root.classList.toggle("sb-navover", full);
   root.classList.toggle("sb-has-quick", everything);   // the Quick links replace "Find your way around" here
-  const onScroll = () => root.classList.toggle("sb-navsolid", scrollY > 40);
+  const onScroll = () => root.classList.toggle("sb-scrolled", scrollY > 24);
   if (full) { onScroll(); addEventListener("scroll", onScroll, { passive: true }); }
 
   maybeStartGuide({ personal: false, site });
@@ -250,7 +251,7 @@ export default async function home(view, { user } = {}) {
     for (const p of scope.querySelectorAll("[data-seg-pane]")) p.hidden = !p.dataset.segPane.split(" ").includes(key);
   });
 
-  return () => { clearInterval(timer); stopStrip(); stopSquad(); removeEventListener("resize", onResize); removeEventListener("scroll", onScroll); ro?.disconnect(); root.classList.remove("sb-navover", "sb-navsolid", "sb-has-quick"); };
+  return () => { clearInterval(timer); stopStrip(); stopSquad(); removeEventListener("resize", onResize); removeEventListener("scroll", onScroll); ro?.disconnect(); root.classList.remove("sb-navover", "sb-has-quick"); };
 }
 
 /** The lead story card(s): photo, category, how long ago, headline, Continue reading and the dots. */
@@ -329,8 +330,24 @@ function rankingsRow(ctx) {
         <span class="sb-rank__pos">${r.pos}</span>${avatar(r.player, "avatar sb-rank__face")}<span class="sb-rank__name">${r.player.full_name}</span><b class="sb-num">${r.pts}</b></a></li>`)}</ol>
       ${provisionalNote(ctx, l)}</div>`;
   };
-  return html`<div class="sb-section-head"><div><h2>Rankings and breaks</h2><p>The top players in each league this season, and the highest breaks.</p></div></div>
-    <div class="sb-ranks">${leagues.map(rankCard)}${breakLeagues.length ? breaksCard(ctx, breakLeagues) : ""}</div>`;
+  return html`<div class="sb-section-head"><div><h2>Rankings, form and breaks</h2><p>The top players in each league this season, who is in form, and the highest breaks.</p></div></div>
+    <div class="sb-ranks">${leagues.map(rankCard)}${formCard(ctx)}${breakLeagues.length ? breaksCard(ctx, breakLeagues) : ""}</div>`;
+}
+/**
+ * Round 104 (Neil: "why did you remove the player form section?"): the players in the best form — the mark out of 10
+ * over their last matches, the W/L of each, and the arrow for which way it is going — as on My Snooker and the Form guide.
+ */
+function formCard(ctx) {
+  if (!ctx.form) return "";
+  const rows = ctx.leagues.flatMap((l) => ctx.playersIn(l.id)).map((p) => ({ p, f: ctx.form.player(p.id) })).filter((x) => x.f?.n)
+    .sort((a, b) => b.f.form - a.f.form || b.f.n - a.f.n || a.p.full_name.localeCompare(b.p.full_name)).slice(0, 8);
+  if (!rows.length) return "";
+  return html`<div class="sb-card sb-rank sb-formcard">
+    <div class="sb-rank__head"><h2>In form</h2><a class="sb-pill-link" href="/form">Form guide</a></div>
+    <ol class="sb-rank__list">${rows.map(({ p, f }, i) => html`<li class="${i === 0 ? "is-first" : ""}"><a href="${urls.player(p)}#form">
+      ${avatar(p, "avatar sb-rank__face")}<span class="sb-rank__name"><span>${p.full_name}</span><small>${ctx.team.get(p.team_id)?.name ?? ""}</small></span>
+      <span class="sb-formcard__chips">${formChips(f, { links: false })}</span>${formBadge(f, { trend: true })}</a></li>`)}</ol>
+  </div>`;
 }
 /** The Breaks card: one league at a time — 1st, 2nd and 3rd on a podium, then the next four. */
 function breaksCard(ctx, leagues) {

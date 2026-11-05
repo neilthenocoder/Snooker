@@ -4,8 +4,12 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.87.2";
+export const SITE_VERSION = "1.88.1";
 export const CHANGES = [
+  "Phones: the bottom menu sits on a flat white sheet with a straight top edge; only the bar with Home, Fixtures, Tables, Comps and More is rounded, a little in from the edges",
+  "The menu bar gets shorter as soon as the page scrolls — on every page — in one smooth movement, with the thin red line under it; on the full-width banner page the see-through bar turns into the white one. No white band left above the menu",
+  "Everything home page: an In form card beside the rankings — the players in the best form, with their mark out of 10 and which way it is going",
+  "Hover effects checked: the headline on the big story card stays white, buttons inside cards light up with the card, and every button has one clear hover",
   "Full-width banner: no light strip above the menu any more (the photo now starts exactly behind the menu), more space between the menu and the headline, and a long headline can no longer slide up under the menu",
   "The website is always light: the sun/moon switch and the light/dark setting are gone, and the page background is the design's own again (no longer a Branding setting)",
   "The thin red line is now only under the menu on the full-width banner page once it has scrolled; the line along the top of the match strip (and its setting) is gone",

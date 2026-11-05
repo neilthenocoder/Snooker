@@ -707,14 +707,19 @@ body { font-size: var(--fs-body, 16px); }
 html body .badge.logo, html body .strip-card .badge.logo, html body .team-cell .badge.logo { background: none !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }
 html body .badge.logo img { object-fit: contain; }
 
-/* Phones: the bar at the bottom as a rounded panel, floating just off the edges (like the rounded menu at the top) */
+/* Phones (round 105): the bottom menu sits on a flat, full-width sheet with a straight top edge; the bar with Home, Fixtures,
+   Tables, Comps and More is a rounded panel inside it, a little in from the edges. */
 @media (max-width: 900px) {
-  html.has-bnav body .bnav { left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); }
-  html.has-bnav body .bnav-tray { border: 1px solid var(--line) !important; border-bottom: 0 !important; border-radius: 22px 22px 0 0; box-shadow: 0 -10px 30px -18px rgba(0, 0, 0, .35); }
-  html.has-bnav body .bnav-bar { height: var(--bnav-bar); padding-bottom: 0; border: 1px solid var(--line) !important; border-radius: 22px; box-shadow: 0 12px 30px -14px rgba(0, 0, 0, .4); overflow: hidden; }
-  html.has-bnav.bnav-tucked body .bnav-tray { box-shadow: none; }
+  html.has-bnav body .bnav { left: 0; right: 0; bottom: 0; background: none; }
+  html.has-bnav body .bnav-tray { border: 0 !important; border-top: 1px solid var(--line) !important; border-radius: 0; background: var(--surface) !important; box-shadow: 0 -10px 24px -18px rgba(0, 0, 0, .3); }
+  /* the flat white sheet behind the rounded bar stays put when the shortcuts above it slide away */
+  html.has-bnav body .bnav-bar { z-index: 3; height: var(--bnav-bar); margin: 0 8px calc(8px + env(safe-area-inset-bottom)); padding-bottom: 0; border: 1px solid var(--line) !important; border-radius: 22px; background: var(--soft) !important;
+    box-shadow: none; }
+  html.has-bnav body .bnav::before { content: ""; position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; height: calc(var(--bnav-bar) + 16px + env(safe-area-inset-bottom));
+    background: var(--surface); border-top: 1px solid var(--line); }
+  html.has-bnav body .bnav-bar .bnav-line { display: none; }
   html.has-bnav body .bnav-line { left: 0; }
-  html.has-bnav body:not(:is([data-page="admin"], [data-page="scorecard"], [data-page="cup-scorecard"], [data-page="my"], [data-page="login"])) { padding-bottom: calc(var(--bnav-space, 0px) + 10px); }
+  html.has-bnav body:not(:is([data-page="admin"], [data-page="scorecard"], [data-page="cup-scorecard"], [data-page="my"], [data-page="login"])) { padding-bottom: calc(var(--bnav-space, 0px) + 8px); }
 }
 
 /* Links that sit in a soft red pill (All news, Full rankings…) */
@@ -797,24 +802,17 @@ a:hover .sb-btn--yellow, .sb-btn--yellow:hover { filter: brightness(1.06); color
 }
 
 /* The menu on top of the photo: see-through, in a rounded glass bar, until the page scrolls */
-html.sb-navover:not(.sb-navsolid) .sb-header { background: transparent; border-bottom-color: transparent; }
-html.sb-navover .sb-header { transition: background .25s, border-color .25s; }
-html.sb-navover .sb-header { padding-top: 14px; padding-bottom: 6px; }
-html.sb-navover:not(.sb-navsolid) .sb-header__inner { padding-top: 10px; padding-bottom: 10px; max-width: calc(var(--container) + 2 * var(--gutter) - 2 * var(--gutter));
-  border-radius: var(--radius-pill); background: rgba(12, 15, 14, .5); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border: 1px solid rgba(255, 255, 255, .14); }
-html.sb-navover:not(.sb-navsolid) .sb-navlink:not([aria-current="page"]) { color: #fff; }
-html.sb-navover:not(.sb-navsolid) .sb-navlink:not([aria-current="page"]):hover { background: rgba(255, 255, 255, .14); }
-html.sb-navover:not(.sb-navsolid) .sb-icon-btn { background: rgba(255, 255, 255, .92); color: #15201B; border-color: transparent; }
-html.sb-navover:not(.sb-navsolid) .sb-theme { background: rgba(255, 255, 255, .16); }
-html.sb-navover:not(.sb-navsolid) .sb-theme button { color: #fff; }
-html.sb-navover:not(.sb-navsolid) .sb-theme button[aria-pressed="true"] { background: #fff; color: #15201B; }
-html.sb-navover:not(.sb-navsolid) .sb-acct { background: rgba(255, 255, 255, .92); color: #15201B; border-color: transparent; }
-html.sb-navover:not(.sb-navsolid) .sb-livebtn:not(.state-live):not(.state-soon) { background: rgba(255, 255, 255, .16); color: #fff; }
-html.sb-navover:not(.sb-navsolid) .sb-logo-dark { display: block !important; }
-html.sb-navover:not(.sb-navsolid) .sb-logo-light { display: none !important; }
+html.sb-navover:not(.sb-scrolled) .sb-navlink:not([aria-current="page"]) { color: #fff; }
+html.sb-navover:not(.sb-scrolled) .sb-navlink:not([aria-current="page"]):hover { background: rgba(255, 255, 255, .14); }
+html.sb-navover:not(.sb-scrolled) .sb-icon-btn { background: rgba(255, 255, 255, .92); color: #15201B; border-color: transparent; }
+html.sb-navover:not(.sb-scrolled) .sb-theme { background: rgba(255, 255, 255, .16); }
+html.sb-navover:not(.sb-scrolled) .sb-theme button { color: #fff; }
+html.sb-navover:not(.sb-scrolled) .sb-theme button[aria-pressed="true"] { background: #fff; color: #15201B; }
+html.sb-navover:not(.sb-scrolled) .sb-acct { background: rgba(255, 255, 255, .92); color: #15201B; border-color: transparent; }
+html.sb-navover:not(.sb-scrolled) .sb-livebtn:not(.state-live):not(.state-soon) { background: rgba(255, 255, 255, .16); color: #fff; }
+html.sb-navover:not(.sb-scrolled) .sb-logo-dark { display: block !important; }
+html.sb-navover:not(.sb-scrolled) .sb-logo-light { display: none !important; }
 @media (max-width: 900px) {
-  html.sb-navover .sb-header { padding: 10px 10px 4px; }
-  html.sb-navover:not(.sb-navsolid) .sb-header__inner { padding: 8px 10px; border-radius: 22px; }
 }
 
 /* ── Quick links (Everything) ── */
@@ -959,10 +957,89 @@ html body:not(#sb) :is(.breadcrumb, .admin-crumbs) a { border-radius: var(--radi
 html body:not(#sb) :is(.breadcrumb, .admin-crumbs) a:hover { background: var(--soft); color: var(--ink); }
 html body:not(#sb) :is(.breadcrumb, .admin-crumbs) a::before { display: none !important; }
 
-/* Round 102 — the thin red line: only under the menu once the full-width banner page has scrolled */
-html.sb-navover.sb-navsolid .sb-header { border-bottom: 2px solid var(--red); }
 /* The cups' own trophy pictures (Admin → Competitions), where one has been uploaded */
 .sb-spot__icon.has-img { background: none !important; }
 .sb-spot__icon img.sb-trophy-img { width: 100%; height: 100%; object-fit: contain; }
 .sb-spotlight__trophy.has-img { width: 96px; height: 96px; background: none !important; border-radius: 0; }
 .sb-spotlight__trophy img.sb-trophy-img { width: 100%; height: 100%; object-fit: contain; }
+
+/* ── 7. Round 104 — the menu bar shrinks smoothly as the page scrolls ──────────────────
+   The bar's box keeps one height (so the page never jumps); the white bar painted inside it gets shorter, the logo
+   smaller, and the thin red line appears under it. On the full-width banner page the see-through rounded bar turns into
+   the white one in the same movement. The white is drawn by the bar row itself (a shadow spread to the screen edges),
+   so nothing white is left above or below it. */
+:root { --hdr-box: 80px; --bar-pad: 14px; --logo-h: 52px; --bar-ease: cubic-bezier(.22, .7, .2, 1); }
+html.sb-navover { --hdr-box: 86px; --bar-pad: 10px; }
+html.sb-scrolled { --bar-pad: 6px; --logo-h: 38px; }
+@media (max-width: 900px) {
+  :root { --hdr-box: 64px; --bar-pad: 10px; --logo-h: 44px; }
+  html.sb-navover { --hdr-box: 70px; --bar-pad: 8px; }
+  html.sb-scrolled { --bar-pad: 5px; --logo-h: 34px; }
+}
+html body .sb-header { height: var(--hdr-box); padding: 0 !important; background: transparent !important; border-bottom: 0 !important; pointer-events: none; }
+html body .sb-header > * { pointer-events: auto; }
+html body .sb-header__inner {
+  padding-top: var(--bar-pad); padding-bottom: var(--bar-pad); margin-top: 0;
+  max-width: calc(var(--container) + 2 * var(--gutter)); border: 1px solid transparent; border-radius: 0;
+  background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none;
+  position: relative; box-shadow: 0 0 0 100vmax var(--surface);
+  clip-path: inset(-1px -100vmax -2px -100vmax);
+  transition: padding .45s var(--bar-ease), margin .45s var(--bar-ease), max-width .45s var(--bar-ease), border-radius .45s var(--bar-ease),
+    background-color .35s ease, border-color .35s ease, box-shadow .35s ease; }
+/* the line under the bar: grey hairline at the top of the page, the thin red line once scrolled */
+html body .sb-header__inner::after { content: ""; position: absolute; left: -100vmax; right: -100vmax; bottom: -1px; height: 1px; background: var(--line); transition: background-color .35s ease, height .35s ease, bottom .35s ease, opacity .35s ease; pointer-events: none; }
+html.sb-scrolled body .sb-header__inner::after { height: 2px; bottom: -2px; background: var(--red); }
+html.sb-navover:not(.sb-scrolled) body .sb-header__inner::after { opacity: 0; }
+html body .sb-header .sb-brand__mark { height: var(--logo-h); transition: height .45s var(--bar-ease); }
+html body .sb-header .sb-navlink, html body .sb-header .sb-btn, html body .sb-header .sb-icon-btn, html body .sb-header .sb-acct { transition: background-color .25s ease, color .25s ease, height .45s var(--bar-ease); }
+html.sb-scrolled body .sb-header :is(.sb-navlink, .sb-btn, .sb-icon-btn, .sb-acct) { height: 36px; }
+html.sb-scrolled body .sb-header .sb-icon-btn { width: 36px; }
+
+/* The full-width banner page, before scrolling: a see-through rounded glass bar on the photo */
+html.sb-navover:not(.sb-scrolled) body .sb-header__inner {
+  margin-top: 14px; max-width: var(--container); border-radius: var(--radius-pill);
+  background: rgba(12, 15, 14, .5); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-color: rgba(255, 255, 255, .14);
+  box-shadow: 0 0 0 100vmax rgba(255, 255, 255, 0); }
+@media (max-width: 900px) {
+  html.sb-navover:not(.sb-scrolled) body .sb-header__inner { margin: 10px 10px 0; padding-left: 10px; padding-right: 10px; border-radius: 22px; }
+}
+@media (prefers-reduced-motion: reduce) { html body .sb-header__inner, html body .sb-header .sb-brand__mark { transition: none; } }
+
+/* ── Hover states, checked one by one ── */
+/* Big story cards and banner slides: the writing stays white on the photo */
+html body .sb-storycard:hover, html body .sb-storycard:hover .sb-storycard__title, .sb-storycard__title { color: #fff !important; }
+html body :is(.sb-hero__slide, .sb-fh__slide):hover :is(.sb-hero__title, .sb-fh__title, .sb-fh__excerpt) { color: #fff !important; }
+html body .sb-storycard:hover .sb-storycard__title, html body :is(.sb-hero__slide, .sb-fh__slide):hover :is(.sb-hero__title, .sb-fh__title) { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 5px; }
+/* Buttons inside a card that is a link: they light up with the card */
+.sb-storycard:hover .sb-btn--light, :is(.sb-hero__slide, .sb-fh__slide):hover .sb-btn--light { background: #E9ECE8; color: #15201B; }
+:is(.sb-hero__slide, .sb-fh__slide):hover .sb-btn--yellow { filter: brightness(1.07); }
+/* Story rows, quick links, rankings and cards: the text keeps its own colour; only the surface changes */
+html body .sb-story-row:hover, html body .sb-story-row:hover .sb-story-row__title { color: var(--ink); }
+html body .sb-story-row:hover .sb-kicker { color: var(--red-text); }
+html body .sb-quick__item:hover, html body .sb-rank__list a:hover, html body .sb-shield:hover, html body .sb-spot:hover, html body .sb-fixture:hover, html body .sb-find__item:hover { color: var(--ink) !important; }
+html body .sb-quick__item:hover .sb-quick__ico { background: var(--red); color: #fff; }
+/* Buttons: one hover each */
+html body .sb-btn--primary:hover { background: var(--red-dark); color: var(--on-red); }
+html body .sb-btn--light:hover { background: #E9ECE8; color: #15201B; }
+html body .sb-btn--outline:hover { background: var(--soft); border-color: var(--ink-muted); color: var(--ink); }
+html body .sb-btn--ink:hover { background: #2A3530; color: #fff; }
+html body .sb-btn--yellow:hover { filter: brightness(1.07); color: var(--on-yellow); }
+html body .sb-promo .sb-btn:hover { background: #FBE3E9; color: var(--red-dark); }
+html body .sb-link:hover { color: var(--red-text); text-decoration: underline; text-underline-offset: 3px; }
+html body .sb-seg button:not([aria-pressed="true"]):hover { color: var(--ink); background: var(--surface); }
+html body .sb-seg--arena button:not([aria-pressed="true"]):hover { color: var(--arena-ink); background: var(--arena-raised); }
+html body .sb-strip__all:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+html body .sb-match:hover { color: var(--arena-ink); }
+html body .sb-match:hover .sb-match__team, html body .sb-match:hover .sb-match__top b { color: var(--arena-ink); }
+html body .sb-livebtn.state-live:hover { color: #fff; }
+html body .sb-navlink:not([aria-current="page"]):hover { color: var(--ink); background: var(--soft); }
+html.sb-navover:not(.sb-scrolled) body .sb-navlink:not([aria-current="page"]):hover { color: #fff; background: rgba(255, 255, 255, .14); }
+html body .sb-navlink[aria-current="page"]:hover { background: var(--red-dark); color: #fff; }
+
+/* Round 104 — the In form card beside the rankings (Everything) */
+.sb-ranks { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+.sb-formcard .sb-rank__name { display: flex; flex-direction: column; gap: 1px; }
+.sb-formcard .sb-rank__name small { color: var(--ink-muted); font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-formcard .sb-formcard__chips { display: none; }
+.sb-formcard li a { gap: 10px; }
+.sb-formcard .form-badge, .sb-formcard [class*="form-b"] { flex: none; }
