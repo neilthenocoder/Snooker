@@ -198,6 +198,44 @@ document.addEventListener("click", (e) => {
   trayPinned = show; setTray(show);
 });
 window.addEventListener("resize", markBottomNav, { passive: true });
+// Round 107 (Neil): on a phone the shortcuts can also be swiped away — drag them down and they follow your finger and
+// tuck behind the bar; swipe up on the bar to bring them back. A tap on the handle still does the same.
+{
+  let drag = null;
+  const root = document.documentElement, tray = () => $(".bnav-tray");
+  document.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" || !e.target.closest(".bnav")) return;
+    drag = { x: e.clientX, y: e.clientY, dy: 0, id: e.pointerId, on: false, tucked: root.classList.contains("bnav-tucked") };
+  }, { passive: true });
+  document.addEventListener("pointermove", (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.on) {
+      if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) { drag = null; return; }   // sideways: the shortcuts row scrolling
+      if (Math.abs(dy) < 8) return;
+      drag.on = true;
+      const t = tray(); if (t) t.style.transition = "none";
+    }
+    drag.dy = dy;
+    const t = tray();
+    if (t && !drag.tucked && dy > 0) t.style.transform = `translateY(${dy}px)`;
+  }, { passive: true });
+  const end = () => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    const t = tray();
+    if (t) { t.style.transition = ""; t.style.transform = ""; }
+    if (!d.on) return;
+    if (!d.tucked && d.dy > 36) { trayPinned = false; setTray(false); }
+    else if (d.tucked && d.dy < -24) { trayPinned = true; setTray(true); }
+    // the tap that ends a swipe doesn't open what it started on
+    const stop = (ev) => { ev.preventDefault(); ev.stopPropagation(); };
+    document.addEventListener("click", stop, { capture: true, once: true });
+    setTimeout(() => document.removeEventListener("click", stop, { capture: true }), 350);
+  };
+  document.addEventListener("pointerup", end);
+  document.addEventListener("pointercancel", end);
+}
 
 
 // Round 104: the menu bar gets shorter (with the thin red line under it) once the page is scrolled a little — on every page.

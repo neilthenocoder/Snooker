@@ -578,6 +578,8 @@ export const RESOURCES = {
       { type: "heading", tab: "Home page", label: "Home page banner", help: "The logo, colours and fonts are under Website → Branding." },
       { name: "hero_image_url", label: "Banner picture for a story that has none of its own (16:9, e.g. 1920 × 1080)", type: "image", folder: "branding", maxSize: 2000 },
       { name: "hero_count", label: "How many news articles rotate in the banner", type: "number", default: 4 },
+      // Round 106 (Neil: "one news after another is very long"): kept in home_sections, so no database change is needed.
+      { name: "hero_seconds", in: "home_sections", label: "Seconds each lead story shows before the next (3 to 30 — the bars under it fill up in this time)", type: "number", min: 3, max: 30, default: 6, placeholder: "6" },
       { name: "hero_layout", label: "Banner layout", type: "select", options: ["auto", "card", "full"], default: "auto",
         labels: { auto: "Standard — the rounded card with Top stories beside it on the Standard home page; the full-width photo on Everything", card: "Rounded card with Top stories beside it", full: "Full-width photo, with the menu and the match strip on top of it (Rich's design)" } },
       { name: "hero_bg", label: "Banner colour when a story has no picture and no banner background is set (empty for the standard dark)", type: "color", optional: true, default: "#121614" },

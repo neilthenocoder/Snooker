@@ -1043,3 +1043,95 @@ html body .sb-navlink[aria-current="page"]:hover { background: var(--red-dark); 
 .sb-formcard .sb-formcard__chips { display: none; }
 .sb-formcard li a { gap: 10px; }
 .sb-formcard .form-badge, .sb-formcard [class*="form-b"] { flex: none; }
+
+/* ── 8. Round 106 ──────────────────────────────────────────────────────────────────── */
+/* The account menu (and anything else that drops down from the menu bar) shows again: the bar's white is now drawn
+   by a layer behind it instead of a clip that cut off everything below the bar. */
+html body .sb-header { overflow-x: clip; }
+html body .sb-header__inner { clip-path: none !important; box-shadow: none !important; background: transparent; }
+html body .sb-header__inner::before { content: ""; position: absolute; z-index: -1; top: 0; bottom: 0; left: -100vmax; right: -100vmax;
+  background: var(--surface); transition: opacity .35s ease; pointer-events: none; }
+html.sb-navover:not(.sb-scrolled) body .sb-header__inner { background: rgba(12, 15, 14, .5); }
+html.sb-navover:not(.sb-scrolled) body .sb-header__inner::before { opacity: 0; }
+html body .sb-header .sb-drop { z-index: 120; }
+
+/* The lead story's bars: one for each story; the current one fills up while it is shown, then the next story comes */
+.sb-hero__dots { display: flex; gap: 8px; }
+.sb-hero__dots button { position: relative; width: 44px !important; height: 3px !important; padding: 0; border: 0; border-radius: 2px; background: rgba(255, 255, 255, .35) !important; overflow: visible; cursor: pointer; transition: none; }
+.sb-hero__dots button i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 2px; background: #fff; }
+.sb-hero__dots button[data-done] i { width: 100%; }
+.sb-hero__dots button[aria-current="true"] i { width: 100%; }
+.sb-hero__dots.is-auto button[aria-current="true"] i { width: 0; animation: sbFill var(--hero-ms, 6000ms) linear forwards; }
+.sb-hero__dots.is-held button[aria-current="true"] i { animation-play-state: paused; }
+.sb-hero__dots button::before { content: ""; position: absolute; left: -4px; right: -4px; top: -20px; bottom: -20px; margin: 0; height: auto; }
+@keyframes sbFill { from { width: 0; } to { width: 100%; } }
+@media (max-width: 760px) { .sb-hero__dots button { width: 32px !important; } }
+
+/* Rankings on one row; In form and Breaks on the row underneath (Neil, round 106) */
+.sb-ranks--2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+.sb-ranks--below { margin-top: var(--space-24); }
+.sb-ranks--below:empty { display: none; }
+
+/* ── Round 107 — phones ── */
+/* The shorter menu bar once scrolled: the logo smaller, with clear space above and below it before the red line */
+@media (max-width: 900px) {
+  html.sb-scrolled { --bar-pad: 9px; --logo-h: 30px; }
+  html.sb-scrolled body .sb-header :is(.sb-navlink, .sb-btn, .sb-icon-btn, .sb-acct) { height: 34px; }
+  html.sb-scrolled body .sb-header .sb-icon-btn { width: 34px; }
+  html.sb-scrolled body .sb-header .sb-acct__initials { width: 28px; height: 28px; }
+  html body .sb-header .sb-brand__mark { height: var(--logo-h) !important; }
+}
+
+/* League tables on phones: every column on the screen at once — no sideways scrolling */
+@media (max-width: 600px) {
+  .sb-split .sb-card { padding: 16px 12px; border-radius: var(--radius-18); }
+  .sb-split .sb-card-head { margin-bottom: 12px; gap: 10px; }
+  .sb-split .sb-card-head h2 { font-size: 22px; }
+  .sb-split .sb-seg button { padding: 0 12px; font-size: 12px; }
+  .sb-table-wrap { overflow-x: visible; }
+  .sb-table { min-width: 0 !important; table-layout: auto; font-size: 13px !important; }
+  .sb-table th { padding: 8px 2px !important; font-size: 11px !important; }
+  .sb-table td { padding: 8px 2px !important; }
+  .sb-lt td, .sb-lt th { padding-top: 7px !important; padding-bottom: 7px !important; }
+  .sb-table th:first-child, .sb-table td:first-child { padding-left: 4px !important; }
+  .sb-table th:last-child, .sb-table td:last-child { padding-right: 4px !important; }
+  .sb-table :is(th, td).sb-c { width: 24px; }
+  .sb-lt .lt-pos { min-width: 0; flex-direction: column; gap: 0; line-height: 1.1; }
+  .sb-lt .lt-pos b { font-size: 13px; }
+  .sb-lt .lt-mv { font-size: 9px; }
+  .sb-lt .lt-mv.same { display: none; }
+  .sb-lt .lt-team { gap: 4px; min-width: 0; }
+  .sb-lt .team-cell { gap: 6px; font-size: 13px; line-height: 1.2; }
+  .sb-lt .team-cell .badge { width: 22px; height: 22px; }
+  .sb-lt .lt-zone { width: 16px; height: 16px; font-size: 10px; border-radius: 5px; }
+  .sb-lt tbody tr.lt-top td:first-child, .sb-lt tbody tr.lt-top td:last-child { border-radius: 0; }
+  .sb-split .lt-key { font-size: 12px; gap: 6px 14px; }
+  .sb-split .sb-card-foot { margin-top: 14px; }
+  /* the same for the other tables on the home page (Everything: League tables) */
+  .sb-tables .panel table.data { font-size: 13px; }
+  .sb-tables .panel table.data :is(th, td) { padding-left: 3px; padding-right: 3px; }
+}
+/* …and every table on the other pages: a little tighter on phones so they fit the screen */
+@media (max-width: 600px) {
+  #view table.data { font-size: 13px; }
+  #view table.data :is(th, td) { padding-left: 4px !important; padding-right: 4px !important; }
+  #view table.data :is(th, td):first-child { padding-left: 8px !important; }
+  #view table.data :is(th, td):last-child { padding-right: 8px !important; }
+  #view table.data .team-cell { gap: 6px; }
+  #view table.data .team-cell .badge, #view table.data .avatar { width: 22px; height: 22px; }
+  #view .panel { border-radius: var(--radius-18); }
+}
+@media (max-width: 600px) {
+  #view table.data th { white-space: normal !important; line-height: 1.15; hyphens: auto; }
+  #view table.data td { white-space: normal; }
+  #view table.data td.num, #view table.data td .lt-pts { white-space: nowrap; }
+}
+@media (max-width: 600px) { #view table.data .hide-sm { display: none !important; } }
+@media (max-width: 600px) {
+  #view table.data th { font-size: 11px !important; letter-spacing: 0 !important; }
+  #view table.data :is(th, td) { padding-left: 3px !important; padding-right: 3px !important; }
+  #view table.data :is(th, td):first-child { padding-left: 6px !important; }
+  #view table.data :is(th, td):last-child { padding-right: 6px !important; }
+}
+/* the bottom menu takes vertical swipes itself (to tuck the shortcuts away or bring them back); sideways still scrolls the shortcuts */
+@media (max-width: 900px) { .bnav-tray, .bnav-bar { touch-action: pan-x; } .bnav-tray { will-change: transform; } }

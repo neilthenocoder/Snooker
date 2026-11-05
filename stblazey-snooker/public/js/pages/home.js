@@ -165,24 +165,42 @@ export default async function home(view, { user } = {}) {
   maybeStartGuide({ personal: false, site });
   const stopSquad = await mountSquadBox(user, ctx, site).catch(() => () => {});
 
-  // The lead story turns every few seconds (it waits while the mouse is over it). Swipe or drag to move it yourself.
+  // The lead story turns every few seconds — Admin → Site settings → "Seconds each lead story shows" (round 106; 6 as
+  // standard). The bars under it fill up as the time runs out, then the next story comes in. Swipe, drag or press a bar.
   const slideEls = $$("[data-slide]", view), dots = $$("[data-dot]", view);
   const track = $("[data-track]", view), heroBox = $("[data-hero]", view);
-  let current = 0, paused = false;
+  const secs = Number(site.home_sections?.hero_seconds);
+  const heroMs = (secs >= 3 && secs <= 30 ? secs : 6) * 1000;
+  view.style.setProperty("--hero-ms", `${heroMs}ms`);
+  let current = 0, turn = null;
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const auto = slideEls.length > 1 && !reduce;
   const place = (px = 0, animate = true) => {
     if (!track) return;
-    track.style.transition = animate && !reduce ? "transform .5s cubic-bezier(.22, .7, .2, 1)" : "none";
+    track.style.transition = animate && !reduce ? "transform .6s cubic-bezier(.22, .7, .2, 1)" : "none";
     track.style.transform = `translate3d(calc(${-current * 100}% + ${px}px), 0, 0)`;
+  };
+  const schedule = () => {
+    clearTimeout(turn);
+    if (auto) turn = setTimeout(() => (document.hidden ? schedule() : show(current + 1)), heroMs);
   };
   const show = (i) => {
     current = (i + slideEls.length) % slideEls.length;
     slideEls.forEach((s, j) => { s.setAttribute("aria-hidden", String(j !== current)); s.tabIndex = j === current ? 0 : -1; });
-    dots.forEach((d) => d.setAttribute("aria-current", String(Number(d.dataset.dot) === current)));
+    dots.forEach((d) => {
+      const j = Number(d.dataset.dot);
+      d.toggleAttribute("data-done", j < current);
+      d.setAttribute("aria-current", "false");
+      void d.offsetWidth;                         // start the bar's fill again from empty
+      d.setAttribute("aria-current", String(j === current));
+    });
+    dots[0]?.parentElement.classList.toggle("is-auto", auto);
+    dots[0]?.parentElement.classList.remove("is-held");
     place(0, true);
+    schedule();
   };
   show(0); place(0, false);
-  heroBox?.addEventListener("click", (e) => { const d = e.target.closest("[data-dot]"); if (d) { e.preventDefault(); show(Number(d.dataset.dot)); } });
+  view.addEventListener("click", (e) => { const d = e.target.closest("[data-dot]"); if (d) { e.preventDefault(); show(Number(d.dataset.dot)); } });
   if (heroBox && track && slideEls.length > 1) {
     let drag = null, dragged = false;
     heroBox.addEventListener("pointerdown", (e) => {
@@ -195,7 +213,8 @@ export default async function home(view, { user } = {}) {
       if (!drag.on) {
         if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
         if (Math.abs(dy) > Math.abs(dx)) { drag = null; return; }
-        drag.on = true; dragged = true; paused = true;
+        drag.on = true; dragged = true; clearTimeout(turn);
+        dots[0]?.parentElement.classList.add("is-held");
         try { heroBox.setPointerCapture(e.pointerId); } catch { /* fine */ }
       }
       const edge = (current === 0 && dx > 0) || (current === slideEls.length - 1 && dx < 0);
@@ -208,19 +227,13 @@ export default async function home(view, { user } = {}) {
       const fast = Math.abs(d.dx) / Math.max(1, performance.now() - d.t) > 0.45;
       const far = Math.abs(d.dx) > d.w * 0.18 || (fast && Math.abs(d.dx) > 24);
       show(Math.max(0, Math.min(slideEls.length - 1, far ? current + (d.dx < 0 ? 1 : -1) : current)));
-      setTimeout(() => { paused = false; }, ROTATE_MS);
     };
     heroBox.addEventListener("pointerup", end); heroBox.addEventListener("pointercancel", end);
     heroBox.addEventListener("click", (e) => { if (dragged) { e.preventDefault(); e.stopPropagation(); dragged = false; } }, true);
     heroBox.addEventListener("dragstart", (e) => e.preventDefault());
-    heroBox.addEventListener("mouseenter", () => { paused = true; });
-    heroBox.addEventListener("mouseleave", () => { paused = false; });
-    heroBox.addEventListener("focusin", () => { paused = true; });
-    heroBox.addEventListener("focusout", () => { paused = false; });
   }
   const onResize = () => place(0, false);
   addEventListener("resize", onResize, { passive: true });
-  const timer = slideEls.length > 1 && !reduce ? setInterval(() => { if (!paused && !document.hidden) show(current + 1); }, ROTATE_MS) : null;
 
   // The match strip, kept live.
   const stopStrip = await mountLiveStrip($("[data-strip]", view), user, { mode: "tabs", layout: "sb" });
@@ -251,13 +264,13 @@ export default async function home(view, { user } = {}) {
     for (const p of scope.querySelectorAll("[data-seg-pane]")) p.hidden = !p.dataset.segPane.split(" ").includes(key);
   });
 
-  return () => { clearInterval(timer); stopStrip(); stopSquad(); removeEventListener("resize", onResize); removeEventListener("scroll", onScroll); ro?.disconnect(); root.classList.remove("sb-navover", "sb-has-quick"); };
+  return () => { clearTimeout(turn); stopStrip(); stopSquad(); removeEventListener("resize", onResize); removeEventListener("scroll", onScroll); ro?.disconnect(); root.classList.remove("sb-navover", "sb-has-quick"); };
 }
 
 /** The lead story card(s): photo, category, how long ago, headline, Continue reading and the dots. */
 function heroLead(slides, site = {}) {
   if (!slides.length) return html`<div class="sb-hero__lead sb-hero__lead--empty"><div class="sb-hero__body"><span class="sb-tag">Since ${SITE.established}</span><h1 class="sb-hero__title">${SITE.name}</h1></div></div>`;
-  const dots = slides.length > 1 ? html`<div class="sb-hero__dots" role="group" aria-label="Choose a story">${slides.map((_, i) => html`<button type="button" data-dot="${i}" aria-label="Story ${i + 1}" aria-current="${String(i === 0)}"></button>`)}</div>` : "";
+  const dots = slides.length > 1 ? html`<div class="sb-hero__dots" role="group" aria-label="Choose a story">${slides.map((_, i) => html`<button type="button" data-dot="${i}" aria-label="Story ${i + 1}" aria-current="${String(i === 0)}"><i></i></button>`)}</div>` : "";
   return html`<div class="sb-hero__lead sb-hero__frame" data-hero>
     <div class="sb-hero__track" data-track>
       ${slides.map((a, i) => html`<a class="sb-hero__slide" data-slide href="${urls.article(a)}" aria-hidden="${String(i !== 0)}">
@@ -280,7 +293,7 @@ function heroLead(slides, site = {}) {
  */
 function heroFull(slides, site = {}) {
   if (!slides.length) return html`<div class="sb-fh__frame"><div class="sb-fh__slide"><span class="sb-fh__body"><span class="sb-fh__inner"><h1 class="sb-fh__title">${SITE.name}</h1></span></span></div></div><div class="sb-fh__space"></div>`;
-  const dots = slides.length > 1 ? html`<div class="sb-fh__dots"><div class="sb-container"><div class="sb-hero__dots" role="group" aria-label="Choose a story">${slides.map((_, i) => html`<button type="button" data-dot="${i}" aria-label="Story ${i + 1}" aria-current="${String(i === 0)}"></button>`)}</div></div></div>` : "";
+  const dots = slides.length > 1 ? html`<div class="sb-fh__dots"><div class="sb-container"><div class="sb-hero__dots" role="group" aria-label="Choose a story">${slides.map((_, i) => html`<button type="button" data-dot="${i}" aria-label="Story ${i + 1}" aria-current="${String(i === 0)}"><i></i></button>`)}</div></div></div>` : "";
   return html`<div class="sb-fh__frame" data-hero>
       <div class="sb-fh__track" data-track>
       ${slides.map((a, i) => html`<a class="sb-fh__slide" data-slide href="${urls.article(a)}" aria-hidden="${String(i !== 0)}">
@@ -331,7 +344,8 @@ function rankingsRow(ctx) {
       ${provisionalNote(ctx, l)}</div>`;
   };
   return html`<div class="sb-section-head"><div><h2>Rankings, form and breaks</h2><p>The top players in each league this season, who is in form, and the highest breaks.</p></div></div>
-    <div class="sb-ranks">${leagues.map(rankCard)}${formCard(ctx)}${breakLeagues.length ? breaksCard(ctx, breakLeagues) : ""}</div>`;
+    <div class="sb-ranks sb-ranks--2">${leagues.map(rankCard)}</div>
+    <div class="sb-ranks sb-ranks--2 sb-ranks--below">${formCard(ctx)}${breakLeagues.length ? breaksCard(ctx, breakLeagues) : ""}</div>`;
 }
 /**
  * Round 104 (Neil: "why did you remove the player form section?"): the players in the best form — the mark out of 10

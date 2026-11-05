@@ -4,8 +4,14 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.88.1";
+export const SITE_VERSION = "1.89.1";
 export const CHANGES = [
+  "Phones: the menu bar once scrolled has a smaller logo with room above and below it, clear of the red line",
+  "Phones: league tables (and the tables on the other pages) fit the screen — every column at a glance, no sideways scrolling",
+  "Phones: swipe the shortcuts above the bottom menu down to tuck them away, and swipe up on the bar to bring them back (a tap on the handle still works)",
+  "The account menu (Admin, My Snooker…) opens properly again from the menu bar — on the photo banner and once scrolled",
+  "Lead stories: bars under the story fill up while it shows, then the next story comes in; it no longer stops while the mouse is over it. New setting: Admin → Site settings → Home page banner → “Seconds each lead story shows” (standard 6)",
+  "Everything home page: Victory and Rees rankings side by side, with In form and Breaks on the row underneath",
   "Phones: the bottom menu sits on a flat white sheet with a straight top edge; only the bar with Home, Fixtures, Tables, Comps and More is rounded, a little in from the edges",
   "The menu bar gets shorter as soon as the page scrolls — on every page — in one smooth movement, with the thin red line under it; on the full-width banner page the see-through bar turns into the white one. No white band left above the menu",
   "Everything home page: an In form card beside the rankings — the players in the best form, with their mark out of 10 and which way it is going",
