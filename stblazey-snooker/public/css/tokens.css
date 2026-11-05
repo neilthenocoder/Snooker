@@ -1,7 +1,7 @@
 /* St Blazey Snooker — generated from the design system's tokens.json. Light is the default theme. */
 :root:root, :root:root[data-theme="light"] {
   color-scheme: light;
-  --bg: #F3F4F1;
+  --bg: var(--brand-bg, #F3F4F1);
   --surface: #FFFFFF;
   --soft: #F3F4F1;
   --ink: #15201B;
@@ -11,10 +11,10 @@
   --red-dark: #C10033;
   --on-red: #FFFFFF;
   --on-red-muted: #FFE3EA;
-  --red-text: #C10033;
+  --red-text: var(--brand-red-text, #C10033);
   --red-tint: #FDE6EC;
   --red-tint-text: #C10033;
-  --live: #1B8047;
+  --live: var(--brand-green, #1B8047);
   --live-line: #1F7A47;
   --live-text: #2BD46B;
   --live-tint: #163322;
@@ -82,6 +82,13 @@
   --hero-height: 520px;
   --match-card: 292px;
   --live-halo: 0 0 0 4px rgba(255,255,255,0.28);
+  --yellow: var(--brand-yellow, #F2B92B);
+  --on-yellow: #15201B;
+  --yellow-soft: #FBEFC8;
+  --silver-soft: #ECEDEA;
+  --bronze-soft: #EBDCCB;
+  --win-soft: #E2F1E7;
+  --loss-soft: #FBE3E9;
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 :root:root[data-theme="dark"] {
@@ -96,4 +103,9 @@
   --red-tint: #3C161F;
   --red-tint-text: #FF7A9C;
   --focus: #F3F4F1;
+  --yellow-soft: #3A3218;
+  --silver-soft: #262C2A;
+  --bronze-soft: #33291F;
+  --win-soft: #15301F;
+  --loss-soft: #3C161F;
 }

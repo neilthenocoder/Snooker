@@ -26,7 +26,7 @@ const COLOURS = {
   color_league: ["--nav-league", "--nav-league-ink"],
   color_news: ["--nav-news", "--nav-news-ink"],
   color_login: ["--nav-login", "--nav-login-ink"],
-  color_background: ["--cream"],
+  color_background: ["--brand-bg"],
 };
 
 /**
@@ -85,7 +85,12 @@ function brandOf(site) {
     if (ink) vars[ink] = inkOn(v);
     if (key === "color_primary") vars["--red-dark"] = darker(v);
     // Round 46 (Rich: "page background colour doesn't change"): the calm look has its own grey, so the chosen colour goes here too.
-    if (key === "color_background") vars["--page-bg"] = v;
+    // Round 101 (Rich: "page background colour isn't working"; "check every setting works"): the design system reads
+    // these — the page background (light mode), red as text, the yellow highlights, the live/win green, the Log in colour.
+    if (key === "color_primary") { vars["--brand-red-text"] = darker(v, 0.84); }
+    if (key === "color_competitions") vars["--brand-yellow"] = v;
+    if (key === "color_fixtures") vars["--brand-green"] = v;
+    if (key === "color_login") { vars["--brand-login"] = v; vars["--brand-login-ink"] = inkOn(v); }
   }
   // Fonts: one of the built-in list, or one from the pasted Google Fonts embed link.
   const embed = parseFontEmbed(site.font_embed);
@@ -94,8 +99,8 @@ function brandOf(site) {
   const builtIn = [site.font_head, site.font_body].filter((f) => f && !mine.includes(f) && [...FONTS.head, ...FONTS.body].includes(f));
   if (builtIn.length) links.push(`https://fonts.googleapis.com/css?family=${[...new Set(builtIn)].map((f) => `${f.replace(/ /g, "+")}:400,500,600,700`).join("|")}&display=swap`);
   if (embed && [site.font_head, site.font_body].some((f) => mine.includes(f))) links.push(embed.url);
-  if ([...FONTS.head, ...mine].includes(site.font_head)) vars["--font-head"] = `"${site.font_head}", "Arial", sans-serif`;
-  if ([...FONTS.body, ...mine].includes(site.font_body)) vars["--font-body"] = `"${site.font_body}", "Helvetica Neue", Arial, system-ui, sans-serif`;
+  if ([...FONTS.head, ...mine].includes(site.font_head)) vars["--font-head"] = `"${site.font_head}", "Inter", system-ui, sans-serif`;
+  if ([...FONTS.body, ...mine].includes(site.font_body)) { vars["--font-body"] = `"${site.font_body}", "Inter", system-ui, sans-serif`; vars["--font-sans"] = vars["--font-body"]; }
   // Text sizes: only the ones that have been changed.
   for (const [key, , , cssVar] of TEXT_SIZES) {
     const n = Number(site.text_sizes?.[key]);
@@ -123,6 +128,8 @@ function brandOf(site) {
     loaderMs: Math.max(0, Math.min(10, Number(site.loader_seconds) || 0)) * 1000,
     // Round 73 (Rich): the loading screen on every page, or (standard) only when the website is first opened.
     loaderEvery: site.loader_every_page === true,
+    // Round 101: light or dark for someone who hasn't chosen with the sun/moon switch (Admin → Branding → Light and dark).
+    theme: ["light", "dark"].includes(site.home_sections?.default_theme) ? site.home_sections.default_theme : "device",
   };
 }
 
@@ -134,8 +141,17 @@ export const layoutFor = (group) => current.layouts?.[group] ?? "auto";
 export function paint(brand) {
   current = brand;
   const root = document.documentElement;
-  for (const name of [...Object.values(COLOURS).flat(), "--red-dark", "--page-bg", "--font-head", "--font-body", "--fs-h1-fluid", ...TEXT_SIZES.map((t) => t[3])]) root.style.removeProperty(name);
-  for (const [name, value] of Object.entries(brand.vars ?? {})) root.style.setProperty(name, value);
+  for (const name of [...Object.values(COLOURS).flat(), "--red-dark", "--page-bg", "--brand-bg", "--brand-red-text", "--brand-yellow", "--brand-green", "--brand-login", "--brand-login-ink", "--font-head", "--font-body", "--font-sans", "--fs-h1-fluid", ...TEXT_SIZES.map((t) => t[3])]) root.style.removeProperty(name);
+  // "important", so the choices win over the stylesheet's own standard values.
+  for (const [name, value] of Object.entries(brand.vars ?? {})) root.style.setProperty(name, value, "important");
+  // The website's standard light or dark, for anyone who hasn't pressed the sun or moon themselves.
+  let own = null;
+  try { own = localStorage.getItem("sb-theme"); } catch { /* fine */ }
+  if (own !== "light" && own !== "dark") {
+    const t = brand.theme === "light" || brand.theme === "dark" ? brand.theme : window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    root.dataset.theme = t;
+    for (const b of document.querySelectorAll("[data-theme-set]")) b.setAttribute("aria-pressed", String(b.dataset.themeSet === t));
+  }
   root.classList.toggle("sidebar-left", brand.sidebar === "left");
   root.classList.toggle("section-colors", brand.sections !== false);
   root.classList.toggle("look-calm", brand.look !== "classic");

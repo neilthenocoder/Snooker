@@ -14,6 +14,8 @@ import { buildBracket, isEntry, walkoverSide, roundName, winnerSide } from "../c
 import { answered, articleCueview } from "../core/cueview.js";
 import { leagueTablePanel, rankingsPanel, sidebar, panel, picture, urls, badge, avatar, articleThumb, shortName, latestNews, trophy, shieldPicture, resultsBox } from "../core/components.js";
 import { SITE } from "../config.js";
+import { menuMore } from "../core/menu.js";
+import { leagueMarks, provisionalNote } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import { competitionSummaries } from "./competitions.js";
 import { loadForm, formBadge, formChips } from "../core/form.js";
@@ -89,52 +91,73 @@ export default async function home(view, { user } = {}) {
   const sections = homeSections(site);
   const on = (key) => sections.find((x) => x.key === key)?.on;
   const promoWanted = site.promo_mode === "always" || (site.promo_mode !== "never" && isOffSeason(ctx, allComps));
+  // Round 101 (Rich): the banner can be the rounded card with Top stories beside it, or his full-width photo with the
+  // menu and the match strip on top of it. "auto" = the card on the Standard page, the full photo on Everything.
+  const heroWanted = ["card", "full"].includes(site.hero_layout) ? site.hero_layout : site.hero_layout === "big" ? "full" : everything ? "full" : "card";
+  const full = heroWanted === "full";
 
-  // News: the lead stories (ticked "Featured", else the newest) and four more in Top stories — each story once.
+  // News: the lead stories (ticked "Featured", else the newest), then four more in Top stories, then (with the
+  // full-width banner) one more as the big story card beside them — each story once.
   const featured = news.filter((a) => a.featured);
   const slides = (featured.length ? featured : news).slice(0, Math.max(1, Math.min(4, site.hero_count || 3)));
-  const top = news.filter((a) => !slides.includes(a)).slice(0, 4);
+  const rest = news.filter((a) => !slides.includes(a));
+  const top = rest.slice(0, 4), bigStory = full ? rest[4] ?? null : null;
 
   const section = (inner, cls = "") => (inner ? html`<section class="sb-section ${cls}"><div class="sb-container">${inner}</div></section>` : "");
   const notices = [
     user ? deadlineBar(deadlineWarnings(user, ctx, compData ?? { competitions: [], entries: [], matches: [] }, site)) : "",
     entering.length ? html`<a class="sb-notice" href="/enter"><span class="sb-chip">Entries are open</span><span>${entering.map((c) => c.name).join(", ")}</span><b class="sb-link">Enter now ${sbIcon(ICON.arrow, 16)}</b></a>` : "",
   ].filter(Boolean);
-
-  mount(view, html`
-    <div class="sb-home">
-    <div class="sb-container"><div class="sb-hero">
-      ${heroLead(slides)}
-      ${top.length ? html`<aside class="sb-hero__side sb-card sb-top">
-        <div class="sb-top__head"><h2>Top stories</h2><a class="sb-link sb-link--sm" href="/news">All news</a></div>
+  const topStories = (cls = "") => (top.length ? html`<aside class="sb-card sb-top ${cls}">
+        <div class="sb-top__head"><h2>Top stories</h2><a class="sb-pill-link" href="/news">All news</a></div>
         ${top.map((a) => html`<a class="sb-story-row" href="${urls.article(a)}">${photo(a)}
           <span class="sb-story-row__text">${a.category ? html`<span class="sb-kicker">${a.category}</span>` : ""}<span class="sb-story-row__title">${a.title}</span><span class="sb-meta">${fmtAgo(a.published_at)}</span></span></a>`)}
-      </aside>` : ""}
-    </div></div>
+      </aside>` : "");
+  const strip = html`<section class="sb-strip live-strip ${full ? "sb-strip--over" : ""}" aria-labelledby="sb-strip-h"><div class="sb-strip__inner" data-strip></div></section>`;
+  const comps2 = compData && comps.length && (on("competitions") !== false || on("comp_strip")) ? competitionsBlock(comps, compData, { yellow: everything }) : "";
 
-    <section class="sb-strip live-strip" aria-labelledby="sb-strip-h"><div class="sb-strip__inner" data-strip></div></section>
+  mount(view, html`
+    <div class="sb-home ${everything ? "sb-home--everything" : ""} ${full ? "sb-home--full" : ""}">
+    ${full ? html`<div class="sb-fh">${heroFull(slides, site)}${strip}</div>`
+      : html`<div class="sb-container"><div class="sb-hero">
+      ${heroLead(slides, site)}
+      ${topStories("sb-hero__side sb-hide-phone")}
+    </div></div>
+    ${strip}
+    ${top.length ? html`<div class="sb-container sb-only-phone sb-top-phone">${topStories()}</div>` : ""}`}
 
     ${notices.length ? html`<div class="sb-container sb-notices">${notices}</div>` : ""}
+
+    ${everything ? section(sbQuickLinks(ctx, site), "sb-section--quick") : ""}
 
     ${section(html`<div class="sb-split">
       ${tableCard(ctx)}
       ${nextUp(ctx)}
     </div>
-    ${on("mysnooker") !== false ? mySnookerCard(user, ctx) : ""}`, "sb-section--first")}
+    ${on("mysnooker") !== false ? mySnookerCard(user, ctx) : ""}`, everything ? "sb-section--tight" : "sb-section--first")}
+
+    ${full && top.length ? section(html`<div class="sb-stories">${topStories()}${bigStory ? storyCard(bigStory) : ""}</div>`, "sb-section--tight") : ""}
 
     ${promoWanted && on("promo") !== false ? section(promoBlock(site, ctx, dates, today), "sb-promo-sec") : ""}
 
-    ${compData && comps.length && (on("competitions") !== false || on("comp_strip")) ? section(competitionsBlock(comps, compData)) : ""}
+    ${everything ? section(rankingsRow(ctx), "sb-section--tight") : ""}
+    ${(everything && site.shields_show !== false) || on("shields") ? section(shieldHolders(ctx), "sb-section--tight") : ""}
+
+    ${comps2 ? section(comps2, everything ? "sb-section--tight" : "") : ""}
 
     ${on("tables") ? section(html`<div class="sb-section-head"><div><h2>League tables</h2><p>Every league this season.</p></div><a class="sb-link" href="/league">All tables</a></div>
       <div class="sb-tables">${ctx.leagues.map((l) => leagueTablePanel(ctx, l, { limit: 10 }))}</div>`) : ""}
-    ${everything ? section(html`<div class="sb-section-head"><div><h2>Player rankings</h2><p>The top ten in each league this season.</p></div><a class="sb-link" href="${urls.season(ctx.season, "rankings")}">All rankings</a></div>
-      <div class="sb-tables">${ctx.leagues.filter((l) => ctx.rankings(l.id).length).map((l) => rankingsPanel(ctx, l, { limit: 10 }))}</div>`) : ""}
-    ${(everything && site.shields_show !== false) || on("shields") ? section(shieldsBox(ctx), "sb-legacy") : ""}
     ${everything || on("spotlights") ? section(spotlights(ctx, site), "sb-legacy") : ""}
     ${(everything || on("cueviews")) && site.cueviews_show !== false ? section(cueviewBox(ctx, news), "sb-legacy") : ""}
     <div class="sb-home__end"></div>
     </div>`);
+
+  // The full-width banner: the menu sits on the photo (see-through) until the page scrolls.
+  const root = document.documentElement;
+  root.classList.toggle("sb-navover", full);
+  root.classList.toggle("sb-has-quick", everything);   // the Quick links replace "Find your way around" here
+  const onScroll = () => root.classList.toggle("sb-navsolid", scrollY > 40);
+  if (full) { onScroll(); addEventListener("scroll", onScroll, { passive: true }); }
 
   maybeStartGuide({ personal: false, site });
   const stopSquad = await mountSquadBox(user, ctx, site).catch(() => () => {});
@@ -198,6 +221,10 @@ export default async function home(view, { user } = {}) {
 
   // The match strip, kept live.
   const stopStrip = await mountLiveStrip($("[data-strip]", view), user, { mode: "tabs", layout: "sb" });
+  // The full-width banner keeps its headline clear of the strip on top of its photo, however tall the strip is.
+  const fh = $(".sb-fh", view), stripEl = $(".sb-strip", view);
+  const ro = fh && stripEl && "ResizeObserver" in window ? new ResizeObserver(() => fh.style.setProperty("--fh-strip", `${stripEl.offsetHeight}px`)) : null;
+  ro?.observe(stripEl);
 
   // The league switch on the table, and the cup filter: they change what shows in place.
   view.addEventListener("click", (e) => {
@@ -209,17 +236,17 @@ export default async function home(view, { user } = {}) {
     for (const p of scope.querySelectorAll("[data-seg-pane]")) p.hidden = !p.dataset.segPane.split(" ").includes(key);
   });
 
-  return () => { clearInterval(timer); stopStrip(); stopSquad(); removeEventListener("resize", onResize); };
+  return () => { clearInterval(timer); stopStrip(); stopSquad(); removeEventListener("resize", onResize); removeEventListener("scroll", onScroll); ro?.disconnect(); root.classList.remove("sb-navover", "sb-navsolid", "sb-has-quick"); };
 }
 
 /** The lead story card(s): photo, category, how long ago, headline, Continue reading and the dots. */
-function heroLead(slides) {
+function heroLead(slides, site = {}) {
   if (!slides.length) return html`<div class="sb-hero__lead sb-hero__lead--empty"><div class="sb-hero__body"><span class="sb-tag">Since ${SITE.established}</span><h1 class="sb-hero__title">${SITE.name}</h1></div></div>`;
   const dots = slides.length > 1 ? html`<div class="sb-hero__dots" role="group" aria-label="Choose a story">${slides.map((_, i) => html`<button type="button" data-dot="${i}" aria-label="Story ${i + 1}" aria-current="${String(i === 0)}"></button>`)}</div>` : "";
   return html`<div class="sb-hero__lead sb-hero__frame" data-hero>
     <div class="sb-hero__track" data-track>
       ${slides.map((a, i) => html`<a class="sb-hero__slide" data-slide href="${urls.article(a)}" aria-hidden="${String(i !== 0)}">
-        ${pic(a) ? html`<img src="${pic(a)}" alt="" ${i ? html`loading="lazy"` : ""}>` : html`<span class="sb-hero__ph" aria-hidden="true"></span>`}
+        ${pic(a) || site.hero_image_url ? html`<img src="${pic(a) || site.hero_image_url}" alt="" ${i ? html`loading="lazy"` : ""}>` : html`<span class="sb-hero__ph" aria-hidden="true" style="${site.hero_bg ? `background:${site.hero_bg}` : ""}"></span>`}
         <span class="sb-hero__body">
           <span class="sb-hero__tags">${a.category ? html`<span class="sb-tag">${a.category}</span>` : ""}<span class="sb-tag sb-tag--glass">${fmtAgo(a.published_at)}</span></span>
           ${i === 0 ? html`<h1 class="sb-hero__title">${a.title}</h1>` : html`<h2 class="sb-hero__title">${a.title}</h2>`}
@@ -230,24 +257,120 @@ function heroLead(slides) {
   </div>`;
 }
 
+
+/**
+ * Round 101 — Rich's full-width banner: the lead story's photo across the whole page, the menu on top of it, the
+ * headline, a line of the story, the date, its category and a yellow Continue reading; the match strip sits on the
+ * bottom of the photo. Several lead stories turn like the card banner (swipe, dots).
+ */
+function heroFull(slides, site = {}) {
+  if (!slides.length) return html`<div class="sb-fh__frame"><div class="sb-fh__slide"><span class="sb-fh__body"><span class="sb-fh__inner"><h1 class="sb-fh__title">${SITE.name}</h1></span></span></div></div><div class="sb-fh__space"></div>`;
+  const dots = slides.length > 1 ? html`<div class="sb-fh__dots"><div class="sb-container"><div class="sb-hero__dots" role="group" aria-label="Choose a story">${slides.map((_, i) => html`<button type="button" data-dot="${i}" aria-label="Story ${i + 1}" aria-current="${String(i === 0)}"></button>`)}</div></div></div>` : "";
+  return html`<div class="sb-fh__frame" data-hero>
+      <div class="sb-fh__track" data-track>
+      ${slides.map((a, i) => html`<a class="sb-fh__slide" data-slide href="${urls.article(a)}" aria-hidden="${String(i !== 0)}">
+        ${pic(a) || site.hero_image_url ? html`<img src="${pic(a) || site.hero_image_url}" alt="" ${i ? html`loading="lazy"` : ""}>` : ""}
+        <span class="sb-fh__body"><span class="sb-fh__inner">
+          ${i === 0 ? html`<h1 class="sb-fh__title">${a.title}</h1>` : html`<h2 class="sb-fh__title">${a.title}</h2>`}
+          ${a.excerpt ? html`<span class="sb-fh__excerpt">${a.excerpt}</span>` : ""}
+          <span class="sb-fh__date">${fmtDate(a.published_at)}</span>
+          <span class="sb-fh__ctas">${a.category ? html`<span class="sb-btn sb-btn--light">${a.category}</span>` : ""}<span class="sb-btn sb-btn--yellow">Continue reading</span></span>
+        </span></span></a>`)}
+      </div>
+    </div>
+    ${dots}
+    <div class="sb-fh__space" aria-hidden="true"></div>`;
+}
+
+/** A big photo card for one story (beside Top stories): its category in red, how long ago in yellow, Continue reading. */
+const storyCard = (a) => html`<a class="sb-storycard" href="${urls.article(a)}">
+  ${pic(a) ? html`<img src="${pic(a)}" alt="" loading="lazy">` : html`<span class="sb-hero__ph" aria-hidden="true"></span>`}
+  <span class="sb-storycard__body">
+    <span class="sb-hero__tags">${a.category ? html`<span class="sb-tag">${a.category}</span>` : ""}<span class="sb-tag sb-tag--yellow">${fmtAgo(a.published_at)}</span></span>
+    <span class="sb-storycard__title">${a.title}</span>
+    <span class="sb-btn sb-btn--light">Continue reading</span>
+  </span></a>`;
+
+/** Quick links (Rich's design): the pages that used to be under "More", each with a coloured dot. */
+const DOTS = ["#1B8047", "#E8003D", "#15201B", "#7A4B2A", "#F2B92B", "#FFFFFF", "#2F6FE0", "#F27BA6"];
+function sbQuickLinks(ctx, site) {
+  const links = [["Fixtures", "/fixtures"], ["Results", "/results"], ["League tables", urls.season(ctx.season, "league-tables")], ["Rankings", urls.season(ctx.season, "rankings")],
+    ["Breaks", urls.season(ctx.season, "breaks")], ["Competitions", "/competitions"], ["Calendar", "/calendar"], ["Handicaps", "/handicaps"],
+    ...menuMore(site).filter((l) => !["/results", "/calendar", "/handicaps"].includes(l.href)).map((l) => [l.label, l.href])].slice(0, 12);
+  return html`<div class="sb-card sb-quick"><h2>Quick links</h2>
+    <div class="sb-quick__grid">${links.map(([label, href], i) => html`<a class="sb-quick__item" href="${href}"><span class="sb-quick__dot" style="--dot:${DOTS[i % DOTS.length]}" aria-hidden="true"></span><span>${label}</span></a>`)}</div></div>`;
+}
+
+/** Victory Rankings · Rees Rankings · Breaks (Rich's design): the leader on green, the breaks podium in gold, silver and bronze. */
+function rankingsRow(ctx) {
+  const leagues = ctx.leagues.filter((l) => ctx.rankings(l.id).length);
+  const breakLeagues = ctx.leagues.filter((l) => ctx.breaksIn(l.id).length);
+  if (!leagues.length && !breakLeagues.length) return "";
+  const rankCard = (l) => {
+    const rows = ctx.rankings(l.id).slice(0, 8);
+    return html`<div class="sb-card sb-rank">
+      <div class="sb-rank__head"><h2>${shortName(l)} rankings</h2><a class="sb-pill-link" href="${urls.standings(l)}#players">Full rankings</a></div>
+      <ol class="sb-rank__list">${rows.map((r, i) => html`<li class="${i === 0 ? "is-first" : ""}"><a href="${urls.player(r.player)}">
+        <span class="sb-rank__pos">${r.pos}</span>${avatar(r.player, "avatar sb-rank__face")}<span class="sb-rank__name">${r.player.full_name}</span><b class="sb-num">${r.pts}</b></a></li>`)}</ol>
+      ${provisionalNote(ctx, l)}</div>`;
+  };
+  return html`<div class="sb-section-head"><div><h2>Rankings and breaks</h2><p>The top players in each league this season, and the highest breaks.</p></div></div>
+    <div class="sb-ranks">${leagues.map(rankCard)}${breakLeagues.length ? breaksCard(ctx, breakLeagues) : ""}</div>`;
+}
+/** The Breaks card: one league at a time — 1st, 2nd and 3rd on a podium, then the next four. */
+function breaksCard(ctx, leagues) {
+  const place = ["1st", "2nd", "3rd"];
+  const pod = (b, i) => (b ? html`<a class="sb-pod sb-pod--${i + 1}" href="${b.player ? urls.player(b.player) : "#"}"><span class="sb-pod__place">${place[i]}</span>${avatar(b.player, "avatar sb-pod__face")}<b class="sb-num">${b.value}</b><span class="sb-pod__name">${b.player?.full_name ?? ""}</span></a>` : html`<span class="sb-pod sb-pod--empty"></span>`);
+  return html`<div class="sb-card sb-breaks" data-seg-scope>
+    <div class="sb-rank__head"><h2>Breaks</h2>
+      ${leagues.length > 1 ? html`<div class="sb-seg sb-seg--sm" role="group" aria-label="League" data-seg-group>${leagues.map((l, i) => html`<button type="button" data-seg="${l.id}" aria-pressed="${String(i === 0)}">${shortName(l)}</button>`)}</div>` : ""}</div>
+    ${leagues.map((l, i) => { const list = ctx.breaksIn(l.id), top = list.slice(0, 3), more = list.slice(3, 7);
+      return html`<div data-seg-pane="${l.id}" ${i ? "hidden" : ""}>
+        <div class="sb-podium">${pod(top[1], 1)}${pod(top[0], 0)}${pod(top[2], 2)}</div>
+        ${more.length ? html`<ol class="sb-rank__list sb-breaks__list" start="4">${more.map((b, j) => html`<li><a href="${b.player ? urls.player(b.player) : "#"}"><span class="sb-rank__pos">${j + 4}</span>${avatar(b.player, "avatar sb-rank__face")}<span class="sb-rank__name">${b.player?.full_name ?? ""}</span><b class="sb-break sb-num">${b.value}</b></a></li>`)}</ol>` : ""}
+        <a class="sb-pill-link sb-breaks__all" href="${urls.standings(l)}#breaks">All ${shortName(l)} breaks</a>
+      </div>`; })}
+  </div>`;
+}
+
+/** The Runabout Shield holders: each league's shield, who holds it, since when and how many defences. */
+function shieldHolders(ctx) {
+  const shields = ctx.leagues.filter((l) => l.shield_team_id).map((l) => ({ l, ...shieldHolder(l, ctx.fixtures, ctx.framesByFixture) }));
+  if (!shields.length) return "";
+  return html`<div class="sb-section-head"><div><h2>Runabout Shield holders</h2><p>Win a league match against the holders and the shield is yours.</p></div></div>
+    <div class="sb-shields">${shields.map(({ l, holderId, since, history }) => {
+      const t = ctx.team.get(holderId);
+      const defences = history.filter((h) => h.to === holderId && h.defended && (!since || h.fixture.starts_at > since.starts_at)).length;
+      return html`<a class="sb-card sb-shield" href="${urls.shield(l)}">
+        <span class="sb-shield__pic">${shieldPicture(l)}</span>
+        <span class="sb-shield__text"><span class="sb-kicker">${l.shield_name || `${l.name} Runabout Shield`}</span>
+          <span class="sb-shield__holder">${t ? crestOf(ctx, t) : ""}<b>${t?.name ?? "–"}</b></span>
+          <span class="sb-meta">${since ? `Won ${fmtDate(since.starts_at)}` : "Holders since the start of the season"}${defences ? ` · ${defences} defence${defences > 1 ? "s" : ""}` : ""}</span></span>
+        <span class="sb-spot__go">${sbIcon(ICON.right)}</span></a>`;
+    })}</div>`;
+}
+
 /** The league table: one league at a time, with a switch between them. */
 function tableCard(ctx) {
+  // Round 101 (Rich: "the league tables before … I loved — please can this go back"): the places moved since last
+  // week, the leader on green, the promotion (P) and relegation (R) places marked and shaded, the key underneath.
   const leagues = ctx.leagues.filter((l) => ctx.standings(l.id).length);
   if (!leagues.length) return "";
-  const pos = (r) => { const n = Number(r.pos ?? r.position ?? 0); return html`<span class="sb-pos ${n === 1 ? "sb-pos--first" : n === 2 || n === 3 ? "sb-pos--top" : ""}">${r.pos ?? r.position ?? ""}</span>`; };
   return html`<div class="sb-card sb-split__main" data-seg-scope>
     <div class="sb-card-head"><h2>League table</h2>
       ${leagues.length > 1 ? html`<div class="sb-seg" role="group" aria-label="League" data-seg-group>${leagues.map((l, i) => html`<button type="button" data-seg="${l.id}" aria-pressed="${String(i === 0)}">${l.name}</button>`)}</div>` : ""}</div>
-    ${leagues.map((l, i) => html`<div data-seg-pane="${l.id}" ${i ? "hidden" : ""}>
-      <div class="sb-table-wrap"><table class="sb-table">
+    ${leagues.map((l, i) => { const rows = ctx.standings(l.id), m = leagueMarks(ctx, l, { shown: rows });
+      return html`<div data-seg-pane="${l.id}" ${i ? "hidden" : ""}>
+      <div class="sb-table-wrap"><table class="sb-table sb-lt">
         <caption class="sr-only">${l.name} table</caption>
         <thead><tr><th class="sb-c" scope="col">Pos</th><th scope="col">Team</th><th class="sb-c" scope="col" title="Played">P</th><th class="sb-c" scope="col" title="Won">W</th><th class="sb-c" scope="col" title="Lost">L</th><th class="sb-c" scope="col" title="Frames for">F</th><th class="sb-c" scope="col" title="Frames against">A</th><th class="sb-c" scope="col" title="Points">Pts</th></tr></thead>
-        <tbody>${ctx.standings(l.id).slice(0, 10).map((r) => html`<tr>
-          <td class="sb-c">${pos(r)}</td><td class="sb-table__team"><a class="sb-teamcell" href="${urls.team(r.team)}">${crestOf(ctx, r.team)}<span>${r.team.name}</span></a></td>
-          <td class="sb-c">${r.p}</td><td class="sb-c">${r.w}</td><td class="sb-c">${r.l}</td><td class="sb-c">${r.f}</td><td class="sb-c">${r.a}</td><td class="sb-c sb-table__key">${r.pts}</td></tr>`)}</tbody>
+        <tbody>${rows.map((r) => html`<tr class="${m.rowClass(r)}">
+          <td class="sb-c">${m.pos(r)}</td><td class="sb-table__team">${m.team(r)}</td>
+          <td class="sb-c">${r.p}</td><td class="sb-c">${r.w}</td><td class="sb-c">${r.l}</td><td class="sb-c">${r.f}</td><td class="sb-c">${r.a}</td><td class="sb-c sb-table__key">${m.pts(r)}</td></tr>`)}</tbody>
       </table></div>
+      ${m.key}${provisionalNote(ctx, l)}
       <div class="sb-card-foot"><a class="sb-btn sb-btn--outline sb-btn--lg" href="${urls.standings(l)}">Full table</a></div>
-    </div>`)}
+    </div>`; })}
   </div>`;
 }
 
@@ -285,7 +408,7 @@ function mySnookerCard(user, ctx) {
  * Competitions, once: the cup with something happening nearest to today, big and dark with its current round, and the
  * other cups beside it, each with how far it has got. Under way · Coming up switches the list in place.
  */
-function competitionsBlock(comps, data) {
+function competitionsBlock(comps, data, { yellow = false } = {}) {
   const now = Date.now();
   const info = comps.map((x) => {
     const b = buildBracket(data.entries.filter((e) => e.competition_id === x.c.id), data.matches.filter((m) => m.competition_id === x.c.id));
@@ -310,7 +433,7 @@ function competitionsBlock(comps, data) {
   const counts = { on: rest.filter((x) => ["live", "on"].includes(status(x))).length, soon: rest.filter((x) => status(x) === "soon").length };
   const pct = (p) => { const m = String(p ?? "").match(/(\d+)\s+of\s+(\d+)/i); return m && Number(m[2]) ? Math.round((Number(m[1]) / Number(m[2])) * 100) : null; };
   const ordered = [...rest].sort((p, q) => ["live", "on", "soon", "done"].indexOf(status(p)) - ["live", "on", "soon", "done"].indexOf(status(q)));
-  return html`<div data-seg-scope>
+  return html`<div data-seg-scope class="${yellow ? "sb-compsec--yellow" : ""}">
     <div class="sb-section-head"><div><h2>Competitions</h2><p>${comps.length} cups this season: the latest result, the draws and what's next.</p></div>
       ${counts.on && counts.soon ? html`<div class="sb-seg sb-seg--ink sb-seg--surface" role="group" aria-label="Show competitions" data-seg-group>
         <button type="button" data-seg="all" aria-pressed="true">All · ${rest.length}</button><button type="button" data-seg="on" aria-pressed="false">Under way · ${counts.on}</button><button type="button" data-seg="soon" aria-pressed="false">Coming up · ${counts.soon}</button></div>` : html`<a class="sb-link" href="/competitions">All competitions</a>`}</div>
@@ -805,37 +928,51 @@ async function liveStrip(user = null, mode = "filters", layout = "strip") {
   // Round 99 (the design system): the dark strip under the lead story — Live · n / Upcoming / Results, cards that
   // scroll sideways, the arrows and "View all matches". The tab chosen is kept while the strip updates itself.
   if (layout === "sb") {
+    // Round 101 (Rich): All first, then Live (always there — it says when nothing is on), Upcoming and Results; the
+    // chosen one in red so you can see where you are. Each card has the My Snooker colour coding: the leading score
+    // green and the other red, the state as a coloured label, and a coloured edge — green live, gold waiting for the
+    // result (or a draw), red a finished result. The colours come from Admin → Site settings → Live & upcoming strip.
     const clubLogo = (t) => (t && !t.logo_url ? venues.find((v) => v.id === t.venue_id)?.logo_url || "" : "");
     const circle = (sd) => { const logo = sd.player?.avatar_url || sd.team?.logo_url || clubLogo(sd.team);
       return logo ? html`<span class="sb-initials sb-initials--pic"><img src="${logo}" alt=""></span>` : html`<span class="sb-initials" aria-hidden="true">${initialsOf(sd.name)}</span>`; };
     const upcoming = shown.filter((c) => !c.live), sets = { all: cards, live, upcoming, results: [...results].reverse() };
-    // Round 100 (Neil): everything shows first, under "All"; Live, Upcoming and Results then narrow it down.
-    if (!sbStripTab || !sets[sbStripTab]?.length) sbStripTab = "all";
+    if (!sbStripTab || !sets[sbStripTab]) sbStripTab = "all";
     const list = sets[sbStripTab] ?? [];
-    const tab = (key, label) => (sets[key].length || !["live", "results"].includes(key) ? html`<button type="button" data-strip-tab="${key}" aria-pressed="${String(sbStripTab === key)}">${label}</button>` : "");
+    const tab = (key, label) => html`<button type="button" data-strip-tab="${key}" aria-pressed="${String(sbStripTab === key)}">${label}</button>`;
     const when = (c) => (ukDay(c.when) === todayUK() ? (c.done ? "Today" : "Tonight") : sbDay(c.when));
-    const card = (c) => (c.draw ? html`<a class="sb-match ${c.live ? "sb-match--live" : ""}" href="${c.href}">
-        <span class="sb-match__top"><span>${c.title}</span>${c.live ? html`<span class="sb-live-tag">Live draw</span>` : html`<span class="sb-when-tag">${when(c)}</span>`}</span>
-        <span class="sb-match__draw"><b>The draw</b><span>${c.text}</span></span>
+    const tone = (c) => (c.draw ? "draw" : c.live ? "live" : c.postponed ? "postponed" : c.label === "pending" ? "pending" : c.walkover ? "walkover" : c.done ? "done" : "soon");
+    const label = (c) => (c.live ? html`<span class="sb-state sb-state--live">Live</span>` : c.postponed ? html`<span class="sb-state sb-state--postponed">Postponed</span>`
+      : c.walkover ? html`<span class="sb-state sb-state--walkover">Walkover</span>` : c.label === "pending" ? html`<span class="sb-state sb-state--pending">${c.status === "in_progress" ? "Awaiting result" : "Pending"}</span>`
+      : c.done ? html`<span class="sb-state sb-state--done">Completed</span>` : liveSoonTag({ starts_at: c.when, status: c.status ?? "scheduled" }));
+    const tiles = (c) => { const h = Number(c.score?.home), a = Number(c.score?.away), lead = h === a ? null : h > a ? "h" : "a";
+      return html`<span class="sb-score sb-score--tone" aria-label="${c.score.home} – ${c.score.away}"><span class="${lead ? (lead === "h" ? "w" : "l") : ""}">${c.score.home}</span><span class="${lead ? (lead === "a" ? "w" : "l") : ""}">${c.score.away}</span></span>`; };
+    const card = (c) => (c.draw ? html`<a class="sb-match sb-match--draw" href="${c.href}">
+        <span class="sb-match__top"><b>${when(c)}</b><span class="sb-match__league">${c.title}</span></span>
+        <span class="sb-match__draw">${c.live ? html`<span class="sb-state sb-state--live">Live draw</span>` : html`<b>The draw</b>`}<span>${c.text}</span></span>
         <span class="sb-match__venue">${c.foot.replace(" →", "")}</span></a>`
-      : html`<a class="sb-match ${c.live ? "sb-match--live" : ""}" href="${c.href}">
-        <span class="sb-match__top"><span class="sb-match__league">${c.title}</span>${c.live ? html`<span class="sb-live-tag">Live</span>` : c.postponed ? html`<span class="sb-when-tag">Postponed</span>` : c.done ? html`<span class="sb-when-tag">${{ pending: "Awaiting result", walkover: "Walkover" }[c.label] ?? "Result"} · ${when(c)}</span>` : html`<span class="sb-when-tag">${when(c)}</span>`}</span>
+      : html`<a class="sb-match sb-match--${tone(c)}" href="${c.href}">
+        <span class="sb-match__top"><b>${when(c)}</b><span class="sb-match__league">${c.title}</span></span>
         <span class="sb-match__teams">
           <span class="sb-match__team ${c.done && Number(c.score?.home) > Number(c.score?.away) ? "is-win" : ""}">${circle(c.a)}<span>${c.a.name}</span></span>
-          ${c.postponed ? html`<span class="sb-match__time">P–P</span>` : c.walkover ? html`<span class="sb-match__time">W/O</span>` : c.hasFrames || c.done ? html`<span class="sb-score" aria-label="${c.score.home} – ${c.score.away}"><span>${c.score.home}</span><span>${c.score.away}</span></span>` : html`<span class="sb-match__time">${fmtTime(c.when)}</span>`}
+          <span class="sb-match__mid">${c.postponed ? html`<span class="sb-match__time">P–P</span>` : c.walkover ? html`<span class="sb-match__time">W/O</span>` : c.hasFrames || c.done ? tiles(c) : html`<span class="sb-match__time">${fmtTime(c.when)}</span>`}${label(c)}</span>
           <span class="sb-match__team ${c.done && Number(c.score?.away) > Number(c.score?.home) ? "is-win" : ""}">${circle(c.b)}<span>${c.b.name}</span></span>
         </span>
         <span class="sb-match__venue">${c.walkover ? `Walkover to ${c.walkover}` : c.venue?.name || " "}</span></a>`);
-    return html`<div class="sb-strip__head">
+    const next = upcoming[0];
+    const empty = sbStripTab === "live"
+      ? html`<p class="sb-strip__empty"><b>No matches are live right now.</b> ${next ? `The next is ${next.a.name} v ${next.b.name}, ${when(next)} at ${fmtTime(next.when)}.` : ""} <a href="/calendar">See the calendar</a></p>`
+      : html`<p class="sb-strip__empty">No matches here just now. <a href="/calendar">See the calendar</a></p>`;
+    const lineColour = { red: "var(--red)", yellow: "var(--yellow)", grey: "#5B6660" }[site.strip_line];
+    return html`${stripColours(site)}${lineColour ? html`<style>.sb-strip{box-shadow:inset 0 3px 0 ${lineColour}}</style>` : ""}<div class="sb-strip__head">
         <h2 id="sb-strip-h">Live and upcoming matches</h2>
-        <div class="sb-seg sb-seg--arena" role="group" aria-label="Which matches">${tab("all", "All")}${tab("live", `Live · ${live.length}`)}${tab("upcoming", "Upcoming")}${tab("results", "Results")}</div>
+        <div class="sb-seg sb-seg--arena sb-seg--pick" role="group" aria-label="Which matches">${tab("all", "All")}${tab("live", `Live · ${live.length}`)}${tab("upcoming", "Upcoming")}${tab("results", "Results")}</div>
         <div class="sb-strip__ctrl">
           <button type="button" class="sb-icon-btn sb-icon-btn--arena" data-strip-move="-1" aria-label="Previous matches">${sbIcon(ICON.left)}</button>
           <button type="button" class="sb-icon-btn sb-icon-btn--arena-solid" data-strip-move="1" aria-label="Next matches">${sbIcon(ICON.right)}</button>
           <a class="sb-strip__all" href="/fixtures">View all matches</a>
         </div></div>
-      ${list.length ? html`<div class="sb-strip__row strip-row">${list.map(card)}</div>`
-        : html`<p class="sb-strip__empty">No matches here just now. <a href="/calendar">See the calendar</a></p>`}`;
+      ${list.length ? html`<div class="sb-strip__row strip-row">${list.map(card)}</div>` : empty}
+      <a class="sb-strip__all sb-strip__all--below" href="/fixtures">View all matches ${sbIcon(ICON.arrow, 18)}</a>`;
   }
 
   if (layout === "list") {

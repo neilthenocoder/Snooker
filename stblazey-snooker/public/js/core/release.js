@@ -4,8 +4,15 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.86.1";
+export const SITE_VERSION = "1.87.0";
 export const CHANGES = [
+  "Everything home page in Rich's design: the full-width photo banner with the menu and the match strip on top of it, Quick links, the league table and Next up, My Snooker, Top stories with a big story card, Victory and Rees rankings, the Breaks podium (1st, 2nd, 3rd), the Runabout Shield holders, and Competitions in yellow",
+  "The full-width banner can be chosen for the Standard page too (Admin → Site settings → Banner layout)",
+  "League tables on the home page: places moved since last week, the leader on green, promotion and relegation places marked (P, R) and shaded, and the key — as before",
+  "Match strip: Live always there (it says when nothing is on), the chosen filter in red, and the My Snooker colour coding — the leading score green and the other red, coloured labels, and a green, gold or red edge",
+  "Phones: the matches show straight under the lead story without scrolling; the bar at the bottom is a rounded panel again",
+  "No name beside the logo, the menu starts on the left; headings in Inter 700; no white circles behind team emblems",
+  "Admin → Branding works with the new design: page background, main colour, yellow, green, Log in colour, fonts, text sizes, and the standard light or dark for new visitors",
   "A match left “in progress” after its night is over (or with every frame played) no longer shows as Live — on the strip, the Live button, the Live page and the match page it says “Awaiting result” until the captain submits",
   "Match strip: an “All” tab first, then Live, Upcoming and Results",
   "The league's own logo is back in the menu bar; club emblems beside every team in the home page's league table and Next up",

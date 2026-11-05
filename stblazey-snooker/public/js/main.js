@@ -267,7 +267,7 @@ async function drawHeader() {
   mount($("#site-header"), html`
     ${DEMO_MODE ? html`<div class="demo-banner">Demo mode — sample data saved in this browser only. Add your Supabase keys in js/config.js to go live.</div>` : ""}
     <header class="sb-header" data-site-header><div class="sb-header__inner">
-      <a class="sb-brand" href="/" aria-label="${SITE.name} home">${brandMark(site)}<span class="sb-brand__name">St Blazey Snooker</span></a>
+      <a class="sb-brand" href="/" aria-label="${SITE.name} home">${brandMark(site)}</a>
       <nav class="sb-header__links" aria-label="Main menu">
         ${MENU.filter((item) => item.color !== "live").map((item) => html`<a class="sb-navlink" data-nav-section="${navSection(item.href)}" href="${item.href}" ${isOutside(item.href) ? html`target="_blank" rel="noopener"` : ""}>${item.label}</a>`)}
       </nav>

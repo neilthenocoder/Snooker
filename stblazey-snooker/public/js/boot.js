@@ -4,7 +4,7 @@
 // straight into a page.
 try {
   var b = JSON.parse(localStorage.getItem("sbdsl-brand") || "{}"), r = document.documentElement, boot = document.getElementById("boot");
-  for (var k in (b.vars || {})) r.style.setProperty(k, b.vars[k]);
+  for (var k in (b.vars || {})) r.style.setProperty(k, b.vars[k], "important");
   if (b.sidebar === "left") r.classList.add("sidebar-left");
   if (b.sections !== false) r.classList.add("section-colors");
   if (b.look !== "classic") r.classList.add("look-calm");
