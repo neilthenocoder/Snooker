@@ -43,11 +43,11 @@ function board(m, { players, competitions, teams, venues }) {
   const venue = venues.find((v) => v.id === m.venue)?.name ?? m.venue ?? "";
   const side = (s) => {
     const p = sidePlayer(m, s, players);
-    const who = html`${avatar(p, "sb-face")}<span class="sb-name">${name[s]}</span><small>${teams.find((t) => t.id === p?.team_id)?.name ?? ""}</small>`;
-    return html`<div class="sb-side ${s} ${live && f.striker === s ? "at-table" : ""} ${won === s ? "won" : ""}">
-      ${p ? html`<a class="sb-who" href="${urls.player(p)}">${who}</a>` : html`<div class="sb-who">${who}</div>`}
-      <div class="sb-points" aria-label="${name[s]}: ${live ? f[s] : m[`frames_${s}`] ?? 0}">${live ? f[s] : finished ? (leagueFrame ? done.at(-1)?.[s] ?? "" : "") : "0"}</div>
-      ${live && f.striker === s ? html`<span class="sb-cue">At the table</span>` : ""}
+    const who = html`${avatar(p, "lsb-face")}<span class="lsb-name">${name[s]}</span><small>${teams.find((t) => t.id === p?.team_id)?.name ?? ""}</small>`;
+    return html`<div class="lsb-side ${s} ${live && f.striker === s ? "at-table" : ""} ${won === s ? "won" : ""}">
+      ${p ? html`<a class="lsb-who" href="${urls.player(p)}">${who}</a>` : html`<div class="lsb-who">${who}</div>`}
+      <div class="lsb-points" aria-label="${name[s]}: ${live ? f[s] : m[`frames_${s}`] ?? 0}">${live ? f[s] : finished ? (leagueFrame ? done.at(-1)?.[s] ?? "" : "") : "0"}</div>
+      ${live && f.striker === s ? html`<span class="lsb-cue">At the table</span>` : ""}
     </div>`;
   };
   const lead = !sit ? "" : sit.ahead ? `${name[sit.ahead]} leads by ${sit.lead}` : "Level";
@@ -56,36 +56,36 @@ function board(m, { players, competitions, teams, venues }) {
   return html`<section class="sb is-${m.status}">
     <div class="wrap">
       ${breadcrumb([["Home", "/"], ["Live scoreboard", "/scoreboard"], [`${name.a} v ${name.b}`]])}
-      <div class="sb-head">
-        ${comp ? trophy(comp, "sb-trophy", { always: false }) : ""}
+      <div class="lsb-head">
+        ${comp ? trophy(comp, "lsb-trophy", { always: false }) : ""}
         <div><h1>${matchLabel(m, competitions)}</h1>
           <p>${leagueFrame ? "League match · this frame is being scored ball by ball" : `Best of ${m.best_of} frames · first to ${framesToWin(m)}`}${venue ? ` · ${venue}` : ""}${m.starts_at && !live && !finished ? ` · ${fmtDate(m.starts_at)} ${fmtTime(m.starts_at)}` : ""}</p></div>
         ${live ? html`<span class="live-dot">Live</span>` : finished ? html`<span class="status approved">Finished</span>` : html`<span class="status submitted">Not started</span>`}
       </div>
-      <div class="sb-table"><div class="sb-board">
+      <div class="lsb-table"><div class="lsb-board">
         ${side("a")}
-        <div class="sb-mid">
-          ${leagueFrame ? html`<div class="sb-frames one"><b>v</b></div><small>Frame ${m.frame_no ?? 1}${finished ? " · over" : ""}</small>`
-            : html`<div class="sb-frames"><b>${m.frames_a ?? 0}</b><span>(${m.best_of})</span><b>${m.frames_b ?? 0}</b></div>
+        <div class="lsb-mid">
+          ${leagueFrame ? html`<div class="lsb-frames one"><b>v</b></div><small>Frame ${m.frame_no ?? 1}${finished ? " · over" : ""}</small>`
+            : html`<div class="lsb-frames"><b>${m.frames_a ?? 0}</b><span>(${m.best_of})</span><b>${m.frames_b ?? 0}</b></div>
           <small>${live ? `Frame ${f.no}` : finished ? "Final score" : "Frames"}</small>`}
         </div>
         ${side("b")}
       </div>
-      ${live ? html`<div class="sb-now">
-        <div class="sb-break"><small>Break</small><b>${f.brk}</b><span class="sb-pots">${f.pots.slice(-24).map((v) => ballDot(v))}</span></div>
-        <div class="sb-facts">
+      ${live ? html`<div class="lsb-now">
+        <div class="lsb-break"><small>Break</small><b>${f.brk}</b><span class="lsb-pots">${f.pots.slice(-24).map((v) => ballDot(v))}</span></div>
+        <div class="lsb-facts">
           <span><b>${sit.remaining}</b> on the table</span>
           <span><b>${f.reds}</b> red${f.reds === 1 ? "" : "s"} left</span>
           <span>${lead}${sit.snookers ? html` — <em>${name[sit.ahead === "a" ? "b" : "a"]} needs snookers</em>` : ""}</span>
-          ${on ? html`<span class="sb-on">Next: ${on === "red" ? html`${ballDot(1)} a red` : on === "colour" ? "a colour" : html`${ballDot(on)} the ${ballOf(on).name.toLowerCase()}`}</span>` : ""}
+          ${on ? html`<span class="lsb-on">Next: ${on === "red" ? html`${ballDot(1)} a red` : on === "colour" ? "a colour" : html`${ballDot(on)} the ${ballOf(on).name.toLowerCase()}`}</span>` : ""}
         </div>
-        ${f.last ? html`<p class="sb-last" aria-live="polite">${f.last}</p>` : ""}
-      </div>` : finished ? html`<p class="sb-result">${leagueFrame ? `${name[won]} wins the frame` : `${name[won]} wins ${Math.max(m.frames_a, m.frames_b)}–${Math.min(m.frames_a, m.frames_b)}`}</p>`
-        : html`<p class="sb-result wait">${m.starts_at ? `Starts ${fmtDate(m.starts_at)} at ${fmtTime(m.starts_at)}` : "Waiting for the first break"} — this page updates by itself.</p>`}
+        ${f.last ? html`<p class="lsb-last" aria-live="polite">${f.last}</p>` : ""}
+      </div>` : finished ? html`<p class="lsb-result">${leagueFrame ? `${name[won]} wins the frame` : `${name[won]} wins ${Math.max(m.frames_a, m.frames_b)}–${Math.min(m.frames_a, m.frames_b)}`}</p>`
+        : html`<p class="lsb-result wait">${m.starts_at ? `Starts ${fmtDate(m.starts_at)} at ${fmtTime(m.starts_at)}` : "Waiting for the first break"} — this page updates by itself.</p>`}
       </div>
     </div></section>
-    <div class="wrap stack sb-under">
-      ${said.length ? panel("Live text", html`<ol class="sb-said" aria-live="polite">${said.map((l) => html`<li><time datetime="${l.at}">${fmtTime(l.at)}</time>
+    <div class="wrap stack lsb-under">
+      ${said.length ? panel("Live text", html`<ol class="lsb-said" aria-live="polite">${said.map((l) => html`<li><time datetime="${l.at}">${fmtTime(l.at)}</time>
         ${l.frame ? html`<small>Frame ${l.frame}</small>` : ""}<p>${l.text}</p></li>`)}</ol>`) : ""}
       ${done.length ? panel("Frame by frame", dataTable([
         { label: "Frame", cell: (r) => r.no, cls: "num" },
@@ -107,14 +107,14 @@ async function list(view, look) {
     const all = (await liveMatches().catch(() => [])).filter((m) => !m.fixture_id || onTable(m));
     const card = (m) => {
       const f = m.state?.frame, won = matchWinner(m);
-      return html`<a class="sb-card is-${m.status}" href="${urls.scoreboard(m)}">
+      return html`<a class="lsb-card is-${m.status}" href="${urls.scoreboard(m)}">
         <small>${matchLabel(m, look.competitions)}${m.status === "live" ? html` <span class="live-dot">Live</span>` : ""}</small>
-        <div class="sb-card-row"><span class="${won === "a" ? "strong" : ""}">${sideName(m, "a", look.players)}</span>
+        <div class="lsb-card-row"><span class="${won === "a" ? "strong" : ""}">${sideName(m, "a", look.players)}</span>
           <b>${m.fixture_id ? html`${f?.a ?? 0} <i>v</i> ${f?.b ?? 0}` : html`${m.frames_a ?? 0} <i>(${m.best_of})</i> ${m.frames_b ?? 0}`}</b>
           <span class="${won === "b" ? "strong" : ""}">${sideName(m, "b", look.players)}</span></div>
         <em>${m.status === "live" ? `Frame ${f?.no ?? 1}: ${f?.a ?? 0} – ${f?.b ?? 0}` : m.status === "finished" ? `Finished ${fmtDate(m.finished_at)}` : m.starts_at ? `${fmtDate(m.starts_at)} at ${fmtTime(m.starts_at)}` : "Not started yet"}</em></a>`;
     };
-    const group = (title, rows) => (rows.length ? html`<div><h3 style="margin-top:0">${title}</h3><div class="sb-cards">${rows.map(card)}</div></div>` : "");
+    const group = (title, rows) => (rows.length ? html`<div><h3 style="margin-top:0">${title}</h3><div class="lsb-cards">${rows.map(card)}</div></div>` : "");
     const by = (s) => all.filter((m) => m.status === s);
     mount(view, html`<div class="wrap stack">
       <div>${breadcrumb([["Home", "/"], ["Live scoreboard"]])}

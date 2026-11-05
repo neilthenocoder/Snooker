@@ -29,24 +29,24 @@ function steps(personal) {
     { at: ".nav-toggle", title: "The menu", text: "Every page of the website is in here: fixtures, tables, competitions, news, and <b>More</b>." },
     { at: ".bnav-bar", title: "The menu", text: "Home, fixtures, the league tables and competitions are always at the bottom of the screen. <b>More</b> opens the full menu." },
     { at: ".nav-more", title: "More pages", text: "The calendar, results, handicaps, players and the rest are all under <b>More</b>." },
-    { at: ".nav-acct", title: "Your menu", text: "Everything for your login is here: My Snooker, its settings, your profile, your password and Log out. To see this guide again, press <b>Help</b> at the bottom of any page." },
-    { at: ".nav-bell", title: "Notifications", text: "League news and alerts. Choose which ones you get in here." },
-    { at: ".nav-search", title: "Search", text: "Find any player, team, venue or news story." },
+    { at: ".sb-acct", title: "Your menu", text: "Everything for your login is here: My Snooker, its settings, your profile, your password and Log out. To see this guide again, press <b>Help</b> at the bottom of any page." },
+    { at: ".sb-bell", title: "Notifications", text: "League news and alerts. Choose which ones you get in here." },
+    { at: ".sb-header__actions [data-search-open]", title: "Search", text: "Find any player, team, venue or news story." },
     { at: ".bnav-chips", title: "Shortcuts", text: "Your account, who you follow, the matches, My Snooker and Search. They tuck away while you scroll down and come back when you scroll up." },
     { title: "One more thing: Follow", text: "On any team or player page, press <b>☆ Follow</b> to add them to My Snooker. Need this guide again? <b>Help</b> is at the bottom of every page. Enjoy the snooker!" },
   ];
   const all = [
     { title: "Welcome!", text: "A quick look round the St Blazey & District Snooker League website. Use <b>Next</b>, or the arrow keys." },
     { at: ".live-strip", title: "Live and upcoming", text: "Tonight's matches and what's coming up. A green card is being played now: press it to follow it live." },
-    { at: ".quick-links", title: "Find your way", text: "Fixtures, results, the league tables, rankings, breaks, competitions, the calendar and handicaps: one press each." },
-    { at: ".main-nav", title: "The menu", text: "Results, tables, competitions and news, all from here." },
+    { at: ".sb-find", title: "Find your way", text: "Fixtures, results, the league tables, rankings, breaks, competitions, the calendar and handicaps: one press each." },
+    { at: ".sb-header__links", title: "The menu", text: "Results, tables, competitions and news, all from here." },
     { at: ".strip-filters", title: "Just one league, or one team", text: "Choose a league, a competition or a team here to see only their matches. Pick a team and you can open its stats." },
-    { at: ".ms-invite", title: "My Snooker", text: "Log in for <b>My Snooker</b>: your own page with your team's table, fixtures, results, rankings and breaks, in the order you choose." },
+    { at: ".sb-promo", title: "My Snooker", text: "Log in for <b>My Snooker</b>: your own page with your team's table, fixtures, results, rankings and breaks, in the order you choose." },
     { at: ".nav-toggle", title: "The menu", text: "Every page of the website is in here: fixtures, tables, competitions, news, and <b>More</b>." },
     { at: ".bnav-bar", title: "The menu", text: "Home, fixtures, the league tables and competitions are always at the bottom of the screen. <b>More</b> opens the full menu." },
     { at: ".nav-more", title: "More pages", text: "The calendar, results, handicaps, players and the rest are all under <b>More</b>." },
-    { at: ".nav-login", title: "Log in", text: "Players, captains and officers log in here, and the home page becomes your own. Your login comes from the league secretary." },
-    { at: ".nav-search", title: "Search", text: "Find any player, team, venue or news story." },
+    { at: ".sb-loginbtn", title: "Log in", text: "Players, captains and officers log in here, and the home page becomes your own. Your login comes from the league secretary." },
+    { at: ".sb-header__actions [data-search-open]", title: "Search", text: "Find any player, team, venue or news story." },
     { at: ".bnav-chips", title: "Shortcuts", text: "Your account, who you follow, the matches, My Snooker and Search. They tuck away while you scroll down and come back when you scroll up." },
   ];
   return personal ? mine : all;
@@ -107,7 +107,7 @@ export function startGuide({ personal = false } = {}) {
       // Bring it into view first (below the sticky menu bar), then put the spotlight on it.
       const r = el.getBoundingClientRect(), head = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 80;
       const fits = r.top >= head + 10 && r.bottom <= window.innerHeight - 180;
-      const fixedEl = getComputedStyle(el).position === "fixed" || el.closest(".site-header");
+      const fixedEl = getComputedStyle(el).position === "fixed" || el.closest(".sb-header");
       if (!fits && !fixedEl) window.scrollTo({ top: window.scrollY + r.top - head - 24, behavior: "smooth" });
     }
     place();

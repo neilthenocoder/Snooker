@@ -4,8 +4,12 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.85.0";
+export const SITE_VERSION = "1.86.0";
 export const CHANGES = [
+  "New design system across the whole website and the dashboard: Inter, Rich's red, every button and card rounded, and a light / dark switch (the sun and moon in the menu bar; in the phone menu too). The match strip and footer stay dark",
+  "Menu bar on one line on a computer — Home, Fixtures, League, Competitions, News, then Live, light/dark, Log in, the bell and search. The old More pages are in “Find your way around” above the footer",
+  "Phones: More opens a menu that slides in from the left instead of covering the whole screen; the top bar and the bar at the bottom are unchanged",
+  "New home page: the lead story on a photo with Top stories beside it, the live and upcoming matches strip, the league table with Next up, My Snooker, and Competitions (the latest cup result with every other cup beside it). News, competitions and the teams each show once; the stories circles are gone — no database change needed",
   "Stories (like the Premier League app): circles at the top of the home page — press one to read the whole article in place, move between stories with the arrows, a swipe or the arrow keys. Chosen in Admin → News (Show as a story, Story heading) — run schema.sql, version 43",
   "Fixtures and Our Players use the home page's crest wall: each league a card with a green header, its teams as club crests",
   "Phones: the My Snooker card is gone from the home page for logged-in people (it's in the shortcuts above the menu bar); the featured competition stacks as one green block with even spacing",

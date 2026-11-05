@@ -23,3 +23,7 @@
 # The scripts are small and change with every update: browsers always check for the newest.
 /js/*
   Cache-Control: public, max-age=0, must-revalidate
+
+# The stylesheets change with each design update too.
+/css/*
+  Cache-Control: public, max-age=0, must-revalidate

@@ -87,16 +87,16 @@ async function refreshLive() {
   const draws = competitions.filter((c) => c.draw_live?.status === "live" || (!c.draw_live && c.draw_at))
     .map((c) => ({ starts_at: c.draw_live?.started_at ?? c.draw_at, status: c.draw_live ? "in_progress" : "scheduled" }));
   const state = liveState([...fixtures, ...comps, ...draws, ...scored], Date.now(), ukDay);
-  for (const btn of document.querySelectorAll(".nav-live-btn")) {
+  for (const btn of document.querySelectorAll("[data-live-btn]")) {
     btn.className = btn.className.replace(/state-\w+/, `state-${state}`);
-    (btn.querySelector("span") ?? btn).textContent = LIVE_LABEL[state];
+    (btn.querySelector("span:last-child") ?? btn).textContent = LIVE_LABEL[state];
   }
 }
 
 /** The bell has a line through it while live notifications are switched off. */
 function drawBell() {
   const on = notificationsOn();
-  const b = $(".nav-bell");
+  const b = $("[data-bell-btn]");
   if (!b) return;
   b.classList.toggle("off", !on);
   b.title = on ? "Notifications: choose what you hear about" : "Notifications are off — press to change";
@@ -104,7 +104,7 @@ function drawBell() {
   unreadNotices().then((n) => {
     let dot = b.querySelector(".nav-bell-count");
     if (!n) return dot?.remove();
-    if (!dot) { dot = document.createElement("span"); dot.className = "nav-bell-count"; b.append(dot); }
+    if (!dot) { dot = document.createElement("span"); dot.className = "sb-bell__count"; b.append(dot); }
     dot.textContent = n > 9 ? "9+" : String(n);
     b.setAttribute("aria-label", `Notifications: ${n} new`);
   }).catch(() => {});
@@ -166,6 +166,7 @@ function bottomNav(seasons, user) {
 }
 /** Light up the part of the site you're in, and slide the red line over it. */
 function markBottomNav() {
+  markTopNav();
   const bar = $(".bnav-bar");
   if (!bar) return;
   const open = document.documentElement.classList.contains("menu-open");
@@ -198,6 +199,53 @@ document.addEventListener("click", (e) => {
 });
 window.addEventListener("resize", markBottomNav, { passive: true });
 
+
+// ── Light / dark (round 99, the design system's ThemeToggle) ──
+const sunIcon = html`<svg class="sb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8"/></svg>`;
+const moonIcon = html`<svg class="sb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>`;
+const currentTheme = () => (document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+/** The league's logo: the light-background version in light mode (or the main one turned dark), the main one in dark mode. */
+const brandMark = (site) => html`<span class="sb-brand__mark"><img class="sb-logo-dark" src="${site.logo_url || "/assets/logo.svg"}" alt=""><img class="sb-logo-light ${site.logo_light_url ? "" : "auto"}" src="${site.logo_light_url || site.logo_url || "/assets/logo.svg"}" alt=""></span>`;
+function themeToggle() {
+  const t = currentTheme();
+  return html`<div class="sb-theme" role="group" aria-label="Colour theme">
+    <button type="button" data-theme-set="light" aria-label="Light mode" aria-pressed="${String(t === "light")}">${sunIcon}</button>
+    <button type="button" data-theme-set="dark" aria-label="Dark mode" aria-pressed="${String(t === "dark")}">${moonIcon}</button></div>`;
+}
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem("sb-theme", t); } catch { /* not remembered: fine for this visit */ }
+  for (const b of document.querySelectorAll("[data-theme-set]")) b.setAttribute("aria-pressed", String(b.dataset.themeSet === t));
+}
+document.addEventListener("click", (e) => { const b = e.target.closest("[data-theme-set]"); if (b) setTheme(b.dataset.themeSet); });
+/** Which part of the site a menu link belongs to, so the page you're on shows as the red pill. */
+function navSection(href = "") {
+  const p = String(href).split(/[?#]/)[0];
+  if (p === "/" || p === "") return "home";
+  const page = match(p).page;
+  return SECTION[page] ?? "";
+}
+/** Mark the menu link for the part of the site you're in (the red pill on a computer, red text in the drawer). */
+function markTopNav() {
+  const section = document.documentElement.dataset.section || "";
+  for (const a of document.querySelectorAll("[data-nav-section]")) {
+    const on = !!section && a.dataset.navSection === section;
+    a.classList.toggle("on", on);
+    if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  }
+}
+/** "Find your way around": the pages that sat under the old "More" menu, just above the footer (computers). */
+async function drawFind() {
+  const box = $("#site-find");
+  if (!box) return;
+  const site = await settings();
+  const more = menuMore(site);
+  mount(box, more.length ? html`<section class="sb-find" aria-labelledby="sb-find-h"><div class="sb-container">
+    <div class="sb-section-head"><div><h2 id="sb-find-h">Find your way around</h2><p>Every other page of the league's website.</p></div></div>
+    <div class="sb-find__grid">${more.map((l) => html`<a class="sb-find__item" href="${l.href}" ${isOutside(l.href) ? html`target="_blank" rel="noopener"` : ""}><span class="sb-find__ico">${moreIcon(l.href)}</span><span>${l.label}</span></a>`)}</div>
+  </div></section>` : "");
+}
+
 async function drawHeader() {
   const [user, site, gate, seasons] = await Promise.all([getUser(), settings(), loginGate(), table("seasons", "name").catch(() => [])]);
   applyBranding(site);
@@ -209,52 +257,65 @@ async function drawHeader() {
   const more = menuMore(site);
   // On the right, always in this order: the person (log in / my account), the bell (notifications), search.
   // Phones add the menu button, which opens the full-screen menu.
+  const logoSrc = site.logo_url || "/assets/logo.svg";
+  const liveItem = MENU.find((item) => item.color === "live");
+  const socials = SOCIAL.filter(([key]) => safeHref(site[key]));
+  // Round 99 (the St Blazey design system): one line on a computer — the brand, the menu pages as pills, then Live,
+  // light/dark, Log in (or the account menu), the bell and search. No "More" on a computer: its pages are in the
+  // "Find your way around" band above the footer. Phones keep their top bar and the bar at the bottom; "More" there
+  // opens a side drawer (not the whole screen) with every page, the account, and light/dark.
   mount($("#site-header"), html`
     ${DEMO_MODE ? html`<div class="demo-banner">Demo mode — sample data saved in this browser only. Add your Supabase keys in js/config.js to go live.</div>` : ""}
-    <header class="site-header"><div class="site-bar"><div class="wrap">
-      <a class="logo" href="/" aria-label="${SITE.name} home"><img class="logo-main" src="${site.logo_url || "/assets/logo.svg"}" alt="${SITE.name}"><img class="logo-light ${site.logo_light_url ? "" : "auto"}" src="${site.logo_light_url || site.logo_url || "/assets/logo.svg"}" alt="${SITE.name}"></a>
-      <nav class="main-nav" aria-label="Main menu">
-        ${MENU.filter((item) => item.color !== "live").map((item) => navLink(item, item.label))}
-        ${more.length ? html`<div class="nav-drop-wrap"><button type="button" class="nav-more" data-drop="more" aria-expanded="false" aria-haspopup="true">More<i class="chev" aria-hidden="true"></i></button>
-          <div class="nav-drop more-drop" data-drop-panel="more" hidden><div class="acct-who more-head"><strong>More pages</strong></div><div class="more-grid">${more.map((l) => html`<a class="acct-item" href="${l.href}" ${isOutside(l.href) ? html`target="_blank" rel="noopener"` : ""}><span class="acct-ico">${moreIcon(l.href)}</span><span><b>${l.label}</b></span></a>`)}</div></div></div>` : ""}
-        ${MENU.filter((item) => item.color === "live").map((item) => navLink(item, html`<span>${item.label}</span>`))}
+    <header class="sb-header" data-site-header><div class="sb-header__inner">
+      <a class="sb-brand" href="/" aria-label="${SITE.name} home">${brandMark(site)}<span class="sb-brand__name">St Blazey Snooker</span></a>
+      <nav class="sb-header__links" aria-label="Main menu">
+        ${MENU.filter((item) => item.color !== "live").map((item) => html`<a class="sb-navlink" data-nav-section="${navSection(item.href)}" href="${item.href}" ${isOutside(item.href) ? html`target="_blank" rel="noopener"` : ""}>${item.label}</a>`)}
       </nav>
-      <div class="nav-icons">
-        ${MENU.some((item) => item.color === "live") ? html`<a class="nav-live-btn nav-live-m state-idle" href="${MENU.find((item) => item.color === "live").href}"><span>Live</span></a>` : ""}
-        ${user ? html`<div class="nav-drop-wrap acct-wrap"><button type="button" class="nav-acct" data-drop="acct" aria-expanded="false" aria-haspopup="true" aria-label="${role} menu: ${name}" title="${name}">
-            <span class="nav-acct-ico">${personIcon}</span><span class="nav-acct-word">${role}</span><i class="chev" aria-hidden="true"></i></button>
-          <div class="nav-drop acct-drop" data-drop-panel="acct" hidden>
-            <div class="acct-who"><span class="drawer-initials">${initials(name)}</span><span><strong>${name}</strong><small>${role}</small></span></div>
+      <div class="sb-header__actions">
+        ${liveItem ? html`<a class="sb-btn sb-btn--live sb-livebtn state-idle" data-live-btn href="${liveItem.href}"><span class="sb-dot" aria-hidden="true"></span><span>Live</span></a>` : ""}
+        <span class="sb-hide-phone">${themeToggle()}</span>
+        ${user ? html`<div class="nav-drop-wrap sb-acct-wrap"><button type="button" class="sb-acct" data-drop="acct" aria-expanded="false" aria-haspopup="true" aria-label="${role} menu: ${name}" title="${name}">
+            <span class="sb-acct__initials">${initials(name)}</span><span class="sb-acct__word">${role}</span><svg class="sb-icon sb-acct__chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <div class="sb-drop" data-drop-panel="acct" hidden>
+            <div class="sb-drop__who"><span class="sb-drop__initials">${initials(name)}</span><span><strong>${name}</strong><small>${role}</small></span></div>
             ${acctItems(user)}
             <button type="button" class="acct-item acct-out" data-logout><span class="acct-ico">${logoutIcon}</span><span><b>Log out</b></span></button>
           </div></div>`
-          : noLogin ? "" : html`<button type="button" class="nav-login" data-account-open>Log in</button>`}
-        ${/* Round 86: no star here — logged-in people reach My Snooker from their menu, the home page and the phone's shortcuts. */ ""}
-        <button type="button" class="nav-icon nav-bell" data-bell aria-label="Notifications" title="Notifications">${bell}</button>
-        <button type="button" class="nav-icon nav-search" data-search-open aria-label="Search" title="Search">${searchIcon}</button>
-        <button type="button" class="nav-icon nav-toggle" data-menu-open aria-label="Menu" aria-expanded="false">${menuIcon}</button>
+          : noLogin ? "" : html`<button type="button" class="sb-btn sb-btn--primary sb-loginbtn" data-account-open>Log in</button>`}
+        <button type="button" class="sb-icon-btn sb-bell" data-bell data-bell-btn aria-label="Notifications" title="Notifications">${bell}</button>
+        <button type="button" class="sb-icon-btn sb-hide-phone" data-search-open aria-label="Search" title="Search"><svg class="sb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14M20 20l-3.5-3.5"/></svg></button>
       </div>
-    </div></div></header>
+    </div></header>
     ${bottomNav(seasons, user)}
-    <div class="menu-overlay" data-menu role="dialog" aria-modal="true" aria-label="Menu">
-      <div class="menu-top"><a class="logo menu-logo" href="/" aria-label="${SITE.name} home"><img class="logo-main" src="${site.logo_url || "/assets/logo.svg"}" alt=""><img class="logo-light ${site.logo_light_url ? "" : "auto"}" src="${site.logo_light_url || site.logo_url || "/assets/logo.svg"}" alt=""></a>
-        <button type="button" class="menu-x" data-menu-close aria-label="Close the menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
-      <nav class="menu-links" aria-label="Main menu">
-        ${MENU.filter((item) => item.color !== "live").map((item) => menuLink(item, html`<span>${item.label}</span>`))}
-      </nav>
-      ${user ? html`<section class="menu-acct" data-menu-acct aria-label="${role} menu">
-          <h4 class="menu-h">${role} · ${name.split(" ")[0]}</h4>
-          ${acctItems(user)}
-          <button type="button" class="acct-item acct-out" data-logout><span class="acct-ico">${logoutIcon}</span><span><b>Log out</b></span></button>
-        </section>`
-        : noLogin ? "" : html`<button type="button" class="btn menu-login" data-account-open>Log in</button>`}
-      <div class="menu-more">
-        ${more.map((l) => html`<a href="${l.href}" ${isOutside(l.href) ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}
-      </div>
-      <div class="menu-foot">
-        <button type="button" class="btn ghost" data-search-open>Search</button>
-        <button type="button" class="btn ghost" data-bell>Notifications</button>
-        ${canInstall() ? html`<button type="button" class="btn green menu-a2hs" data-install-app>＋ Add to home screen</button>` : ""}
+    <div class="sbd" data-menu>
+      <div class="sbd__scrim" data-menu-close aria-hidden="true"></div>
+      <div class="sbd__panel" role="dialog" aria-modal="true" aria-label="Menu">
+        <div class="sbd__top">
+          <a class="sbd__brand" href="/">${brandMark(site)}<span>St Blazey Snooker</span></a>
+          <button type="button" class="sbd__icon" data-search-open aria-label="Search"><svg class="sb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14M20 20l-3.5-3.5"/></svg></button>
+          <button type="button" class="sbd__icon" data-menu-close aria-label="Close the menu"><svg class="sb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        </div>
+        <nav class="sbd__main" aria-label="Main menu">
+          ${MENU.map((item) => html`<a class="sbd__link ${item.color === "live" ? "sbd__link--live state-idle" : ""}" ${item.color === "live" ? html`data-live-btn` : ""} data-nav-section="${navSection(item.href)}" href="${item.href}" ${isOutside(item.href) ? html`target="_blank" rel="noopener"` : ""}><span>${item.label}</span></a>`)}
+        </nav>
+        ${user ? html`<details class="sbd__group" data-menu-acct>
+            <summary><span>${role} · ${name.split(" ")[0]}</span><svg class="sb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="sbd__acct">${acctItems(user)}
+              <button type="button" class="acct-item acct-out" data-logout><span class="acct-ico">${logoutIcon}</span><span><b>Log out</b></span></button></div>
+          </details>`
+          : noLogin ? "" : html`<button type="button" class="sb-btn sb-btn--primary sb-btn--xl sbd__login" data-account-open>Log in</button>`}
+        <hr class="sbd__rule">
+        <p class="sbd__h">More</p>
+        <nav class="sbd__more" aria-label="More pages">
+          ${more.map((l) => html`<a href="${l.href}" ${isOutside(l.href) ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}
+          <button type="button" data-bell>Notifications</button>
+          ${canInstall() ? html`<button type="button" data-install-app>Add to home screen</button>` : ""}
+        </nav>
+        <hr class="sbd__rule">
+        <div class="sbd__foot">
+          <div class="sbd__social">${socials.map(([key, label, icon]) => html`<a href="${safeHref(site[key])}" target="_blank" rel="noopener" aria-label="${label}"><svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></a>`)}</div>
+          ${themeToggle()}
+        </div>
       </div>
     </div>`);
   // The favicon and the iPhone home-screen icon (Admin → Branding). On Netlify they are already in the page
@@ -294,10 +355,10 @@ function slimHeader() {
   // Round 17: the bar no longer gets slimmer when scrolling. Getting slimmer needed a see-through strip under
   // the bar (so the page would not move), and that strip showed the page scrolling behind it — the "white line
   // under the menu". The bar is now one solid height all the time: nothing to flicker, nothing to shake.
-  $(".site-header")?.classList.remove("stuck");
+  $(".sb-header")?.classList.remove("stuck");
 }
 function measureHeader() {
-  const head = $(".site-header"), bar = $(".site-bar");
+  const head = $(".sb-header"), bar = $(".sb-header");
   if (!head || !bar) return;
   const root = document.documentElement.style;
   // How tall the bar is at full size: measured without its animation, whatever size it is at this moment.
@@ -353,7 +414,7 @@ function closeDrops(except = null) {
 const phoneMenu = () => window.matchMedia("(max-width: 900px)").matches;
 /** Open the account part: the dropdown on a computer; on a phone, the one menu, at its account section. */
 function openAcctMenu() {
-  if (phoneMenu()) { setMenu(true); requestAnimationFrame(() => $("[data-menu-acct]")?.scrollIntoView({ block: "start" })); return; }
+  if (phoneMenu()) { setMenu(true); const acct = $("[data-menu-acct]"); if (acct) acct.open = true; requestAnimationFrame(() => acct?.scrollIntoView({ block: "start" })); return; }
   const b = $('[data-drop="acct"]'); if (!b) return;
   closeDrops("acct"); b.setAttribute("aria-expanded", "true"); $('[data-drop-panel="acct"]').hidden = false;
   $('[data-drop-panel="acct"] .acct-item')?.focus();
@@ -463,7 +524,7 @@ async function navigate(path, { replace = false } = {}) {
 
 async function refreshShell() {
   invalidate();
-  await Promise.all([drawHeader(), drawFooter()]);
+  await Promise.all([drawHeader(), drawFooter(), drawFind()]);
 }
 setNavigator(navigate);
 setShellRefresher(refreshShell);
@@ -690,7 +751,7 @@ document.addEventListener("change", (e) => {
   if (e.target.matches("[data-season-picker]")) navigate(`${location.pathname}?season=${e.target.value}`);
 });
 
-await Promise.all([drawHeader(), drawFooter()]);
+await Promise.all([drawHeader(), drawFooter(), drawFind()]);
 // A reload, or arriving with the browser's back / forward buttons, also returns to the same place.
 try { restoring = ["reload", "back_forward"].includes(performance.getEntriesByType("navigation")[0]?.type); } catch { /* top of the page */ }
 renderRoute();
@@ -757,6 +818,7 @@ document.addEventListener("click", async (e) => {
 // Esc closes the menu bar's dropdowns (and puts the focus back on their button).
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
+  if (document.documentElement.classList.contains("menu-open")) { setMenu(false); return; }
   const open = document.querySelector('[data-drop][aria-expanded="true"]');
   if (open) { closeDrops(); open.focus(); }
 });

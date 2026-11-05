@@ -63,7 +63,7 @@ function keepInView() {
   const r = input.getBoundingClientRect();
   const need = r.bottom + Math.min(box.offsetHeight, 250) + 8 - (top + height);
   if (need <= 0) return;
-  const head = document.querySelector(".site-header")?.getBoundingClientRect();
+  const head = document.querySelector(".sb-header")?.getBoundingClientRect();
   const headBottom = head && head.bottom > 0 && head.top <= 1 ? head.bottom : 0;
   const room = r.top - top - headBottom - 8;      // how far the box can go up before it meets the top of the screen
   if (room > 0) window.scrollBy({ top: Math.min(need, room), behavior: "smooth" });

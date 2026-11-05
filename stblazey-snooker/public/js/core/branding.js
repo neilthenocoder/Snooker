@@ -8,9 +8,9 @@ const CACHE = "sbdsl-brand";
 
 /** Fonts offered in Admin → Branding (all free from Google Fonts). The first of each is the standard one. */
 export const FONTS = {
-  // Round 93 (Baize): Hanken Grotesk is the one typeface of the site (the stylesheet holds every page to it).
-  head: ["Hanken Grotesk", "Oswald", "Bebas Neue", "Barlow Condensed", "Montserrat", "Poppins", "Archivo", "Roboto Condensed", "Teko", "Anton"],
-  body: ["Hanken Grotesk", "Questrial", "Inter", "Open Sans", "Roboto", "Lato", "Nunito", "Source Sans 3", "Plus Jakarta Sans", "Poppins", "Montserrat"],
+  // Round 99 (the St Blazey design system): Inter is the one typeface of the site (the stylesheet holds every page to it).
+  head: ["Inter", "Oswald", "Bebas Neue", "Barlow Condensed", "Montserrat", "Poppins", "Archivo", "Roboto Condensed", "Teko", "Anton"],
+  body: ["Inter", "Questrial", "Open Sans", "Roboto", "Lato", "Nunito", "Source Sans 3", "Plus Jakarta Sans", "Poppins", "Montserrat"],
 };
 
 /** The parts of the site that can each have their own page layout (Admin → Branding → Page layout). */

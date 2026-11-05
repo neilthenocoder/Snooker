@@ -10,9 +10,9 @@ import { seasonContext, sideBoxData } from "../core/context.js";
 import { articles, settings, upcomingMatches, loadCompetitions, subscribe, table, liveMatches, currentCompetitions } from "../core/api.js";
 import { deadlineWarnings, deadlineBar } from "../core/comp-deadlines.js";
 import { matchScore, shieldHolder } from "../core/rules.js";
-import { buildBracket, isEntry, walkoverSide } from "../core/bracket.js";
+import { buildBracket, isEntry, walkoverSide, roundName, winnerSide } from "../core/bracket.js";
 import { answered, articleCueview } from "../core/cueview.js";
-import { leagueTablePanel, sidebar, panel, picture, urls, badge, avatar, articleThumb, shortName, latestNews, trophy, shieldPicture, resultsBox } from "../core/components.js";
+import { leagueTablePanel, rankingsPanel, sidebar, panel, picture, urls, badge, avatar, articleThumb, shortName, latestNews, trophy, shieldPicture, resultsBox } from "../core/components.js";
 import { SITE } from "../config.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import { competitionSummaries } from "./competitions.js";
@@ -20,7 +20,6 @@ import { loadForm, formBadge, formChips } from "../core/form.js";
 import { liveSoonTag, compBoxStyle } from "../core/components.js";
 import { homeSections, isOffSeason, promoBlock, mySnookerPrompt, newsBlock, compsBlock, teamsBlock } from "../core/home-blocks.js";
 import { leagueCrests } from "../core/components.js";
-import { storyList, storiesRow, mountStories } from "../core/stories.js";
 
 const ROTATE_MS = 7000;      // banner: time each article is shown
 const CAROUSEL_MS = 4500;    // live strip: time before it moves on one card
@@ -46,277 +45,313 @@ const chevRight = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.3
 const calIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h2v2h6V2h2v2h3v17H4V4h3Zm11 8H6v9h12Zm0-4H6v2h12Z"/></svg>`;
 const searchGlass = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.8 4.8-1.4 1.4-4.8-4.8A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg>`;
 
+// ─────────────────────────────────────────────────────────────
+//  ROUND 99 — THE HOME PAGE IN THE ST BLAZEY DESIGN SYSTEM (the WST-inspired layout Rich chose)
+//  1. The lead story on a photo, with Top stories beside it
+//  2. Live and upcoming matches: the dark strip (Live · Upcoming · Results)
+//  3. The league table, with Next up beside it
+//  4. My Snooker
+//  5. Competitions: the cup with the latest result, and the other cups beside it
+//  Rich's trims: news only in one place (the top), competitions once (no second competitions strip),
+//  no wall of every team (they are in the tables and the League menu), no stories row, no quick links.
+//  "Everything" (Site settings → Home page style) adds every league table, the shields, player and team of the
+//  week and CueViews underneath, in the same design.
+// ─────────────────────────────────────────────────────────────
+const sbIcon = (d, size = 18) => html`<svg class="sb-icon" viewBox="0 0 24 24" style="width:${size}px;height:${size}px" aria-hidden="true"><path d="${d}"/></svg>`;
+const ICON = {
+  trophy: "M8 4h8v5a4 4 0 0 1-8 0ZM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8",
+  star: "M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9Z",
+  right: "m9 6 6 6-6 6",
+  left: "m15 6-6 6 6 6",
+  arrow: "M5 12h14M13 6l6 6-6 6",
+};
+/** "Tue 10 Nov" in the visitor's own time (the footer says times are local). */
+const sbDay = (iso) => (iso ? new Date(iso).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }).replace(",", "") : "");
+const initialsOf = (name = "") => name.replace(/[^A-Za-z0-9 ]/g, " ").split(/\s+/).filter(Boolean).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
+const pic = (a) => a.image_url || a.circle_image_url || "";
+const photo = (a, cls = "") => (pic(a) ? html`<img class="${cls}" src="${pic(a)}" alt="" loading="lazy">` : html`<span class="sb-ph ${cls}" aria-hidden="true"></span>`);
+
 export default async function home(view, { user } = {}) {
   setTitle("");
   adminEdit("settings", null, { label: "Edit home page" });
-  const [ctx, news, allComps, site, box, notices, dates] = await Promise.all([seasonContext(), articles(), competitionSummaries({ current: true }), settings(), sideBoxData(),
-    table("announcements", "sort").catch(() => []), table("key_dates", "starts_on").catch(() => [])]);
-  // Form (Rich, round 25) beside the player and team of the week.
+  const [ctx, news, allComps, site] = await Promise.all([seasonContext(), articles(), competitionSummaries({ current: true }), settings()]);
   if (site.player_of_week_show || site.team_of_week_show || site.player_of_month_show || site.team_of_month_show) ctx.form = await loadForm(ctx).catch(() => null);
   const today = todayUK();
+  const dates = await table("key_dates", "starts_on").catch(() => []);
   const entering = openForEntry(allComps.map((x) => x.c));
-  const slides = news.filter((a) => a.featured).slice(0, Math.max(1, site.hero_count || 4));
-  // This season's competitions (ones with no season set count as current).
   const comps = allComps.filter(({ c }) => !c.season_id || c.season_id === ctx.season?.id);
+  const compData = await currentCompetitions().catch(() => null);
   view.classList.add("flush");
-  // Round 48 (Neil's idea, Rich agreed to try it): logged in and following a team or a player → the home page IS
-  // their My Snooker: the live strip and the quick links stay on top, then their own sections in their own order.
-  // "Normal home page" (/?home=1) shows everyone's home page once.
-  // Round 52 (Neil): the home page is the same for everyone again; My Snooker is its own page (/mysnooker, pages/myteam.js).
-  const personal = false;
-  // Round 47 (Rich): the standard home page — news and promotion first, the blocks and their order chosen in Site settings.
-  // "Everything" is the earlier home page with all the tables (Site settings → Home page → Home page style).
-  const standard = site.home_style !== "full";
+  const everything = site.home_style === "full";
   const sections = homeSections(site);
   const on = (key) => sections.find((x) => x.key === key)?.on;
   const promoWanted = site.promo_mode === "always" || (site.promo_mode !== "never" && isOffSeason(ctx, allComps));
-  const compData = standard && (on("competitions") || on("comp_strip")) ? await currentCompetitions().catch(() => null) : null;
-  // Round 77 (Rich's layout): the home page runs the full width — no side column. Some blocks sit in a dark band that
-  // goes edge to edge. Each block is its own section with the page width inside it.
-  const inWrap = (inner, cls = "") => (inner ? html`<section class="hz ${cls}"><div class="wrap">${inner}</div></section>` : "");
-  const inBand = (inner, cls = "") => (inner ? html`<section class="hz hz-band ${cls}"><div class="wrap">${inner}</div></section>` : "");
-  const bannerIds = slides.map((a) => a.id);
-  const featuredNews = news.filter((a) => !bannerIds.includes(a.id)).slice(0, 4);
-  const block = {
-    promo: () => inWrap(promoWanted ? promoBlock(site, ctx, dates, today) : ""),
-    mysnooker: () => "",      // round 91: drawn at the top, under the quick links
-    // Round 94 (the approved home page design): three news cards side by side.
-    news: () => inWrap(newsCards(news.filter((a) => !bannerIds.includes(a.id)).slice(0, 3))),
-    comp_strip: () => inBand(compData ? compStrip(comps, compData) : "", "hz-comps"),
-    // Round 94: the design has no featured-competition block, no "More stories" and no spotlight band — the
-    // competitions strip, the news cards and the Our teams lists cover them. (Their settings are kept, unused.)
-    // Round 97 (Neil): the featured competition is back, under the competitions strip; the card at the top of the
-    // page ("Competitions") jumps down to it.
-    competitions: () => inWrap(compData ? html`<div id="home-competitions" class="bz-anchor">${compsBlock(comps, compData)}</div>` : "", "bz-comps-feature"),
-    // Round 96 (Neil): More stories is back — four more stories as cards in the same style as Latest news.
-    features: () => inWrap(moreStoryCards(news.filter((a) => !bannerIds.includes(a.id)).slice(3, 7)), "bz-more-sec"),
-    spotlights: () => "",
-    teams: () => inWrap(teamsCards(ctx), "bz-teams-sec"),
-    cueviews: () => inWrap(site.cueviews_show !== false ? cueviewBox(ctx, news) : ""),
-    tables: () => inWrap(html`<div class="hz-tables">${ctx.leagues.map((l) => leagueTablePanel(ctx, l, { limit: 10 }))}</div>`),
-    shields: () => inWrap(site.shields_show !== false ? shieldsBox(ctx) : ""),
-  };
-  // The home page is the same for everyone (My Snooker is a page of its own, in the menu).
+
+  // News: the lead stories (ticked "Featured", else the newest) and four more in Top stories — each story once.
+  const featured = news.filter((a) => a.featured);
+  const slides = (featured.length ? featured : news).slice(0, Math.max(1, Math.min(4, site.hero_count || 3)));
+  const top = news.filter((a) => !slides.includes(a)).slice(0, 4);
+
+  const section = (inner, cls = "") => (inner ? html`<section class="sb-section ${cls}"><div class="sb-container">${inner}</div></section>` : "");
+  const notices = [
+    user ? deadlineBar(deadlineWarnings(user, ctx, compData ?? { competitions: [], entries: [], matches: [] }, site)) : "",
+    entering.length ? html`<a class="sb-notice" href="/enter"><span class="sb-chip">Entries are open</span><span>${entering.map((c) => c.name).join(", ")}</span><b class="sb-link">Enter now ${sbIcon(ICON.arrow, 16)}</b></a>` : "",
+  ].filter(Boolean);
 
   mount(view, html`
-    ${/* Round 93 (Baize): the top of the home page is two panels side by side — Matchday (tonight's matches, on the
-       table green) and the featured story. Where they meet at the top, a corner pocket is cut into each, so together
-       they make one middle pocket. On a phone they stack, Matchday first. */ ""}
-    ${storiesRow(storyList(news))}
-    <section class="bz-top"><div class="wrap bz-top-grid">
-      <div class="bz-matchday">
-        <div class="bz-md-head"><p class="bz-md-date">${new Date().toLocaleDateString("en-GB", { timeZone: "Europe/London", weekday: "long", day: "numeric", month: "long" })}</p><h1 class="bz-md-title">Matchday</h1></div>
-        <div class="live-strip bz-list" data-strip></div>
-        <div class="bz-md-foot"><a class="bz-md-cal" href="/calendar">${calIcon}<span>Calendar</span></a><a class="bz-md-all" href="/fixtures">All fixtures and results</a></div>
-      </div>
-      <div class="bz-story hero-inner">
-        <div class="hero-slides" data-slides><div class="hero-track" data-track>
-          ${slides.length ? slides.map((a, i) => storySlide(a, i === 0)) : html`<div class="hero-slide bz-slide on"><div class="bz-slide-text"><h2 class="bz-slide-title">${SITE.name}</h2><p class="bz-slide-meta">Established ${SITE.established}</p></div></div>`}
-        </div></div>
-        ${slides.length > 1 ? html`<div class="hero-dots bz-dots">${slides.map((_, i) => html`<button class="${i ? "" : "on"}" data-dot="${i}" aria-label="Show story ${i + 1}"></button>`)}</div>` : ""}
-      </div>
-    </div></section>
-    ${standard ? html`
-    <section class="hz hz-top"><div class="wrap"><div class="hz-top-grid">
-      <div class="home-top">
-        <div class="hb-head ql-head"><h2>Quick links</h2></div>
-        ${quickLinks(ctx)}
-        ${myBtn(user, ctx)}
-        ${/* Round 91 (Neil): the My Snooker invitation sits between the quick links and the feature box */ on("mysnooker") ? mySnookerPrompt(user, ctx) : ""}
-        ${featureBox(site, notices, today)}
-        ${compData && comps.length && on("competitions") ? html`<a class="bz-link-card" href="#home-competitions"><span class="ql-tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/></svg></span><b>Competitions</b><span>This season's cups: the latest results, the draws and what's next</span><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></i></a>` : ""}
-        ${user ? deadlineBar(deadlineWarnings(user, ctx, await currentCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] })), site)) : ""}
-        ${entering.length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${entering.map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
-        ${keyDates(site, dates, allComps.map((x) => x.c), today)}
-      </div>
-      <aside class="hz-results">${resultsBox(ctx, box)}</aside>
-    </div></div></section>
-    ${/* Round 94: the design's order — news, competitions, teams — then anything else switched on */
-      [...sections.filter((x) => x.on)].sort((a, b) => (DESIGN_ORDER.indexOf(a.key) + 1 || 99) - (DESIGN_ORDER.indexOf(b.key) + 1 || 99)).map((x) => block[x.key]?.() ?? "")}
-    <div style="height:40px"></div>` : html`
-    <div class="${personal ? "wrap ms-homepage" : "wrap layout"}" style="margin-top:${personal ? 24 : 30}px">
-      <div class="stack">
-        <div class="home-top">
-        <div class="hb-head ql-head"><h2>Quick links</h2></div>
-        <nav class="quick-links ql-8" aria-label="Quick links">
-          <a style="background:var(--green)" href="/fixtures">${quickIcon.fixtures}<span>Fixtures</span></a>
-          <a style="background:var(--red)" href="/results">${quickIcon.results}<span>Results</span></a>
-          <a style="background:var(--blue)" href="${urls.season(ctx.season, "league-tables")}">${quickIcon.tables}<span>League tables</span></a>
-          <a style="background:var(--red)" href="${urls.season(ctx.season, "rankings")}">${quickIcon.rankings}<span>Rankings</span></a>
-          <a style="background:var(--green)" href="${urls.season(ctx.season, "breaks")}">${quickIcon.breaks}<span>Breaks</span></a>
-          <a style="background:var(--yellow);color:#1b0e06" href="/competitions">${quickIcon.competitions}<span>Competitions</span></a>
-          <a style="background:var(--red)" href="/calendar">${quickIcon.calendar}<span>Calendar</span></a>
-          <a style="background:var(--blue)" href="/handicaps">${quickIcon.handicaps}<span>Handicaps</span></a>
-        </nav>
-        ${myBtn(user, ctx)}
-        ${featureBox(site, notices, today)}
-        ${user ? deadlineBar(deadlineWarnings(user, ctx, await currentCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] })), site)) : ""}
-        ${entering.length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${entering.map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}
-        ${keyDates(site, dates, allComps.map((x) => x.c), today)}
-        </div>
-        ${html`
-        ${ctx.leagues.map((l) => leagueTablePanel(ctx, l, { limit: 10 }))}
-        ${site.shields_show !== false ? shieldsBox(ctx) : ""}
-        ${spotlights(ctx, site)}
-        ${site.cueviews_show !== false ? cueviewBox(ctx, news) : ""}
-        ${panel("Latest Competitions", html`<div class="list-rows comp-cols" style="background:var(--cream)">
-          ${comps.length ? comps.map(({ c, season, progress }) => html`<a href="${urls.competition(c)}">${compBoxStyle(c) !== "trophy" ? html`<span class="cc-pic">${picture(c.image_url)}</span>` : html`<div class="ph trophy-ph">${trophy(c)}</div>`}<div><strong>${c.name}</strong><small>${c.kind}${season ? ` · ${season.name}` : ""}</small><span class="cc-prog">${progress}</span></div></a>`)
-            : html`<div class="empty">No competitions yet.</div>`}
-        </div>`, { color: "yellow", href: "/competitions" })}`}
-      </div>
-      ${personal ? "" : sidebar(ctx, latestNews(news, site, slides.map((a) => a.id)), { count: site.latest_news_count || 1, box,
-        breaks: !standard || on("side_breaks"), rankings: !standard || on("side_rankings") })}
-    </div>`}`);
+    <div class="sb-home">
+    <div class="sb-container"><div class="sb-hero">
+      ${heroLead(slides)}
+      ${top.length ? html`<aside class="sb-hero__side sb-card sb-top">
+        <div class="sb-top__head"><h2>Top stories</h2><a class="sb-link sb-link--sm" href="/news">All news</a></div>
+        ${top.map((a) => html`<a class="sb-story-row" href="${urls.article(a)}">${photo(a)}
+          <span class="sb-story-row__text">${a.category ? html`<span class="sb-kicker">${a.category}</span>` : ""}<span class="sb-story-row__title">${a.title}</span><span class="sb-meta">${fmtAgo(a.published_at)}</span></span></a>`)}
+      </aside>` : ""}
+    </div></div>
 
-  // The guide: the first time someone sees their own home page, or straight after "Show me around".
-  maybeStartGuide({ personal, site });
-  // Captains and vice captains: the "Manage team" box at the bottom of the screen in the days before a match.
+    <section class="sb-strip live-strip" aria-labelledby="sb-strip-h"><div class="sb-strip__inner" data-strip></div></section>
+
+    ${notices.length ? html`<div class="sb-container sb-notices">${notices}</div>` : ""}
+
+    ${section(html`<div class="sb-split">
+      ${tableCard(ctx)}
+      ${nextUp(ctx)}
+    </div>
+    ${on("mysnooker") !== false ? mySnookerCard(user, ctx) : ""}`, "sb-section--first")}
+
+    ${promoWanted && on("promo") !== false ? section(promoBlock(site, ctx, dates, today), "sb-promo-sec") : ""}
+
+    ${compData && comps.length && (on("competitions") !== false || on("comp_strip")) ? section(competitionsBlock(comps, compData)) : ""}
+
+    ${on("tables") ? section(html`<div class="sb-section-head"><div><h2>League tables</h2><p>Every league this season.</p></div><a class="sb-link" href="/league">All tables</a></div>
+      <div class="sb-tables">${ctx.leagues.map((l) => leagueTablePanel(ctx, l, { limit: 10 }))}</div>`) : ""}
+    ${everything ? section(html`<div class="sb-section-head"><div><h2>Player rankings</h2><p>The top ten in each league this season.</p></div><a class="sb-link" href="${urls.season(ctx.season, "rankings")}">All rankings</a></div>
+      <div class="sb-tables">${ctx.leagues.filter((l) => ctx.rankings(l.id).length).map((l) => rankingsPanel(ctx, l, { limit: 10 }))}</div>`) : ""}
+    ${(everything && site.shields_show !== false) || on("shields") ? section(shieldsBox(ctx), "sb-legacy") : ""}
+    ${everything || on("spotlights") ? section(spotlights(ctx, site), "sb-legacy") : ""}
+    ${(everything || on("cueviews")) && site.cueviews_show !== false ? section(cueviewBox(ctx, news), "sb-legacy") : ""}
+    <div class="sb-home__end"></div>
+    </div>`);
+
+  maybeStartGuide({ personal: false, site });
   const stopSquad = await mountSquadBox(user, ctx, site).catch(() => () => {});
 
-  // Rotate the banner articles (pauses while the mouse is over it).
-  const slideEls = $$(".hero-slide", view), dots = $$("[data-dot]", view);
+  // The lead story turns every few seconds (it waits while the mouse is over it). Swipe or drag to move it yourself.
+  const slideEls = $$("[data-slide]", view), dots = $$("[data-dot]", view);
+  const track = $("[data-track]", view), heroBox = $("[data-hero]", view);
   let current = 0, paused = false;
-  // Round 74 (Neil & Rich): the stories sit side by side on a track — no fade-in. The track follows a finger (or the
-  // mouse) as it is dragged, and lets go onto the next or previous story; the automatic turn slides it along too.
-  const track = $("[data-track]", view), heroBox = $("[data-slides]", view);
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const place = (px = 0, animate = true) => {
     if (!track) return;
-    track.style.transition = animate ? "transform .5s cubic-bezier(.22, .7, .2, 1)" : "none";
+    track.style.transition = animate && !reduce ? "transform .5s cubic-bezier(.22, .7, .2, 1)" : "none";
     track.style.transform = `translate3d(calc(${-current * 100}% + ${px}px), 0, 0)`;
   };
   const show = (i) => {
     current = (i + slideEls.length) % slideEls.length;
-    slideEls.forEach((s, j) => { s.classList.toggle("on", j === current); s.setAttribute("aria-hidden", String(j !== current)); });
-    $$(".hero-bg", view).forEach((s, j) => s.classList.toggle("on", j === current));
-    dots.forEach((d) => d.classList.toggle("on", Number(d.dataset.dot) === current));
+    slideEls.forEach((s, j) => { s.setAttribute("aria-hidden", String(j !== current)); s.tabIndex = j === current ? 0 : -1; });
+    dots.forEach((d) => d.setAttribute("aria-current", String(Number(d.dataset.dot) === current)));
     place(0, true);
   };
-  place(0, false);
-  // The dots in the white card are drawn into every slide, so they're found by click instead of up front.
-  $(".hero-inner", view)?.addEventListener("click", (e) => { const d = e.target.closest("[data-dot]"); if (d) show(Number(d.dataset.dot)); });
+  show(0); place(0, false);
+  heroBox?.addEventListener("click", (e) => { const d = e.target.closest("[data-dot]"); if (d) { e.preventDefault(); show(Number(d.dataset.dot)); } });
   if (heroBox && track && slideEls.length > 1) {
     let drag = null, dragged = false;
     heroBox.addEventListener("pointerdown", (e) => {
-      if (e.pointerType === "mouse" && e.button !== 0) return;
-      if (e.target.closest("[data-dot]")) return;
-      drag = { x: e.clientX, y: e.clientY, t: performance.now(), w: heroBox.clientWidth || 1, id: e.pointerId, on: false, dx: 0 };
-      dragged = false;
+      if ((e.pointerType === "mouse" && e.button !== 0) || e.target.closest("[data-dot]")) return;
+      drag = { x: e.clientX, y: e.clientY, t: performance.now(), w: heroBox.clientWidth || 1, id: e.pointerId, on: false, dx: 0 }; dragged = false;
     });
     heroBox.addEventListener("pointermove", (e) => {
       if (!drag || e.pointerId !== drag.id) return;
       const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
       if (!drag.on) {
         if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-        if (Math.abs(dy) > Math.abs(dx)) { drag = null; return; }     // scrolling the page up or down
-        drag.on = true; dragged = true; paused = true; heroBox.classList.add("dragging");
+        if (Math.abs(dy) > Math.abs(dx)) { drag = null; return; }
+        drag.on = true; dragged = true; paused = true;
         try { heroBox.setPointerCapture(e.pointerId); } catch { /* fine */ }
       }
-      // A little resistance past the first and last story.
       const edge = (current === 0 && dx > 0) || (current === slideEls.length - 1 && dx < 0);
-      drag.dx = edge ? dx / 3 : dx;
-      place(drag.dx, false);
-      e.preventDefault();
+      drag.dx = edge ? dx / 3 : dx; place(drag.dx, false); e.preventDefault();
     });
     const end = () => {
       if (!drag) return;
-      const d = drag; drag = null; heroBox.classList.remove("dragging");
+      const d = drag; drag = null;
       if (!d.on) return;
       const fast = Math.abs(d.dx) / Math.max(1, performance.now() - d.t) > 0.45;
       const far = Math.abs(d.dx) > d.w * 0.18 || (fast && Math.abs(d.dx) > 24);
-      const next = far ? current + (d.dx < 0 ? 1 : -1) : current;
-      show(Math.max(0, Math.min(slideEls.length - 1, next)));
+      show(Math.max(0, Math.min(slideEls.length - 1, far ? current + (d.dx < 0 ? 1 : -1) : current)));
       setTimeout(() => { paused = false; }, ROTATE_MS);
     };
-    heroBox.addEventListener("pointerup", end);
-    heroBox.addEventListener("pointercancel", end);
-    // A drag that started on the headline or picture doesn't open the article.
+    heroBox.addEventListener("pointerup", end); heroBox.addEventListener("pointercancel", end);
     heroBox.addEventListener("click", (e) => { if (dragged) { e.preventDefault(); e.stopPropagation(); dragged = false; } }, true);
     heroBox.addEventListener("dragstart", (e) => e.preventDefault());
-    addEventListener("resize", () => place(0, false), { passive: true });
+    heroBox.addEventListener("mouseenter", () => { paused = true; });
+    heroBox.addEventListener("mouseleave", () => { paused = false; });
+    heroBox.addEventListener("focusin", () => { paused = true; });
+    heroBox.addEventListener("focusout", () => { paused = false; });
   }
-  $(".hero-inner", view)?.addEventListener("mouseenter", () => { paused = true; });
-  $(".hero-inner", view)?.addEventListener("mouseleave", () => { paused = false; });
-  const timer = slideEls.length > 1 ? setInterval(() => { if (!paused && !document.hidden) show(current + 1); }, ROTATE_MS) : null;
+  const onResize = () => place(0, false);
+  addEventListener("resize", onResize, { passive: true });
+  const timer = slideEls.length > 1 && !reduce ? setInterval(() => { if (!paused && !document.hidden) show(current + 1); }, ROTATE_MS) : null;
 
-  // Round 98: stories — the circles open the story viewer.
-  const stopStories = mountStories($(".bz-stories", view), storyList(news));
+  // The match strip, kept live.
+  const stopStrip = await mountLiveStrip($("[data-strip]", view), user, { mode: "tabs", layout: "sb" });
 
-  // Live & upcoming matches strip, updated live — with the league / competition and team filters (round 52).
-  const stopStrip = await mountLiveStrip($("[data-strip]", view), user, { mode: "filters", layout: "list" });
+  // The league switch on the table, and the cup filter: they change what shows in place.
+  view.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-seg]");
+    if (!b) return;
+    const group = b.closest("[data-seg-group]"), key = b.dataset.seg;
+    for (const x of group.querySelectorAll("[data-seg]")) x.setAttribute("aria-pressed", String(x === b));
+    const scope = group.closest("[data-seg-scope]");
+    for (const p of scope.querySelectorAll("[data-seg-pane]")) p.hidden = !p.dataset.segPane.split(" ").includes(key);
+  });
 
-  // The feature box: scrolling like the ticker (at the ticker's speed), or one message at a time.
-  const feature = $("[data-feature]", view);
-  let featureTimer = null;
-  if (feature?.dataset.feature === "scroll") {
-    const track = $(".ticker-track", feature), sets = $$(".ticker-set", feature), once = sets[0].innerHTML;
-    const pace = Math.max(1, Math.min(10, Math.round(Number(site.ticker_pace) || 3)));
-    const setPace = () => {
-      // A short list is repeated until it is at least as wide as the box, so the loop never shows a gap.
-      for (const s of sets) s.innerHTML = once;
-      const times = Math.min(8, Math.ceil($(".ticker-view", feature).clientWidth / Math.max(1, sets[0].getBoundingClientRect().width)));
-      if (times > 1) for (const s of sets) s.innerHTML = once.repeat(times);
-      track.style.animationDuration = `${Math.max(8, Math.round(sets[0].getBoundingClientRect().width / TICKER_PX[pace - 1]))}s`;
-    };
-    setPace();
-    document.fonts?.ready.then(() => track.isConnected && setPace());
-  } else if (feature?.dataset.feature === "rotate") {
-    const items = $$(".feature-item", feature);
-    let at = 0, held = false;
-    feature.addEventListener("mouseenter", () => { held = true; });
-    feature.addEventListener("mouseleave", () => { held = false; });
-    feature.addEventListener("focusin", () => { held = true; });
-    feature.addEventListener("focusout", () => { held = false; });
-    featureTimer = setInterval(() => {
-      if (held || document.hidden) return;
-      items[at].classList.remove("on");
-      at = (at + 1) % items.length;
-      items[at].classList.add("on");
-    }, FEATURE_MS);
-  }
+  return () => { clearInterval(timer); stopStrip(); stopSquad(); removeEventListener("resize", onResize); };
+}
 
-  // Round 96 (Neil: "a big gap"): on a computer the Latest results box shows as many results as fit beside the left
-  // column (at least two), so the two sides end level. Phones show three (the stylesheet).
-  const fitResults = () => {
-    const left = $(".hz-top-grid .home-top", view), box = $(".hz-results", view);
-    if (!left || !box) return;
-    const cards = $$(".res-list > .res-card", box);
-    cards.forEach((c) => { c.style.display = ""; });
-    if (!window.matchMedia("(min-width: 1001px)").matches) return;
-    const room = left.getBoundingClientRect().height;
-    let shown = cards.length;
-    while (shown > 2 && box.getBoundingClientRect().height > room + 1) { cards[--shown].style.display = "none"; }
+/** The lead story card(s): photo, category, how long ago, headline, Continue reading and the dots. */
+function heroLead(slides) {
+  if (!slides.length) return html`<div class="sb-hero__lead sb-hero__lead--empty"><div class="sb-hero__body"><span class="sb-tag">Since ${SITE.established}</span><h1 class="sb-hero__title">${SITE.name}</h1></div></div>`;
+  const dots = slides.length > 1 ? html`<div class="sb-hero__dots" role="group" aria-label="Choose a story">${slides.map((_, i) => html`<button type="button" data-dot="${i}" aria-label="Story ${i + 1}" aria-current="${String(i === 0)}"></button>`)}</div>` : "";
+  return html`<div class="sb-hero__lead sb-hero__frame" data-hero>
+    <div class="sb-hero__track" data-track>
+      ${slides.map((a, i) => html`<a class="sb-hero__slide" data-slide href="${urls.article(a)}" aria-hidden="${String(i !== 0)}">
+        ${pic(a) ? html`<img src="${pic(a)}" alt="" ${i ? html`loading="lazy"` : ""}>` : html`<span class="sb-hero__ph" aria-hidden="true"></span>`}
+        <span class="sb-hero__body">
+          <span class="sb-hero__tags">${a.category ? html`<span class="sb-tag">${a.category}</span>` : ""}<span class="sb-tag sb-tag--glass">${fmtAgo(a.published_at)}</span></span>
+          ${i === 0 ? html`<h1 class="sb-hero__title">${a.title}</h1>` : html`<h2 class="sb-hero__title">${a.title}</h2>`}
+          <span class="sb-hero__cta"><span class="sb-btn sb-btn--light sb-btn--xl">Continue reading</span></span>
+        </span></a>`)}
+    </div>
+    ${dots}
+  </div>`;
+}
+
+/** The league table: one league at a time, with a switch between them. */
+function tableCard(ctx) {
+  const leagues = ctx.leagues.filter((l) => ctx.standings(l.id).length);
+  if (!leagues.length) return "";
+  const pos = (r) => { const n = Number(r.pos ?? r.position ?? 0); return html`<span class="sb-pos ${n === 1 ? "sb-pos--first" : n === 2 || n === 3 ? "sb-pos--top" : ""}">${r.pos ?? r.position ?? ""}</span>`; };
+  return html`<div class="sb-card sb-split__main" data-seg-scope>
+    <div class="sb-card-head"><h2>League table</h2>
+      ${leagues.length > 1 ? html`<div class="sb-seg" role="group" aria-label="League" data-seg-group>${leagues.map((l, i) => html`<button type="button" data-seg="${l.id}" aria-pressed="${String(i === 0)}">${l.name}</button>`)}</div>` : ""}</div>
+    ${leagues.map((l, i) => html`<div data-seg-pane="${l.id}" ${i ? "hidden" : ""}>
+      <div class="sb-table-wrap"><table class="sb-table">
+        <caption class="sr-only">${l.name} table</caption>
+        <thead><tr><th class="sb-c" scope="col">Pos</th><th scope="col">Team</th><th class="sb-c" scope="col" title="Played">P</th><th class="sb-c" scope="col" title="Won">W</th><th class="sb-c" scope="col" title="Lost">L</th><th class="sb-c" scope="col" title="Frames for">F</th><th class="sb-c" scope="col" title="Frames against">A</th><th class="sb-c" scope="col" title="Points">Pts</th></tr></thead>
+        <tbody>${ctx.standings(l.id).slice(0, 10).map((r) => html`<tr>
+          <td class="sb-c">${pos(r)}</td><td class="sb-table__team"><a href="${urls.team(r.team)}">${r.team.name}</a></td>
+          <td class="sb-c">${r.p}</td><td class="sb-c">${r.w}</td><td class="sb-c">${r.l}</td><td class="sb-c">${r.f}</td><td class="sb-c">${r.a}</td><td class="sb-c sb-table__key">${r.pts}</td></tr>`)}</tbody>
+      </table></div>
+      <div class="sb-card-foot"><a class="sb-btn sb-btn--outline sb-btn--lg" href="${urls.standings(l)}">Full table</a></div>
+    </div>`)}
+  </div>`;
+}
+
+/** Next up: the next league night's fixtures, grouped by league. */
+function nextUp(ctx) {
+  const now = Date.now() - 3 * 3600e3;
+  const coming = ctx.fixtures.filter((f) => f.starts_at && Date.parse(f.starts_at) >= now && !["submitted", "approved", "postponed", "in_progress"].includes(f.status))
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  if (!coming.length) return html`<div class="sb-card sb-split__side"><div class="sb-card-head"><h2>Next up</h2></div><p class="sb-empty">No league matches coming up just now. <a class="sb-link" href="/calendar">See the calendar</a></p></div>`;
+  const day = ukDay(coming[0].starts_at);
+  const night = coming.filter((f) => ukDay(f.starts_at) === day);
+  const times = [...new Set(night.map((f) => fmtTime(f.starts_at)))];
+  const groups = ctx.leagues.map((l) => ({ l, list: night.filter((f) => f.league_id === l.id) })).filter((g) => g.list.length);
+  const name = (id) => ctx.team.get(id)?.name ?? "TBC";
+  return html`<div class="sb-card sb-split__side">
+    <div class="sb-card-head"><h2>Next up</h2><span class="sb-chip sb-chip--date sb-num">${sbDay(coming[0].starts_at)}${times.length === 1 ? ` · ${times[0]}` : ""}</span></div>
+    <div class="sb-next">${groups.map(({ l, list }) => html`<div class="sb-fixture-group"><span class="sb-meta">${l.name}</span>
+      ${list.map((f) => html`<a class="sb-fixture" href="${urls.match(f)}"><span>${name(f.home_team_id)}</span><span class="sb-v">${times.length === 1 ? "v" : fmtTime(f.starts_at)}</span><span>${name(f.away_team_id)}</span></a>`)}</div>`)}</div>
+    <div class="sb-card-foot"><a class="sb-link" href="/fixtures">All fixtures ${sbIcon(ICON.arrow, 16)}</a></div>
+  </div>`;
+}
+
+/** My Snooker: the one red card on the page. */
+function mySnookerCard(user, ctx) {
+  const team = user ? ctx.team.get(mySnookerTeamId(user)) : null;
+  return html`<div class="sb-promo sb-promo--home">
+    <span class="sb-promo__icon">${sbIcon(ICON.star, 24)}</span>
+    <span class="sb-promo__text"><span class="sb-promo__title">${user ? (team ? `My Snooker: ${team.name}` : "My Snooker") : "My Snooker: your team's own page"}</span>
+      <span class="sb-promo__desc">${user ? "Your team's table, fixtures, results, rankings and breaks, and everyone you follow, on one page." : "Log in and see your team's table, fixtures, results, rankings and breaks on one page, in the order you choose."}</span></span>
+    ${user ? html`<a class="sb-btn" href="/mysnooker">Open My Snooker</a>` : html`<button type="button" class="sb-btn" data-account-open>Log in</button>`}
+  </div>`;
+}
+
+/**
+ * Competitions, once: the cup with something happening nearest to today, big and dark with its current round, and the
+ * other cups beside it, each with how far it has got. Under way · Coming up switches the list in place.
+ */
+function competitionsBlock(comps, data) {
+  const now = Date.now();
+  const info = comps.map((x) => {
+    const b = buildBracket(data.entries.filter((e) => e.competition_id === x.c.id), data.matches.filter((m) => m.competition_id === x.c.id));
+    const real = b.rounds.flat().filter((m) => !m.isBye);
+    const live = real.find((m) => m.row.status === "in_progress");
+    const last = real.filter((m) => m.played).sort((p, q) => String(q.row.result_at ?? q.row.starts_at ?? "").localeCompare(String(p.row.result_at ?? p.row.starts_at ?? "")))[0];
+    const known = (m) => b.entryById.has(m.a) && b.entryById.has(m.b);
+    const next = real.filter((m) => !m.played && known(m) && m.row.starts_at && Date.parse(m.row.starts_at) > now - 3 * 3600e3).sort((p, q) => p.row.starts_at.localeCompare(q.row.starts_at))[0];
+    const name = (id) => b.entryById.get(id)?.name ?? "TBC";
+    const done = !!b.champion, drawn = real.length > 0;
+    const lastAt = last ? Date.parse(last.row.result_at ?? last.row.starts_at ?? 0) : null, nextAt = next ? Date.parse(next.row.starts_at) : null;
+    const nearest = Math.min(...[lastAt, nextAt].filter((t) => t !== null).map((t) => Math.abs(now - t)));
+    const score = live ? 4e15 : !done && Number.isFinite(nearest) ? 3e15 - nearest : done ? 1e15 : 0;
+    return { ...x, b, live, last, next, name, done, drawn, score };
+  }).sort((p, q) => q.score - p.score);
+  const [topCup, ...rest] = info;
+  const focus = topCup.live ?? topCup.next ?? topCup.last;
+  const label = topCup.live ? "Being played now" : topCup.last && !topCup.done ? "Latest result" : topCup.next ? "Next match" : topCup.done ? "Finished" : "Coming up";
+  const round = focus ? spotlightRound(topCup, focus) : "";
+  const status = (x) => (x.live ? "live" : x.done ? "done" : x.drawn ? "on" : "soon");
+  const meta = (x) => (x.live ? "Being played now" : x.next && !x.done ? `Next match ${sbDay(x.next.row.starts_at)}` : x.progress ?? "");
+  const counts = { on: rest.filter((x) => ["live", "on"].includes(status(x))).length, soon: rest.filter((x) => status(x) === "soon").length };
+  const pct = (p) => { const m = String(p ?? "").match(/(\d+)\s+of\s+(\d+)/i); return m && Number(m[2]) ? Math.round((Number(m[1]) / Number(m[2])) * 100) : null; };
+  const ordered = [...rest].sort((p, q) => ["live", "on", "soon", "done"].indexOf(status(p)) - ["live", "on", "soon", "done"].indexOf(status(q)));
+  return html`<div data-seg-scope>
+    <div class="sb-section-head"><div><h2>Competitions</h2><p>${comps.length} cups this season: the latest result, the draws and what's next.</p></div>
+      ${counts.on && counts.soon ? html`<div class="sb-seg sb-seg--ink sb-seg--surface" role="group" aria-label="Show competitions" data-seg-group>
+        <button type="button" data-seg="all" aria-pressed="true">All · ${rest.length}</button><button type="button" data-seg="on" aria-pressed="false">Under way · ${counts.on}</button><button type="button" data-seg="soon" aria-pressed="false">Coming up · ${counts.soon}</button></div>` : html`<a class="sb-link" href="/competitions">All competitions</a>`}</div>
+    <div class="sb-comps">
+      <div class="sb-spotlight">
+        <div class="sb-spotlight__hero">
+          <span class="sb-spotlight__trophy">${sbIcon(ICON.trophy, 30)}</span>
+          <div class="sb-spotlight__text"><span class="sb-spotlight__label">${label}</span>
+            <a class="sb-spotlight__title" href="${urls.competition(topCup.c)}">${topCup.c.name}</a>
+            <span class="sb-spotlight__sub">${topCup.progress ?? ""}</span></div>
+          <a class="sb-btn sb-btn--primary sb-btn--xl" href="${urls.competition(topCup.c)}">See the draw</a>
+        </div>
+        ${round ? html`<div class="sb-spotlight__round">${round}</div>` : ""}
+      </div>
+      ${ordered.length ? html`<div class="sb-comps__side">
+        <div class="sb-comps__list">${ordered.map((x) => { const s = status(x), p = pct(x.progress);
+          return html`<a class="sb-spot" href="${urls.competition(x.c)}" data-seg-pane="all ${s === "live" ? "on" : s}">
+            <span class="sb-spot__icon ${s === "done" || s === "on" || s === "live" ? "is-brass" : ""}">${sbIcon(ICON.trophy, 22)}</span>
+            <span class="sb-spot__text"><span class="sb-comp__name">${x.c.name}</span><span class="sb-meta">${meta(x)}</span>
+              ${p !== null && !x.done ? html`<span class="sb-cue" style="--pct:${Math.max(3, p)}%" aria-hidden="true"><span class="sb-cue__fill"></span><span class="sb-cue__tip"></span></span>` : ""}</span>
+            ${s === "live" ? html`<span class="sb-chip">Live</span>` : ""}
+            <span class="sb-spot__go">${sbIcon(ICON.right)}</span></a>`; })}</div>
+        <a class="sb-btn sb-btn--ink sb-btn--block" href="/competitions">All competitions</a>
+      </div>` : ""}
+    </div>
+  </div>`;
+}
+/** The featured cup's current round: every pairing, played ones with their scores. */
+function spotlightRound(x, focus) {
+  const ms = (x.b.rounds[focus.round - 1] ?? []).filter((m) => !m.isBye && x.b.entryById.has(m.a) && x.b.entryById.has(m.b));
+  if (!ms.length) return "";
+  const played = ms.filter((m) => m.played).length;
+  const order = (m) => (m.row.status === "in_progress" ? 0 : m.played ? 1 : 2);
+  const list = [...ms].sort((p, q) => order(p) - order(q)).slice(0, 6);
+  const cell = (m) => {
+    const live = m.row.status === "in_progress", w = m.played ? winnerSide(m.row) : null;
+    const row = (id, sc, me) => html`<span class="sb-result__row ${w ? (w === me ? "sb-result__row--win" : "sb-result__row--loss") : "sb-result__row--tba"}"><span>${x.name(id)}</span>
+      ${m.played || live ? html`<span class="sb-frame ${w ? (w === me ? "sb-frame--win" : "sb-frame--loss") : "sb-frame--live"}">${sc ?? ""}</span>` : ""}</span>`;
+    return html`<a class="sb-result" href="/cup-match/${m.row.no ?? m.row.id}"><span class="sb-result__label">${live ? "Being played now" : m.played ? "Result" : m.row.starts_at ? `${sbDay(m.row.starts_at)} · ${fmtTime(m.row.starts_at)}` : "To be arranged"}</span>
+      ${row(m.a, m.row.score_a, "a")}${row(m.b, m.row.score_b, "b")}</a>`;
   };
-  // Round 97: the Competitions card at the top glides down to the competitions section (the menu bar stays clear of it).
-  $(".bz-link-card", view)?.addEventListener("click", (e) => {
-    const to = $("#home-competitions", view);
-    if (!to) return;
-    e.preventDefault(); e.stopPropagation();
-    to.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
-  });
-  fitResults();
-  document.fonts?.ready.then(() => view.isConnected && fitResults());
-  setTimeout(fitResults, 600);
-  window.addEventListener("resize", fitResults, { passive: true });
-  view.addEventListener("click", (e) => { if (e.target.closest(".res-sum-btn, [data-res-more]")) requestAnimationFrame(fitResults); });
-
-  // Key dates: the round ‹ › buttons on its edges appear only when the dates don't all fit, and slide the row along.
-  const stopKd = manualSlider($("[data-kd]", view), ".kd-row", "data-kd-move");
-
-  // Live and upcoming competitions (round 84): swiped by hand, the round buttons on its edges, and a search box.
-  const cs = $("[data-cs]", view);
-  const stopCs = manualSlider(cs, ".cs-row", "data-cs-move");
-  $("[data-cs-search]", view)?.addEventListener("input", (e) => {
-    const q = e.target.value.trim().toLowerCase(), cards = $$(".cs-card", cs);
-    let shown = 0;
-    for (const card of cards) { const hit = !q || q.split(/\s+/).every((w) => card.dataset.name.includes(w)); card.hidden = !hit; shown += hit; }
-    $(".cs-none", cs).hidden = shown > 0;
-    $("[data-cs-q]", cs).textContent = e.target.value.trim();
-    cs.classList.toggle("is-empty", !shown);
-    $(".cs-row", cs).scrollTo({ left: 0 });
-    cs.refreshEnds?.();
-  });
-
-  return () => { clearInterval(timer); clearInterval(featureTimer); stopStrip(); stopSquad(); stopKd(); stopCs(); stopStories(); window.removeEventListener("resize", fitResults); };
+  return html`<div class="sb-spotlight__roundhead"><span class="sb-spotlight__roundname">${roundName(focus.round, x.b.totalRounds, x.b)}</span><span class="sb-chip sb-chip--brass">${played} of ${ms.length} played</span></div>
+    <div class="sb-spotlight__grid">${list.map(cell)}</div>
+    ${ms.length > 6 ? html`<a class="sb-spotlight__more" href="${urls.competition(x.c)}">and ${ms.length - 6} more in this round</a>` : ""}`;
 }
 
 
@@ -555,6 +590,7 @@ function myBtn(user, ctx) {
     <span>${team ? html`The latest stats for ${team.name} and everyone you follow` : "The latest stats of all your favourite teams and players"}</span><i aria-hidden="true">→</i></a>`;
 }
 
+let sbStripTab = "";
 // Round 51 (Neil): a logged-in person can see only their own team's matches on the strip (All | Bugle).
 const STRIP_MINE = "sbds-strip-mine";
 const stripMine = () => { try { return localStorage.getItem(STRIP_MINE) === "1"; } catch { return false; } };
@@ -583,7 +619,7 @@ export async function mountLiveStrip(el, user, { mode = "filters", layout = "str
   const move = (dir) => {
     const row = $(".strip-row", el);
     if (!row) return;
-    const stepPx = ($(".strip-card", row)?.offsetWidth ?? 230) + 10;
+    const stepPx = ($(".strip-card, .sb-match", row)?.offsetWidth ?? 230) + 16;
     const atEnd = row.scrollLeft + row.clientWidth >= row.scrollWidth - 4;
     if (dir > 0 && atEnd) row.scrollTo({ left: 0, behavior: "smooth" });
     else if (dir < 0 && row.scrollLeft <= 4) row.scrollTo({ left: row.scrollWidth, behavior: "smooth" });
@@ -617,7 +653,7 @@ export async function mountLiveStrip(el, user, { mode = "filters", layout = "str
     if (!dragged) return;
     row.classList.remove("is-dragging");
     // Settle on the nearest card, as the arrows do.
-    const step = ($(".strip-card", row)?.offsetWidth ?? 230) + 10;
+    const step = ($(".strip-card, .sb-match", row)?.offsetWidth ?? 230) + (row.classList.contains("sb-strip__row") ? 16 : 10);
     row.scrollTo({ left: Math.round(row.scrollLeft / step) * step, behavior: "smooth" });
   };
   el.addEventListener("pointerup", endDrag);
@@ -627,6 +663,7 @@ export async function mountLiveStrip(el, user, { mode = "filters", layout = "str
     if (dragged && e.target.closest(".strip-row")) { e.preventDefault(); e.stopPropagation(); dragged = false; return; }
     dragged = false;
     const b = e.target.closest("[data-strip-move]"); if (b) return move(Number(b.dataset.stripMove));
+    const tabBtn = e.target.closest("[data-strip-tab]"); if (tabBtn) { sbStripTab = tabBtn.dataset.stripTab; draw(); return; }
     const t = e.target.closest("[data-strip-mine]");
     if (t) { try { localStorage.setItem(STRIP_MINE, t.dataset.stripMine); } catch { /* not remembered */ } draw(); }
   });
@@ -636,7 +673,8 @@ export async function mountLiveStrip(el, user, { mode = "filters", layout = "str
     setStripFilter({ ...stripFilter(), [sel.dataset.stripFilter]: sel.value });
     draw();
   });
-  const carousel = setInterval(() => { if (!paused && !document.hidden) move(1); }, CAROUSEL_MS);
+  const still = layout === "sb" || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const carousel = still ? null : setInterval(() => { if (!paused && !document.hidden) move(1); }, CAROUSEL_MS);
   return () => { clearInterval(carousel); unsubscribe(); };
 }
 
@@ -758,6 +796,41 @@ async function liveStrip(user = null, mode = "filters", layout = "strip") {
 
   // Round 93 (Baize): on the home page the matches are a list inside the green Matchday panel — each row a scoreline
   // (name, club badge, score or time, club badge, name) with the league or competition and the venue under it.
+  // Round 99 (the design system): the dark strip under the lead story — Live · n / Upcoming / Results, cards that
+  // scroll sideways, the arrows and "View all matches". The tab chosen is kept while the strip updates itself.
+  if (layout === "sb") {
+    const clubLogo = (t) => (t && !t.logo_url ? venues.find((v) => v.id === t.venue_id)?.logo_url || "" : "");
+    const circle = (sd) => { const logo = sd.player?.avatar_url || sd.team?.logo_url || clubLogo(sd.team);
+      return logo ? html`<span class="sb-initials sb-initials--pic"><img src="${logo}" alt=""></span>` : html`<span class="sb-initials" aria-hidden="true">${initialsOf(sd.name)}</span>`; };
+    const upcoming = shown.filter((c) => !c.live), sets = { live, upcoming, results: [...results].reverse() };
+    if (!sets[sbStripTab]?.length) sbStripTab = live.length ? "live" : upcoming.length ? "upcoming" : "results";
+    const list = sets[sbStripTab] ?? [];
+    const tab = (key, label) => (sets[key].length || key !== "live" ? html`<button type="button" data-strip-tab="${key}" aria-pressed="${String(sbStripTab === key)}">${label}</button>` : "");
+    const when = (c) => (ukDay(c.when) === todayUK() ? (c.done ? "Today" : "Tonight") : sbDay(c.when));
+    const card = (c) => (c.draw ? html`<a class="sb-match ${c.live ? "sb-match--live" : ""}" href="${c.href}">
+        <span class="sb-match__top"><span>${c.title}</span>${c.live ? html`<span class="sb-live-tag">Live draw</span>` : html`<span class="sb-when-tag">${when(c)}</span>`}</span>
+        <span class="sb-match__draw"><b>The draw</b><span>${c.text}</span></span>
+        <span class="sb-match__venue">${c.foot.replace(" →", "")}</span></a>`
+      : html`<a class="sb-match ${c.live ? "sb-match--live" : ""}" href="${c.href}">
+        <span class="sb-match__top"><span class="sb-match__league">${c.title}</span>${c.live ? html`<span class="sb-live-tag">Live</span>` : c.postponed ? html`<span class="sb-when-tag">Postponed</span>` : c.done ? html`<span class="sb-when-tag">${{ pending: "Pending", walkover: "Walkover" }[c.label] ?? "Result"} · ${when(c)}</span>` : html`<span class="sb-when-tag">${when(c)}</span>`}</span>
+        <span class="sb-match__teams">
+          <span class="sb-match__team ${c.done && Number(c.score?.home) > Number(c.score?.away) ? "is-win" : ""}">${circle(c.a)}<span>${c.a.name}</span></span>
+          ${c.postponed ? html`<span class="sb-match__time">P–P</span>` : c.walkover ? html`<span class="sb-match__time">W/O</span>` : c.hasFrames || c.done ? html`<span class="sb-score" aria-label="${c.score.home} – ${c.score.away}"><span>${c.score.home}</span><span>${c.score.away}</span></span>` : html`<span class="sb-match__time">${fmtTime(c.when)}</span>`}
+          <span class="sb-match__team ${c.done && Number(c.score?.away) > Number(c.score?.home) ? "is-win" : ""}">${circle(c.b)}<span>${c.b.name}</span></span>
+        </span>
+        <span class="sb-match__venue">${c.walkover ? `Walkover to ${c.walkover}` : c.venue?.name || " "}</span></a>`);
+    return html`<div class="sb-strip__head">
+        <h2 id="sb-strip-h">Live and upcoming matches</h2>
+        <div class="sb-seg sb-seg--arena" role="group" aria-label="Which matches">${tab("live", `Live · ${live.length}`)}${tab("upcoming", "Upcoming")}${tab("results", "Results")}</div>
+        <div class="sb-strip__ctrl">
+          <button type="button" class="sb-icon-btn sb-icon-btn--arena" data-strip-move="-1" aria-label="Previous matches">${sbIcon(ICON.left)}</button>
+          <button type="button" class="sb-icon-btn sb-icon-btn--arena-solid" data-strip-move="1" aria-label="Next matches">${sbIcon(ICON.right)}</button>
+          <a class="sb-strip__all" href="/fixtures">View all matches</a>
+        </div></div>
+      ${list.length ? html`<div class="sb-strip__row strip-row">${list.map(card)}</div>`
+        : html`<p class="sb-strip__empty">No matches here just now. <a href="/calendar">See the calendar</a></p>`}`;
+  }
+
   if (layout === "list") {
     const clubLogo = (t) => (t && !t.logo_url ? venues.find((v) => v.id === t.venue_id)?.logo_url || "" : "");
     const crest = (sd) => (sd.player ? avatar(sd.player, "avatar md-face") : sd.team ? badge({ ...sd.team, logo_url: sd.team.logo_url || clubLogo(sd.team) }) : html`<span class="badge">${sd.name.slice(0, 2).toUpperCase()}</span>`);
