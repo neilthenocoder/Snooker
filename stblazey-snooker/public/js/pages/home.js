@@ -225,8 +225,20 @@ export default async function home(view, { user } = {}) {
   const stopStrip = await mountLiveStrip($("[data-strip]", view), user, { mode: "tabs", layout: "sb" });
   // The full-width banner keeps its headline clear of the strip on top of its photo, however tall the strip is.
   const fh = $(".sb-fh", view), stripEl = $(".sb-strip", view);
-  const ro = fh && stripEl && "ResizeObserver" in window ? new ResizeObserver(() => fh.style.setProperty("--fh-strip", `${stripEl.offsetHeight}px`)) : null;
-  ro?.observe(stripEl);
+  // Round 103 (Neil: "where is this white strip at the top?"): the photo is pulled up under the menu by exactly the
+  // menu's height (measured, not guessed), and the space above the strip grows to fit the tallest headline, so a long
+  // headline never slides up under the menu.
+  const hdr = $(".sb-header");
+  const fit = () => {
+    if (!fh) return;
+    if (stripEl) fh.style.setProperty("--fh-strip", `${stripEl.offsetHeight}px`);
+    if (hdr) fh.style.setProperty("--hdr-h", `${hdr.offsetHeight}px`);
+    const tallest = Math.max(0, ...$$(".sb-fh__inner", fh).map((b) => b.offsetHeight));
+    fh.style.setProperty("--fh-body", `${tallest}px`);
+  };
+  const ro = fh && "ResizeObserver" in window ? new ResizeObserver(fit) : null;
+  if (ro) { [stripEl, hdr, ...$$(".sb-fh__inner", fh)].filter(Boolean).forEach((el) => ro.observe(el)); }
+  fit();
 
   // The league switch on the table, and the cup filter: they change what shows in place.
   view.addEventListener("click", (e) => {
