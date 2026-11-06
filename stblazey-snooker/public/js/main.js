@@ -306,8 +306,8 @@ async function drawHeader() {
   const liveItem = MENU.find((item) => item.color === "live");
   const socials = SOCIAL.filter(([key]) => safeHref(site[key]));
   // Round 99 (the St Blazey design system): one line on a computer — the brand, the menu pages as pills, then Live,
-  // light/dark, Log in (or the account menu), the bell and search. No "More" on a computer: its pages are in the
-  // "Find your way around" band above the footer. Phones keep their top bar and the bar at the bottom; "More" there
+  // Log in (or the account menu), the bell and search. Round 108 (Rich: "More isn't there on desktop — do we need it
+  // back?"): More ▾ is back as a dropdown after the menu pages; logged in, a gold My Snooker star sits before the account. Phones keep their top bar and the bar at the bottom; "More" there
   // opens a side drawer (not the whole screen) with every page, the account, and light/dark.
   mount($("#site-header"), html`
     ${DEMO_MODE ? html`<div class="demo-banner">Demo mode — sample data saved in this browser only. Add your Supabase keys in js/config.js to go live.</div>` : ""}
@@ -315,9 +315,12 @@ async function drawHeader() {
       <a class="sb-brand" href="/" aria-label="${SITE.name} home">${brandMark(site)}</a>
       <nav class="sb-header__links" aria-label="Main menu">
         ${MENU.filter((item) => item.color !== "live").map((item) => html`<a class="sb-navlink" data-nav-section="${navSection(item.href)}" href="${item.href}" ${isOutside(item.href) ? html`target="_blank" rel="noopener"` : ""}>${item.label}</a>`)}
+        ${more.length ? html`<div class="nav-drop-wrap sb-more-wrap"><button type="button" class="sb-navlink sb-morebtn" data-drop="more" aria-expanded="false" aria-haspopup="true">More<svg class="sb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <div class="sb-drop sb-drop--more" data-drop-panel="more" hidden>${more.map((l) => html`<a class="acct-item" href="${l.href}" ${isOutside(l.href) ? html`target="_blank" rel="noopener"` : ""}><span class="acct-ico">${moreIcon(l.href)}</span><span><b>${l.label}</b></span></a>`)}</div></div>` : ""}
       </nav>
       <div class="sb-header__actions">
         ${liveItem ? html`<a class="sb-btn sb-btn--live sb-livebtn state-idle" data-live-btn href="${liveItem.href}"><span class="sb-dot" aria-hidden="true"></span><span>Live</span></a>` : ""}
+        ${user ? html`<a class="sb-icon-btn sb-mystar" href="/mysnooker" data-nav-section="mysnooker" aria-label="My Snooker" title="My Snooker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.2l-5.8 3.2 1.2-6.5-4.8-4.5 6.5-.8z"/></svg></a>` : ""}
         ${user ? html`<div class="nav-drop-wrap sb-acct-wrap"><button type="button" class="sb-acct" data-drop="acct" aria-expanded="false" aria-haspopup="true" aria-label="${role} menu: ${name}" title="${name}">
             <span class="sb-acct__initials">${initials(name)}</span><span class="sb-acct__word">${role}</span><svg class="sb-icon sb-acct__chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
           <div class="sb-drop" data-drop-panel="acct" hidden>

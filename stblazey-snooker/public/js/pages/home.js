@@ -96,15 +96,17 @@ export default async function home(view, { user } = {}) {
   const promoWanted = site.promo_mode === "always" || (site.promo_mode !== "never" && isOffSeason(ctx, allComps));
   // Round 101 (Rich): the banner can be the rounded card with Top stories beside it, or his full-width photo with the
   // menu and the match strip on top of it. "auto" = the card on the Standard page, the full photo on Everything.
-  const heroWanted = ["card", "full"].includes(site.hero_layout) ? site.hero_layout : site.hero_layout === "big" ? "full" : everything ? "full" : "card";
-  const full = heroWanted === "full";
+  // Round 108 (Rich: "the hero variant which I did … it looked a bit like the WST header"): "split" — the photo and the
+  // headline in two blocks side by side, the menu above them as usual.
+  const heroWanted = ["card", "full", "split"].includes(site.hero_layout) ? site.hero_layout : site.hero_layout === "big" ? "full" : everything ? "full" : "card";
+  const full = heroWanted === "full", split = heroWanted === "split";
 
   // News: the lead stories (ticked "Featured", else the newest), then four more in Top stories, then (with the
   // full-width banner) one more as the big story card beside them — each story once.
   const featured = news.filter((a) => a.featured);
   const slides = (featured.length ? featured : news).slice(0, Math.max(1, Math.min(4, site.hero_count || 3)));
   const rest = news.filter((a) => !slides.includes(a));
-  const top = rest.slice(0, 4), bigStory = full ? rest[4] ?? null : null;
+  const top = rest.slice(0, 4), bigStory = full || split ? rest[4] ?? null : null;
 
   const section = (inner, cls = "") => (inner ? html`<section class="sb-section ${cls}"><div class="sb-container">${inner}</div></section>` : "");
   const notices = [
@@ -117,11 +119,12 @@ export default async function home(view, { user } = {}) {
           <span class="sb-story-row__text">${a.category ? html`<span class="sb-kicker">${a.category}</span>` : ""}<span class="sb-story-row__title">${a.title}</span><span class="sb-meta">${fmtAgo(a.published_at)}</span></span></a>`)}
       </aside>` : "");
   const strip = html`<section class="sb-strip live-strip ${full ? "sb-strip--over" : ""}" aria-labelledby="sb-strip-h"><div class="sb-strip__inner" data-strip></div></section>`;
-  const comps2 = compData && comps.length && (on("competitions") !== false || on("comp_strip")) ? competitionsBlock(comps, compData, { yellow: everything }) : "";
+  const comps2 = compData && comps.length && (on("competitions") !== false || on("comp_strip")) ? competitionsBlock(comps, compData, { gold: true }) : "";
 
   mount(view, html`
     <div class="sb-home ${everything ? "sb-home--everything" : ""} ${full ? "sb-home--full" : ""}">
     ${full ? html`<div class="sb-fh">${heroFull(slides, site)}${strip}</div>`
+      : split ? html`<div class="sb-container">${heroSplit(slides, site)}</div>${strip}`
       : html`<div class="sb-container"><div class="sb-hero">
       ${heroLead(slides, site)}
       ${topStories("sb-hero__side sb-hide-phone")}
@@ -139,7 +142,7 @@ export default async function home(view, { user } = {}) {
     </div>
     ${on("mysnooker") !== false ? mySnookerCard(user, ctx) : ""}`, everything ? "sb-section--tight" : "sb-section--first")}
 
-    ${full && top.length ? section(html`<div class="sb-stories">${topStories()}${bigStory ? storyCard(bigStory) : ""}</div>`, "sb-section--tight") : ""}
+    ${(full || split) && top.length ? section(html`<div class="sb-stories">${topStories()}${bigStory ? storyCard(bigStory) : ""}</div>`, "sb-section--tight") : ""}
 
     ${promoWanted && on("promo") !== false ? section(promoBlock(site, ctx, dates, today), "sb-promo-sec") : ""}
 
@@ -147,10 +150,11 @@ export default async function home(view, { user } = {}) {
     ${(everything && site.shields_show !== false) || on("shields") ? section(shieldHolders(ctx), "sb-section--tight") : ""}
 
     ${comps2 ? section(comps2, everything ? "sb-section--tight" : "") : ""}
+    ${everything ? section(promoColumns(ctx, site), "sb-section--tight") : ""}
 
     ${on("tables") ? section(html`<div class="sb-section-head"><div><h2>League tables</h2><p>Every league this season.</p></div><a class="sb-link" href="/league">All tables</a></div>
       <div class="sb-tables">${ctx.leagues.map((l) => leagueTablePanel(ctx, l, { limit: 10 }))}</div>`) : ""}
-    ${everything || on("spotlights") ? section(spotlights(ctx, site), "sb-legacy") : ""}
+    ${everything || on("spotlights") ? section(spotlights(ctx, site, { months: !everything }), "sb-legacy") : ""}
     ${(everything || on("cueviews")) && site.cueviews_show !== false ? section(cueviewBox(ctx, news), "sb-legacy") : ""}
     <div class="sb-home__end"></div>
     </div>`);
@@ -164,6 +168,16 @@ export default async function home(view, { user } = {}) {
 
   maybeStartGuide({ personal: false, site });
   const stopSquad = await mountSquadBox(user, ctx, site).catch(() => () => {});
+  // Round 108 (Rich): Quick links on one row that slides sideways, with arrows like the match strip.
+  const stopQuick = manualSlider($(".sb-quick", view), ".sb-quick__row", "data-quick-move");
+  // …and the list of other cups beside the featured one gets up and down arrows, so it is plain there are more.
+  const cupList = $(".sb-comps__list", view), cupSide = $(".sb-comps__side", view);
+  const cupEnds = () => { if (!cupList || !cupSide) return; const can = cupList.scrollHeight - cupList.clientHeight > 4;
+    cupSide.classList.toggle("can-slide", can); cupSide.classList.toggle("at-start", !can || cupList.scrollTop <= 4); cupSide.classList.toggle("at-end", !can || cupList.scrollTop + cupList.clientHeight >= cupList.scrollHeight - 4); };
+  cupList?.addEventListener("scroll", cupEnds, { passive: true });
+  cupSide?.addEventListener("click", (e) => { const b = e.target.closest("[data-cup-move]"); if (b) cupList.scrollBy({ top: Number(b.dataset.cupMove) * cupList.clientHeight * 0.8, behavior: "smooth" }); });
+  addEventListener("resize", cupEnds, { passive: true }); cupEnds();
+  view.addEventListener("click", () => requestAnimationFrame(cupEnds));   // after Under way · Coming up changes the list
 
   // The lead story turns every few seconds — Admin → Site settings → "Seconds each lead story shows" (round 106; 6 as
   // standard). The bars under it fill up as the time runs out, then the next story comes in. Swipe, drag or press a bar.
@@ -264,7 +278,7 @@ export default async function home(view, { user } = {}) {
     for (const p of scope.querySelectorAll("[data-seg-pane]")) p.hidden = !p.dataset.segPane.split(" ").includes(key);
   });
 
-  return () => { clearTimeout(turn); stopStrip(); stopSquad(); removeEventListener("resize", onResize); removeEventListener("scroll", onScroll); ro?.disconnect(); root.classList.remove("sb-navover", "sb-has-quick"); };
+  return () => { clearTimeout(turn); stopStrip(); stopSquad(); stopQuick(); removeEventListener("resize", cupEnds); removeEventListener("resize", onResize); removeEventListener("scroll", onScroll); ro?.disconnect(); root.classList.remove("sb-navover", "sb-has-quick"); };
 }
 
 /** The lead story card(s): photo, category, how long ago, headline, Continue reading and the dots. */
@@ -307,7 +321,30 @@ function heroFull(slides, site = {}) {
       </div>
     </div>
     ${dots}
+    <button type="button" class="sb-fh__down" data-scroll-down aria-label="Scroll down"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16.5 5 9.6l1.4-1.4L12 13.7l5.6-5.5L19 9.6Z"/></svg></button>
     <div class="sb-fh__space" aria-hidden="true"></div>`;
+}
+
+/**
+ * Round 108 — Rich's own banner, like the WST site's: the photo in one block and the headline in a dark block of its own
+ * beside it (under it on a phone), turning together, with the bars that fill as each story's time runs out.
+ */
+function heroSplit(slides, site = {}) {
+  if (!slides.length) return heroLead(slides, site);
+  const dots = slides.length > 1 ? html`<div class="sb-hero__dots sb-hs__dots" role="group" aria-label="Choose a story">${slides.map((_, i) => html`<button type="button" data-dot="${i}" aria-label="Story ${i + 1}" aria-current="${String(i === 0)}"><i></i></button>`)}</div>` : "";
+  return html`<div class="sb-hs" data-hero>
+    <div class="sb-hs__track" data-track>
+      ${slides.map((a, i) => html`<a class="sb-hs__slide" data-slide href="${urls.article(a)}" aria-hidden="${String(i !== 0)}">
+        <span class="sb-hs__pic">${pic(a) || site.hero_image_url ? html`<img src="${pic(a) || site.hero_image_url}" alt="" ${i ? html`loading="lazy"` : ""}>` : html`<span class="sb-hero__ph" aria-hidden="true"></span>`}</span>
+        <span class="sb-hs__text">
+          <span class="sb-hero__tags">${a.category ? html`<span class="sb-tag">${a.category}</span>` : ""}<span class="sb-tag sb-tag--glass">${fmtAgo(a.published_at)}</span></span>
+          ${i === 0 ? html`<h1 class="sb-hs__title">${a.title}</h1>` : html`<h2 class="sb-hs__title">${a.title}</h2>`}
+          ${a.excerpt ? html`<span class="sb-hs__excerpt">${a.excerpt}</span>` : ""}
+          <span class="sb-hs__foot"><span class="sb-btn sb-btn--yellow">Continue reading</span><span class="sb-hs__date">${fmtDate(a.published_at)}</span></span>
+        </span></a>`)}
+    </div>
+    ${dots}
+  </div>`;
 }
 
 /** A big photo card for one story (beside Top stories): its category in red, how long ago in yellow, Continue reading. */
@@ -326,8 +363,12 @@ function sbQuickLinks(ctx) {
     ["Rankings", urls.season(ctx.season, "rankings"), quickIcon.rankings], ["Breaks", urls.season(ctx.season, "breaks"), quickIcon.breaks], ["Competitions", "/competitions", quickIcon.competitions],
     ["Calendar", "/calendar", quickIcon.calendar], ["Handicaps", "/handicaps", quickIcon.handicaps], ["Our players", "/players", sbIcon("M12 4a4 4 0 1 0 0 8a4 4 0 1 0 0-8M4 21a8 8 0 0 1 16 0", 20)],
     ["Form guide", "/form", sbIcon("M3 17l6-6 4 4 8-8M15 7h6v6", 20)], ["Live scoreboard", "/scoreboard", sbIcon("M3 6h18v12H3ZM12 6v12M7 10v4M15.5 10h2v4h-2", 20)], ["Hall of Fame", "/hall-of-fame", sbIcon(ICON.star, 20)]];
-  return html`<div class="sb-card sb-quick"><h2>Quick links</h2>
-    <div class="sb-quick__grid">${links.map(([label, href, icon]) => html`<a class="sb-quick__item" href="${href}"><span class="sb-quick__ico" aria-hidden="true">${icon}</span><span>${label}</span></a>`)}</div></div>`;
+  // Round 108 (Rich: "quick links … is huge — a manual scroller here on 1 row would be good"): one slim row that slides.
+  return html`<div class="sb-quick">
+    <div class="sb-quick__head"><h2>Quick links</h2><span class="sb-quick__ctrl">
+      <button type="button" class="sb-icon-btn sb-quick__btn" data-quick-move="-1" aria-label="Earlier links">${sbIcon(ICON.left)}</button>
+      <button type="button" class="sb-icon-btn sb-quick__btn sb-quick__btn--solid" data-quick-move="1" aria-label="More links">${sbIcon(ICON.right)}</button></span></div>
+    <div class="sb-quick__row">${links.map(([label, href, icon]) => html`<a class="sb-quick__item" href="${href}"><span class="sb-quick__ico" aria-hidden="true">${icon}</span><span>${label}</span></a>`)}</div></div>`;
 }
 
 /** Victory Rankings · Rees Rankings · Breaks (Rich's design): the leader on green, the breaks podium in gold, silver and bronze. */
@@ -359,7 +400,7 @@ function formCard(ctx) {
   return html`<div class="sb-card sb-rank sb-formcard">
     <div class="sb-rank__head"><h2>In form</h2><a class="sb-pill-link" href="/form">Form guide</a></div>
     <ol class="sb-rank__list">${rows.map(({ p, f }, i) => html`<li class="${i === 0 ? "is-first" : ""}"><a href="${urls.player(p)}#form">
-      ${avatar(p, "avatar sb-rank__face")}<span class="sb-rank__name"><span>${p.full_name}</span><small>${ctx.team.get(p.team_id)?.name ?? ""}</small></span>
+      <span class="sb-rank__pos">${i + 1}</span>${avatar(p, "avatar sb-rank__face")}<span class="sb-rank__name"><span>${p.full_name}</span><small>${ctx.team.get(p.team_id)?.name ?? ""}</small></span>
       <span class="sb-formcard__chips">${formChips(f, { links: false })}</span>${formBadge(f, { trend: true })}</a></li>`)}</ol>
   </div>`;
 }
@@ -454,7 +495,7 @@ function mySnookerCard(user, ctx) {
  * Competitions, once: the cup with something happening nearest to today, big and dark with its current round, and the
  * other cups beside it, each with how far it has got. Under way · Coming up switches the list in place.
  */
-function competitionsBlock(comps, data, { yellow = false } = {}) {
+function competitionsBlock(comps, data, { gold = false } = {}) {
   const now = Date.now();
   const info = comps.map((x) => {
     const b = buildBracket(data.entries.filter((e) => e.competition_id === x.c.id), data.matches.filter((m) => m.competition_id === x.c.id));
@@ -479,7 +520,7 @@ function competitionsBlock(comps, data, { yellow = false } = {}) {
   const counts = { on: rest.filter((x) => ["live", "on"].includes(status(x))).length, soon: rest.filter((x) => status(x) === "soon").length };
   const pct = (p) => { const m = String(p ?? "").match(/(\d+)\s+of\s+(\d+)/i); return m && Number(m[2]) ? Math.round((Number(m[1]) / Number(m[2])) * 100) : null; };
   const ordered = [...rest].sort((p, q) => ["live", "on", "soon", "done"].indexOf(status(p)) - ["live", "on", "soon", "done"].indexOf(status(q)));
-  return html`<div data-seg-scope class="${yellow ? "sb-compsec--yellow" : ""}">
+  return html`<div data-seg-scope class="${gold ? "sb-compsec--gold" : ""}">
     <div class="sb-section-head"><div><h2>Competitions</h2><p>${comps.length} cups this season: the latest result, the draws and what's next.</p></div>
       ${counts.on && counts.soon ? html`<div class="sb-seg sb-seg--ink sb-seg--surface" role="group" aria-label="Show competitions" data-seg-group>
         <button type="button" data-seg="all" aria-pressed="true">All · ${rest.length}</button><button type="button" data-seg="on" aria-pressed="false">Under way · ${counts.on}</button><button type="button" data-seg="soon" aria-pressed="false">Coming up · ${counts.soon}</button></div>` : html`<a class="sb-link" href="/competitions">All competitions</a>`}</div>
@@ -495,6 +536,7 @@ function competitionsBlock(comps, data, { yellow = false } = {}) {
         ${round ? html`<div class="sb-spotlight__round">${round}</div>` : ""}
       </div>
       ${ordered.length ? html`<div class="sb-comps__side">
+        <button type="button" class="sb-comps__arrow sb-comps__arrow--up" data-cup-move="-1" aria-label="Earlier competitions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7.5 5 14.4l1.4 1.4L12 10.3l5.6 5.5L19 14.4Z"/></svg></button>
         <div class="sb-comps__list">${ordered.map((x) => { const s = status(x), p = pct(x.progress);
           return html`<a class="sb-spot" href="${urls.competition(x.c)}" data-seg-pane="all ${s === "live" ? "on" : s}">
             <span class="sb-spot__icon ${x.c.trophy_url ? "has-img" : s === "done" || s === "on" || s === "live" ? "is-brass" : ""}">${cupTrophy(x.c)}</span>
@@ -502,6 +544,7 @@ function competitionsBlock(comps, data, { yellow = false } = {}) {
               ${p !== null && !x.done ? html`<span class="sb-cue" style="--pct:${Math.max(3, p)}%" aria-hidden="true"><span class="sb-cue__fill"></span><span class="sb-cue__tip"></span></span>` : ""}</span>
             ${s === "live" ? html`<span class="sb-chip">Live</span>` : ""}
             <span class="sb-spot__go">${sbIcon(ICON.right)}</span></a>`; })}</div>
+        <button type="button" class="sb-comps__arrow sb-comps__arrow--down" data-cup-move="1" aria-label="More competitions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16.5 5 9.6l1.4-1.4L12 13.7l5.6-5.5L19 9.6Z"/></svg><span>More cups</span></button>
         <a class="sb-btn sb-btn--ink sb-btn--block" href="/competitions">All competitions</a>
       </div>` : ""}
     </div>
@@ -845,7 +888,9 @@ export async function mountLiveStrip(el, user, { mode = "filters", layout = "str
     setStripFilter({ ...stripFilter(), [sel.dataset.stripFilter]: sel.value });
     draw();
   });
-  const still = layout === "sb" || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Round 108 (Rich: "Live and upcoming matches — add auto scroll"): the home page strip moves on by itself too, one
+  // card every few seconds, pausing while the pointer or a finger is on it.
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const carousel = still ? null : setInterval(() => { if (!paused && !document.hidden) move(1); }, CAROUSEL_MS);
   return () => { clearInterval(carousel); unsubscribe(); };
 }
@@ -1117,12 +1162,12 @@ function shieldsBox(ctx) {
 
 const spotForm = (f) => (f?.n ? html`<span class="spot-form">${formChips(f, { links: false })}</span>` : "");
 const spotScore = (f) => (f?.n ? html`<span class="spot-score"><small>Form</small>${formBadge(f, { big: true, trend: true })}</span>` : "");
-function spotlights(ctx, site) {
+function spotlights(ctx, site, { months = true } = {}) {
   // Player and team of the week, and (round 25) of the month — each a slim card with their form.
   const cards = [
     ["player", "week"], ["team", "week"], ["player", "month"], ["team", "month"],
   ].map(([kind, span]) => {
-    if (!site[`${kind}_of_${span}_show`]) return null;
+    if (!site[`${kind}_of_${span}_show`] || (span === "month" && !months)) return null;
     const who = ctx[kind].get(site[`${kind}_of_${span}_id`]);
     if (!who) return null;
     const text = site[`${kind}_of_${span}_text`], label = `${kind === "player" ? "Player" : "Team"} of the ${span}`;
@@ -1143,6 +1188,39 @@ function spotlights(ctx, site) {
  * Kept small — the photo, the name and a "Q&A" mark with how many questions were answered; the answers
  * themselves are one tap away on the player's page (or the article).
  */
+/**
+ * Round 108 (Rich): four promotions in a row under Competitions — sign up to the newsletter, send us your CueView, and
+ * the player and team of the month (Admin → Site settings → Player / Team of the month).
+ */
+function promoColumns(ctx, site) {
+  const pIco = (d) => html`<span class="sb-promo4__ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${d}"/></svg></span>`;
+  const player = site.player_of_month_show !== false ? ctx.player.get(site.player_of_month_id) : null;
+  const team = site.team_of_month_show !== false ? ctx.team.get(site.team_of_month_id) : null;
+  const pf = player && ctx.form?.player(player.id), tf = team && ctx.form?.team(team.id);
+  return html`<div class="sb-promo4">
+    <a class="sb-promo4__card sb-promo4__card--news" href="/newsletter" data-newsletter-open>
+      ${pIco("M3 5h18v14H3Zm2 2v.5l7 4.5 7-4.5V7Zm14 2.8-7 4.5-7-4.5V17h14Z")}
+      <span class="sb-kicker">Newsletter</span><b class="sb-promo4__title">Sign up to the newsletter</b>
+      <span class="sb-promo4__text">Results, draws and league news in your inbox. Unsubscribe any time.</span>
+      <span class="sb-btn sb-btn--primary">Sign up</span></a>
+    <a class="sb-promo4__card sb-promo4__card--cue" href="/cueview">
+      ${pIco("M4 4h16v12H9.5L5 20v-4H4Zm4.2 3.2v2h7.6v-2Zm0 3.6v2h5.2v-2Z")}
+      <span class="sb-kicker">CueView</span><b class="sb-promo4__title">Send us your CueView</b>
+      <span class="sb-promo4__text">Answer our questions and tell the league about your game, your cue and your best break.</span>
+      <span class="sb-btn sb-btn--yellow">Send yours</span></a>
+    <a class="sb-promo4__card sb-promo4__card--potm" href="${player ? urls.player(player) : "/form"}">
+      ${player ? html`<span class="sb-promo4__face">${avatar(player, "avatar")}</span>` : pIco(ICON.star)}
+      <span class="sb-kicker">Player of the month</span><b class="sb-promo4__title">${player?.full_name ?? "Coming soon"}</b>
+      <span class="sb-promo4__text">${player ? site.player_of_month_text || ctx.team.get(player.team_id)?.name || "" : "Chosen at the end of each month. See who's in form now."}</span>
+      ${pf?.n ? html`<span class="sb-promo4__form">${formChips(pf, { links: false })}</span>` : html`<span class="sb-btn sb-btn--outline">${player ? "View player" : "Form guide"}</span>`}</a>
+    <a class="sb-promo4__card sb-promo4__card--totm" href="${team ? urls.team(team) : "/league"}">
+      ${team ? html`<span class="sb-promo4__face">${crestOf(ctx, team)}</span>` : pIco("M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v2H8v-2h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3Z")}
+      <span class="sb-kicker">Team of the month</span><b class="sb-promo4__title">${team?.name ?? "Coming soon"}</b>
+      <span class="sb-promo4__text">${team ? site.team_of_month_text || ctx.league.get(team.league_id)?.name || "" : "Chosen at the end of each month from the league tables."}</span>
+      ${tf?.n ? html`<span class="sb-promo4__form">${formChips(tf, { links: false })}</span>` : html`<span class="sb-btn sb-btn--outline">${team ? "View team" : "League tables"}</span>`}</a>
+  </div>`;
+}
+
 const qaIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H9.5L5 20v-4H4Zm4.2 3.2v2h7.6v-2Zm0 3.6v2h5.2v-2Z"/></svg>`;
 function cueviewBox(ctx, news) {
   // Interviews from the news come first (newest first), then the featured players.

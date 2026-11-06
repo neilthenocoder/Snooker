@@ -81,6 +81,8 @@ function brandOf(site) {
     if (!isHex(v)) continue;
     // Round 77: the old standard gold, saved before Rich chose #FFB81C, gives way to the new yellow.
     if (key === "color_competitions" && /^#fbb61a$/i.test(v)) continue;
+    // Round 108 (Rich: "any red colour to be changed throughout to #f1002a"): the old standard red gives way to the new one.
+    if ((key === "color_primary" || key === "color_login") && /^#e8003d$/i.test(v)) continue;
     vars[main] = v;
     if (ink) vars[ink] = inkOn(v);
     if (key === "color_primary") vars["--red-dark"] = darker(v);

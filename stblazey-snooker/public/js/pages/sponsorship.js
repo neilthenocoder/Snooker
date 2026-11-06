@@ -16,7 +16,7 @@ export default async function sponsorship(view) {
     ${breadcrumb([["Home", "/"], ["Our League", "/league"], ["Sponsorship"]])}
     <h1>Sponsor the league</h1>
     <div class="sp-intro">${paragraphs(site.sponsorship_intro || "Put your business in front of every player, captain and supporter in the league — on the website all season, at the clubs and at presentation night. Choose a package below and get in touch.")}</div>
-    ${list.length ? html`<div class="sp-grid">${list.map((p) => html`<article class="sp-card" style="--sp:${/^#[0-9a-f]{6}$/i.test(p.colour ?? "") ? p.colour : "#e8003d"}">
+    ${list.length ? html`<div class="sp-grid">${list.map((p) => html`<article class="sp-card" style="--sp:${/^#[0-9a-f]{6}$/i.test(p.colour ?? "") ? p.colour : "#f1002a"}">
         <header><h2>${p.name}</h2>${p.price ? html`<p class="sp-price">${p.price}${p.period ? html` <small>${p.period}</small>` : ""}</p>` : ""}</header>
         ${p.summary ? html`<p class="sp-sum">${p.summary}</p>` : ""}
         <ul>${lines(p.benefits).map((b) => html`<li>${b}</li>`)}${p.includes_advert ? html`<li>Your advert on the website</li>` : ""}</ul>

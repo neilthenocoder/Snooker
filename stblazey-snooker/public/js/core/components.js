@@ -248,22 +248,27 @@ export function leagueMarks(ctx, league, { highlightTeamId, shown } = {}) {
   const before = ctx.previousStandings?.(league.id) ?? null;
   const was = new Map((before ?? []).map((r) => [r.team.id, r.pos]));
   const moved = (r) => (was.has(r.team.id) ? was.get(r.team.id) - r.pos : null);
+  // Round 108 (Rich: "add back the up, down and level icons"): a green arrow up, a red arrow down, a grey bar for level —
+  // every team gets one once the league has results (level until there is a week to compare with).
+  const ICO = { up: "M12 6l7 9H5z", down: "M12 18l-7-9h14z", same: "M5 10.5h14v3H5z" };
+  const mvIco = (k) => html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${ICO[k]}"/></svg>`;
   const move = (r) => {
-    const n = moved(r);
-    if (n === null) return "";
-    if (n === 0) return html`<span class="lt-mv same" title="No change since last week"><i aria-hidden="true">–</i><span class="sr-only"> no change since last week</span></span>`;
+    if (!started) return "";
+    const n = moved(r) ?? 0;
+    if (n === 0) return html`<span class="lt-mv same" title="No change since last week">${mvIco("same")}<span class="sr-only"> no change since last week</span></span>`;
     const dir = n > 0 ? "up" : "down", by = Math.abs(n);
-    return html`<span class="lt-mv ${dir}" title="${n > 0 ? "Up" : "Down"} ${by} place${by > 1 ? "s" : ""} since last week"><i aria-hidden="true">${n > 0 ? "▲" : "▼"}</i>${by}<span class="sr-only"> place${by > 1 ? "s" : ""} ${dir} since last week</span></span>`;
+    return html`<span class="lt-mv ${dir}" title="${n > 0 ? "Up" : "Down"} ${by} place${by > 1 ? "s" : ""} since last week">${mvIco(dir)}${by > 1 ? html`<small>${by}</small>` : ""}<span class="sr-only"> ${by} place${by > 1 ? "s" : ""} ${dir} since last week</span></span>`;
   };
   const upTitle = `Promotion place${zone.above ? `: up to the ${zone.above.name}` : ""}`, downTitle = `Relegation place${zone.below ? `: down to the ${zone.below.name}` : ""}`;
-  const chip = (r) => (ups.has(r) ? html`<span class="lt-zone up" title="${upTitle}">P<span class="sr-only"> promotion place</span></span>`
-    : downs.has(r) ? html`<span class="lt-zone down" title="${downTitle}">R<span class="sr-only"> relegation place</span></span>` : "");
+  // Round 108 (Rich): no P and R chips — a green or red line down the left edge of the row marks the places instead.
+  const chip = (r) => (ups.has(r) ? html`<span class="sr-only"> (${upTitle})</span>` : downs.has(r) ? html`<span class="sr-only"> (${downTitle})</span>` : "");
+  const last = started && all.length > 1 ? all[all.length - 1] : null;
   const strong = (r) => r === top || downs.has(r) || mine(r);
   const visible = shown ?? all;
   const keys = [
-    visible.some((r) => ups.has(r)) ? html`<span><span class="lt-zone up">P</span>${nUp > 1 ? `Promotion places (top ${nUp})` : "Promotion place"}${zone.above ? `, up to the ${zone.above.name}` : ""}</span>` : "",
-    visible.some((r) => downs.has(r)) ? html`<span><span class="lt-zone down">R</span>${nDown > 1 ? `Relegation places (bottom ${nDown})` : "Relegation place"}${zone.below ? `, down to the ${zone.below.name}` : ""}</span>` : "",
-    before ? html`<span><span class="lt-mv up"><i>▲</i></span><span class="lt-mv down"><i>▼</i></span>Places moved since last week</span>` : "",
+    visible.some((r) => ups.has(r)) ? html`<span><span class="lt-edge up" aria-hidden="true"></span>${nUp > 1 ? `Promotion places (top ${nUp})` : "Promotion place"}${zone.above ? `, up to the ${zone.above.name}` : ""}</span>` : "",
+    visible.some((r) => downs.has(r)) ? html`<span><span class="lt-edge down" aria-hidden="true"></span>${nDown > 1 ? `Relegation places (bottom ${nDown})` : "Relegation place"}${zone.below ? `, down to the ${zone.below.name}` : ""}</span>` : "",
+    started ? html`<span><span class="lt-mv up">${mvIco("up")}</span><span class="lt-mv down">${mvIco("down")}</span><span class="lt-mv same">${mvIco("same")}</span>Up, down or level since last week</span>` : "",
   ].filter(Boolean);
   // Within the promotion places and within the relegation places every other row is a shade lighter, so two
   // teams side by side in the same zone can be told apart (Rich, round 16).
@@ -273,9 +278,9 @@ export function leagueMarks(ctx, league, { highlightTeamId, shown } = {}) {
     // Only the leader is the big green row. The team someone follows (My Snooker, a team's page) keeps its own
     // cream row with a dark edge — the same size as the others.
     highlight: (r) => r === top,
-    rowClass: (r) => [r === top ? "lt-top" : "", ups.has(r) ? "lt-up" : "", downs.has(r) ? "lt-down" : "", alt(r) ? "lt-alt" : "", mine(r) && r !== top ? "lt-mine" : ""].join(" "),
+    rowClass: (r) => [r === top ? "lt-top" : "", ups.has(r) ? "lt-up" : "", downs.has(r) ? "lt-down" : "", alt(r) ? "lt-alt" : "", mine(r) && r !== top ? "lt-mine" : "", r === last ? "lt-last" : ""].join(" "),
     strong,
-    pos: (r) => html`<span class="lt-pos"><b>${r.pos}</b>${move(r)}</span>`,
+    pos: (r) => html`<span class="lt-pos"><b class="lt-circ">${r.pos}</b>${move(r)}</span>`,
     team: (r) => html`<span class="lt-team">${teamLink(r.team, strong(r))}${chip(r)}</span>`,
     // The highest points total in green; the points of the teams in the relegation places in red.
     pts: (r) => (topPts > 0 && r.pts === topPts ? html`<span class="lt-pts">${r.pts}</span>` : downs.has(r) ? html`<span class="lt-pts down">${r.pts}</span>` : r.pts),

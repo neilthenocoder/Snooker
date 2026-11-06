@@ -533,10 +533,10 @@ export const RESOURCES = {
       // looks, the strip and header styles and the colour-block phone menu belong to the earlier designs and are gone;
       // these are the settings the design system reads. (Nothing in the database changes — the old values are just unused.)
       { type: "heading", label: "Colours", help: "Leave a colour on “standard” to keep the design's own. Every one shows across the website as soon as you press Save." },
-      { name: "color_primary", label: "Main colour (standard: red #E8003D — buttons, the menu pill for the page you're on, links)", type: "color", optional: true, default: "#e8003d" },
+      { name: "color_primary", label: "Main colour (standard: red #F1002A — buttons, the menu pill for the page you're on, links)", type: "color", optional: true, default: "#f1002a" },
       { name: "color_competitions", label: "Yellow highlights (standard: #F2B92B — Continue reading, competitions and the top break on the Everything home page)", type: "color", optional: true, default: "#f2b92b" },
       { name: "color_fixtures", label: "Live and win green (standard: #1B8047 — the Live button, the leader in the tables, a won frame)", type: "color", optional: true, default: "#1b8047" },
-      { name: "color_login", label: "Log in button (standard: the main colour)", type: "color", optional: true, default: "#e8003d" },
+      { name: "color_login", label: "Log in button (standard: the main colour)", type: "color", optional: true, default: "#f1002a" },
       { type: "heading", label: "Fonts", help: "Pick from the lists — or, for any other Google font, paste its embed link in the box underneath and it joins both lists." },
       { name: "font_head", label: "Headings and menu", type: "select", options: fontOptions(FONTS.head), labels: { "": `${FONTS.head[0]} (standard)` } },
       { name: "font_body", label: "Body text", type: "select", options: fontOptions(FONTS.body), labels: { "": `${FONTS.body[0]} (standard)` } },
@@ -580,8 +580,8 @@ export const RESOURCES = {
       { name: "hero_count", label: "How many news articles rotate in the banner", type: "number", default: 4 },
       // Round 106 (Neil: "one news after another is very long"): kept in home_sections, so no database change is needed.
       { name: "hero_seconds", in: "home_sections", label: "Seconds each lead story shows before the next (3 to 30 — the bars under it fill up in this time)", type: "number", min: 3, max: 30, default: 6, placeholder: "6" },
-      { name: "hero_layout", label: "Banner layout", type: "select", options: ["auto", "card", "full"], default: "auto",
-        labels: { auto: "Standard — the rounded card with Top stories beside it on the Standard home page; the full-width photo on Everything", card: "Rounded card with Top stories beside it", full: "Full-width photo, with the menu and the match strip on top of it (Rich's design)" } },
+      { name: "hero_layout", label: "Banner layout", type: "select", options: ["auto", "card", "full", "split"], default: "auto",
+        labels: { auto: "Standard — the rounded card with Top stories beside it on the Standard home page; the full-width photo on Everything", card: "Rounded card with Top stories beside it", full: "Full-width photo, with the menu and the match strip on top of it (Rich's design)", split: "Photo and headline in two blocks side by side, like the WST site (Rich's design)" } },
       { name: "hero_bg", label: "Banner colour when a story has no picture and no banner background is set (empty for the standard dark)", type: "color", optional: true, default: "#121614" },
       { type: "heading", tab: "Home page", label: "Player of the week" },
       { name: "player_of_week_show", label: "Show on the home page", type: "checkbox" },

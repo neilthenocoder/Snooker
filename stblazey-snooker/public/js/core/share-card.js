@@ -48,7 +48,7 @@ export async function drawResultCard(card) {
   const css = getComputedStyle(document.documentElement);
   const head = (css.getPropertyValue("--font-head").trim() || "Arial Black, Arial, sans-serif");
   const body = (css.getPropertyValue("--font-body").trim() || "Arial, sans-serif");
-  const red = css.getPropertyValue("--red").trim() || "#e8003d";
+  const red = css.getPropertyValue("--red").trim() || "#f1002a";
   try { await document.fonts?.ready; } catch { /* draw with what there is */ }
 
   // The baize: a deep green with a soft light in the middle, a black band top and bottom.

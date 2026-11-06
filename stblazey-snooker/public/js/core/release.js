@@ -4,8 +4,20 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.89.1";
+export const SITE_VERSION = "1.90.0";
 export const CHANGES = [
+  "New banner layout like the WST site: the photo and the headline in two blocks side by side (Admin → Site settings → Banner layout → Photo and headline in two blocks)",
+  "The main red is now #F1002A everywhere (buttons, My Snooker, links), and the page background is #F4EEEC",
+  "Headings are Inter 700 throughout; the banner headline no longer underlines on hover",
+  "Menu bar: More is back on computers as a dropdown; logged in, a gold My Snooker star sits before the account; the bell is a green circle",
+  "Phones: the menu bar is solid white right to the top of the screen (nothing shows through above it) and a little taller once scrolled",
+  "Live and upcoming matches move along by themselves every few seconds (pausing while the pointer or a finger is on them); arrows and dragging still work",
+  "Quick links: one slim row that slides sideways, with arrows",
+  "League tables: the position in a circle, up/down/level icons for every team, a green or red line down the edge of the promotion and relegation places instead of P and R, and only the top and bottom rows shaded, rounded, with no lines round them",
+  "In form: numbered circles like the rankings",
+  "Competitions in black and gold, with up and down arrows on the list of other cups so it is plain there are more",
+  "Under Competitions: four promotions — sign up to the newsletter, send us your CueView, player of the month and team of the month",
+  "Back to top on computers too, and a scroll-down arrow on the full-width banner",
   "Phones: the menu bar once scrolled has a smaller logo with room above and below it, clear of the red line",
   "Phones: league tables (and the tables on the other pages) fit the screen — every column at a glance, no sideways scrolling",
   "Phones: swipe the shortcuts above the bottom menu down to tuck them away, and swipe up on the bar to bring them back (a tap on the handle still works)",
