@@ -4,8 +4,19 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.90.0";
+export const SITE_VERSION = "1.91.0";
 export const CHANGES = [
+  "Site settings save again: the new banner layouts are allowed in the database (run supabase/fixes/round110-banner-layout.sql once)",
+  "Home page Competitions: no glow; the cup's own picture (Admin → Competitions → Picture) fills the top of the panel — the Rees Singles winner to start with",
+  "Phones: a simpler Competitions panel — the picture, the cup and its button, then four other cups as plain rows",
+  "League tables: circles as in the rankings; the promotion places shaded green and the relegation places red (two shades each); white numbers in the coloured circles; Rees no longer shades its bottom team",
+  "Rankings, form and breaks: no heading over them; cards side by side are the same height, as are the League table and Next up",
+  "Runabout Shield holders moved up, straight after the league table",
+  "Promo columns: no hover effect, icons without boxes (white and bigger), new Player and Team of the month icons",
+  "My Snooker: a bigger gold star with no box; in the menu bar a gold circle with a white star",
+  "Phones: no account button in the top bar (it is in the bottom menu); top and bottom bars fully rounded; the bottom bar white and the shortcuts above it grey with no outline; more space under the bottom bar when saved to the home screen",
+  "Footer: the social icons in a thin black circle, red with a white icon on hover",
+  "Moving between pages, the loading screen waits a little longer before it appears, so nearly-ready pages never flash black",
   "New banner layout like the WST site: the photo and the headline in two blocks side by side (Admin → Site settings → Banner layout → Photo and headline in two blocks)",
   "The main red is now #F1002A everywhere (buttons, My Snooker, links), and the page background is #F4EEEC",
   "Headings are Inter 700 throughout; the banner headline no longer underlines on hover",

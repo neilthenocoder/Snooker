@@ -181,7 +181,9 @@ let waiting = null, firstLoad = true;
 export function loaderOn(delay = 300) {
   clearTimeout(waiting);
   if (current.loaderShow === false || (!firstLoad && !current.loaderEvery)) return;
-  waiting = setTimeout(() => document.getElementById("boot")?.classList.remove("done"), delay);
+  // Round 110 (Rich: "site is running quite slow in places"): moving between pages, the loading screen waits a little
+  // longer before it appears, so a page that is nearly ready never flashes black.
+  waiting = setTimeout(() => document.getElementById("boot")?.classList.remove("done"), firstLoad ? delay : Math.max(delay, 700));
 }
 /**
  * Hide it again. When the site is first opened it stays up for at least the time set under

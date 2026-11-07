@@ -27,6 +27,12 @@ function load() {
 const persist = () => store.setItem(KEY, JSON.stringify(state));
 // Sample data saved before a round added new tables: add them (round 55: support categories).
 function upgrade(s) {
+  // Round 110 (Rich): the Rees Singles winner's photo, so the Competitions block shows a picture (Admin → Competitions → Picture).
+  if (!s.r110) {
+    s.r110 = true;
+    const rees = s.tables.competitions?.find((c) => c.name === "Rees Singles" && !c.image_url);
+    if (rees) rees.image_url = "/assets/comps/rees-singles-winner.webp";
+  }
   if (!s.tables.support_categories) {
     s.tables.support_categories = demoSupportCategories();
     s.tables.support_tickets ??= []; s.tables.support_messages ??= [];

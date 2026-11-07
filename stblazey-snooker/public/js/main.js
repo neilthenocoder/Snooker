@@ -483,7 +483,7 @@ async function drawFooter() {
     ${sponsors.length ? html`<h3 class="foot-h">Principal Partners</h3>
       <div class="sponsors">${sponsors.map((s) => html`<a href="${urls.sponsor(s)}" title="About ${s.name}">${s.image_url ? html`<img src="${s.image_url}" alt="${s.name}">` : s.name}</a>`)}</div>` : ""}
     <h3 class="foot-h">#SBDS</h3>
-    ${socials.length ? html`<div class="socials">${socials.map(([key, name, icon]) => html`<a href="${safeHref(site[key])}" target="_blank" rel="noopener" aria-label="${name}" title="${name}">
+    ${socials.length ? html`<div class="socials">${socials.map(([key, name, icon]) => html`<a href="${safeHref(site[key])}" target="_blank" rel="noopener" aria-label="${name}">
       <svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></a>`)}</div>` : ""}
     <nav class="foot-links" aria-label="Footer"><a href="/" class="foot-help" data-guide-start>Help: show me around</a>${[["/page/help", "Help & FAQs"], ["/support", "Contact the league"]].filter(([h, l]) => !links.some((x) => x.href === h || (h === "/support" && /contact/i.test(x.label)))).map(([h, l]) => html`<a href="${h}">${l}</a>`)}${links.map((l) => html`<a href="${l.href}" ${l.outside ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}</nav>
     ${site.newsletter_footer_link !== false ? html`<p class="foot-news"><a href="/newsletter" data-newsletter-open>✉ Sign up to the newsletter</a></p>` : ""}

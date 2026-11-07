@@ -2287,6 +2287,9 @@ end $$;
 alter table settings add column if not exists hero_layout text not null default 'side';
 alter table settings drop constraint if exists settings_hero_layout_check;
 alter table settings add constraint settings_hero_layout_check check (hero_layout in ('side', 'big', 'text', 'white'));   -- 'white': round 28
+-- Round 110: the new banner choices (auto, card, full, split) — saving Site settings failed with "violates check constraint".
+alter table settings drop constraint if exists settings_hero_layout_check;
+alter table settings add constraint settings_hero_layout_check check (hero_layout in ('side', 'big', 'text', 'white', 'auto', 'card', 'full', 'split'));
 
 -- 2. Paid adverts in the side column (Admin → Website → Side adverts), shown everywhere or only on chosen pages:
 --    one venue, one team, one competition, one league, or a kind of page (presentation night, in memoriam…).

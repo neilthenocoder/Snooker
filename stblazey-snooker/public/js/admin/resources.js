@@ -136,7 +136,7 @@ export const RESOURCES = {
         help: "bracket = winners follow the fixed bracket. redraw = a fresh random draw is made every round." },
       { name: "best_of", label: "Frames per match (best of)", type: "number", default: 5 },
       { name: "sort", label: "Display order", type: "number", default: 1 },
-      { name: "image_url", label: "Picture (winner photo, venue… — the banner of the competition's page: 16:9, e.g. 1600 × 900 — the same shape everywhere it appears)", type: "image", folder: "competitions", maxSize: 1600 },
+      { name: "image_url", label: "Picture (winner photo, venue… — the banner of the competition's page, and the big photo in the home page's Competitions panel when this cup is the one shown there. Change it any time, e.g. for the latest winner)", type: "image", folder: "competitions", maxSize: 1600 },
       // Rich, round 34: the box on the Competitions page (and the home page card) shows the trophy OR fills with the picture.
       { name: "card_style", label: "The competition's box on the Competitions page and home page shows", type: "select", options: ["", "trophy", "picture"],
         labels: { "": "Automatic: the picture if there is one (with the trophy in the corner), otherwise the trophy", trophy: "The trophy, in the middle of the dark box", picture: "The picture, filling the whole box" } },

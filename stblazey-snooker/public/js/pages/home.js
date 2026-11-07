@@ -142,12 +142,13 @@ export default async function home(view, { user } = {}) {
     </div>
     ${on("mysnooker") !== false ? mySnookerCard(user, ctx) : ""}`, everything ? "sb-section--tight" : "sb-section--first")}
 
+    ${/* Round 110 (Rich: "add the Runabout Shield holders … preferably higher up"): straight after the table */ ""}
+    ${(everything && site.shields_show !== false) || on("shields") ? section(shieldHolders(ctx), "sb-section--tight") : ""}
     ${(full || split) && top.length ? section(html`<div class="sb-stories">${topStories()}${bigStory ? storyCard(bigStory) : ""}</div>`, "sb-section--tight") : ""}
 
     ${promoWanted && on("promo") !== false ? section(promoBlock(site, ctx, dates, today), "sb-promo-sec") : ""}
 
     ${everything ? section(rankingsRow(ctx), "sb-section--tight") : ""}
-    ${(everything && site.shields_show !== false) || on("shields") ? section(shieldHolders(ctx), "sb-section--tight") : ""}
 
     ${comps2 ? section(comps2, everything ? "sb-section--tight" : "") : ""}
     ${everything ? section(promoColumns(ctx, site), "sb-section--tight") : ""}
@@ -384,8 +385,8 @@ function rankingsRow(ctx) {
         <span class="sb-rank__pos">${r.pos}</span>${avatar(r.player, "avatar sb-rank__face")}<span class="sb-rank__name">${r.player.full_name}</span><b class="sb-num">${r.pts}</b></a></li>`)}</ol>
       ${provisionalNote(ctx, l)}</div>`;
   };
-  return html`<div class="sb-section-head"><div><h2>Rankings, form and breaks</h2><p>The top players in each league this season, who is in form, and the highest breaks.</p></div></div>
-    <div class="sb-ranks sb-ranks--2">${leagues.map(rankCard)}</div>
+  // Round 110 (Rich): no heading over these — the cards say what they are.
+  return html`<div class="sb-ranks sb-ranks--2">${leagues.map(rankCard)}</div>
     <div class="sb-ranks sb-ranks--2 sb-ranks--below">${formCard(ctx)}${breakLeagues.length ? breaksCard(ctx, breakLeagues) : ""}</div>`;
 }
 /**
@@ -526,8 +527,12 @@ function competitionsBlock(comps, data, { gold = false } = {}) {
         <button type="button" data-seg="all" aria-pressed="true">All · ${rest.length}</button><button type="button" data-seg="on" aria-pressed="false">Under way · ${counts.on}</button><button type="button" data-seg="soon" aria-pressed="false">Coming up · ${counts.soon}</button></div>` : html`<a class="sb-link" href="/competitions">All competitions</a>`}</div>
     <div class="sb-comps">
       <div class="sb-spotlight">
-        <div class="sb-spotlight__hero">
-          <span class="sb-spotlight__trophy ${topCup.c.trophy_url ? "has-img" : ""}">${cupTrophy(topCup.c, 30)}</span>
+        <div class="sb-spotlight__hero ${topCup.c.image_url ? "has-photo" : ""}">
+          ${topCup.c.image_url
+            // Round 110 (Rich): the cup's own picture (Admin → Competitions → Picture: the winner, the trophy…) fills the top
+            // of the panel in place of the trophy — it changes with whichever cup is shown here.
+            ? html`<span class="sb-spotlight__photo"><img src="${topCup.c.image_url}" alt="" loading="lazy"></span>`
+            : html`<span class="sb-spotlight__trophy ${topCup.c.trophy_url ? "has-img" : ""}">${cupTrophy(topCup.c, 30)}</span>`}
           <div class="sb-spotlight__text"><span class="sb-spotlight__label">${label}</span>
             <a class="sb-spotlight__title" href="${urls.competition(topCup.c)}">${topCup.c.name}</a>
             <span class="sb-spotlight__sub">${topCup.progress ?? ""}</span></div>
@@ -1192,6 +1197,9 @@ function spotlights(ctx, site, { months = true } = {}) {
  * Round 108 (Rich): four promotions in a row under Competitions — sign up to the newsletter, send us your CueView, and
  * the player and team of the month (Admin → Site settings → Player / Team of the month).
  */
+// Round 110 (Rich: "new icons needed for Player and Team of the month"): a player with a star, and a team of three.
+const POTM_ICON = "M10 2.8a4.2 4.2 0 1 1 0 8.4 4.2 4.2 0 0 1 0-8.4ZM2.2 21c0-4.4 3.5-7.6 7.8-7.6 1.4 0 2.6.3 3.7.9L13 21ZM18.2 13.0L19.4 16.0L22.6 16.2L20.1 18.2L20.9 21.3L18.2 19.6L15.5 21.3L16.3 18.2L13.8 16.2L17.0 16.0Z";
+const TOTM_ICON = "M12 3.6a3.3 3.3 0 1 1 0 6.6 3.3 3.3 0 0 1 0-6.6ZM5.4 6.6a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM18.6 6.6a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM6.2 20.4c0-3.6 2.6-6.4 5.8-6.4s5.8 2.8 5.8 6.4ZM.8 19.4c0-2.8 2-4.9 4.6-4.9.8 0 1.5.2 2.1.5-1.1 1.2-1.8 2.7-2 4.4ZM23.2 19.4c0-2.8-2-4.9-4.6-4.9-.8 0-1.5.2-2.1.5 1.1 1.2 1.8 2.7 2 4.4Z";
 function promoColumns(ctx, site) {
   const pIco = (d) => html`<span class="sb-promo4__ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${d}"/></svg></span>`;
   const player = site.player_of_month_show !== false ? ctx.player.get(site.player_of_month_id) : null;
@@ -1209,12 +1217,12 @@ function promoColumns(ctx, site) {
       <span class="sb-promo4__text">Answer our questions and tell the league about your game, your cue and your best break.</span>
       <span class="sb-btn sb-btn--yellow">Send yours</span></a>
     <a class="sb-promo4__card sb-promo4__card--potm" href="${player ? urls.player(player) : "/form"}">
-      ${player ? html`<span class="sb-promo4__face">${avatar(player, "avatar")}</span>` : pIco(ICON.star)}
+      ${player ? html`<span class="sb-promo4__face">${avatar(player, "avatar")}</span>` : pIco(POTM_ICON)}
       <span class="sb-kicker">Player of the month</span><b class="sb-promo4__title">${player?.full_name ?? "Coming soon"}</b>
       <span class="sb-promo4__text">${player ? site.player_of_month_text || ctx.team.get(player.team_id)?.name || "" : "Chosen at the end of each month. See who's in form now."}</span>
       ${pf?.n ? html`<span class="sb-promo4__form">${formChips(pf, { links: false })}</span>` : html`<span class="sb-btn sb-btn--outline">${player ? "View player" : "Form guide"}</span>`}</a>
     <a class="sb-promo4__card sb-promo4__card--totm" href="${team ? urls.team(team) : "/league"}">
-      ${team ? html`<span class="sb-promo4__face">${crestOf(ctx, team)}</span>` : pIco("M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v2H8v-2h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3Z")}
+      ${team ? html`<span class="sb-promo4__face">${crestOf(ctx, team)}</span>` : pIco(TOTM_ICON)}
       <span class="sb-kicker">Team of the month</span><b class="sb-promo4__title">${team?.name ?? "Coming soon"}</b>
       <span class="sb-promo4__text">${team ? site.team_of_month_text || ctx.league.get(team.league_id)?.name || "" : "Chosen at the end of each month from the league tables."}</span>
       ${tf?.n ? html`<span class="sb-promo4__form">${formChips(tf, { links: false })}</span>` : html`<span class="sb-btn sb-btn--outline">${team ? "View team" : "League tables"}</span>`}</a>

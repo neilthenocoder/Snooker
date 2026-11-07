@@ -241,7 +241,7 @@ export function buildSeed() {
   const compDefs = [
     // name, kind, entrant names/links, rounds fully played, extra matches played in next round, first date, options
     ["Team Handicap", "Team", teams.slice(0, 16).map((t) => ({ name: t.name, team_id: t.id })), 0, 5, "2026-09-15", { handicap: true }],
-    ["Rees Singles", "Singles", shuffled(reesPlayers).slice(0, 12).map((p) => ({ name: p.full_name, player_id: p.id })), 1, 2, "2026-09-08", { league_ids: [leagues[1].id] }],
+    ["Rees Singles", "Singles", shuffled(reesPlayers).slice(0, 12).map((p) => ({ name: p.full_name, player_id: p.id })), 1, 2, "2026-09-08", { league_ids: [leagues[1].id], image_url: "/assets/comps/rees-singles-winner.webp" }],
     ["Bill Toms", "Singles", shuffled(players).slice(0, 8).map((p) => ({ name: p.full_name, player_id: p.id })), 3, 0, "2026-08-04", { handicap: true, away_start: 5 }],
     ["Handicap Doubles", "Doubles", pairs, 0, 0, "2026-10-13", { handicap: true }],
     ["Willie Thomas", "Singles", shuffled(reesPlayers).slice(0, 8).map((p) => ({ name: p.full_name, player_id: p.id })), 3, 0, "2026-02-03", { league_ids: [leagues[1].id], season_id: prevSeason.id, handicap: true, away_start: 5 }],

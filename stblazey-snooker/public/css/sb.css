@@ -1407,3 +1407,131 @@ html body:not(#sb) table.data tbody tr:is(.lt-top, .lt-last) td .lt-circ { color
 html body:not(#sb) table.data tbody tr td .lt-mv.up { color: var(--live) !important; }
 html body:not(#sb) table.data tbody tr td .lt-mv.down { color: var(--red) !important; }
 html body:not(#sb) table.data tbody tr td .lt-mv.same { color: #ABA29D !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Round 110 (Rich): a flatter look: fewer borders and strokes.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Cards side by side are the same height (no gap under the shorter one) ── */
+.sb-ranks { align-items: stretch !important; }
+.sb-ranks > .sb-card, .sb-split > .sb-card { display: flex; flex-direction: column; }
+.sb-split { align-items: stretch !important; }
+.sb-split > .sb-card > [data-seg-pane]:not([hidden]) { display: flex; flex-direction: column; flex: 1; }
+.sb-split__side .sb-card-foot { margin-top: auto; }
+.sb-ranks > .sb-card .sb-rank__list { flex: none; }
+/* the note under a rankings card sits at the bottom, so both cards end level */
+.sb-ranks > .sb-card > :last-child:not(.sb-rank__list):not(.sb-rank__head) { margin-top: auto; }
+.sb-breaks > [data-seg-pane]:not([hidden]) { display: flex; flex-direction: column; flex: 1; }
+.sb-breaks .sb-breaks__all { margin-top: auto; margin-bottom: 6px; align-self: flex-start; }
+.sb-breaks .sb-breaks__list { margin-bottom: 18px; }
+
+/* ── Competitions: no glow top left, and the cup's photo fills the top of the panel ── */
+html body .sb-compsec--gold .sb-spotlight__hero { background: linear-gradient(180deg, #141414, #0B0B0B) !important; }
+html body .sb-compsec--gold .sb-spotlight { overflow: hidden; }
+.sb-spotlight__photo { display: block; flex: 1 1 auto; position: relative; min-height: 260px; margin: calc(-1 * var(--space-28)) calc(-1 * var(--space-28)) 0; overflow: hidden; background: #1A1A1A; }
+.sb-spotlight__photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; display: block; }
+/* a soft fade into the black so the words below sit cleanly under the picture */
+.sb-spotlight__photo::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 38%; background: linear-gradient(180deg, rgba(11, 11, 11, 0), #0F0F0F); pointer-events: none; }
+.sb-spotlight__hero.has-photo { gap: var(--space-20) !important; }
+.sb-spotlight__hero.has-photo .sb-spotlight__text { margin-top: -28px; position: relative; z-index: 1; }
+
+/* ── Phones: a simpler Competitions panel: the picture, the cup, its button, then the other cups as plain rows ── */
+@media (max-width: 720px) {
+  html body .sb-compsec--gold .sb-section-head [data-seg-group] { display: none !important; }
+  html body .sb-compsec--gold .sb-spotlight__round { display: none !important; }
+  .sb-spotlight__photo { min-height: 0; height: 230px; flex: none; margin: calc(-1 * var(--space-20)) calc(-1 * var(--space-20)) 0; }
+  html body .sb-compsec--gold .sb-spotlight__trophy { width: 64px; height: 64px; }
+  html body .sb-compsec--gold .sb-spotlight__title { font-size: 28px !important; }
+  html body .sb-compsec--gold .sb-spotlight__hero .sb-btn { width: 100%; justify-content: center; }
+  html body .sb-compsec--gold .sb-comps__arrow { display: none !important; }
+  html body .sb-compsec--gold .sb-comps__list { max-height: none !important; overflow: visible !important; -webkit-mask-image: none !important; mask-image: none !important; gap: 0 !important; }
+  html body .sb-compsec--gold .sb-comps__list > .sb-spot { padding: 14px 4px !important; border: 0 !important; border-bottom: 1px solid rgba(255, 255, 255, .1) !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; }
+  html body .sb-compsec--gold .sb-comps__list > .sb-spot:nth-child(n+5) { display: none !important; }
+  html body .sb-compsec--gold .sb-comps__list > .sb-spot .sb-spot__icon { width: 36px !important; height: 36px !important; }
+  html body .sb-compsec--gold .sb-comps__list > .sb-spot .sb-cue { display: none !important; }
+  html body .sb-compsec--gold .sb-comps__list > .sb-spot .sb-comp__name { font-size: 16px !important; }
+}
+
+/* ── The four promo columns: no hover effect; icons without a box, bigger ── */
+html body .sb-promo4__card, html body .sb-promo4__card:hover { transform: none !important; box-shadow: none !important; transition: none !important; }
+html body .sb-promo4__card--news:hover { border-color: var(--red) !important; color: #fff !important; }
+html body .sb-promo4__card--cue:hover { border-color: #0B0B0B !important; color: #fff !important; }
+html body .sb-promo4__card--cue, html body .sb-promo4__card--cue:hover { background: #0B0B0B !important; }
+html body .sb-promo4__card:is(.sb-promo4__card--potm, .sb-promo4__card--totm):hover { border-color: var(--line) !important; color: var(--ink) !important; }
+html body .sb-promo4__card:hover .sb-promo4__title { color: inherit !important; }
+html body .sb-promo4__card--cue .sb-promo4__title, html body .sb-promo4__card--news .sb-promo4__title { color: #fff !important; }
+html body .sb-promo4__ico { width: auto !important; height: auto !important; background: none !important; border-radius: 0 !important; justify-content: start; }
+html body .sb-promo4__ico svg { width: 44px !important; height: 44px !important; }
+html body .sb-promo4__card--news .sb-promo4__ico, html body .sb-promo4__card--cue .sb-promo4__ico { color: #fff !important; }
+html body .sb-promo4__card:is(.sb-promo4__card--potm, .sb-promo4__card--totm) .sb-promo4__ico { color: #E5A800 !important; }
+html body .sb-promo4__card { border-color: transparent !important; }
+html body .sb-promo4__card:is(.sb-promo4__card--potm, .sb-promo4__card--totm) { border-color: transparent !important; }
+html body .sb-promo4__card .sb-btn:hover { filter: none; }
+
+/* ── My Snooker card: no box behind the star; the star bigger and gold ── */
+html body .sb-promo .sb-promo__icon { background: none !important; width: auto !important; height: auto !important; border-radius: 0 !important; }
+html body .sb-promo .sb-promo__icon .sb-icon { width: 40px !important; height: 40px !important; fill: #FFC81A !important; color: #FFC81A !important; }
+html body .sb-promo .sb-promo__icon svg path { fill: #FFC81A !important; }
+
+/* ── Menu bar: the My Snooker star: gold circle, white star, no border ── */
+html body:not(#sb) .sb-header .sb-icon-btn.sb-mystar,
+html.sb-navover:not(.sb-scrolled) body:not(#sb) .sb-header .sb-icon-btn.sb-mystar { background: #E5A800 !important; border: 0 !important; box-shadow: none !important; color: #fff !important; }
+html body:not(#sb) .sb-header .sb-icon-btn.sb-mystar svg { fill: #fff !important; }
+html body:not(#sb) .sb-header .sb-icon-btn.sb-mystar:hover,
+html body:not(#sb) .sb-header .sb-icon-btn.sb-mystar[aria-current="page"] { background: #CC9600 !important; color: #fff !important; }
+
+/* ── League tables: the circles as in the rankings; the promotion and relegation places shaded (two shades each) ── */
+html:not(#x) body:not(#sb) .lt-circ { background: var(--soft) !important; box-shadow: none !important; color: var(--ink) !important; }
+html:not(#x) body:not(#sb) tr:is(.lt-up, .lt-top) .lt-circ, html:not(#x) body:not(#sb) table.data tbody tr:is(.lt-up, .lt-top) td .lt-circ { background: var(--live) !important; color: #fff !important; }
+html:not(#x) body:not(#sb) tr.lt-down .lt-circ, html:not(#x) body:not(#sb) table.data tbody tr.lt-down td .lt-circ { background: var(--red) !important; color: #fff !important; }
+/* the bottom team is no longer shaded just for being last (Rees has no relegation) */
+html:not(#x) body:not(#sb) tr.lt-last:not(.lt-down) .lt-circ { background: var(--soft) !important; color: var(--ink) !important; }
+html:not(#x) body:not(#sb) .sb-lt tbody tr.lt-last:not(.lt-down) td, html:not(#x) body:not(#sb) table.data tbody tr.lt-last:not(.lt-down):not(.lt-top):not(.hl) td { background: none !important; }
+html:not(#x) body:not(#sb) :is(.sb-lt, table.data) tbody tr.lt-up td { background: #DCEFE3 !important; }
+html:not(#x) body:not(#sb) :is(.sb-lt, table.data) tbody tr.lt-up.lt-alt td { background: #EBF6EF !important; }
+html:not(#x) body:not(#sb) :is(.sb-lt, table.data) tbody tr.lt-down td { background: #FDDDE3 !important; color: var(--ink) !important; }
+html:not(#x) body:not(#sb) :is(.sb-lt, table.data) tbody tr.lt-down.lt-alt td { background: #FEEDF0 !important; }
+html:not(#x) body:not(#sb) :is(.sb-lt, table.data) tbody tr.lt-down td :is(a, b, span):not(.lt-circ):not(.lt-mv):not(.lt-mv *):not(.fc) { color: var(--ink) !important; }
+html:not(#x) body:not(#sb) :is(.sb-lt, table.data) tbody tr:is(.lt-up, .lt-down, .lt-top) td { border-top-color: transparent !important; border-bottom-color: transparent !important; }
+html:not(#x) body:not(#sb) :is(.sb-lt, table.data) tbody tr:is(.lt-up, .lt-down, .lt-top) + tr td { border-top-color: transparent !important; }
+html:not(#x) body:not(#sb) .sb-lt tbody tr:is(.lt-up, .lt-down) td:first-child { border-radius: 14px 0 0 14px !important; }
+html:not(#x) body:not(#sb) .sb-lt tbody tr:is(.lt-up, .lt-down) td:last-child { border-radius: 0 14px 14px 0 !important; }
+/* a hairline of the page colour between two shaded rows of the same zone */
+html:not(#x) body:not(#sb) :is(.sb-lt, table.data) tbody tr.lt-up + tr.lt-up td, html:not(#x) body:not(#sb) :is(.sb-lt, table.data) tbody tr.lt-down + tr.lt-down td { box-shadow: inset 0 2px 0 var(--surface); }
+html:not(#x) body:not(#sb) table.data tbody tr.lt-up + tr.lt-up > td:first-child { box-shadow: inset 5px 0 0 var(--live), inset 0 2px 0 var(--surface); }
+html:not(#x) body:not(#sb) table.data tbody tr.lt-down + tr.lt-down > td:first-child { box-shadow: inset 5px 0 0 var(--red), inset 0 2px 0 var(--surface); }
+/* points stay readable on the shading */
+html:not(#x) body:not(#sb) :is(.sb-lt, table.data) tbody tr.lt-down .lt-pts.down { color: var(--red-tint-text) !important; }
+@media (max-width: 720px) {
+  html:not(#x) body:not(#sb) .sb-lt tbody tr:is(.lt-up, .lt-down) td:first-child { border-radius: 10px 0 0 10px !important; }
+  html:not(#x) body:not(#sb) .sb-lt tbody tr:is(.lt-up, .lt-down) td:last-child { border-radius: 0 10px 10px 0 !important; }
+}
+
+/* ── Footer: the social icons in a thin circle; red circle with a white icon on hover ── */
+html body:not(#sb) .site-footer .socials { gap: 14px !important; }
+html body:not(#sb) .site-footer .socials a { width: 46px !important; height: 46px !important; display: grid !important; place-items: center; border-radius: 50% !important;
+  border: 1.5px solid var(--ink) !important; background: transparent !important; color: var(--ink) !important; transform: none !important; transition: background .15s, border-color .15s, color .15s !important; }
+html body:not(#sb) .site-footer .socials a svg { width: 20px !important; height: 20px !important; fill: currentColor !important; }
+html body:not(#sb) .site-footer .socials a:is(:hover, :focus-visible) { background: var(--red) !important; border-color: var(--red) !important; color: #fff !important; }
+html body:not(#sb) .site-footer .socials a:is(:hover, :focus-visible) svg { fill: #fff !important; }
+html body:not(#sb) .site-footer .socials a svg :is(rect, circle[fill="none"]) { fill: none !important; stroke: currentColor !important; }
+html body:not(#sb) .site-footer .socials a:is(:hover, :focus-visible) svg :is(rect, circle[fill="none"]) { fill: none !important; stroke: #fff !important; }
+
+/* ── Phones: the menu bars ── */
+@media (max-width: 900px) {
+  /* the account button is in the bottom menu, so not in the top one as well */
+  html.has-bnav body .sb-header :is(.sb-acct-wrap, .sb-loginbtn) { display: none !important; }
+  /* fully rounded ends on the floating top bar and on the bottom bar */
+  html.sb-navover:not(.sb-scrolled) body .sb-header__inner { border-radius: 999px !important; }
+  /* the bottom bar (Home, Fixtures…) white; the shortcuts above it grey, with no outline */
+  html.has-bnav body .bnav-bar { border-radius: 999px !important; background: var(--surface) !important; border: 1px solid var(--line) !important; box-shadow: 0 6px 20px -12px rgba(0, 0, 0, .25) !important; }
+  html.has-bnav body .bnav-chip { background: var(--soft) !important; border: 0 !important; box-shadow: none !important; }
+  html.has-bnav body .bnav-me:not(.in) { background: var(--soft) !important; border: 0 !important; }
+}
+/* Saved to the home screen (full screen): keep the bottom bar clear of the bottom edge of the phone */
+@media (max-width: 900px) and (display-mode: standalone), (max-width: 900px) and (display-mode: fullscreen) {
+  html.has-bnav body .bnav-bar { margin-bottom: max(22px, calc(8px + env(safe-area-inset-bottom))) !important; }
+  html.has-bnav body .bnav::before { height: calc(var(--bnav-bar) + 30px + env(safe-area-inset-bottom)) !important; }
+}
+/* inner pages: on the shaded (zebra) rows the circle is white, so it still shows */
+html:not(#x) body:not(#sb) table.data tbody tr:nth-child(even):not(.lt-up):not(.lt-down):not(.lt-top) td .lt-circ { background: var(--surface) !important; }
