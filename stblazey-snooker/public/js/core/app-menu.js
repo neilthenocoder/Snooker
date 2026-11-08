@@ -48,6 +48,7 @@ const P = {
   search: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-3.5-3.5",
   user: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20a7.5 7.5 0 0 1 15 0",
   more: "M6 12h.01M12 12h.01M18 12h.01",
+  explore: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM15.5 8.5l-2 5-5 2 2-5z",
 };
 const ICON_FOR = [
   [/^\/$/, "home"], [/^\/fixtures/, "fixtures"], [/^\/league|^\/standings|^\/shield/, "league"], [/^\/competition|^\/draw/, "comps"],
@@ -100,7 +101,6 @@ export function appMenu({ menu, more, user, name = "", role = "", initials = "",
       </nav></section>`);
     return html`<button type="button" class="sbm__row" data-sbm-go="${id}" data-nav-section="${navSection(item.href)}"><span class="sbm__icowrap">${lineIcon(iconFor(item.href))}</span><span class="sbm__label">${item.label}</span>${chev}</button>`;
   });
-  const leftovers = more.filter((l) => !used.has(l.href) && !menu.some((m) => m.href === l.href));
 
   return html`<div class="sbd sbm" data-menu>
     <div class="sbd__scrim" data-menu-close aria-hidden="true"></div>
@@ -112,8 +112,9 @@ export function appMenu({ menu, more, user, name = "", role = "", initials = "",
         ${user ? html`<button type="button" class="sbm__me" data-sbm-go="acct"><span class="sbm__initials">${initials}</span><span class="sbm__who"><b>${name}</b><small>${role} · your account</small></span>${chev}</button>`
           : noLogin ? "" : html`<button type="button" class="sbm__login" data-account-open>Log in or create an account</button>`}
         <nav class="sbm__list" aria-label="Main menu">${rows}</nav>
-        ${leftovers.length ? html`<p class="sbm__group">More pages</p>
-          <nav class="sbm__list" aria-label="More pages">${leftovers.map((l) => html`<a class="sbm__row" href="${l.href}" ${isOutside(l.href) ? html`target="_blank" rel="noopener"` : ""}><span class="sbm__icowrap">${lineIcon(iconFor(l.href))}</span><span class="sbm__label">${l.label}</span></a>`)}</nav>` : ""}
+        ${/* Round 112 (Neil): "Explore" — every other page of the website (the computer's More ▾ list) on a screen of its own */ ""}
+        ${more.length ? html`<div class="sbm__list"><button type="button" class="sbm__row sbm__row--sub" data-sbm-go="explore"><span class="sbm__icowrap">${lineIcon("explore")}</span>
+          <span class="sbm__label">Explore<small>${more.slice(0, 3).map((l) => l.label).join(", ")} and more</small></span>${chev}</button></div>` : ""}
         <p class="sbm__group">Settings</p>
         <div class="sbm__list">
           <button type="button" class="sbm__row" data-bell><span class="sbm__icowrap">${lineIcon("bell")}</span><span class="sbm__label">Notifications</span></button>
@@ -122,6 +123,11 @@ export function appMenu({ menu, more, user, name = "", role = "", initials = "",
         ${socials.length ? html`<div class="sbd__social sbm__social">${socials}</div>` : ""}
       </section>
       ${screens}
+      ${more.length ? html`<section class="sbm__screen" data-sbm-screen="explore" aria-label="Explore" hidden>
+        <div class="sbm__head sbm__head--sub"><button type="button" class="sbm__back" data-sbm-back aria-label="Back to the menu">${back}</button><h2>Explore</h2>
+          <button type="button" class="sbm__btn" data-menu-close aria-label="Close the menu">${cross}</button></div>
+        <nav class="sbm__list" aria-label="Every other page">${more.map((l) => html`<a class="sbm__row" href="${l.href}" ${isOutside(l.href) ? html`target="_blank" rel="noopener"` : ""}><span class="sbm__icowrap">${lineIcon(iconFor(l.href))}</span><span class="sbm__label">${l.label}</span></a>`)}</nav>
+      </section>` : ""}
       ${user ? html`<section class="sbm__screen" data-sbm-screen="acct" data-menu-acct aria-label="Your account" hidden>
         <div class="sbm__head sbm__head--sub"><button type="button" class="sbm__back" data-sbm-back aria-label="Back to the menu">${back}</button><h2>Your account</h2>
           <button type="button" class="sbm__btn" data-menu-close aria-label="Close the menu">${cross}</button></div>

@@ -4,8 +4,10 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.92.1";
+export const SITE_VERSION = "1.92.3";
 export const CHANGES = [
+  "Phone menu: Explore — every other page of the website (Calendar, Results, Handicaps, Our Players and the rest) on a screen of its own",
+  "A page left open while a new version went live reloads itself once instead of showing \"Something went wrong: Importing binding name … is not found\"",
   "Home page Competitions: scrolling the list of cups no longer carries on and scrolls the page (the picture beside it stayed still)",
   "Match strip: the › button white with a dark arrow again",
   "Every mention of another snooker website taken out of the dashboard and the code",

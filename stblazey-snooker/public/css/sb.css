@@ -1823,3 +1823,6 @@ html:not(#x) body:not(#sb) .sb-icon-btn--arena-solid { background-color: #fff !i
 html:not(#x) body:not(#sb) .sb-icon-btn--arena-solid svg { stroke: currentColor !important; color: var(--scoreboard) !important; }
 html:not(#x) body:not(#sb) .sb-icon-btn--arena-solid:hover { background-color: #E9ECE8 !important; }
 html:not(#x) body:not(#sb) .sb-icon-btn--arena-solid:disabled { opacity: .45; }
+/* Round 112: "Explore" in the phone menu — a line of examples under the word */
+.sbm__row--sub .sbm__label { display: grid; gap: 1px; }
+.sbm__row--sub .sbm__label small { font-size: 13px; font-weight: 500; color: var(--ink-muted); letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

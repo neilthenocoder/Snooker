@@ -627,10 +627,18 @@ async function renderRoute({ quiet = false, keepPlace = false } = {}) {
     } else { if (!quiet && !keepPlace) window.scrollTo(0, 0); setTimeout(() => { routing = false; }, 50); }
     restoring = false;
     drawScrollHint();
+    try { sessionStorage.removeItem("sbds-reloaded"); } catch { /* fine */ }
   } catch (err) {
     console.error(err);
     routing = false;
-    mount(view, html`<div class="wrap"><div class="notice error">Something went wrong: ${err.message}</div></div>`);
+    // Round 112: a tab left open while a new version of the website went live still holds some of the old files, and
+    // a page from the new version can't use them ("Importing binding name … is not found", "does not provide an
+    // export named", "Failed to fetch dynamically imported module"). Load the whole page again, once, to get the new set.
+    if (/importing binding name|does not provide an export named|dynamically imported module|error loading dynamically|module script failed/i.test(err?.message ?? "")) {
+      let tried = false; try { tried = sessionStorage.getItem("sbds-reloaded") === location.pathname; sessionStorage.setItem("sbds-reloaded", location.pathname); } catch { /* fine */ }
+      if (!tried) { location.reload(); return; }
+    }
+    mount(view, html`<div class="wrap"><div class="notice error">Something went wrong: ${err.message}. <button type="button" class="link-btn" data-reload>Reload the page</button></div></div>`);
   } finally { loaderOff(); window.sbdslStarted = true; }     // (the safety net in boot.js stands down)
 }
 
@@ -700,6 +708,7 @@ document.addEventListener("click", async (e) => {
   // The bottom bar's More opens the menu, and closes it again when it is already open (like an app's tab).
   if (e.target.closest("[data-menu-open]")) return setMenu(!(e.target.closest(".bnav") && document.documentElement.classList.contains("menu-open")));
   if (e.target.closest("[data-menu-close]")) return setMenu(false);
+  if (e.target.closest("[data-reload]")) return location.reload();
   // Log in (logged out); once logged in the same buttons open the account menu instead (round 51 — one menu, not two).
   if (e.target.closest("[data-account-open]")) { const u = await getUser(); if (u) return openAcctMenu(); setMenu(false); return openAccount(u, { back: e.target.closest("[data-account-open]").dataset.back ?? "" }); }
   // The menu bar's dropdowns: More ▾, and Admin ▾ / Captain ▾ / My account ▾ (on a phone that one opens the phone menu).
