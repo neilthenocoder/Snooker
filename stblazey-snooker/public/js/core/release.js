@@ -4,8 +4,17 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.91.0";
+export const SITE_VERSION = "1.92.0";
 export const CHANGES = [
+  "Welcome set-up for first-time visitors: welcome, teams to follow, notifications, competitions to follow, make a login, profile, all set — with a back arrow and a progress bar (Admin → Site settings → Home page → Welcome set-up: on/off, the date it stops, whether people can make their own login, show it again). Run supabase/fixes/round111-welcome-setup.sql once",
+  "People can make their own Player login in the welcome set-up while it is open; they confirm their email first (netlify/functions/signup.mjs)",
+  "Competitions can be followed: they show on My Snooker (My Snooker settings → Competitions I follow)",
+  "Phones: the More menu is a full screen like an app; each part of the site slides in its own screen of pages, with ‹ back",
+  "Newsletter sign-up box at the bottom of the home page (Admin → Newsletter sign-up → Show the sign-up box)",
+  "New greys everywhere: page #F9F9F9, grey fills #F4F2F5, lines #EDE7EB",
+  "Buttons flat with no borders everywhere; outline buttons get a grey fill",
+  "Every table and box on the other pages styled like the home page: white cards, no borders, headings in the card, no striped rows, the leader on a green band, places in circles; filter buttons as the home page's grey switch",
+  "Computer menu bar: no thin see-through line above it any more",
   "Site settings save again: the new banner layouts are allowed in the database (run supabase/fixes/round110-banner-layout.sql once)",
   "Home page Competitions: no glow; the cup's own picture (Admin → Competitions → Picture) fills the top of the panel — the Rees Singles winner to start with",
   "Phones: a simpler Competitions panel — the picture, the cup and its button, then four other cups as plain rows",

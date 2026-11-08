@@ -1,6 +1,6 @@
 // Picks the real Supabase client or the in-browser demo database.
 import { SUPABASE_URL, SUPABASE_ANON_KEY, DEMO_MODE } from "../config.js";
-import { demoClient, demoAdminUsers, resetDemo } from "./demo-client.js";
+import { demoClient, demoAdminUsers, demoSelfSignup, resetDemo } from "./demo-client.js";
 import { SCHEMA_VERSION } from "./version.js";
 
 let client = demoClient;
@@ -65,5 +65,14 @@ export async function adminUsers(body) {
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(json.error || `Request failed (${res.status})`);
+  return json;
+}
+
+/** Round 111: someone making their own Player login in the welcome set-up (netlify/functions/signup.mjs checks it's open). */
+export async function selfSignup(body) {
+  if (DEMO_MODE) return demoSelfSignup(body);
+  const res = await fetch("/.netlify/functions/signup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || "That didn't work — please try again.");
   return json;
 }

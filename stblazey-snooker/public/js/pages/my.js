@@ -94,6 +94,8 @@ async function snookerTab(el, { ctx, user, team, me }) {
   const prefs = myPrefs(user);
   const order = sectionOrder(prefs);
   const categories = (await table("categories", "sort").catch(() => [])).map((c) => c.name);
+  // Round 111: competitions can be followed too (the welcome set-up asks for them first).
+  const cups = ((await loadCompetitions().catch(() => null))?.competitions ?? []).filter((c) => !c.season_id || c.season_id === ctx.season?.id);
   const followed = new Set(prefs.teams);
   let players = prefs.players.filter((id) => ctx.player.get(id));
   const wants = (key) => !prefs.sections || prefs.sections.includes(key) || (["form", "glance"].includes(key) && !prefs.sections.includes(`${key}_off`));
@@ -124,6 +126,10 @@ async function snookerTab(el, { ctx, user, team, me }) {
         <div class="ms-add"><input type="text" list="ms-players" placeholder="Start typing a player's name…" data-player-add autocomplete="off" aria-label="Add a player to follow">
           <button type="button" class="btn small secondary" data-player-add-btn>Follow</button></div>
         <datalist id="ms-players">${pickable.map((p) => html`<option value="${p.full_name}">${teamName(p)}</option>`)}</datalist></fieldset>
+
+      ${cups.length ? html`<fieldset class="ms-set-box"><legend>Competitions I follow</legend>
+        <p class="ms-help">Every match of a competition you follow shows in the Competitions part of your page — not only the ones your teams and players are in.</p>
+        <div class="ms-ticks">${cups.map((c) => html`<label class="ms-tick"><input type="checkbox" name="comp" value="${c.id}" ${prefs.comps.includes(c.id) ? "checked" : ""}><span>${c.name}</span></label>`)}</div></fieldset>` : ""}
 
       <fieldset class="ms-set-box"><legend>What I see, and in what order</legend>
         <p class="ms-help">Tick the sections you want, and use <b>↑</b> and <b>↓</b> to put the most important ones first.
@@ -185,7 +191,7 @@ async function snookerTab(el, { ctx, user, team, me }) {
     }
     // Reset asks first (Neil, round 52: one accidental tap shouldn't lose everything).
     if (t.matches("[data-reset]")) confirmBox("Your teams and players go back to your own team only, and every section comes back in the standard order.\n\nThis can't be undone.",
-      { title: "Reset My Snooker?", ok: "Yes, reset" }).then((ok) => ok && save(true, { place: "page", teams: [user.profile?.team_id].filter(Boolean), players: [user.profile?.player_id].filter(Boolean), cats: [], sections: null }, "My Snooker reset"));
+      { title: "Reset My Snooker?", ok: "Yes, reset" }).then((ok) => ok && save(true, { place: "page", teams: [user.profile?.team_id].filter(Boolean), players: [user.profile?.player_id].filter(Boolean), cats: [], comps: [], sections: null }, "My Snooker reset"));
   });
   // Anything changed: the Save bar at the bottom of the screen says so until it is saved.
   const dirty = () => $("[data-ms-actions]", el)?.classList.add("dirty");
@@ -210,7 +216,7 @@ async function snookerTab(el, { ctx, user, team, me }) {
     const sections = [...form.querySelectorAll(".ms-order [name=section]")].filter((b) => b.checked).map((b) => b.value);
     // Keep the order the teams were followed in (so the first stays first), then any newly ticked ones.
     const teams = [...prefs.teams.filter((id) => ticked("team").includes(id)), ...ticked("team").filter((id) => !prefs.teams.includes(id))];
-    save(true, { place: "page", teams, players, cats: ticked("cat"), sections: [...sections, ...["form", "glance"].filter((k) => !sections.includes(k)).map((k) => `${k}_off`)] }, "My Snooker settings saved");
+    save(true, { place: "page", teams, players, cats: ticked("cat"), comps: ticked("comp"), sections: [...sections, ...["form", "glance"].filter((k) => !sections.includes(k)).map((k) => `${k}_off`)] }, "My Snooker settings saved");
   });
 }
 

@@ -1,12 +1,12 @@
 /* St Blazey Snooker — generated from the design system's tokens.json. Light is the default theme. */
 :root:root, :root:root[data-theme="light"] {
   color-scheme: light;
-  --bg: var(--brand-bg, #F4EEEC);
+  --bg: var(--brand-bg, #F9F9F9);
   --surface: #FFFFFF;
-  --soft: #EFE8E5;
+  --soft: #F4F2F5;
   --ink: #15201B;
   --ink-muted: #5B6660;
-  --line: #E2D9D5;
+  --line: #EDE7EB;
   --red: #F1002A;
   --red-dark: #C80023;
   --on-red: #FFFFFF;

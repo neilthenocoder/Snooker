@@ -375,6 +375,25 @@ export function demoAdminUsers(body) {
   return { ok: true };
 }
 
+// Mirrors the Netlify function netlify/functions/signup.mjs (round 111). In the demo there is no email to confirm.
+export function demoSelfSignup(body) {
+  const site = Array.isArray(state.tables.settings) ? state.tables.settings[0] : state.tables.settings;
+  const h = site?.home_sections ?? {}, until = String(h.onboard_until ?? "").slice(0, 10);
+  if (!h.onboard_on || !h.onboard_signup || (until && new Date().toISOString().slice(0, 10) > until)) throw new Error("Making your own login has closed. Your login will come from the league — ask your captain or the league secretary.");
+  if (body.website || Number(body.took_ms) < 3000) throw new Error("Please try again.");
+  const email = String(body.email ?? "").trim().toLowerCase(), full_name = String(body.full_name ?? "").trim().slice(0, 120), password = String(body.password ?? "");
+  if (full_name.length < 2) throw new Error("Please type your name.");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new Error("That doesn't look like an email address.");
+  if (password.length < 8 || !/[a-z]/i.test(password) || !/\d/.test(password)) throw new Error("Your password needs at least 8 characters, with a letter and a number.");
+  if (state.users.some((u) => u.email.toLowerCase() === email)) throw new Error("There's already a login with this email address. Log in instead — or ask the league to reset your password.");
+  const id = newId();
+  state.users.push({ id, email, password });
+  state.tables.profiles.push({ id, email, full_name, role: "player", team_role: null, team_id: null, player_id: null });
+  audit("added", "profiles", [{ id, name: `${full_name} made their own login (welcome set-up)` }], null, true);
+  persist(); emit("profiles", state.tables.profiles);
+  return { ok: true, confirm: false };
+}
+
 export const demoClient = {
   from: (table) => new Query(table),
   auth,
@@ -576,7 +595,7 @@ export const demoClient = {
       const p = args.p_prefs ?? {}, t = state.tables;
       const known = (list, rows, max) => [...new Set(Array.isArray(list) ? list : [])].filter((id) => rows.some((r) => r.id === id)).slice(0, max);
       const out = { place: ["page", "home", "both"].includes(p.place) ? p.place : "page", teams: known(p.teams, t.teams, 12), players: known(p.players, t.players, 40),
-        cats: (Array.isArray(p.cats) ? p.cats : []).map((c) => String(c).slice(0, 80)).slice(0, 20) };
+        cats: (Array.isArray(p.cats) ? p.cats : []).map((c) => String(c).slice(0, 80)).slice(0, 20), comps: known(p.comps, t.competitions ?? [], 20) };
       if (Array.isArray(p.sections)) out.sections = p.sections.filter((x) => /^[a-z_]{1,24}$/.test(x)).slice(0, 30);
       Object.assign(me, { my_snooker: args.p_on ?? true, my_prefs: out, my_team_id: out.teams[0] ?? null });
       persist();

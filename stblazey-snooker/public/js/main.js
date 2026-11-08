@@ -31,6 +31,9 @@ import { ROUTES } from "./core/routes.js";
 import { placeAds } from "./core/ads.js";
 import { rulesHelpButton } from "./core/rules-help.js";
 import { canInstall, installApp, offerInstall } from "./core/install.js";
+import { appMenu, sbmGo, sbmReset, wireAppMenu } from "./core/app-menu.js";
+import { maybeOnboard, applyPendingPicks, startOnboarding } from "./core/onboard.js";
+wireAppMenu();
 import { requestGuide } from "./core/guide.js";
 
 // Every address of the website and the page that draws it: core/routes.js (the link checker uses the list too).
@@ -294,6 +297,8 @@ async function drawFind() {
 async function drawHeader() {
   const [user, site, gate, seasons] = await Promise.all([getUser(), settings(), loginGate(), table("seasons", "name").catch(() => [])]);
   applyBranding(site);
+  // Round 111: the teams and competitions picked in the welcome set-up go onto My Snooker the first time they log in.
+  if (user) applyPendingPicks(user).catch(() => {});
   const MENU = menuItems(site);
   // Security → custom login address: the person button can be hidden from visitors (people then log in at that address).
   const noLogin = !user && !!gate.hide_button;
@@ -334,36 +339,11 @@ async function drawHeader() {
       </div>
     </div></header>
     ${bottomNav(seasons, user)}
-    <div class="sbd" data-menu>
-      <div class="sbd__scrim" data-menu-close aria-hidden="true"></div>
-      <div class="sbd__panel" role="dialog" aria-modal="true" aria-label="Menu">
-        <div class="sbd__top">
-          <a class="sbd__brand" href="/">${brandMark(site)}<span>St Blazey Snooker</span></a>
-          <button type="button" class="sbd__icon" data-search-open aria-label="Search"><svg class="sb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14M20 20l-3.5-3.5"/></svg></button>
-          <button type="button" class="sbd__icon" data-menu-close aria-label="Close the menu"><svg class="sb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-        </div>
-        <nav class="sbd__main" aria-label="Main menu">
-          ${MENU.map((item) => html`<a class="sbd__link ${item.color === "live" ? "sbd__link--live state-idle" : ""}" ${item.color === "live" ? html`data-live-btn` : ""} data-nav-section="${navSection(item.href)}" href="${item.href}" ${isOutside(item.href) ? html`target="_blank" rel="noopener"` : ""}><span>${item.label}</span></a>`)}
-        </nav>
-        ${user ? html`<details class="sbd__group" data-menu-acct>
-            <summary><span>${role} · ${name.split(" ")[0]}</span><svg class="sb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
-            <div class="sbd__acct">${acctItems(user)}
-              <button type="button" class="acct-item acct-out" data-logout><span class="acct-ico">${logoutIcon}</span><span><b>Log out</b></span></button></div>
-          </details>`
-          : noLogin ? "" : html`<button type="button" class="sb-btn sb-btn--primary sb-btn--xl sbd__login" data-account-open>Log in</button>`}
-        <hr class="sbd__rule">
-        <p class="sbd__h">More</p>
-        <nav class="sbd__more" aria-label="More pages">
-          ${more.map((l) => html`<a href="${l.href}" ${isOutside(l.href) ? html`target="_blank" rel="noopener"` : ""}>${l.label}</a>`)}
-          <button type="button" data-bell>Notifications</button>
-          ${canInstall() ? html`<button type="button" data-install-app>Add to home screen</button>` : ""}
-        </nav>
-        <hr class="sbd__rule">
-        <div class="sbd__foot">
-          <div class="sbd__social">${socials.map(([key, label, icon]) => html`<a href="${safeHref(site[key])}" target="_blank" rel="noopener" aria-label="${label}"><svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></a>`)}</div>
-        </div>
-      </div>
-    </div>`);
+    ${/* Round 111 (Rich: "as app-like as possible"): the phone menu is a full screen, and each part of the site slides
+       in its own screen of pages — core/app-menu.js */ ""}
+    ${appMenu({ menu: MENU, more, user, name, role, initials: initials(name), acct: user ? acctItems(user) : "", logoutIcon, noLogin, navSection,
+      installable: canInstall(),
+      socials: socials.map(([key, label, icon]) => html`<a href="${safeHref(site[key])}" target="_blank" rel="noopener" aria-label="${label}"><svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></a>`) })}`);
   // The favicon and the iPhone home-screen icon (Admin → Branding). On Netlify they are already in the page
   // (netlify/edge-functions/social.js); this keeps them right in the preview and straight after a change.
   // Only what has been uploaded: with nothing uploaded there is no icon at all (no stand-in logo).
@@ -423,6 +403,9 @@ function measureHeader() {
 }
 window.addEventListener("resize", measureHeader, { passive: true });   // a different width can mean a different height
 const setMenu = (open) => {
+  const was = document.documentElement.classList.contains("menu-open");
+  if (!open && was) setTimeout(() => { if (!document.documentElement.classList.contains("menu-open")) sbmReset(); }, 300);   // back to the first screen once it has closed
+  if (open && !was) sbmReset();
   document.documentElement.classList.toggle("menu-open", open);
   for (const b of document.querySelectorAll("[data-menu-open]")) b.setAttribute("aria-expanded", String(open));
   if (open) closeDrops();
@@ -460,7 +443,7 @@ function closeDrops(except = null) {
 const phoneMenu = () => window.matchMedia("(max-width: 900px)").matches;
 /** Open the account part: the dropdown on a computer; on a phone, the one menu, at its account section. */
 function openAcctMenu() {
-  if (phoneMenu()) { setMenu(true); const acct = $("[data-menu-acct]"); if (acct) acct.open = true; requestAnimationFrame(() => acct?.scrollIntoView({ block: "start" })); return; }
+  if (phoneMenu()) { setMenu(true); sbmGo("acct", { instant: true }); return; }
   const b = $('[data-drop="acct"]'); if (!b) return;
   closeDrops("acct"); b.setAttribute("aria-expanded", "true"); $('[data-drop-panel="acct"]').hidden = false;
   $('[data-drop-panel="acct"] .acct-item')?.focus();
@@ -622,7 +605,13 @@ async function renderRoute({ quiet = false, keepPlace = false } = {}) {
     // Side adverts (Admin → Website → Side adverts): everywhere, or only on this venue / team / kind of page.
     if (!["admin", "login", "my", "scorecard", "cup-scorecard", "unsubscribe", "not-found", "market-edit"].includes(page)) placeAds(view, page, params).catch(() => {});
     // Pop-up adverts (home page) and the newsletter sign-up (Admin → Website → Pop-up adverts / Newsletter).
-    if (!["admin", "login", "my", "scorecard", "cup-scorecard", "unsubscribe", "not-found"].includes(page)) { showPopups(page, site, user); offerInstall(); }
+    // Round 111: the welcome set-up comes first for a first-time visitor (then the pop-ups wait for another page).
+    if (!["admin", "login", "my", "scorecard", "cup-scorecard", "unsubscribe", "not-found"].includes(page)) {
+      // ?welcome=preview shows it to anyone (Admin's preview link); ?welcome=confirmed is where the confirmation email lands.
+      const welcome = new URLSearchParams(location.search).get("welcome");
+      if (welcome === "confirmed") { toast(user ? "Your email is confirmed — welcome!" : "Your email is confirmed. Log in with your email and password."); history.replaceState(null, "", location.pathname); }
+      maybeOnboard(page, site, user, { force: welcome === "preview" }).then((busy) => { if (!busy) { showPopups(page, site, user); offerInstall(); } }).catch(() => {});
+    }
     // Round 79: the Master Admin's changes to the wording (Edit → "Edit the wording on this page").
     if (!["admin", "scorecard", "cup-scorecard", "login", "my"].includes(page)) stopPageText = applyPageText(view, page, site);
     drawEditButton(user, page, site);
@@ -708,7 +697,8 @@ document.addEventListener("click", async (e) => {
     await signOut(); try { sessionStorage.removeItem("sbds-my-snooker-seen"); } catch { /* nothing stored */ }
     closeDrawer(); await drawHeader(); return navigate("/");
   }
-  if (e.target.closest("[data-menu-open]")) return setMenu(true);
+  // The bottom bar's More opens the menu, and closes it again when it is already open (like an app's tab).
+  if (e.target.closest("[data-menu-open]")) return setMenu(!(e.target.closest(".bnav") && document.documentElement.classList.contains("menu-open")));
   if (e.target.closest("[data-menu-close]")) return setMenu(false);
   // Log in (logged out); once logged in the same buttons open the account menu instead (round 51 — one menu, not two).
   if (e.target.closest("[data-account-open]")) { const u = await getUser(); if (u) return openAcctMenu(); setMenu(false); return openAccount(u, { back: e.target.closest("[data-account-open]").dataset.back ?? "" }); }

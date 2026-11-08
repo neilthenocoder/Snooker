@@ -300,14 +300,14 @@ export function leagueTablePanel(ctx, league, { limit = Infinity, highlightTeamI
   }
   const m = leagueMarks(ctx, league, { highlightTeamId, shown: rows });
   const table = dataTable([
-    { label: "P", cell: m.pos, cls: "num" },
+    { label: "Pos", cell: m.pos, cls: "num" },
     { label: "Team", cell: m.team },
     { label: "P", cell: (r) => r.p, cls: "num" },
     { label: "W", cell: (r) => r.w, cls: "num" },
     { label: "L", cell: (r) => r.l, cls: "num" },
     { label: "F", cell: (r) => r.f, cls: "num" },
     { label: "A", cell: (r) => r.a, cls: "num" },
-    { label: "P", cell: m.pts, cls: "num strong" },
+    { label: "Pts", cell: m.pts, cls: "num strong" },
     // Form (Rich, round 25): on the full table, when the page has loaded it (see core/form.js).
     ...(ctx.form && !Number.isFinite(limit) ? [{ label: "Form", cell: (r) => html`<a class="lt-form" href="/form?view=teams&league=${league.slug}">${formChipsFn(ctx.form.team(r.team.id))}</a>`, cls: "hide-sm lt-form-cell" }] : []),
   ], rows, { highlight: m.highlight, rowClass: m.rowClass, empty: "No teams in this league yet." });
@@ -319,7 +319,8 @@ export function leagueTablePanel(ctx, league, { limit = Infinity, highlightTeamI
 export function rankingsPanel(ctx, league, { limit = Infinity, scroll = false } = {}) {
   const rows = ctx.rankings(league.id).slice(0, limit);
   const table = dataTable([
-    { label: "", cell: (r) => r.pos, cls: "num" },
+    // Round 111 (Rich: "all the pages inherit the styling of the homepage"): the place in a circle, as on the home page.
+    { label: "", cell: (r) => html`<span class="lt-pos"><b class="lt-circ">${r.pos}</b></span>`, cls: "num" },
     { label: "Player", cell: (r) => playerLink(r.player) },
     ...(Number.isFinite(limit) ? [] : [
       { label: "Team", cell: (r) => teamLink(ctx.team.get(r.player.team_id)), cls: "hide-sm" },

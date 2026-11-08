@@ -15,6 +15,7 @@ import { answered, articleCueview } from "../core/cueview.js";
 import { leagueTablePanel, rankingsPanel, sidebar, panel, picture, urls, badge, avatar, articleThumb, shortName, latestNews, trophy, shieldPicture, resultsBox } from "../core/components.js";
 import { SITE } from "../config.js";
 import { menuMore } from "../core/menu.js";
+import { newsletterBox, wireNewsletterBox } from "../core/popups.js";
 import { leagueMarks, provisionalNote } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import { competitionSummaries } from "./competitions.js";
@@ -157,6 +158,8 @@ export default async function home(view, { user } = {}) {
       <div class="sb-tables">${ctx.leagues.map((l) => leagueTablePanel(ctx, l, { limit: 10 }))}</div>`) : ""}
     ${everything || on("spotlights") ? section(spotlights(ctx, site, { months: !everything }), "sb-legacy") : ""}
     ${(everything || on("cueviews")) && site.cueviews_show !== false ? section(cueviewBox(ctx, news), "sb-legacy") : ""}
+    ${/* Round 111 (Rich): the newsletter sign-up as a box at the bottom of the home page */ ""}
+    ${section(newsletterBox(site, user), "sb-section--tight sb-nlsec")}
     <div class="sb-home__end"></div>
     </div>`);
 
@@ -167,6 +170,7 @@ export default async function home(view, { user } = {}) {
   const onScroll = () => root.classList.toggle("sb-scrolled", scrollY > 24);
   if (full) { onScroll(); addEventListener("scroll", onScroll, { passive: true }); }
 
+  wireNewsletterBox(view);
   maybeStartGuide({ personal: false, site });
   const stopSquad = await mountSquadBox(user, ctx, site).catch(() => () => {});
   // Round 108 (Rich): Quick links on one row that slides sideways, with arrows like the match strip.

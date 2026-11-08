@@ -1536,7 +1536,7 @@ update leagues set shield_name = 'Rees Memorial League Runabout Shield' where sl
 alter table profiles add column if not exists my_prefs jsonb not null default '{}'::jsonb;
 create or replace function public.set_my_prefs(p_on boolean, p_prefs jsonb) returns void
 language plpgsql security definer set search_path = public as $$
-declare p jsonb := coalesce(p_prefs, '{}'::jsonb); v_teams jsonb; v_players jsonb; v_cats jsonb; v_place text; v_out jsonb;
+declare p jsonb := coalesce(p_prefs, '{}'::jsonb); v_teams jsonb; v_players jsonb; v_cats jsonb; v_comps jsonb; v_place text; v_out jsonb;
 begin
   if auth.uid() is null then raise exception 'Please log in first'; end if;
   if jsonb_typeof(p) <> 'object' or octet_length(p::text) > 8000 then raise exception 'Those choices could not be saved'; end if;
@@ -1549,8 +1549,12 @@ begin
       join players pl on pl.id::text = e.v group by pl.id order by 2 limit 40) x;
   select coalesce(jsonb_agg(left(e.v, 80) order by e.n), '[]'::jsonb) into v_cats from (
     select v, n from jsonb_array_elements_text(case when jsonb_typeof(p->'cats') = 'array' then p->'cats' else '[]'::jsonb end) with ordinality e(v, n) limit 20) e;
+  -- Round 111: competitions they follow (the welcome set-up and My Snooker settings) — only ones on the website, at most 20.
+  select coalesce(jsonb_agg(x.id order by x.n), '[]'::jsonb) into v_comps from (
+    select c.id, min(e.n) as n from jsonb_array_elements_text(case when jsonb_typeof(p->'comps') = 'array' then p->'comps' else '[]'::jsonb end) with ordinality e(v, n)
+      join competitions c on c.id::text = e.v group by c.id order by 2 limit 20) x;
   v_place := case when p->>'place' in ('page', 'home', 'both') then p->>'place' else 'page' end;
-  v_out := jsonb_build_object('place', v_place, 'teams', v_teams, 'players', v_players, 'cats', v_cats);
+  v_out := jsonb_build_object('place', v_place, 'teams', v_teams, 'players', v_players, 'cats', v_cats, 'comps', v_comps);
   -- Sections: left out means "all of them"; otherwise the short names chosen (never more than 30).
   if jsonb_typeof(p->'sections') = 'array' then
     v_out := v_out || jsonb_build_object('sections', (select coalesce(jsonb_agg(e.v order by e.n), '[]'::jsonb)
@@ -3013,8 +3017,8 @@ alter table venues add column if not exists tables int not null default 1 check 
 alter table settings add column if not exists page_text jsonb not null default '{}'::jsonb;
 create or replace function public.guard_home_layout() returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  -- (the phone menu style and the welcome guide are kept in home_sections too, but aren't the home page's layout)
-  if ((new.home_sections - 'menu_style' - 'guide_on') is distinct from (old.home_sections - 'menu_style' - 'guide_on')
+  -- (the phone menu style, the welcome guide and — round 111 — the newsletter box are kept in home_sections too, but aren't the home page's layout)
+  if ((new.home_sections - 'menu_style' - 'guide_on' - 'newsletter_box') is distinct from (old.home_sections - 'menu_style' - 'guide_on' - 'newsletter_box')
       or new.home_style is distinct from old.home_style
       or new.page_text is distinct from old.page_text)
      and auth.uid() is not null and not public.is_master() then

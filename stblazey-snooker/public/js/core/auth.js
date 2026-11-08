@@ -202,6 +202,7 @@ export function myPrefs(user) {
     players: list(saved.players).length ? [...saved.players] : fresh ? [p.player_id].filter(Boolean) : [],
     sections: Array.isArray(saved.sections) ? [...saved.sections] : null,
     cats: list(saved.cats),
+    comps: list(saved.comps),          // round 111: competitions they follow (the welcome set-up, My Snooker settings)
   };
 }
 /** The first team a login follows (the one its page opens on). */

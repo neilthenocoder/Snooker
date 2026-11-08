@@ -568,6 +568,15 @@ export const RESOURCES = {
       // Round 48: the guided tour (core/guide.js). Kept in home_sections, so no database change is needed for it.
       { type: "heading", tab: "Home page", label: "Welcome guide", help: "A short guided tour that lights up each part of a logged-in person's My Snooker page with a note: their team, next match, the table, My Snooker settings and so on. It starts by itself the first time they open My Snooker on a phone or computer. Anyone can start it again from their account menu or the footer (“Show me around”)." },
       { name: "guide_on", in: "home_sections", label: "Show the welcome guide the first time someone opens My Snooker", type: "checkbox", default: true },
+      // Round 111 (Rich's feedback 111: "when a user visits the website/app for the very first time … a setup appear").
+      // Kept in home_sections, so no database change is needed. core/onboard.js shows it; netlify/functions/signup.mjs makes the logins.
+      { type: "heading", tab: "Home page", master: true, label: "Welcome set-up (first visit)", help: "A few app-style screens for someone opening the website for the first time on their phone or computer: a welcome, the teams to follow, the notifications they want, the competitions to follow, making a login, their profile — then done. Each step can be skipped. It shows once on each phone or computer (it is remembered in the browser — two people on the same Wi-Fi each get it, which going by internet address would not do). Nobody who is logged in sees it. To see it yourself at any time, add ?welcome=preview to the website's address (e.g. stblazeydistrictsnooker.co.uk/?welcome=preview)." },
+      { name: "onboard_on", in: "home_sections", master: true, label: "Show the welcome set-up to first-time visitors", type: "checkbox", default: false },
+      { name: "onboard_until", in: "home_sections", master: true, label: "Show it until (empty: until you untick it above) — e.g. the day sign-ups close", type: "date" },
+      { name: "onboard_signup", in: "home_sections", master: true, label: "Let people make their own login in it, until the date above (a Player login only — they confirm their email address first; the league links their team and player profile afterwards in Admin → Logins). Unticked: the step offers “Log in” for people the league has already given a login.", type: "checkbox", default: false },
+      { name: "onboard_round", in: "home_sections", master: true, label: "Show it again to everyone who has already been through it: change this number (1, 2, 3…)", type: "number", min: 1, max: 99, placeholder: "1" },
+      { name: "onboard_title", in: "home_sections", master: true, label: "Welcome heading", type: "text", placeholder: "Don't miss a frame!", wide: true },
+      { name: "onboard_text", in: "home_sections", master: true, label: "Welcome words", type: "textarea", rows: 3, placeholder: "Get live match notifications and match results from your favourite teams and players, plus all the results from our competitions." },
       { type: "heading", tab: "Home page", label: "Season promotion", help: "A big block for the months with no snooker (about April to September): when the new season starts (the first league match on the calendar, or a key date with “season” in its name), the next key dates — AGM, presentation night, entries closing — and a button inviting new players and teams. Leave the words empty to use the standard ones." },
       { name: "promo_mode", label: "When to show it", type: "select", options: ["auto", "always", "never"], default: "auto",
         labels: { auto: "By itself between seasons — no league match in the last 2 weeks or the next 3 (standard)", always: "All the time", never: "Never" } },
@@ -741,6 +750,9 @@ export const RESOURCES = {
       { name: "newsletter_title", label: "Heading", type: "text", placeholder: "Get the league news by email", wide: true },
       { name: "newsletter_text", label: "Text", type: "textarea", rows: 3, placeholder: "Results, competition draws, presentation night and league news — straight to your inbox. Unsubscribe any time with the link at the bottom of every email." },
       { name: "newsletter_footer_link", label: "Show “✉ Sign up to the newsletter” at the bottom of every page", type: "checkbox", default: true },
+      // Round 111 (Rich): a sign-up box built into the bottom of the home page, not a pop-up. Kept in home_sections, so no database change.
+      { type: "heading", label: "The sign-up box on the home page", help: "A box at the bottom of the home page (only the home page) where visitors type their email address straight in. It uses the heading and text above. Other pages keep the link in the footer." },
+      { name: "newsletter_box", in: "home_sections", label: "Show the sign-up box at the bottom of the home page", type: "checkbox", default: true },
     ],
   },
   // ── Round 23 ───────────────────────────────────────────────────

@@ -117,3 +117,47 @@ export function openNewsletter(site = {}, { auto = false, user = null } = {}) {
   setTimeout(() => $("[name=email]", box.el)?.focus(), 60);
   return box;
 }
+
+// ─────────────────────────────────────────────────────────────
+//  Round 111 (Rich: "add a newsletter signup box to the homepage (not as a link pop) but as a physical box at the
+//  bottom (just home)"). The same sign-up as the pop-up, built into the page. Admin → Newsletter sign-up → "Show the
+//  sign-up box at the bottom of the home page".
+// ─────────────────────────────────────────────────────────────
+const NL_ICON = html`<svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg>`;
+const nlDone = () => html`<div class="sb-nlbox__done" role="status"><b>You're signed up — thank you!</b><span>The next newsletter will come to your inbox. Every email has a link at the bottom to unsubscribe.</span></div>`;
+
+export function newsletterBox(site = {}, user = null) {
+  if (site.home_sections?.newsletter_box === false) return "";
+  const signed = read(NL_KEY, "") === "subscribed";
+  return html`<section class="sb-nlbox" aria-labelledby="sb-nlbox-h" data-nlbox>
+    <div class="sb-nlbox__text"><span class="sb-nlbox__icon">${NL_ICON}</span>
+      <div><h2 id="sb-nlbox-h">${site.newsletter_title || "Get the league news by email"}</h2>
+      <p>${site.newsletter_text || "Results, competition draws, presentation night and league news — straight to your inbox. Unsubscribe any time with the link at the bottom of every email."}</p></div></div>
+    ${signed ? nlDone() : html`<form class="sb-nlbox__form" data-nlbox-form novalidate>
+      <label class="sb-nlbox__field"><span class="sr-only">Your name (optional)</span><input name="name" autocomplete="name" maxlength="120" placeholder="Your name (optional)" value="${user?.profile?.full_name ?? ""}"></label>
+      <label class="sb-nlbox__field"><span class="sr-only">Email address</span><input name="email" type="email" autocomplete="email" required maxlength="254" placeholder="Email address" value="${user?.email ?? ""}"></label>
+      <button class="sb-nlbox__btn">Sign me up</button>
+      <p class="sb-nlbox__small" data-nl-error>We only use your email for the league's newsletter, and never share it.${DEMO_MODE ? " (Demo: nothing is sent.)" : ""}</p>
+    </form>`}
+  </section>`;
+}
+
+/** Makes the home page box work (called after the page has drawn). */
+export function wireNewsletterBox(root) {
+  const form = root?.querySelector("[data-nlbox-form]");
+  if (!form) return;
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = form.elements.email.value.trim(), msg = $("[data-nl-error]", form), btn = form.querySelector("button");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.textContent = "Please type your email address, like name@example.com."; msg.classList.add("is-error"); form.elements.email.focus(); return; }
+    btn.disabled = true; btn.textContent = "Signing you up…";
+    try {
+      await newsletterSubscribe(email, form.elements.name.value.trim());
+      write(NL_KEY, "subscribed");
+      const box = document.createElement("div"); mount(box, nlDone()); form.replaceWith(box.firstElementChild);
+    } catch (err) {
+      msg.textContent = err.message || "That didn't work — please try again."; msg.classList.add("is-error");
+      btn.disabled = false; btn.textContent = "Sign me up";
+    }
+  });
+}

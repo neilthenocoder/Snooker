@@ -55,7 +55,7 @@ export function followButton(kind, id, user) {
     title="${on ? "On your My Snooker page — press to stop following" : "Add to your My Snooker page"}">${star}<span>${on ? "Following" : "Follow"}</span></button>`;
 }
 /** The shape set_my_prefs() expects (sections are left out when they have every section). */
-export const prefsToSave = (p) => ({ place: p.place, teams: p.teams, players: p.players, cats: p.cats, ...(p.sections ? { sections: p.sections } : {}) });
+export const prefsToSave = (p) => ({ place: p.place, teams: p.teams, players: p.players, cats: p.cats, comps: p.comps ?? [], ...(p.sections ? { sections: p.sections } : {}) });
 /** Add or remove one team or player from what this login follows. Returns true if they follow it now. */
 export async function toggleFollow(user, kind, id) {
   const p = myPrefs(user), key = `${kind}s`;
@@ -138,7 +138,9 @@ function view(user, { ctx, news, comps, site = {}, form: formData = null }, pref
   const mine = (e) => e && ((e.team_id && teamIds.has(e.team_id)) || entryPlayers(e).some((id) => followIds.has(id) || teamIds.has(ctx.player.get(id)?.team_id)));
   const cup = !wants("comps") ? [] : comps.competitions.filter((c) => !c.season_id || c.season_id === ctx.season?.id).flatMap((c) => {
     const b = buildBracket(comps.entries.filter((e) => e.competition_id === c.id), comps.matches.filter((m) => m.competition_id === c.id));
-    return b.rounds.flat().filter((m) => !m.isBye && (mine(b.entryById.get(m.a)) || mine(b.entryById.get(m.b)))).map((m) => ({ c, b, m }));
+    // Round 111: a competition they follow shows every match that has both players or teams in it, not only their own.
+    const followsCup = (prefs.comps ?? []).includes(c.id);
+    return b.rounds.flat().filter((m) => !m.isBye && (mine(b.entryById.get(m.a)) || mine(b.entryById.get(m.b)) || (followsCup && isEntry(m.a) && isEntry(m.b)))).map((m) => ({ c, b, m }));
   }).sort((x, y) => String(x.m.row.starts_at ?? "9").localeCompare(String(y.m.row.starts_at ?? "9")));
   const cupName = (b, id) => (isEntry(id) ? b.entryById.get(id).name : "To be decided");
 
