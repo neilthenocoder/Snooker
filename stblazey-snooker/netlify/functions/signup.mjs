@@ -19,6 +19,7 @@
 //  Needs (Netlify → Site configuration → Environment variables):
 //    SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY, RESULTS_EMAIL_FROM (or SIGNUP_EMAIL_FROM)
 //  Supabase → Authentication → URL Configuration: the website's address must be in "Redirect URLs".
+//  Supabase → Authentication → "Allow new users to sign up": leave it OFF, always (see step 5).
 // ─────────────────────────────────────────────────────────────
 import { createClient } from "@supabase/supabase-js";
 import { createHash } from "node:crypto";
@@ -79,15 +80,19 @@ export default async (req) => {
   if ((recent ?? []).length >= ALL_HOUR) return json(429, { error: "Lots of people are signing up right now. Please try again in an hour." });
   if ((recent ?? []).filter((r) => r.changes?.from === ipCode).length >= PER_IP_HOUR) return json(429, { error: "Too many new logins from here. Please try again in an hour." });
 
-  // 5. Make the login (not confirmed yet) and the link that confirms it.
+  // 5. Make the login (not confirmed yet), then a one-time link that confirms the email and logs them in.
+  //    Both are the server's own (admin) calls, so Supabase's "Allow new users to sign up" switch can stay OFF: it only
+  //    closes Supabase's public sign-up door, which nobody should use — the dates and checks above are the only way in.
   const siteUrl = String(process.env.SITE_URL || process.env.URL || new URL(req.url).origin).replace(/\/+$/, "");
-  const { data: link, error: linkErr } = await sb.auth.admin.generateLink({ type: "signup", email, password, options: { redirectTo: `${siteUrl}/?welcome=confirmed` } });
-  if (linkErr) {
-    // Someone with this email already has a login: say so plainly (they can log in, or reset their password with the league).
-    if (/already|registered|exists/i.test(linkErr.message)) return json(409, { error: "There's already a login with this email address. Log in instead — or ask the league to reset your password." });
+  const { data: made, error: makeErr } = await sb.auth.admin.createUser({ email, password, email_confirm: false, user_metadata: { full_name } });
+  if (makeErr) {
+    // Someone with this email already has a login: say so plainly (they can log in, or ask the league to reset their password).
+    if (/already|registered|exists/i.test(makeErr.message)) return json(409, { error: "There's already a login with this email address. Log in instead — or ask the league to reset your password." });
     return json(400, { error: "That login couldn't be made. Please try again." });
   }
-  const id = link.user.id;
+  const { data: link, error: linkErr } = await sb.auth.admin.generateLink({ type: "magiclink", email, options: { redirectTo: `${siteUrl}/?welcome=confirmed` } });
+  if (linkErr) { await sb.auth.admin.deleteUser(made.user.id); return json(400, { error: "That login couldn't be made. Please try again." }); }
+  const id = made.user.id;
   const { error: pErr } = await sb.from("profiles").insert({ id, email, full_name, role: "player", team_role: null, team_id: null, player_id: null });
   if (pErr) { await sb.auth.admin.deleteUser(id); return json(400, { error: "That login couldn't be made. Please try again." }); }
   await sb.from("audit_log").insert({ actor_id: id, actor: full_name, action: "signed up", table_name: "profiles", row_id: id, label: `${full_name} made their own login (welcome set-up)`, changes: { from: ipCode } }).then(() => {}, () => {});

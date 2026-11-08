@@ -9,6 +9,7 @@ export const CHANGES = [
   "Home page Competitions: scrolling the list of cups no longer carries on and scrolls the page (the picture beside it stayed still)",
   "Match strip: the › button white with a dark arrow again",
   "Every mention of another snooker website taken out of the dashboard and the code",
+  "Welcome set-up sign-ups work with Supabase's own \"Allow new users to sign up\" left off (the link in the email confirms the address and logs them in)",
   "Welcome set-up for first-time visitors: welcome, teams to follow, notifications, competitions to follow, make a login, profile, all set — with a back arrow and a progress bar (Admin → Site settings → Home page → Welcome set-up: on/off, the date it stops, whether people can make their own login, show it again). Run supabase/fixes/round111-welcome-setup.sql once",
   "People can make their own Player login in the welcome set-up while it is open; they confirm their email first (netlify/functions/signup.mjs)",
   "Competitions can be followed: they show on My Snooker (My Snooker settings → Competitions I follow)",
