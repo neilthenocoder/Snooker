@@ -331,7 +331,7 @@ export function rankingsPanel(ctx, league, { limit = Infinity, scroll = false } 
     ]),
     { label: "Pts", cell: (r) => topPoints(r, rows[0]), cls: "num strong" },
   ], rows, { highlight: (r) => r === rows[0], empty: "No frames played yet.", phoneLimit: Number.isFinite(limit) ? 0 : 10, more: "players" });
-  // Rich, round 44 ("like WST"): in the side column the top ten scroll in a short box and the leader stays pinned at the top.
+  // Rich, round 44: in the side column the top ten scroll in a short box and the leader stays pinned at the top.
   const body = scroll ? html`<div class="rk-scroll">${noHead(table, limit)}</div>` : noHead(table, limit);
   return panel(`${shortName(league)} Rankings`, html`${body}${provisionalNote(ctx, league)}`, { cls: scroll ? "rk-panel" : "",
     foot: Number.isFinite(limit) ? { href: `${urls.standings(league)}#players`, label: "View all players" } : null,

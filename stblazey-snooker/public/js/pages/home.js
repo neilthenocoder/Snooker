@@ -42,14 +42,14 @@ const quickIcon = {
   handicaps: qi("M5 9h6M8 6v6M13 17h6M18 5 6 19"),
 };
 
-// Round 84: the round ‹ › buttons on the left and right edges of every sliding strip (like the World Snooker Tour's).
+// Round 84: the round ‹ › buttons on the left and right edges of every sliding strip.
 const chevLeft = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 5.3 8 12l6.7 6.7"/></svg>`;
 const chevRight = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.3 5.3 16 12l-6.7 6.7"/></svg>`;
 const calIcon = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h2v2h6V2h2v2h3v17H4V4h3Zm11 8H6v9h12Zm0-4H6v2h12Z"/></svg>`;
 const searchGlass = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.8 4.8-1.4 1.4-4.8-4.8A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg>`;
 
 // ─────────────────────────────────────────────────────────────
-//  ROUND 99 — THE HOME PAGE IN THE ST BLAZEY DESIGN SYSTEM (the WST-inspired layout Rich chose)
+//  ROUND 99 — THE HOME PAGE IN THE ST BLAZEY DESIGN SYSTEM (the layout Rich chose)
 //  1. The lead story on a photo, with Top stories beside it
 //  2. Live and upcoming matches: the dark strip (Live · Upcoming · Results)
 //  3. The league table, with Next up beside it
@@ -97,7 +97,7 @@ export default async function home(view, { user } = {}) {
   const promoWanted = site.promo_mode === "always" || (site.promo_mode !== "never" && isOffSeason(ctx, allComps));
   // Round 101 (Rich): the banner can be the rounded card with Top stories beside it, or his full-width photo with the
   // menu and the match strip on top of it. "auto" = the card on the Standard page, the full photo on Everything.
-  // Round 108 (Rich: "the hero variant which I did … it looked a bit like the WST header"): "split" — the photo and the
+  // Round 108 (Rich's own banner variant): "split" — the photo and the
   // headline in two blocks side by side, the menu above them as usual.
   const heroWanted = ["card", "full", "split"].includes(site.hero_layout) ? site.hero_layout : site.hero_layout === "big" ? "full" : everything ? "full" : "card";
   const full = heroWanted === "full", split = heroWanted === "split";
@@ -331,7 +331,7 @@ function heroFull(slides, site = {}) {
 }
 
 /**
- * Round 108 — Rich's own banner, like the WST site's: the photo in one block and the headline in a dark block of its own
+ * Round 108 — Rich's own banner: the photo in one block and the headline in a dark block of its own
  * beside it (under it on a phone), turning together, with the bars that fill as each story's time runs out.
  */
 function heroSplit(slides, site = {}) {

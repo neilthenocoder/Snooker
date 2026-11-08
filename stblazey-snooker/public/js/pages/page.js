@@ -5,7 +5,7 @@ import { breadcrumb, gallery } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import notFound from "./not-found.js";
 
-// ── FAQs (round 54, Rich: "FAQs like play.wst.tv/help — expanders") ──────────────────────────────
+// ── FAQs (round 54, Rich: questions that open and close) ──────────────────────────────
 // In any info page's text, a line starting "??" is a question; the lines under it (until the next "??" or a
 // "# heading") are its answer, which can use all the usual formatting. Each question opens and closes.
 // The Help page (/page/help) has a built-in set below until the league writes its own.

@@ -1145,7 +1145,7 @@ html body :is(h1, h2, h3, h4, h5, h6, .panel-head, .sb-hero__title, .sb-fh__titl
 /* The banner headlines: no underline when the pointer is on them */
 html body :is(.sb-hero__slide, .sb-fh__slide, .sb-hs__slide):hover :is(.sb-hero__title, .sb-fh__title, .sb-hs__title) { text-decoration: none !important; }
 
-/* ── The WST-style banner: the photo and the headline in two blocks ── */
+/* ── Rich's split banner: the photo and the headline in two blocks ── */
 .sb-hs { position: relative; margin-top: var(--space-24); margin-bottom: var(--space-24); overflow: hidden; border-radius: var(--radius-22); }
 .sb-hs__track { display: flex; will-change: transform; }
 .sb-hs__slide { flex: 0 0 100%; display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 12px; color: #fff; text-decoration: none; }
@@ -1813,3 +1813,13 @@ html body .ob .ob-eye.on { color: var(--ink); }
 .ob-pick .ob-tick svg { width: 13px; height: 13px; }
 .ob-pick__name { font-size: 14px; overflow-wrap: anywhere; padding-right: 10px; }
 .ob-body--welcome { justify-content: flex-start; padding-top: 34px; }
+
+/* ═══ Round 112 ═══ */
+/* 1. The cups list beside the featured cup: scrolling it to its end no longer carries on scrolling the page
+      (which moved the picture beside it). */
+html body .sb-comps__list { overscroll-behavior: contain; }
+/* 3. The match strip's › button: white with a dark arrow again (the flat-buttons rule had greyed it). */
+html:not(#x) body:not(#sb) .sb-icon-btn--arena-solid { background-color: #fff !important; color: var(--scoreboard) !important; }
+html:not(#x) body:not(#sb) .sb-icon-btn--arena-solid svg { stroke: currentColor !important; color: var(--scoreboard) !important; }
+html:not(#x) body:not(#sb) .sb-icon-btn--arena-solid:hover { background-color: #E9ECE8 !important; }
+html:not(#x) body:not(#sb) .sb-icon-btn--arena-solid:disabled { opacity: .45; }

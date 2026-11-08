@@ -4,8 +4,11 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.92.0";
+export const SITE_VERSION = "1.92.1";
 export const CHANGES = [
+  "Home page Competitions: scrolling the list of cups no longer carries on and scrolls the page (the picture beside it stayed still)",
+  "Match strip: the › button white with a dark arrow again",
+  "Every mention of another snooker website taken out of the dashboard and the code",
   "Welcome set-up for first-time visitors: welcome, teams to follow, notifications, competitions to follow, make a login, profile, all set — with a back arrow and a progress bar (Admin → Site settings → Home page → Welcome set-up: on/off, the date it stops, whether people can make their own login, show it again). Run supabase/fixes/round111-welcome-setup.sql once",
   "People can make their own Player login in the welcome set-up while it is open; they confirm their email first (netlify/functions/signup.mjs)",
   "Competitions can be followed: they show on My Snooker (My Snooker settings → Competitions I follow)",
@@ -26,7 +29,7 @@ export const CHANGES = [
   "Phones: no account button in the top bar (it is in the bottom menu); top and bottom bars fully rounded; the bottom bar white and the shortcuts above it grey with no outline; more space under the bottom bar when saved to the home screen",
   "Footer: the social icons in a thin black circle, red with a white icon on hover",
   "Moving between pages, the loading screen waits a little longer before it appears, so nearly-ready pages never flash black",
-  "New banner layout like the WST site: the photo and the headline in two blocks side by side (Admin → Site settings → Banner layout → Photo and headline in two blocks)",
+  "New banner layout: the photo and the headline in two blocks side by side (Admin → Site settings → Banner layout → Photo and headline in two blocks)",
   "The main red is now #F1002A everywhere (buttons, My Snooker, links), and the page background is #F4EEEC",
   "Headings are Inter 700 throughout; the banner headline no longer underlines on hover",
   "Menu bar: More is back on computers as a dropdown; logged in, a gold My Snooker star sits before the account; the bell is a green circle",
@@ -229,7 +232,7 @@ export const CHANGES = [
   "Rounds that are mostly byes are called Pre-qualifier; match previews count down to the start (days, hours, minutes, seconds); a Share button on every page; the Rules page back button fixed",
   "New calm look (standard): white space, black and red, one quiet menu with the current page underlined; Classic look still available under Branding → Look (run schema.sql — version 30 to switch)",
   "Latest Results box: competition results now show by standard alongside league results (new option for league only)",
-  "My Snooker: Team news and Latest news shown as small versions of the news page; Live & upcoming heading readable on the white banner; World Snooker wording removed",
+  "My Snooker: Team news and Latest news shown as small versions of the news page; Live & upcoming heading readable on the white banner; old wording removed",
   "Latest Results box (home page): newest date at the top — results go by the day they were played, so the latest competition results (e.g. Team Handicap) show first; a result with no date goes by the day it was entered",
   "Competition draws made on paper: a side can be a Bye or the Winner of another match (“St Neot or Mevagissey C”) — winners drop in by themselves (run schema.sql — version 29)",
   "Dashboard Overview: Tonight (every match of the night with Approve / Scorecard / Postpone), Needs you (everything waiting, grouped) and Your recent changes with Undo",

@@ -91,7 +91,7 @@ export default async function player(view, { params, user }) {
   for (const a of awards) if (a.winner_player_id === p.id) addWin(a.name, a.season_id, a.trophy_url ? a : comps.competitions.find((c) => c.id === a.competition_id) ?? a);
   const trophies = [...cabinet.values()].sort((x, y) => y.seasons.size - x.seasons.size || x.name.localeCompare(y.name));
 
-  // Round 73 (Rich: "I love the WST feature for career stats and Triple Crown"): career stats, WST style —
+  // Round 73 (Rich): career stats and the Triple Crown —
   // titles, finals reached (won or runner-up), Triple Crown titles, highest break and centuries.
   const finals = new Set([...cabinet.values()].flatMap((t) => [...t.seasons].map((sid) => `${t.name}|${sid}`)));
   for (const c of comps.competitions) {

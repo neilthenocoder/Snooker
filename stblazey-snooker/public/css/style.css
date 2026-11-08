@@ -3871,7 +3871,7 @@ p.not-upd { margin: 0; }
 .ms-sec-handicaps td small.muted { font-size: 11px; }
 
 /* Round 31 (Rich): the White banner on the page's light grey, the headline in its own white panel, a small gap,
-   then the picture — rounded corners on both (our own look: soft corners, not WST's angled cuts). */
+   then the picture — rounded corners on both (our own look: soft corners, not angled cuts). */
 .hero.hero-l-white { background: var(--cream, var(--soft)); border-bottom: 0; }
 .hero.hero-l-white .hero-inner { padding-top: 22px; padding-bottom: 22px; }
 .hero.hero-l-white .hero-slide { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 14px; align-items: stretch; }
@@ -3991,7 +3991,7 @@ p.not-upd { margin: 0; }
 
 /* ═════════════════════════════════════════════════════════════
    ROUND 43 — THE CALM LOOK (standard; Admin → Branding → Look)
-   Rich: "too many colours … make things a little more light and airy … like WST, blacks and reds and a less
+   Rich: "too many colours … make things a little more light and airy … blacks and reds and a less
    colourful menu". One accent (the main colour, red), black and greys for everything else, white cards with
    room around them, and one quiet menu where the page you are on is underlined. Colour is kept for meaning
    only: live (green), cup results (gold), wins and relegation. Everything here is under html.look-calm, so
@@ -4177,7 +4177,7 @@ html.look-calm .tile p { color: var(--muted); }
 @media (max-width: 480px) { .countdown span { min-width: 54px; } .countdown b { font-size: 24px; } }
 
 /* ═════════════════════════════════════════════════════════════
-   ROUND 44 — FLATTER, LIKE WST (Rich's list)
+   ROUND 44 — FLATTER (Rich's list)
    No hairline borders or shadows on cards: white blocks on the light grey page do the separating.
    ═════════════════════════════════════════════════════════════ */
 /* 11 + 13: flat — no borders or shadows round cards, tiles and the four quick links */
@@ -4239,7 +4239,7 @@ html.look-calm .tally.brk.prov { background: var(--surface); color: var(--red-te
 html.look-calm .bk-pod b { color: var(--red-text); }
 html.look-calm .bk-pod.p1, html.look-calm .bk-pod.p2, html.look-calm .bk-pod.p3 { background: var(--soft); }
 
-/* 6: rankings like WST — the leader in a black row that stays at the top while the list scrolls */
+/* 6: rankings — the leader in a black row that stays at the top while the list scrolls */
 html.look-calm .rk-scroll { max-height: 312px; overflow-y: auto; scrollbar-width: thin; }
 .rk-scroll tr.hl td { position: sticky; top: 0; z-index: 1; }
 html.look-calm .rk-scroll tr.hl td, html.look-calm .rk-panel table.data tbody tr.hl td { background: #141414 !important; color: #fff; font-weight: 700; }
@@ -4288,7 +4288,7 @@ html.look-calm .tally.brk.prov { background: var(--card); color: var(--green); o
 html.look-calm .bk-pod b { color: var(--ink); }
 html.look-calm .bk-pod.p1, html.look-calm .bk-pod.p2, html.look-calm .bk-pod.p3 { background: var(--soft); }
 
-/* option: the Live & upcoming strip in black, like WST */
+/* option: the Live & upcoming strip in black */
 html.look-calm.strip-dark .live-strip-wrap, html.look-calm.strip-dark .hero.hero-l-white .live-strip-wrap { background: #0f0f0f !important; }
 html.look-calm.strip-dark .live-strip .strip-head h3, html.look-calm.strip-dark .hero .live-strip .strip-head h3 { color: #fff !important; }
 html.look-calm.strip-dark .strip-card { background: #1e1e1e; color: #fff; }
@@ -4310,7 +4310,7 @@ html.look-calm:not(.strip-dark) .live-strip-wrap, html.look-calm:not(.strip-dark
 html.look-calm .rk-panel td.num:first-child { color: var(--ink); }
 html.look-calm .rk-panel tr.hl td.num:first-child { color: #fff; }
 html.look-calm.strip-dark .strip-card .badge:not(.logo) { background: #3a3a3a; }
-/* Round 45b (Rich): the page background a neutral light grey like WST, so the white blocks stand out */
+/* Round 45b (Rich): the page background a neutral light grey, so the white blocks stand out */
 html.look-calm { --cream: #ececec !important; --card: #ffffff; --row-alt: #f6f6f6; --head-row: #f6f6f6; }
 html.look-calm:not(.strip-dark) .live-strip-wrap, html.look-calm:not(.strip-dark) .hero.hero-l-white .live-strip-wrap { background: var(--soft) !important; }
 html.look-calm .bk-pod.p1, html.look-calm .bk-pod.p2, html.look-calm .bk-pod.p3 { background: var(--soft); }
@@ -5310,7 +5310,7 @@ html.look-calm .quick-links.ql-8 svg { width: 15px !important; height: 15px !imp
 .res-mini b.rs i.l { background: var(--red, #f1002a); }
 .res-mini b.rs-one { border-radius: 6px; }
 
-/* Player page: career stats and the Triple Crown, World Snooker style (Rich) */
+/* Player page: career stats and the Triple Crown, (Rich) */
 .career { border-top: 1px solid var(--line); padding: 22px 0 6px; }
 .career + .career { border-top: 1px solid var(--line); }
 .career h3 { margin: 0 0 16px; font-size: clamp(22px, 2.6vw, 30px); letter-spacing: .01em; }
@@ -5976,7 +5976,7 @@ html.look-calm .hz-teams .team-tile:hover { background: var(--surface) !importan
 .hz-teams .team-tile .badge:not(.logo) { background: var(--soft); color: var(--ink); }
 .hz-band + .hz:not(.hz-band) { padding-top: 56px; }
 
-/* ── 6. Round ‹ › buttons on the left and right edges of every sliding strip (like the World Snooker Tour) ── */
+/* ── 6. Round ‹ › buttons on the left and right edges of every sliding strip ── */
 .edge-btn { position: absolute; top: 50%; z-index: 4; width: 46px; height: 46px; margin: 0; padding: 0; display: grid; place-items: center;
   border: 0 !important; border-radius: 50% !important; background: var(--surface) !important; color: var(--ink) !important; cursor: pointer;
   box-shadow: 0 8px 22px -6px rgba(0, 0, 0, .35), 0 0 0 1px rgba(0, 0, 0, .06) !important;

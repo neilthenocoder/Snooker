@@ -590,7 +590,7 @@ export const RESOURCES = {
       // Round 106 (Neil: "one news after another is very long"): kept in home_sections, so no database change is needed.
       { name: "hero_seconds", in: "home_sections", label: "Seconds each lead story shows before the next (3 to 30 — the bars under it fill up in this time)", type: "number", min: 3, max: 30, default: 6, placeholder: "6" },
       { name: "hero_layout", label: "Banner layout", type: "select", options: ["auto", "card", "full", "split"], default: "auto",
-        labels: { auto: "Standard — the rounded card with Top stories beside it on the Standard home page; the full-width photo on Everything", card: "Rounded card with Top stories beside it", full: "Full-width photo, with the menu and the match strip on top of it (Rich's design)", split: "Photo and headline in two blocks side by side, like the WST site (Rich's design)" } },
+        labels: { auto: "Standard — the rounded card with Top stories beside it on the Standard home page; the full-width photo on Everything", card: "Rounded card with Top stories beside it", full: "Full-width photo, with the menu and the match strip on top of it (Rich's design)", split: "Photo and headline in two blocks side by side (Rich's design)" } },
       { name: "hero_bg", label: "Banner colour when a story has no picture and no banner background is set (empty for the standard dark)", type: "color", optional: true, default: "#121614" },
       { type: "heading", tab: "Home page", label: "Player of the week" },
       { name: "player_of_week_show", label: "Show on the home page", type: "checkbox" },
@@ -616,7 +616,7 @@ export const RESOURCES = {
       { type: "heading", tab: "Captains & competitions", label: "Scorecard reminders", help: "The morning after a league match night, the captains (and vice captains) of the home team get an email if their match still has no result entered. One reminder per match. Needs the RESEND_API_KEY on Netlify, like the result emails." },
       { name: "reminders_on", label: "Email captains when a scorecard hasn't been entered by the next morning", type: "checkbox", default: true },
       { name: "reminders_both", label: "Email the away team's captains as well", type: "checkbox", default: false },
-      // Round 73 (Rich: "I love the WST career stats and Triple Crown"): the three competitions that make up the
+      // Round 73 (Rich: career stats and the Triple Crown): the three competitions that make up the
       // league's Triple Crown — the league to decide (Singles, Doubles, Team competition or league, probably).
       { type: "heading", tab: "Players", label: "Player pages: the Triple Crown", help: "Every player's page shows their career stats (titles, finals, highest break, centuries) and, once three competitions are chosen here, the Triple Crown: how many times they have won each one. Type the competition's name as it is in the draw or on Presentation night (any season)." },
       { name: "triple_crown", label: "The three Triple Crown competitions", type: "list", add: "+ Add a competition", placeholder: "e.g. Rees Singles", max: 80, wide: true,
