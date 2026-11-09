@@ -1911,3 +1911,8 @@ html:not(#x) body:not(#sb) .sb-promo--home .sb-promo__icon { width: 56px !import
 html:not(#x) body:not(#sb) .sb-promo--home .sb-promo__icon svg { width: 30px !important; height: 30px !important; fill: #FFD23F !important; color: #FFD23F !important; }
 html:not(#x) body:not(#sb) .sb-promo--home .sb-promo__icon .sb-icon { width: 30px !important; height: 30px !important; }
 html:not(#x) body:not(#sb) .sb-promo--home .sb-promo__icon svg path { fill: #FFD23F !important; }
+/* Round 113.3d (Neil): the star (40px solid circle) looked bigger than the initials (32px circle on nothing). The
+   account button is now a light grey pill the same 40px height, so star · Admin · bell line up as one row. */
+html:not(#x) body:not(#sb) .sb-header button.sb-acct { background: var(--soft) !important; border: 0 !important; border-radius: 999px !important; height: 40px; }
+html:not(#x) body:not(#sb) .sb-header button.sb-acct:hover, html:not(#x) body:not(#sb) .sb-header button.sb-acct[aria-expanded="true"] { background: #E9E6EA !important; }
+html:not(#x) body:not(#sb) .sb-header .sb-icon-btn.sb-mystar svg { width: 20px !important; height: 20px !important; }
