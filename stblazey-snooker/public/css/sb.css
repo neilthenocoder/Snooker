@@ -1899,3 +1899,15 @@ html:not(#x) body:not(#sb) #view .comp-pic img:not(.trophy) { object-position: 5
 /* My Snooker top: "Do you play? Link your player profile" (moved here from the menu) readable on the dark panel. */
 html:not(#x) body:not(#sb) .ms-hero .btn.ms-linkme, html:not(#x) body:not(#sb) .ms-hero .btn.small.ghost { background: rgba(255, 255, 255, .14) !important; color: #fff !important; border-color: transparent !important; }
 html:not(#x) body:not(#sb) .ms-hero .btn.ms-linkme:hover, html:not(#x) body:not(#sb) .ms-hero .btn.small.ghost:hover { background: rgba(255, 255, 255, .24) !important; color: #fff !important; }
+/* Round 113.3b (Neil): two red circles side by side looked odd — the account initials are dark now, so the
+   My Snooker star is the only red circle in the menu bar (same dark as the admin buttons). */
+html:not(#x) body:not(#sb) :is(.sb-acct__initials, .sb-drop__initials, .sbm__initials, .drawer-initials) { background: #15201B !important; color: #fff !important; }
+/* Round 113.3c (Neil): the My Snooker star looked weak — now one look everywhere: a bigger gold star in a solid
+   darker-red rounded square (account menu row and the home page My Snooker card). */
+html:not(#x) body:not(#sb) .acct-item.acct-special .acct-ico { background: var(--red-dark) !important; width: 44px !important; height: 44px !important; border-radius: 12px !important; display: grid !important; place-items: center !important; flex: none; }
+html:not(#x) body:not(#sb) .acct-item.acct-special .acct-ico svg { width: 24px !important; height: 24px !important; }
+html:not(#x) body:not(#sb) .acct-item.acct-special:hover .acct-ico { background: #A8001D !important; }
+html:not(#x) body:not(#sb) .sb-promo--home .sb-promo__icon { width: 56px !important; height: 56px !important; border-radius: 14px !important; background: var(--red-dark) !important; display: grid !important; place-items: center; flex: none; }
+html:not(#x) body:not(#sb) .sb-promo--home .sb-promo__icon svg { width: 30px !important; height: 30px !important; fill: #FFD23F !important; color: #FFD23F !important; }
+html:not(#x) body:not(#sb) .sb-promo--home .sb-promo__icon .sb-icon { width: 30px !important; height: 30px !important; }
+html:not(#x) body:not(#sb) .sb-promo--home .sb-promo__icon svg path { fill: #FFD23F !important; }

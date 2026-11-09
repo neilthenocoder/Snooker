@@ -7,6 +7,8 @@
 export const SITE_VERSION = "1.93.1";
 export const CHANGES = [
   "My Snooker is red with a gold star and white writing: the star in the menu bar and My Snooker at the top of the account menu (no more gold shine)",
+  "Your initials in the menu bar are in a dark circle now, so the red My Snooker star stands on its own",
+  "My Snooker star: a bigger gold star in a darker-red square, the same in the account menu and on the home page card",
   "Admin buttons are dark now — red is kept for My Snooker (Delete stays red)",
   "Account menu: My Snooker settings and “Do you play? Link your player profile” moved onto the My Snooker page",
   "Admin overview: panel headings with normal letter spacing",
