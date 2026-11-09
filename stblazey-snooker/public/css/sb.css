@@ -1842,3 +1842,6 @@ html:not(#x) body:not(#sb) .sc-run { font-size: 60px !important; line-height: 1 
   html:not(#x) body:not(#sb) .sc-emblem :is(.badge, img) { width: 36px !important; height: 36px !important; font-size: 12px !important; }
   html:not(#x) body:not(#sb) .sc-run { font-size: 44px !important; }
 }
+/* Round 113: a finished match's card had the "Walkover" red edge by mistake. Completed cards now have the plain edge
+   of the other cards (the green "Completed" label says it); only a walkover keeps the red edge. */
+html body .sb-match.sb-match--done { border-color: var(--arena-line, #222C27) !important; }

@@ -10,6 +10,7 @@ export const CHANGES = [
   "Scorecards: players from other teams can be drafted in — under “Drafted in from …” in the player list, showing how many times they've been drafted; no more than 3 a season",
   "Scorecard: team names and the V in the site's red; smaller team badges and bigger frame scores",
   "Breadcrumbs: the page you're on is a red pill",
+  "Match strip: finished matches no longer have the red Walkover edge — a plain edge, with the green Completed label",
   "Phone menu: Explore — every other page of the website (Calendar, Results, Handicaps, Our Players and the rest) on a screen of its own",
   "A page left open while a new version went live reloads itself once instead of showing \"Something went wrong: Importing binding name … is not found\"",
   "Home page Competitions: scrolling the list of cups no longer carries on and scrolls the page (the picture beside it stayed still)",
