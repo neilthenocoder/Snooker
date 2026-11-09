@@ -165,7 +165,7 @@ export function breadcrumb(items) {
 }
 function trail(items) {
   return html`<nav class="breadcrumb" aria-label="Breadcrumb">${items.map(([label, href]) =>
-    href ? html`<a href="${href}">${label}</a>` : html`<span>${label}</span>`)}</nav>`;
+    href ? html`<a href="${href}">${label}</a>` : html`<span aria-current="page">${label}</span>`)}</nav>`;
 }
 
 export function panel(title, body, { color = "", href = "", foot = null, cls = "" } = {}) {

@@ -144,6 +144,8 @@ export async function saveScorecard(fixtureId, frames, breaks) {
   await run(db.from("frames").delete().eq("fixture_id", fixtureId).gt("frame_no", rows.length));
   await run(db.from("breaks").delete().eq("fixture_id", fixtureId));
   if (breaks.length) await run(db.from("breaks").insert(breaks.map((b) => ({ ...b, fixture_id: fixtureId }))).select());
+  // Round 112: the live website's database marks the match as being played now (live_at, a trigger on frames); the demo does it here.
+  if (DEMO_MODE && rows.length) await db.from("fixtures").update({ live_at: new Date().toISOString() }).eq("id", fixtureId).in("status", ["scheduled", "in_progress"]);
   invalidate();
 }
 

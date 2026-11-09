@@ -144,7 +144,7 @@ export function scorecardEditor(opts) {
       const taken = !selected && clash(i, side, j, o.id, ext);
       return html`<option value="${ext ? `${o.id}|ext` : o.id}" ${selected ? "selected" : ""} ${taken ? "disabled" : ""}>${optionName(o)}${ext ? " (Ext)" : ""}${taken ? ` — ${taken}` : ""}</option>`;
     };
-    const list = (items) => html`${items.map((o) => opt(o, false))}${allowExt ? items.map((o) => opt(o, true)) : ""}`;
+    const list = (items) => html`${items.map((o) => opt(o, false))}${allowExt ? items.filter((o) => !o.noExt).map((o) => opt(o, true)) : ""}`;
     return html`<option value="">– player –</option>${[...groups].map(([g, items]) => (g ? html`<optgroup label="${g}">${list(items)}</optgroup>` : list(items)))}`;
   };
   const picker = (f, i, side, j) => html`<select data-i="${i}" data-side="${side}" data-j="${j}" data-k="player" aria-label="${sides[side].name} player, frame ${f.frame_no}">${playerOptions(i, side, j)}</select>`;
@@ -493,6 +493,7 @@ export function scorecardEditor(opts) {
         else if (pts != null && total > pts - start) errors.push(`Frame ${f.frame_no}: ${sides[sd].name}'s breaks add up to ${total}, which is more than ${start ? `the ${pts - start} they scored (${pts} ${start > 0 ? `less the ${start} start` : `plus the ${-start} they started behind`})` : `their frame score of ${pts}`}.`);
       }
     });
+    if (opts.check) errors.push(...opts.check(frames));        // the page's own rules (round 112: drafted-in players)
     for (const [pid, n] of extNow) {
       if ((extUsed.get(pid) ?? 0) + n > EXT_PER_SEASON)
         errors.push(`${playerName(pid)} has already played as the extra (Ext) player ${extUsed.get(pid) ?? 0} time(s) this season — only ${EXT_PER_SEASON} allowed.`);

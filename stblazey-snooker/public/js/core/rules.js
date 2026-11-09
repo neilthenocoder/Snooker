@@ -188,6 +188,21 @@ export function isShieldMatch(league, fixture, fixtures, framesByFixture) {
 // ── Extra (Ext) players ──────────────────────────────────────────
 /** Each player may play as the extra player once a season. */
 export const EXT_PER_SEASON = 1;
+/** Round 112 (Rich): a player from another team (e.g. a Rees League player in a Victory League match) can be drafted in
+ *  this many times a season. The scorecard lists them under "Drafted in" and won't save a 4th. */
+export const DRAFT_PER_SEASON = 3;
+/** How many matches each player has been drafted into this season: frames played for a team that isn't their own. */
+export function draftCounts(frames, fixtureById, playerById) {
+  const seen = new Map();          // player → Set of fixtures
+  for (const f of frames) {
+    const fx = fixtureById.get(f.fixture_id); if (!fx) continue;
+    for (const [side, team] of [["home", fx.home_team_id], ["away", fx.away_team_id]]) {
+      const p = playerById.get(f[`${side}_player_id`]);
+      if (p && p.team_id && p.team_id !== team) (seen.get(p.id) ?? seen.set(p.id, new Set()).get(p.id)).add(fx.id);
+    }
+  }
+  return new Map([...seen].map(([id, s]) => [id, s.size]));
+}
 
 /** Map of playerId → number of frames played as Ext in the given frames. */
 export function extCounts(frames) {
@@ -231,7 +246,8 @@ export const LIVE_WINDOW_HOURS = 5;
 export function isLiveNow(m, now = Date.now(), framesPlayed = null, framesTotal = RULES.framesPerMatch) {
   if (m?.status !== "in_progress") return false;
   if (framesPlayed !== null && framesTotal && framesPlayed >= framesTotal) return false;
-  const start = Date.parse(m.started_at ?? m.starts_at ?? "");
+  // Round 112: a match from last week being scored tonight is live — live_at is when its scorecard was last worked on.
+  const start = Math.max(Date.parse(m.started_at ?? m.starts_at ?? "") || 0, Date.parse(m.live_at ?? "") || 0) || NaN;
   return !Number.isFinite(start) || now - start < LIVE_WINDOW_HOURS * 3600e3;
 }
 /** In progress but no longer live: the night is over and the captain hasn't submitted the scorecard yet. */

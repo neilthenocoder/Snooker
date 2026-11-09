@@ -4,8 +4,12 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.92.3";
+export const SITE_VERSION = "1.93.0";
 export const CHANGES = [
+  "Live matches: a match from an earlier date being scored now shows as Live on the strip (run supabase/fixes/round112-live-results.sql once)",
+  "Scorecards: players from other teams can be drafted in — under “Drafted in from …” in the player list, showing how many times they've been drafted; no more than 3 a season",
+  "Scorecard: team names and the V in the site's red; smaller team badges and bigger frame scores",
+  "Breadcrumbs: the page you're on is a red pill",
   "Phone menu: Explore — every other page of the website (Calendar, Results, Handicaps, Our Players and the rest) on a screen of its own",
   "A page left open while a new version went live reloads itself once instead of showing \"Something went wrong: Importing binding name … is not found\"",
   "Home page Competitions: scrolling the list of cups no longer carries on and scrolls the page (the picture beside it stayed still)",

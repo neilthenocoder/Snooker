@@ -1,7 +1,7 @@
 import { html, mount, $, toast } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { loadFixture, saveScorecard, setFixtureStatus, seasonFrames, setScorecardPhoto, addPlayerToTeam, sendResultEmail, fixtureBoards, save, lineupsFor } from "../core/api.js";
-import { extCounts, isShieldMatch } from "../core/rules.js";
+import { extCounts, isShieldMatch, draftCounts, DRAFT_PER_SEASON } from "../core/rules.js";
 import { canEditFixture, isAdmin, canLiveScore } from "../core/auth.js";
 import { uploadImage } from "../core/upload.js";
 import { scorecardEditor, breaksText } from "../core/scorecard-editor.js";
@@ -52,9 +52,34 @@ export default async function scorecard(view, { params, user }) {
     const onCard = bundle.frames.map((f) => ctx.player.get(f[`${side}_player_id`])).filter((p) => p && !list.includes(p));
     return [...list, ...new Set(onCard)].map(playerOption);
   };
+  // Round 112 (Rich: "a player from the Rees League has been drafted in to the Victory League (which is allowed 3 times
+  // a season) — how would I add that to the card?"): every other player of the season is in the list too, under
+  // "Drafted in from …", with how many times they've been drafted already. The card won't save a 4th time.
+  const draftUsed = draftCounts(allSeasonFrames.filter((f) => f.fixture_id !== fx.id), ctx.fixture, ctx.player);
+  const drafted = (teamId) => {
+    const own = new Set(ctx.playersOf(teamId).map((p) => p.id));
+    return [...ctx.player.values()].filter((p) => p.team_id && p.team_id !== teamId && !own.has(p.id) && ctx.team.get(p.team_id) && !["not_playing", "deceased"].includes(p.status))
+      .sort((x, y) => (ctx.team.get(x.team_id).name).localeCompare(ctx.team.get(y.team_id).name) || x.full_name.localeCompare(y.full_name))
+      .map((p) => { const t = ctx.team.get(p.team_id), n = draftUsed.get(p.id) ?? 0;
+        return { id: p.id, noExt: true, group: `Drafted in from ${ctx.league.get(t.league_id)?.name ?? "another league"}`, name: `${p.full_name} — ${t.name} (drafted ${n} of ${DRAFT_PER_SEASON})` }; });
+  };
+  const withDrafts = (teamId, side) => { const mine = squad(teamId, side), ids = new Set(mine.map((o) => o.id)); return [...mine, ...drafted(teamId).filter((o) => !ids.has(o.id))]; };
   const sides = {
-    a: { name: home?.name, team: home, options: squad(fx.home_team_id, "home") },
-    b: { name: away?.name, team: away, options: squad(fx.away_team_id, "away") },
+    a: { name: home?.name, team: home, options: withDrafts(fx.home_team_id, "home") },
+    b: { name: away?.name, team: away, options: withDrafts(fx.away_team_id, "away") },
+  };
+  const draftCheck = (frames) => {
+    const errors = [];
+    for (const [sd, teamId] of [["a", fx.home_team_id], ["b", fx.away_team_id]]) {
+      const ids = new Set(frames.flatMap((f) => f[sd].map((x) => x.player_id)).filter(Boolean));
+      for (const id of ids) {
+        const p = ctx.player.get(id);
+        if (!p?.team_id || p.team_id === teamId || ctx.playersOf(teamId).some((x) => x.id === id)) continue;
+        if ((draftUsed.get(id) ?? 0) + 1 > DRAFT_PER_SEASON)
+          errors.push(`${p.full_name} has already been drafted in ${draftUsed.get(id)} times this season — only ${DRAFT_PER_SEASON} allowed.`);
+      }
+    }
+    return errors;
   };
   // Team sheets picked ahead of the night (My area → Manage team): the names go into any place on the card
   // that is still empty. Nothing is saved until the card is — and they can be changed here as usual.
@@ -84,7 +109,7 @@ export default async function scorecard(view, { params, user }) {
   const editor = scorecardEditor({
     el: $("[data-editor]", view),
     subtitle: league?.name ?? "League match", when: fx.starts_at, venue: ctx.venue.get(fx.venue_id)?.name,
-    sides, allowExt: true, extUsed,
+    sides, allowExt: true, extUsed, check: draftCheck,
     playerName: (id) => ctx.player.get(id)?.full_name ?? "A player",
     person: (id) => { const p = ctx.player.get(id); return { name: p?.full_name ?? "A player", avatar_url: p?.avatar_url, club: ctx.team.get(p?.team_id)?.name }; },
     photo: { required: true, url: () => fx.scorecard_url, pick: () => pickPhoto() },

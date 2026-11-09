@@ -1826,3 +1826,19 @@ html:not(#x) body:not(#sb) .sb-icon-btn--arena-solid:disabled { opacity: .45; }
 /* Round 112: "Explore" in the phone menu — a line of examples under the word */
 .sbm__row--sub .sbm__label { display: grid; gap: 1px; }
 .sbm__row--sub .sbm__label small { font-size: 13px; font-weight: 500; color: var(--ink-muted); letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Round 113 (Rich) */
+/* Scorecard: the team names in the heading and the "V" in the site's red, not the dark red. */
+html:not(#x) body:not(#sb) .sc-title :is(span, b, strong, em) { color: var(--red) !important; }
+html:not(#x) body:not(#sb) .sc-v > b { color: var(--red) !important; }
+/* Breadcrumbs: the page you're on is a red pill with rounded ends, like the others. */
+html:not(#x) body:not(#sb) .breadcrumb > [aria-current="page"], html:not(#x) body:not(#sb) .breadcrumb > span:last-child {
+  display: inline-flex; align-items: center; border-radius: 999px !important; background: var(--red) !important; color: #fff !important; border-color: transparent !important; font-weight: 700; }
+/* Scorecard: smaller team badges, bigger frame scores. */
+html:not(#x) body:not(#sb) .sc-emblem .badge { width: 46px !important; height: 46px !important; font-size: 14px !important; }
+html:not(#x) body:not(#sb) .sc-emblem img { width: 46px !important; height: 46px !important; }
+html:not(#x) body:not(#sb) .sc-run { font-size: 60px !important; line-height: 1 !important; margin-top: 6px; }
+@media (max-width: 720px) {
+  html:not(#x) body:not(#sb) .sc-emblem :is(.badge, img) { width: 36px !important; height: 36px !important; font-size: 12px !important; }
+  html:not(#x) body:not(#sb) .sc-run { font-size: 44px !important; }
+}
