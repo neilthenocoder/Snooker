@@ -8,7 +8,7 @@
 import { html, mount, $, toast } from "../core/dom.js";
 import { setMyPrefs, settings } from "../core/api.js";
 import { mountSquadBox } from "../core/squad.js";
-import { myPrefs, refreshUser } from "../core/auth.js";
+import { myPrefs, refreshUser, isMaster } from "../core/auth.js";
 import { mySnookerData, mountMySnooker, mySnookerStar as star, prefsToSave, followButton } from "../core/my-snooker.js";
 import { breadcrumb, urls, badge } from "../core/components.js";
 import { setTitle, navigate, refreshShell } from "../core/router.js";
@@ -33,7 +33,7 @@ export default async function myteam(view, { user, query }) {
   const prefs = look ? { ...saved, teams: [look.id, ...saved.teams.filter((id) => id !== look.id)], players: user ? saved.players : [] } : saved;
   const teams = prefs.teams.map((id) => ctx.team.get(id)).filter(Boolean);
   const players = prefs.players.map((id) => ctx.player.get(id)).filter(Boolean);
-  if (!teams.length && !players.length) return chooser(view, ctx, crumbs, prefs);
+  if (!teams.length && !players.length) return chooser(view, ctx, crumbs, prefs, user);
 
   view.classList.add("flush");
   const lineClass = ["red", "yellow", "grey"].includes(site.strip_line ?? "red") ? `strip-line-${site.strip_line ?? "red"}` : "";
@@ -53,6 +53,11 @@ export default async function myteam(view, { user, query }) {
   return () => { stopStrip?.(); stopMine?.(); stopSquad(); };
 }
 
+/** Round 113.3 (Rich): "Do you play? Link your player profile" moved here from the account menu. A Master Admin links it
+ *  themselves (Admin → Logins); anyone else asks the league. Gone once their login has a player profile. */
+const linkMe = (user) => (user && !user.profile?.player_id
+  ? html`<a class="btn small ghost ms-linkme" href="${isMaster(user) ? "/admin/accounts" : "/support"}" title="${isMaster(user) ? "Then My profile and My form appear in your menu" : "Ask the league to link your login to your player profile"}">Do you play? Link your player profile</a>` : "");
+
 /** The top of the page: the team, and My Snooker settings (or Follow, for a team looked at from the home page). */
 function hero(user, ctx, teams, players, look, saved) {
   const team = teams[0];
@@ -69,6 +74,7 @@ function hero(user, ctx, teams, players, look, saved) {
     </div>
     <div class="ms-hero-actions">
       ${look && user && !following ? followButton("team", look.id, user) : ""}
+      ${!look ? linkMe(user) : ""}
       ${user ? html`<a class="btn small" href="/my/snooker" data-guide="settings">My Snooker settings</a>`
         : html`<a class="btn small" href="/login">Log in for your own My Snooker</a>`}
     </div>
@@ -76,12 +82,12 @@ function hero(user, ctx, teams, players, look, saved) {
 }
 
 /** Nothing followed yet: pick the first team (more teams, players and sections are chosen in My Snooker settings). */
-function chooser(view, ctx, crumbs, prefs) {
+function chooser(view, ctx, crumbs, prefs, user) {
   mount(view, html`<div class="wrap ms">${crumbs}
     <header class="ms-hero"><div class="ms-hero-text"><small class="ms-kicker">${star} My Snooker</small><h1>Choose your team</h1>
       <p>Pick the team you play for or follow. Your My Snooker page then shows its matches, results, breaks, handicaps and news every time you log in.
         You can follow more teams and players, and choose what you see, whenever you like.</p></div>
-      <div class="ms-hero-actions"><a class="btn ghost" href="/">Home page</a><a class="btn small ghost" href="/my/snooker">My Snooker settings</a></div></header>
+      <div class="ms-hero-actions"><a class="btn ghost" href="/">Home page</a><a class="btn small" href="/my/snooker">My Snooker settings</a>${linkMe(user)}</div></header>
     ${ctx.leagues.map((l) => html`<section class="pick-league"><h2 class="league-group-h">${l.name}</h2><div class="pick-grid">${ctx.teamsIn(l.id).map((t) => html`<button type="button" class="pick-team" data-pick="${t.id}">
       <span class="pick-badge">${badge(t)}</span><b>${t.name}</b><span class="pick-go">Choose this team</span></button>`)}</div></section>`)}
   </div>`);

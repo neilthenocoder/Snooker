@@ -1845,3 +1845,57 @@ html:not(#x) body:not(#sb) .sc-run { font-size: 60px !important; line-height: 1 
 /* Round 113: a finished match's card had the "Walkover" red edge by mistake. Completed cards now have the plain edge
    of the other cards (the green "Completed" label says it); only a walkover keeps the red edge. */
 html body .sb-match.sb-match--done { border-color: var(--arena-line, #222C27) !important; }
+
+/* ── Round 113.3 (Rich) ─────────────────────────────────────── */
+/* 1. No big empty band above "Find your way around" (the page's own bottom space + the section's top space added up). */
+html:not(#x) body:not(#sb):has(#site-find .sb-find) #view { padding-bottom: 24px !important; }
+html:not(#x) body:not(#sb) .sb-find { padding-top: 24px !important; }
+
+/* 2. Home Competitions: the picture keeps one shape (16:9) and no longer grows and shrinks while the list beside it is
+      scrolled — the ↑ arrow now keeps its space when hidden, so the column beside the picture stays the same height. */
+@media (min-width: 761px) {
+  html:not(#x) body:not(#sb) .sb-comps__side .sb-comps__arrow { display: flex !important; align-items: center; justify-content: center; gap: 6px; flex: none; height: 34px; visibility: hidden; }
+  html:not(#x) body:not(#sb) .sb-comps__side.can-slide .sb-comps__arrow { visibility: visible; }
+  html:not(#x) body:not(#sb) .sb-comps__side.can-slide.at-start .sb-comps__arrow--up { visibility: hidden; }
+  html:not(#x) body:not(#sb) .sb-comps__list { height: 520px; max-height: 520px !important; }
+}
+
+/*    Competitions page: every picture the same 4:3 shape on a computer, and a full-width 16:9 picture on top on a phone. */
+html:not(#x) body:not(#sb) #view .comp-row { grid-template-columns: 240px minmax(0, 1fr) auto; align-items: center; }
+html:not(#x) body:not(#sb) #view .comp-pic { align-self: center; min-height: 0 !important; aspect-ratio: 4 / 3; margin: 12px; border-radius: 14px; overflow: hidden; }
+@media (max-width: 640px) {
+  html:not(#x) body:not(#sb) #view .comp-row { grid-template-columns: minmax(0, 1fr); }
+  html:not(#x) body:not(#sb) #view .comp-pic { aspect-ratio: 16 / 9; margin: 0; border-radius: 0; }
+  html:not(#x) body:not(#sb) #view .comp-go { display: none; }
+}
+
+/* 3. Fixtures → team emblems: no white circle or white square behind the club crest (the card colour shows through). */
+html:not(#x) body:not(#sb):not([data-page="admin"]) #view .bz-league .bz-crest-badge { background: transparent !important; }
+html:not(#x) body:not(#sb):not([data-page="admin"]) #view .bz-league .bz-crest .badge.logo { background: transparent !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important; }
+html:not(#x) body:not(#sb):not([data-page="admin"]) #view .bz-league .bz-crest .badge.logo img { mix-blend-mode: multiply; }   /* a crest saved with a white box round it loses the box */
+
+/* 4. My Snooker is the red thing: red background, gold star, white writing — in the menu and the star in the menu bar.
+      (The gold shine that ran across it is gone.) */
+html:not(#x) body:not(#sb) .acct-item.acct-special { background: var(--red) !important; border: 0 !important; }
+html:not(#x) body:not(#sb) .acct-item.acct-special::after { display: none !important; animation: none !important; }
+html:not(#x) body:not(#sb) .acct-item.acct-special .acct-ico { background: rgba(255, 255, 255, .16) !important; }
+html:not(#x) body:not(#sb) .acct-item.acct-special .acct-ico svg { fill: #FFD23F !important; color: #FFD23F !important; }
+html:not(#x) body:not(#sb) .acct-item.acct-special b { color: #fff !important; }
+html:not(#x) body:not(#sb) .acct-item.acct-special small { color: rgba(255, 255, 255, .85) !important; }
+html:not(#x) body:not(#sb) .acct-item.acct-special:hover { background: var(--red-dark) !important; }
+html:not(#x) body:not(#sb) .sb-header .sb-icon-btn.sb-mystar,
+html.sb-navover:not(.sb-scrolled) body:not(#sb) .sb-header .sb-icon-btn.sb-mystar { background: var(--red) !important; color: #FFD23F !important; }
+html:not(#x) body:not(#sb) .sb-header .sb-icon-btn.sb-mystar svg { fill: #FFD23F !important; }
+html:not(#x) body:not(#sb) .sb-header .sb-icon-btn.sb-mystar:hover,
+html:not(#x) body:not(#sb) .sb-header .sb-icon-btn.sb-mystar[aria-current="page"] { background: var(--red-dark) !important; color: #FFD23F !important; }
+
+/* 5. Admin: red is kept for My Snooker, so the admin buttons are dark (grey ones stay grey; Delete stays red as a warning). */
+html:not(#x) body[data-page="admin"]:not(#sb) .btn:not(.ghost):not(.danger):not(.light):not(.plain):not(.link) { background: #15201B !important; border-color: #15201B !important; color: #fff !important; }
+html:not(#x) body[data-page="admin"]:not(#sb) .btn:not(.ghost):not(.danger):not(.light):not(.plain):not(.link):hover { background: #2E3A34 !important; border-color: #2E3A34 !important; color: #fff !important; }
+
+/* 6. Admin panel headings: normal letter spacing ("Next match night · 10th Nov 2026" was spread out). */
+html:not(#x) body[data-page="admin"]:not(#sb) .panel-head { letter-spacing: -0.005em !important; }
+html:not(#x) body:not(#sb) #view .comp-pic img:not(.trophy) { object-position: 50% 25%; }
+/* My Snooker top: "Do you play? Link your player profile" (moved here from the menu) readable on the dark panel. */
+html:not(#x) body:not(#sb) .ms-hero .btn.ms-linkme, html:not(#x) body:not(#sb) .ms-hero .btn.small.ghost { background: rgba(255, 255, 255, .14) !important; color: #fff !important; border-color: transparent !important; }
+html:not(#x) body:not(#sb) .ms-hero .btn.ms-linkme:hover, html:not(#x) body:not(#sb) .ms-hero .btn.small.ghost:hover { background: rgba(255, 255, 255, .24) !important; color: #fff !important; }

@@ -10,7 +10,7 @@ import { setFixtureStatus, save, invalidate, currentCompetitions, auditLog, tabl
 import { db, run } from "../core/db.js";
 import { buildBracket, isEntry, roundName, compScoreText } from "../core/bracket.js";
 import { canOpenSection, isMaster } from "../core/auth.js";
-import { rearrangeBy } from "../core/rules.js";
+import { rearrangeBy, isLiveNow, RULES } from "../core/rules.js";
 import { panel, urls, statusBadge } from "../core/components.js";
 
 const LATE_HOURS = 3;      // a match that started this long ago with nothing entered is flagged
@@ -46,7 +46,13 @@ function stateOf(x, ctx) {
     if (f.status === "postponed") return ["postponed", "Postponed"];
     if (f.status === "approved") return ["approved", "Approved"];
     if (f.status === "submitted") return ["submitted", "Waiting for approval"];
-    if (f.status === "in_progress") return ["live", frames ? `Live · ${frames} frame${frames > 1 ? "s" : ""}` : "Started"];
+    // Round 113: "Live" here means exactly what the match strip calls live (Rich: "shows in admin as live, but not on the
+    // scroller"). A card with every frame in, or not touched for 5 hours, is a result waiting to be submitted.
+    if (f.status === "in_progress") {
+      const played = ctx.framesOf(f.id).filter((x) => x.home_points != null && x.away_points != null).length;
+      if (isLiveNow(f, Date.now(), played)) return ["live", played ? `Live · ${played} frame${played > 1 ? "s" : ""}` : "Started — live"];
+      return ["late", played >= RULES.framesPerMatch ? "All frames in — waiting to be submitted" : "Not live — no frame saved for 5 hours; submit it when done"];
+    }
     if (Date.parse(f.starts_at) < Date.now() - LATE_HOURS * 3600e3) return ["late", "Nothing entered yet"];
     return ["waiting", Date.parse(f.starts_at) <= Date.now() ? "Should have started" : `Starts ${fmtTime(f.starts_at)}`];
   }

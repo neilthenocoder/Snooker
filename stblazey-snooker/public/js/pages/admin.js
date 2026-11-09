@@ -2,7 +2,7 @@ import { html, mount, $, toast, readForm, fmtDate, fmtTime, fromLocalInput, toLo
 import { seasonContext } from "../core/context.js";
 import { table, insertMany, setFixtureStatus, save, invalidate, signups, cueviewSubmissions, articleList } from "../core/api.js";
 import { isStaff, isMaster, canOpenSection, isMember } from "../core/auth.js";
-import { rearrangeBy, POSTPONE_WEEKS } from "../core/rules.js";
+import { rearrangeBy, POSTPONE_WEEKS, isLiveNow } from "../core/rules.js";
 import { resetDemo, databaseVersion, SCHEMA_VERSION } from "../core/db.js";
 import { DEMO_MODE } from "../config.js";
 import { roundRobin, addDays, londonISO } from "../core/schedule.js";
@@ -317,10 +317,12 @@ async function overview(el, { user }) {
   const ctx = await seasonContext();
   const unpaid = canOpenSection(user, "entries") ? (await signups().catch(() => [])).filter((r) => r.status === "pending") : [];
   const count = (s) => ctx.fixtures.filter((f) => f.status === s).length;
+  // Round 113 (Rich: "shows in admin as live, but not on the scroller"): counted exactly as the match strip counts live.
+  const liveNow = ctx.fixtures.filter((f) => isLiveNow(f, Date.now(), ctx.framesOf(f.id).filter((x) => x.home_points != null && x.away_points != null).length)).length;
   // Each box opens the list behind its number (only for the parts of the dashboard this login has).
   const stats = [
     ["Teams", ctx.teams.length, "teams", "/admin/teams"], ["Players", ctx.players.length, "players", "/admin/players"], ["Fixtures", ctx.fixtures.length, "fixtures", "/admin/fixtures"],
-    ["Approved", count("approved"), "fixtures", "/admin/fixtures?status=approved"], ["Awaiting approval", count("submitted"), "results", "/admin/results"], ["Live now", count("in_progress"), "results", "/admin/results"],
+    ["Approved", count("approved"), "fixtures", "/admin/fixtures?status=approved"], ["Awaiting approval", count("submitted"), "results", "/admin/results"], ["Live now", liveNow, "results", "/admin/results"],
   ];
   const fresh = ctx.players.filter((p) => p.needs_review);
   const news = canOpenSection(user, "approvals") ? await waitingNews().catch(() => []) : [];

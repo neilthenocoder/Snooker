@@ -126,10 +126,9 @@ export function accountLinks(user) {
     isMember(user) && !isPlainPlayer(user) && { href: "/my", icon: ICON.team, label: "My team", note: "Scorecards, fixtures and your team" },
     isCaptain(user) && { href: "/my/squad", icon: ICON.team, label: "Manage team", note: "The team sheet, and adding players" },
     canWriteNews(user) && !isStaff(user) && { href: "/my/news", icon: ICON.pen, label: "Write news", note: "Step by step: headline, story, pictures" },
-    { href: "/my/snooker", icon: ICON.cog, label: "My Snooker settings", note: "Who you follow, what you see and in what order" },
+    // Round 113.3 (Rich): "My Snooker settings" and "Do you play? Link your player profile" are on the My Snooker page itself now.
     p.player_id && { href: "/my/profile", icon: ICON.team, label: "My profile", note: "Your photo, bio and CueView" },
     p.player_id && { href: `/player/${p.player_id}#form`, icon: ICON.form, label: "My form", note: "Your mark out of 10 from your last 6 matches" },
-    !p.player_id && isMaster(user) && { href: "/admin/accounts", icon: ICON.team, label: "Do you play? Link your player profile", note: "Then My profile and My form appear here" },
     { href: "/my/details", icon: ICON.key, label: "Password & details" },
     // Round 55: questions and problems for the league, and the answers.
     { href: "/support", icon: ICON.help, label: "Help & support", note: "Ask the league, and see your requests" },
