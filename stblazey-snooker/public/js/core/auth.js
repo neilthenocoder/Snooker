@@ -152,6 +152,8 @@ export const SECTION_AREA = {
   comp_wizard: "competitions",
   // Round 76: Set up a new season step by step (leagues, teams and fixtures — the same people as the fixture generator)
   season_wizard: "fixtures",
+  // Round 114: winners typed in by hand (the same people as the competitions)
+  past_winners: "competitions",
 };
 
 const roleOf = (user) => user?.profile?.role;

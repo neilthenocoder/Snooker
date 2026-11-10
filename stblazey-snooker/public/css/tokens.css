@@ -20,7 +20,7 @@
   --live-tint: #163322;
   --brass: #C79A3A;
   --on-brass: #15201B;
-  --brass-text: #E2BC6A;
+  --brass-text: #FFD237;   /* round 114: one yellow */
   --brass-tint: #332E1B;
   --arena: #0A0E0C;
   --arena-card: #121916;
@@ -82,7 +82,7 @@
   --hero-height: 520px;
   --match-card: 292px;
   --live-halo: 0 0 0 4px rgba(255,255,255,0.28);
-  --yellow: var(--brand-yellow, #F2B92B);
+  --yellow: var(--brand-yellow, #FFD237);   /* Rich's yellow — the Continue reading button (round 114: one yellow everywhere) */
   --on-yellow: #15201B;
   --yellow-soft: #FBEFC8;
   --silver-soft: #ECEDEA;

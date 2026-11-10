@@ -998,7 +998,7 @@ async function liveStrip(user = null, mode = "filters", layout = "strip") {
   const mineTeams = [...mineSets.teams].map((id) => team.get(id)).filter(Boolean);
   const mineLabel = mineTeams.length === 1 ? mineTeams[0].name : "My teams";
   const toggle = canMine ? html`<span class="strip-mine" role="group" aria-label="Which matches to show">
-    <button type="button" data-strip-mine="0" aria-pressed="${mine ? "false" : "true"}">All</button><button type="button" data-strip-mine="1" aria-pressed="${mine ? "true" : "false"}">${mineLabel}</button></span>` : "";
+    <button type="button" data-strip-mine="0" aria-pressed="${mine ? "false" : "true"}">${layout === "sb" ? "All teams" : "All"}</button><button type="button" data-strip-mine="1" aria-pressed="${mine ? "true" : "false"}">${mineLabel}</button></span>` : "";
   // Rich, round 33: a league night fills a dozen places on its own, so cup matches a week or two away never got a
   // look in. Everything live comes first; then the next matches in date order, keeping up to four places for the
   // next cup matches (and draws) that would otherwise drop off the end.
@@ -1064,6 +1064,7 @@ async function liveStrip(user = null, mode = "filters", layout = "strip") {
       : html`<p class="sb-strip__empty">No matches here just now. <a href="/calendar">See the calendar</a></p>`;
     return html`${stripColours(site)}<div class="sb-strip__head">
         <h2 id="sb-strip-h">Live and upcoming matches</h2>
+        ${mode === "mine" && toggle ? html`<span class="sb-strip__mine">${toggle}</span>` : ""}
         <div class="sb-seg sb-seg--arena sb-seg--pick" role="group" aria-label="Which matches">${tab("all", "All")}${tab("live", `Live · ${live.length}`)}${tab("upcoming", "Upcoming")}${tab("results", "Results")}</div>
         <div class="sb-strip__ctrl">
           <button type="button" class="sb-icon-btn sb-icon-btn--arena" data-strip-move="-1" aria-label="Previous matches">${sbIcon(ICON.left)}</button>
@@ -1146,7 +1147,7 @@ function scoreTiles(c) {
 function stripColours(site) {
   const hex = (v) => (/^#[0-9a-f]{6}$/i.test(v ?? "") ? v : null);
   const ink = (c) => { const n = parseInt(c.slice(1), 16), [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255]; return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#111" : "#fff"; };
-  const vars = [["live", site.strip_live_color], ["soon", site.strip_soon_color], ["done", site.strip_done_color], ["pending", site.strip_pending_color], ["postponed", site.strip_postponed_color], ["walkover", site.strip_walkover_color]]
+  const vars = [["live", site.strip_live_color], ["soon", site.strip_soon_color], ["done", site.strip_done_color], ["pending", /^#f2b705$/i.test(site.strip_pending_color ?? "") ? null : site.strip_pending_color], ["postponed", site.strip_postponed_color], ["walkover", site.strip_walkover_color]]
     .filter(([, c]) => hex(c)).map(([k, c]) => `--strip-${k}:${c};--strip-${k}-ink:${ink(c)}`).join(";");
   return vars ? html`<style>[data-strip]{${vars}}</style>` : "";
 }

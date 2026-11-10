@@ -1,3 +1,4 @@
+import { pastWinners, honoursOf, honoursPanel } from "../core/past-winners.js";
 import { html, mount, fmtDate } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { breadcrumb, panel, fixturesTable, urls, seasonPicker, seasonShort, personCard, badge, dataTable, playerLink, breakTag, topPoints } from "../core/components.js";
@@ -26,6 +27,8 @@ export default async function team(view, { params, query, user }) {
   const allRanks = league ? ctx.rankings(league.id) : [];
   const ranks = allRanks.filter((r) => squadIds.has(r.player.id));
   const breaks = (league ? ctx.breaksIn(league.id) : []).filter((b) => squadIds.has(b.player_id));
+  // Round 114: titles the league typed in by hand (Admin → Competitions → Past winners).
+  const honours = honoursOf(await pastWinners(), { team });
 
   mount(view, html`<div class="wrap">
     ${breadcrumb([["Home", "/"], ["Our League", "/league"], ["Seasons", "/seasons"], [`${ctx.season?.name} Season`, urls.season(ctx.season)], [`Fixtures & Results ${seasonShort(ctx.season)}`, `/fixtures?season=${ctx.season?.id}`], [title]])}
@@ -53,6 +56,7 @@ export default async function team(view, { params, query, user }) {
         { label: "Break", cell: (b) => breakTag(b.value), cls: "num strong" },
       ], breaks, { empty: "No breaks of 30 or more yet this season.", phoneLimit: 8, minHidden: 2, more: "breaks" }))}
     </div>` : ""}
+    ${honoursPanel(honours, { title: `${team.name} honours` })}
     <h3>Team</h3>
     ${players.length ? html`<div class="people squad">${players.map((p) => { const f = form?.player(p.id);
       return personCard(p, html`${p.position === "Player" ? "" : p.position}${f?.n ? html` <span class="pc-form">Form ${formBadge(f)}</span>` : ""}`); })}</div>` : html`<div class="empty box">No players listed yet.</div>`}

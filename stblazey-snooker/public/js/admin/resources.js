@@ -46,6 +46,7 @@ import { MEETING_KINDS, PLAYER_STATUS, footerSuggestions } from "../core/terms.j
 import { CONTACT_RULE } from "../core/comp-deadlines.js";
 import { HEADLINE_MAX } from "../core/components.js";
 import { AD_PAGES } from "../core/ads.js";
+import { yearFrom, splitSeasons } from "../core/past-winners.js";
 import { save, seoPages, saveSeoPage, deleteSeoPage, allRows, upsertRow } from "../core/api.js";
 
 /** Fill in an award's shown name from the player or team picked for it (unless a different name was typed). */
@@ -534,7 +535,7 @@ export const RESOURCES = {
       // these are the settings the design system reads. (Nothing in the database changes — the old values are just unused.)
       { type: "heading", label: "Colours", help: "Leave a colour on “standard” to keep the design's own. Every one shows across the website as soon as you press Save." },
       { name: "color_primary", label: "Main colour (standard: red #F1002A — buttons, the menu pill for the page you're on, links)", type: "color", optional: true, default: "#f1002a" },
-      { name: "color_competitions", label: "Yellow highlights (standard: #F2B92B — Continue reading, competitions and the top break on the Everything home page)", type: "color", optional: true, default: "#f2b92b" },
+      { name: "color_competitions", label: "Yellow highlights (standard: #FFD237 — Continue reading, competitions and the top break on the Everything home page)", type: "color", optional: true, default: "#ffd237" },
       { name: "color_fixtures", label: "Live and win green (standard: #1B8047 — the Live button, the leader in the tables, a won frame)", type: "color", optional: true, default: "#1b8047" },
       { name: "color_login", label: "Log in button (standard: the main colour)", type: "color", optional: true, default: "#f1002a" },
       { type: "heading", label: "Fonts", help: "Pick from the lists — or, for any other Google font, paste its embed link in the box underneath and it joins both lists." },
@@ -647,7 +648,7 @@ export const RESOURCES = {
       { name: "strip_live_color", label: "“Live” label and the edge of a live card (standard: green, like the Live button)", type: "color", optional: true, default: "#19a33a" },
       { name: "strip_soon_color", label: "“Live soon” label (standard: orange)", type: "color", optional: true, default: "#ff8a00" },
       { name: "strip_done_color", label: "“Completed” label (standard: green)", type: "color", optional: true, default: "#2f7d32" },
-      { name: "strip_pending_color", label: "“Pending” label — a league result waiting for approval (standard: yellow)", type: "color", optional: true, default: "#f2b705" },
+      { name: "strip_pending_color", label: "“Pending” label — a league result waiting for approval (standard: yellow)", type: "color", optional: true, default: "#ffd237" },
       { name: "strip_walkover_color", label: "“Walkover” label (standard: red)", type: "color", optional: true, default: "#c4112f" },
       { name: "strip_postponed_color", label: "“Postponed” label — shown from the match's date until a week ahead (standard: red)", type: "color", optional: true, default: "#c4112f" },
       { type: "custom", render: () => stripPreview() },
@@ -787,7 +788,7 @@ export const RESOURCES = {
       { name: "name", label: "Package name", type: "text", required: true, placeholder: "Gold" },
       { name: "price", label: "Price", type: "text", placeholder: "£250" },
       { name: "period", label: "For how long", type: "text", placeholder: "a season" },
-      { name: "colour", label: "Colour", type: "color", default: "#d4a017" },
+      { name: "colour", label: "Colour", type: "color", default: "#ffd237" },
       { name: "summary", label: "One line about it", type: "text", wide: true },
       { name: "benefits", label: "What they get — one per line", type: "textarea", rows: 6, placeholder: "Banner at the bottom of every page" },
       { name: "includes_advert", label: "Includes a side advert on the website", type: "checkbox", default: true },
@@ -840,6 +841,49 @@ export const RESOURCES = {
     rowActions: [{ label: "View", href: (row) => `/hall-of-fame/${row.no ?? row.id}` }],
     rowClass: (row) => (row.status === "pending" ? "hl" : ""),
   },
+  // Round 114 (Rich: "a manual override for old results and old players"): winners typed in by hand.
+  past_winners: {
+    label: "Past winners", table: "past_winners", order: "year_from", desc: true, filters: ["title"], columns: ["season", "title", "winner_name", "runner_up_name"],
+    intro: "Winners from before the website — or anything the results can't show. One line per title: the competition, the season, and who won. "
+      + "The winner can be a player or team on the website (their page then shows it under “Honours”), or just a name — fine for players from years ago. "
+      + "Shown in the Season archive & roll of honour, and under “Previous winners” on the competition's page. It never changes any results, tables or rankings. "
+      + "Tip: the same person won it in several seasons? Type them all in “Season”, separated by commas (1980/81, 1984/85) — one line is made for each.",
+    fields: [
+      { type: "heading", label: "The title" },
+      { name: "competition_id", label: "Competition on the website (optional — puts it under “Previous winners” on that competition's page)", type: "ref", ref: "competitions" },
+      { name: "title", label: "Competition name, as it was then", type: "text", list: true, placeholder: "Singles, Pairs, League champions, Handicap Cup…", help: "Leave empty to use the competition chosen above." },
+      { name: "season", label: "Season — or several, separated by commas", type: "text", required: true, placeholder: "1980/81 — or 1980/81, 1984/85, 1985/86" },
+      { type: "heading", label: "Winner" },
+      { name: "winner_player_id", label: "Player on the website (optional)", type: "ref", ref: "players" },
+      { name: "winner_team_id", label: "Team on the website (optional — for a team title)", type: "ref", ref: "teams" },
+      { name: "winner_name", label: "Name (for anyone not on the website — or leave empty to use the player or team chosen)", type: "text", list: true, placeholder: "e.g. John Smith" },
+      { type: "heading", label: "Runner-up (optional)" },
+      { name: "runner_up_player_id", label: "Player on the website", type: "ref", ref: "players" },
+      { name: "runner_up_team_id", label: "Team on the website", type: "ref", ref: "teams" },
+      { name: "runner_up_name", label: "Name (for anyone not on the website)", type: "text", list: true },
+      { name: "notes", label: "Note (optional)", type: "text", wide: true, placeholder: "Final 5–3 · Highest break 112 · Played at Bugle Working Mens Club" },
+    ],
+    validate: (row) => (!row.title?.trim() && !row.competition_id ? "Type the competition's name, or choose a competition on the website."
+      : !String(row.season ?? "").trim() ? "Type the season, e.g. 1980/81."
+      : !row.winner_name?.trim() && !row.winner_player_id && !row.winner_team_id ? "Who won? Choose a player or team, or type a name."
+      : row.id && splitSeasons(row.season).length > 1 ? "This line is one season. To add more seasons, use “Add new” and type them there."
+      : null),
+    beforeSave: (row, refs) => {
+      const comp = (refs.competitions ?? []).find((c) => c.id === row.competition_id);
+      const nameOf = (which) => row[`${which}_name`]?.trim()
+        || (refs.players ?? []).find((p) => p.id === row[`${which}_player_id`])?.full_name
+        || (refs.teams ?? []).find((t) => t.id === row[`${which}_team_id`])?.name || null;
+      return { ...row, title: row.title?.trim() || comp?.name, winner_name: nameOf("winner"), runner_up_name: nameOf("runner_up") };
+    },
+    // Several seasons typed at once → one line each.
+    save: async (row) => {
+      let saved = null;
+      for (const season of row.id ? [String(row.season).trim()] : splitSeasons(row.season))
+        saved = await save("past_winners", { ...row, season, year_from: yearFrom(season) });
+      return saved;
+    },
+    rowActions: [{ label: "View", href: (row) => (row.competition_id ? "/competitions" : "/archive") }],
+  },
   page_settings_23: {
     label: "Page introductions", table: "settings", order: "id", single: true,
     intro: "The few lines of text at the top of these pages — what visitors read first. Leave a box empty to use the standard wording.",
@@ -861,7 +905,7 @@ function stripPreview() {
   const labels = [["live", "Live"], ["soon", "Live soon"], ["done", "Completed"], ["pending", "Pending"], ["walkover", "Walkover"], ["postponed", "Postponed"]];
   return html`<div class="strip-preview" data-strip-preview><span class="muted">Preview:</span>${labels.map(([k, l]) => html`<span class="sp-tag" data-sp="${k}">${l}</span>`)}</div>`;
 }
-const STANDARD = { live: "#19a33a", soon: "#ff8a00", done: "#2f7d32", pending: "#f2b705", walkover: "#c4112f", postponed: "#c4112f" };
+const STANDARD = { live: "#19a33a", soon: "#ff8a00", done: "#2f7d32", pending: "#ffd237", walkover: "#c4112f", postponed: "#c4112f" };
 const inkFor = (c) => { const n = parseInt(c.slice(1), 16), [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255]; return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#111" : "#fff"; };
 function liveStripPreview(form) {
   const box = form.querySelector("[data-strip-preview]");

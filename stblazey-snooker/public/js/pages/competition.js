@@ -1,3 +1,4 @@
+import { pastWinners, winnersOf, previousWinnersPanel } from "../core/past-winners.js";
 import { html, mount, $, fmtDate, paragraphs, cssUrl } from "../core/dom.js";
 import { table, articles, loadCompetitions, subscribe, competitionBreaks, signupNames } from "../core/api.js";
 import { openForEntry } from "./enter.js";
@@ -10,7 +11,7 @@ import notFound from "./not-found.js";
 
 export default async function competition(view, { params, user }) {
   const draw = async () => {
-    const [data, venues, seasons, news, players, leagues] = await Promise.all([loadCompetitions(), table("venues", "name"), table("seasons", "name"), articles(), table("players", "full_name"), table("leagues", "sort")]);
+    const [data, venues, seasons, news, players, leagues, pastWon, teams] = await Promise.all([loadCompetitions(), table("venues", "name"), table("seasons", "name"), articles(), table("players", "full_name"), table("leagues", "sort"), pastWinners(), table("teams", "name").catch(() => [])]);
     const c = data.competitions.find((x) => x.slug === params.slug);
     if (!c) return notFound(view);
     setTitle(c.name);
@@ -94,6 +95,7 @@ export default async function competition(view, { params, user }) {
             <div><b>${next ? fmtDate(next.row.starts_at) : "–"}</b>Next match</div>
           </div>
           ${next && isEntry(next.a) && isEntry(next.b) ? html`<p class="glance-next">Next up: <b>${b.entryById.get(next.a).name}</b> v <b>${b.entryById.get(next.b).name}</b></p>` : ""}`)}
+          ${previousWinnersPanel(winnersOf(pastWon, c), { players, teams }, { compact: true })}
           ${others.length ? panel("Other competitions", html`<div class="list-links">${others.map((x) => html`<a href="${urls.competition(x)}">${x.name}</a>`)}</div>`) : ""}
         </aside>
       </div>

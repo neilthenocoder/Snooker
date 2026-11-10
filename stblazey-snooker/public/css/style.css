@@ -7,7 +7,7 @@
   --red: #f1002a;
   --red-dark: #c80023;
   --blue: #0088e0;
-  --yellow: #FFB81C;
+  --yellow: var(--brand-yellow, #FFD237);
   --green: #0b8a12;
   --brown: #4b2019;
   --ink: #111;
@@ -315,7 +315,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); outl
 .balls i { width: 16px; height: 16px; border-radius: 50%; animation: ball 1s ease-in-out infinite; box-shadow: inset -3px -3px 4px rgba(0,0,0,.35), inset 2px 2px 3px rgba(255,255,255,.4); }
 .balls i:nth-child(2) { animation-delay: .1s; } .balls i:nth-child(3) { animation-delay: .2s; } .balls i:nth-child(4) { animation-delay: .3s; }
 .balls i:nth-child(5) { animation-delay: .4s; } .balls i:nth-child(6) { animation-delay: .5s; } .balls i:nth-child(7) { animation-delay: .6s; }
-.balls .red { background: #d0021b; } .balls .yellow { background: #f8d21c; } .balls .green { background: #138a36; } .balls .brown { background: #7b4a20; }
+.balls .red { background: #d0021b; } .balls .yellow { background: var(--yellow); } .balls .green { background: #138a36; } .balls .brown { background: #7b4a20; }
 .balls .blue { background: #1565c0; } .balls .pink { background: #f48fb1; } .balls .black { background: #111; }
 @keyframes ball { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-16px); } }
 
@@ -1091,7 +1091,7 @@ table.data tbody tr.imp-row-error td { background: var(--soft) !important; }
 :root {
   --nav-home: var(--brown);     --nav-home-ink: #fff;
   --nav-comps-ink: #1b0e06;     /* competitions use --yellow */
-  --nav-fixtures-ink: #ffe86a;  /* fixtures use --green */
+  --nav-fixtures-ink: var(--yellow);  /* fixtures use --green */
   --nav-league: #fff;           --nav-league-ink: #000;
   --nav-login: var(--red);      --nav-login-ink: #fff;
   /* Section headers: red unless the page's section has its own colour (below). */
@@ -1391,7 +1391,7 @@ body.maintenance .main-nav > :not(.nav-login), body.maintenance .nav-search-m { 
    ═════════════════════════════════════════════════════════════ */
 :root {
   /* The snooker balls (scoreboard, 404 page, confetti). */
-  --ball-red: #d4092f; --ball-yellow: #f6c21c; --ball-green: #0b8a12; --ball-brown: #6b3a2a;
+  --ball-red: #d4092f; --ball-yellow: var(--yellow); --ball-green: #0b8a12; --ball-brown: #6b3a2a;
   --ball-blue: #0a84dc; --ball-pink: #ff86b7; --ball-black: #141414; --ball-white: #f7f3e6;
   --baize: #0d6b25; --baize-dark: #07461a; --rail: #4b2019;
 }
@@ -1711,15 +1711,15 @@ button.award-face { cursor: zoom-in; border-radius: 6px; }
 .award-face.blank { background: repeating-linear-gradient(135deg, var(--soft) 0 6px, var(--soft) 6px 12px); }
 .award-who.first .award-face { box-shadow: 0 0 0 3px var(--yellow); }
 .award-who.second .award-face { width: 44px; height: 44px; }
-.honours { background: var(--rail) linear-gradient(90deg, rgba(0,0,0,.22), transparent 30%, transparent 70%, rgba(0,0,0,.22)); color: #f6d365; padding: 26px 30px 22px; border: 6px solid #2c120d; box-shadow: inset 0 0 0 2px #7a4a1c; }
-.honours h2 { text-align: center; font-size: 26px; letter-spacing: .08em; margin-bottom: 18px; color: #f6d365; }
+.honours { background: var(--rail) linear-gradient(90deg, rgba(0,0,0,.22), transparent 30%, transparent 70%, rgba(0,0,0,.22)); color: var(--yellow); padding: 26px 30px 22px; border: 6px solid #2c120d; box-shadow: inset 0 0 0 2px #7a4a1c; }
+.honours h2 { text-align: center; font-size: 26px; letter-spacing: .08em; margin-bottom: 18px; color: var(--yellow); }
 .honours dl { margin: 0; columns: 2 320px; column-gap: 44px; }
 .honours dl div { display: flex; align-items: baseline; gap: 8px; break-inside: avoid; padding: 5px 0; font-family: var(--font-head); }
 .honours dt { text-transform: uppercase; font-size: 13px; letter-spacing: .04em; color: #e3c98a; }
 .honours dt::after { content: ""; }
 .honours dl div::before { content: ""; order: 1; flex: 1; border-bottom: 2px dotted rgba(246,211,101,.45); transform: translateY(-3px); min-width: 16px; }
 .honours dd { order: 2; margin: 0; font-weight: 700; font-size: 16px; text-align: right; }
-.honours > a { display: block; text-align: center; margin-top: 16px; font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; color: #f6d365; }
+.honours > a { display: block; text-align: center; margin-top: 16px; font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; color: var(--yellow); }
 .honours > a:hover { color: #fff; }
 .pres-best { margin: -8px 0 0; font-size: 16px; }
 .pres-best .team-cell { display: inline-flex; vertical-align: middle; font-weight: 700; }
@@ -1935,7 +1935,7 @@ table.data tbody tr.is-bye td { color: var(--muted); }
 .ms-hero-actions .btn.ghost { background: var(--surface); color: var(--ink); }
 .ms-hero-actions .btn.small.ghost { background: transparent; color: #fff; border: 1px solid #666; }
 .ms-note { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 22px; padding: 12px 24px; background: #fff7df; border-radius: 0 0 14px 14px; font-size: 14px; }
-.ms-note svg { fill: #c98a00; margin-top: 3px; }
+.ms-note svg { fill: var(--yellow); margin-top: 3px; }
 .ms-note a { color: var(--red-text); font-weight: 700; text-decoration: underline; }
 .ms-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 26px; align-items: start; }
 .ms .stats { margin-bottom: 0; grid-template-columns: repeat(4, 1fr); }
@@ -2846,7 +2846,7 @@ a.notice-item:hover { color: inherit; border-color: var(--line); box-shadow: 0 2
 /* 4. Home page: Shield holders and CueView take far less room.
       Shield holders — one slim row per shield: its picture (uploaded under Admin → Leagues, small), the holders, since when. */
 .shield-pic { flex: none; width: 46px; height: 46px; object-fit: contain; }
-svg.shield-pic.placeholder { fill: #f0b323; }
+svg.shield-pic.placeholder { fill: var(--yellow); }
 svg.shield-pic.placeholder .shine { fill: rgba(255, 255, 255, .35); }
 .shield-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1px; background: var(--soft); }
 .shield-row { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 10px 12px 10px 14px; background: var(--surface); color: var(--ink); }
@@ -3125,9 +3125,9 @@ a.panel-head.green:hover { color: #fff; }
 .bk-pod small { max-width: 100%; font-size: 12px; font-weight: 700; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
 .bk-rank { font: 700 11px/1 var(--font-head); text-transform: uppercase; letter-spacing: .06em; padding: 3px 7px; border-radius: 10px; color: #fff; }
 .bk-pod.p1 { background: linear-gradient(#fff6d6, #ffeaa3); padding-top: 14px; padding-bottom: 16px; }
-.bk-pod.p1 .avatar { width: 62px; height: 62px; box-shadow: 0 0 0 3px #f0b323; }
+.bk-pod.p1 .avatar { width: 62px; height: 62px; box-shadow: 0 0 0 3px var(--yellow); }
 .bk-pod.p1 b { font-size: 44px; }
-.bk-pod.p1 .bk-rank { background: #c99400; }
+.bk-pod.p1 .bk-rank { background: var(--yellow); }
 .bk-pod.p2 { background: linear-gradient(var(--soft), var(--soft)); }
 .bk-pod.p2 .bk-rank { background: #8a8a85; }
 .bk-pod.p3 { background: linear-gradient(#fbf0e6, #f1dcc6); }
@@ -3294,7 +3294,7 @@ button { font-family: inherit; }
 .brk-item .tally { height: 24px; min-width: 30px; font-size: 13px; }
 .break-list b { display: inline-grid; place-items: center; min-width: 30px; height: 26px; padding: 0 6px; border-radius: 13px; background: #ffe39a; color: #5a3d00; }
 .break-list b.best { background: var(--yellow); color: #1b0e06; }
-.sc-breaks:not(:placeholder-shown) { background: #fff3c4; border-color: #e8b923; font-weight: 700; }
+.sc-breaks:not(:placeholder-shown) { background: #fff3c4; border-color: var(--yellow); font-weight: 700; }
 /* 2. Live scoring: once every ball is off the table the balls can't be pressed; a note says to end the frame. */
 .pad-cleared { margin: 0 0 12px; }
 /* 3. The home page banner: the round news picture is now a landscape (16:9) picture. The headline has about 70% of
@@ -3520,7 +3520,7 @@ button { font-family: inherit; }
 .ts-form input[name=code] { max-width: 200px !important; }
 .sec-you { margin: 0 0 16px; }
 .celebrate-note { margin: 10px 0 0; font-size: 11.5px; opacity: .8; }
-.tally.brk.prov { background: #fff3c4; outline: 1px dashed #d9a400; }
+.tally.brk.prov { background: #fff3c4; outline: 1px dashed var(--yellow); }
 .prov-note { color: #6b4a00; }
 
 /* ══ Round 23 (Rich's feedback, 16 Oct) ═══════════════════════════════════════════════════ */
@@ -3809,7 +3809,7 @@ a.fc:hover { color: #fff; filter: brightness(1.15); transform: translateY(-1px);
 .not-upd { color: var(--ink-muted); font-style: italic; font-weight: 600; white-space: nowrap; }
 p.not-upd { margin: 0; }
 .cv-empty { display: flex; align-items: center; gap: 12px; background: #111; color: #fff; padding: 14px 18px; }
-.cv-empty span { font: 700 13px var(--font-head); text-transform: uppercase; letter-spacing: .08em; color: var(--yellow, #FFB81C); }
+.cv-empty span { font: 700 13px var(--font-head); text-transform: uppercase; letter-spacing: .08em; color: var(--yellow, var(--yellow)); }
 .cv-empty .not-upd { color: #bbb; }
 .stats-empty { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); padding: 16px 18px; }
 .stats-empty b { font: 700 15px var(--font-head); text-transform: uppercase; }
@@ -3855,9 +3855,9 @@ p.not-upd { margin: 0; }
 .res-top { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
 .res-tag { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 999px; font: 700 10.5px var(--font-head); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .res-tag.league { background: var(--soft); color: var(--green); }
-.res-tag.cup { background: #fff3cf; color: #8a6200; border: 1px solid #f0c94f; }
+.res-tag.cup { background: #fff3cf; color: #8a6200; border: 1px solid var(--yellow); }
 .res-tag i { font-style: normal; font-size: 10px; }
-.res-card.cup, .res-mini.cup { box-shadow: inset 4px 0 0 #e0a800; }
+.res-card.cup, .res-mini.cup { box-shadow: inset 4px 0 0 var(--yellow); }
 .res-toggle { width: 28px; height: 28px; background: transparent; border: 1.5px solid var(--line); color: var(--ink-muted); transition: transform .25s, background .2s, border-color .2s, color .2s; }
 .res-toggle svg { width: 18px; height: 18px; fill: currentColor; display: block; }
 .res-head:hover .res-toggle { border-color: var(--ink); color: var(--ink); }
@@ -3902,7 +3902,7 @@ p.not-upd { margin: 0; }
 /* Round 38: Live & upcoming strip — result labels, and every label's colour can be changed in Site settings */
 .sc-label { display: inline-flex; align-items: center; padding: 3px 7px; border-radius: 4px; font: 700 11px var(--font-head); text-transform: uppercase; letter-spacing: .03em;
   background: var(--strip-done, #2f7d32); color: var(--strip-done-ink, #fff); }
-.sc-label.pending { background: var(--strip-pending, #f2b705); color: var(--strip-pending-ink, var(--ink)); }
+.sc-label.pending { background: var(--strip-pending, var(--yellow)); color: var(--strip-pending-ink, var(--ink)); }
 .sc-label.walkover { background: var(--strip-walkover, var(--strip-done, #2f7d32)); color: var(--strip-walkover-ink, var(--strip-done-ink, #fff)); }
 .sc-label.postponed { background: var(--strip-postponed, #6b6b6b); color: var(--strip-postponed-ink, #fff); }
 .live-strip .live-dot { background: var(--strip-live, var(--red)); color: var(--strip-live-ink, #fff); }
@@ -3972,9 +3972,9 @@ p.not-upd { margin: 0; }
 .share-card-box .muted { font-size: 13px; margin: 10px 0 0; }
 /* Round 40: Season wrapped */
 .wr-hero { background: linear-gradient(135deg, #0d0d0d, #2a0b14 60%, #0b3d1a); color: #fff; border-radius: 16px; padding: 28px 26px; }
-.wr-hero small { color: #FFB81C; font: 700 13px var(--font-head); text-transform: uppercase; letter-spacing: .08em; }
+.wr-hero small { color: var(--yellow); font: 700 13px var(--font-head); text-transform: uppercase; letter-spacing: .08em; }
 .wr-hero h1 { margin: 8px 0 14px; font-size: clamp(30px, 5vw, 52px); line-height: 1.02; color: #fff; display: block; }
-.wr-hero h1 em { font-style: normal; color: #FFB81C; }
+.wr-hero h1 em { font-style: normal; color: var(--yellow); }
 .wr-hero h1 .badge { width: 46px; height: 46px; vertical-align: middle; }
 .wr-tools { display: flex; flex-wrap: wrap; gap: 14px; }
 .wr-tools .toolbar { color: #fff; margin: 0; }
@@ -3986,7 +3986,7 @@ p.not-upd { margin: 0; }
 .wr-card a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 .wr-wide { grid-column: span 2; }
 @media (max-width: 560px) { .wr-wide { grid-column: auto; } }
-.wr-red { background: var(--red); } .wr-green { background: #0b7a2b; } .wr-gold { background: #e3a20a; color: var(--ink); }
+.wr-red { background: var(--red); } .wr-green { background: #0b7a2b; } .wr-gold { background: var(--yellow); color: var(--ink); }
 .wr-black { background: #151515; } .wr-blue { background: #0a6fc2; }
 
 /* ═════════════════════════════════════════════════════════════
@@ -4001,7 +4001,7 @@ html.look-calm {
   --cream: #f5f5f3 !important;          /* page background: a quiet light grey */
   --blue: #141414 !important;           /* everything that was blue (News, buttons) becomes black */
   --nav-news: #141414 !important; --nav-news-ink: #fff !important;
-  --yellow: #d9a514 !important;         /* a deeper gold, for trophies and cup results only */
+  --yellow: #FFD237 !important;         /* round 114: one yellow everywhere (was a deeper gold for trophies) */
   --green: #1d7a35 !important;
   --ink: #141414; --muted: #6b6b6b;
   --line: #e7e5e0;
@@ -4269,7 +4269,7 @@ html.look-calm .panel-foot:hover { background: var(--soft) !important; }
 
 /* alerts (the scrolling feature box, notices): a soft yellow */
 html.look-calm .feature-box { background: #fdf3cf !important; color: #3b2f05 !important; }
-html.look-calm .feature-box .ticker-item::before { background: #c99400; }
+html.look-calm .feature-box .ticker-item::before { background: var(--yellow); }
 html.look-calm .notice { background: #fdf3cf; border-radius: 10px; }
 
 /* tables: the light stripes back, the leader a little bigger on a soft yellow, the bottom places on a soft red */
@@ -4770,7 +4770,7 @@ html.look-calm.strip-dark [data-strip] .strip-mine button[aria-pressed="true"] {
 @media (max-width: 900px) { .my-snooker-btn { display: none; } }
 
 /* My Snooker in the account menu (phone menu and the dropdown): it stands out, with a soft shine */
-.acct-item.acct-special { position: relative; overflow: hidden; background: linear-gradient(135deg, #fff7d1, #ffe58a) !important; border: 1px solid #f0cd55 !important;
+.acct-item.acct-special { position: relative; overflow: hidden; background: linear-gradient(135deg, #fff7d1, #ffe58a) !important; border: 1px solid var(--yellow) !important;
   border-radius: 12px !important; margin: 4px 0 8px; padding: 12px 12px !important; }
 .acct-item.acct-special .acct-ico { background: var(--scoreboard) !important; border: 0 !important; }
 .acct-item.acct-special .acct-ico svg { fill: var(--yellow, #ffd237) !important; }
@@ -4855,7 +4855,7 @@ html.look-calm .main-nav .more-drop a.acct-item b { font: 700 14.5px var(--font-
 html.look-calm .main-nav .more-drop a.acct-item:hover, html.look-calm .main-nav .more-drop a.acct-item:focus-visible { background: var(--soft) !important; }
 /* Phones: the ★ goes straight to My Snooker (before the bell); computers have it in the Admin ▾ menu and on the home page */
 .nav-star { display: none !important; }
-@media (max-width: 900px) { .nav-star { display: grid !important; } html.look-calm .nav-star svg { fill: #e0a800 !important; } }
+@media (max-width: 900px) { .nav-star { display: grid !important; } html.look-calm .nav-star svg { fill: var(--yellow) !important; } }
 
 /* Featured competition: its current round — results and fixtures */
 .cf-round { margin-top: 12px; }
@@ -4907,7 +4907,7 @@ dialog.search { border-radius: 18px; }
 @media (max-width: 400px) { .nav-live-m { padding: 0 10px; font-size: 12px; } .nav-icons { gap: 5px; } }
 /* …and the ★ glows like the My Snooker row in the menu: gold, with the same soft shine passing over it */
 @media (max-width: 900px) {
-  .nav-icon.nav-star { position: relative; overflow: hidden; background: linear-gradient(135deg, #fff7d1, #ffe58a) !important; border: 1px solid #f0cd55 !important; }
+  .nav-icon.nav-star { position: relative; overflow: hidden; background: linear-gradient(135deg, #fff7d1, #ffe58a) !important; border: 1px solid var(--yellow) !important; }
   html.look-calm .nav-icon.nav-star svg { fill: var(--ink) !important; }
   .nav-icon.nav-star::after { content: ""; position: absolute; top: 0; bottom: 0; left: -70%; width: 50%; transform: skewX(-20deg);
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .8), transparent); animation: acctShine 4.5s ease-in-out infinite; pointer-events: none; }
@@ -4926,7 +4926,7 @@ html.look-calm .quick-links.ql-8 a span { overflow: visible; text-overflow: clip
 .ql-head h2 { margin: 0; }
 /* (stronger than the cream header's own button colour, which was winning) */
 @media (max-width: 900px) {
-  html .nav-icons a.nav-icon.nav-star { background: linear-gradient(135deg, #fff7d1, #ffd84d) !important; border: 1px solid #e9bf2e !important; box-shadow: 0 0 0 3px rgba(255, 210, 55, .28), 0 0 14px rgba(255, 196, 0, .45); }
+  html .nav-icons a.nav-icon.nav-star { background: linear-gradient(135deg, #fff7d1, var(--yellow)) !important; border: 1px solid var(--yellow) !important; box-shadow: 0 0 0 3px rgba(255, 210, 55, .28), 0 0 14px rgba(255, 196, 0, .45); }
   html .nav-icons a.nav-icon.nav-star svg { fill: var(--ink) !important; }
 }
 @media (min-width: 761px) { html.look-calm .quick-links.ql-8 a { font-size: 14px; letter-spacing: 0; padding: 13px 12px; gap: 9px; } html.look-calm .quick-links.ql-8 svg { width: 18px; height: 18px; } }
@@ -5084,7 +5084,7 @@ a.res-sb { padding-right: 16px; }
 .sup-msg.league { justify-self: end; background: var(--soft); border-color: #cfe7d3; border-top-right-radius: 4px; }
 .sup-page .sup-msg.me { justify-self: end; background: var(--surface); border-top-left-radius: 14px; border-top-right-radius: 4px; }
 .sup-page .sup-msg.league { justify-self: start; border-top-right-radius: 14px; border-top-left-radius: 4px; }
-.sup-msg.note { justify-self: stretch; max-width: none; background: #fff8dc; border: 1px dashed #e0c25c; }
+.sup-msg.note { justify-self: stretch; max-width: none; background: #fff8dc; border: 1px dashed var(--yellow); }
 .sup-msg-head { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; margin-bottom: 6px; }
 .sup-msg-head time { color: var(--muted); white-space: nowrap; }
 .sup-msg-body p { margin: 0 0 8px; } .sup-msg-body p:last-child { margin-bottom: 0; }
@@ -5275,7 +5275,7 @@ html.look-calm .quick-links.ql-8 svg { width: 15px !important; height: 15px !imp
 @media (max-width: 760px) { html.look-calm .quick-links.ql-8 a { font-size: 12px !important; padding: 9px 10px !important; } }
 
 /* The black My Snooker bar on the home page glows (logged in) — it's where computers find My Snooker */
-.my-snooker-btn { position: relative; overflow: hidden; border: 1px solid #e9bf2e !important;
+.my-snooker-btn { position: relative; overflow: hidden; border: 1px solid var(--yellow) !important;
   box-shadow: 0 0 0 3px rgba(255, 210, 55, .25), 0 0 22px rgba(255, 196, 0, .35) !important; animation: msGlow 2.8s ease-in-out infinite; }
 .my-snooker-btn::after { content: ""; position: absolute; top: 0; bottom: 0; left: -40%; width: 30%; transform: skewX(-20deg); pointer-events: none;
   background: linear-gradient(90deg, transparent, rgba(255, 230, 140, .28), transparent); animation: msShine 4.5s ease-in-out infinite; }
@@ -5484,7 +5484,7 @@ html.look-calm .panel.bracket-panel .bracket-hint { color: #9a9a9a; }
 .sw-move i { margin-left: auto; font-style: normal; font-weight: 700; font-size: 13px; }
 .sw-move i.up { color: var(--green); } .sw-move i.down { color: var(--red-text); }
 .sw-move.moved { opacity: .6; }
-.cw-pick.warn { border-color: #f0cd55; background: #fff8db; }
+.cw-pick.warn { border-color: var(--yellow); background: #fff8db; }
 .sw-preview { margin-top: 14px; padding: 14px 16px; border-radius: 12px; background: var(--soft); }
 .sw-preview p { margin: 0 0 6px; }
 .sw-clash { margin: 10px 0; padding: 12px 14px; border-radius: 12px; border: 1px solid #f5c2cb; background: var(--soft); }
@@ -6571,7 +6571,7 @@ html.look-calm body:not([data-page="admin"]) :is(.back-link, .share-page, .share
    (buttons), chalk tiles (icons), balls (true circles), the cue (progress). Cards never move on hover.
    ═════════════════════════════════════════════════════════════════════════════════════ */
 :root {
-  --baize: #0F5A3B; --baize-deep: #0B4530; --chalk: #F4EFDF; --cloth: #F1F2EE; --brass: #C79A3A; --win: #1E7A4A;
+  --baize: #0F5A3B; --baize-deep: #0B4530; --chalk: #F4EFDF; --cloth: #F1F2EE; --brass: var(--yellow); --win: #1E7A4A;
   --ink: #15201B; --muted: #5B6660; --line: #DDE1DC; --line-soft: #EEF0EC; --hover-line: #F3A9BA;
   --cream: #F1F2EE; --dark: #15201B; --green: #1E7A4A;
   --r-xs: 6px; --r-sm: 14px; --r: 18px; --r-lg: 22px; --r-pill: 999px; --radius: 18px;

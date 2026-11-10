@@ -14,7 +14,7 @@ export function reminderEmail(r) {
   const html = `<!doctype html><html><body style="margin:0;background:#f9f8ee;font-family:Arial,Helvetica,sans-serif;color:#111">
   <div style="max-width:620px;margin:0 auto;padding:20px 14px">
     <div style="background:#111;color:#fff;padding:16px 18px;border-bottom:5px solid #e8003d">
-      <div style="font-size:13px;color:#fbb61a;font-weight:bold">${esc(r.siteName)}</div>
+      <div style="font-size:13px;color:#ffd237;font-weight:bold">${esc(r.siteName)}</div>
       <div style="font-size:20px;font-weight:bold;margin-top:4px">Your match result is still needed</div>
     </div>
     <div style="background:#fff;padding:18px">

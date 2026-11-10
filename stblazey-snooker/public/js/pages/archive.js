@@ -1,7 +1,9 @@
 // Season archive & roll of honour: every season the website knows about, with its
 // champions, top player, highest break and competition winners — and links to that
 // season's full tables, rankings, breaks and results. Nothing is typed in by hand:
-// it is all worked out from the results (the same maths as the live tables, rules.js).
+// it is all worked out from the results (the same maths as the live tables, rules.js) — except "Past winners"
+// (round 114), which the league types in by hand for the years before the website (Admin → Competitions → Past winners).
+import { pastWinners, pastWinnersSection } from "../core/past-winners.js";
 import { html, mount, fmtDate } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { table, loadCompetitions } from "../core/api.js";
@@ -12,7 +14,7 @@ import { setTitle, adminEdit } from "../core/router.js";
 export default async function archive(view) {
   setTitle("Season archive & roll of honour");
   adminEdit("seasons");
-  const [seasons, comps] = await Promise.all([table("seasons", "name"), loadCompetitions()]);
+  const [seasons, comps, pastWon, players, teams] = await Promise.all([table("seasons", "name"), loadCompetitions(), pastWinners(), table("players", "full_name").catch(() => []), table("teams", "name").catch(() => [])]);
   const current = seasons.find((s) => s.is_current) ?? seasons.at(-1);
   const list = await Promise.all([...seasons].reverse().map((s) => seasonContext(s.id)));
 
@@ -91,5 +93,7 @@ export default async function archive(view) {
           ${cups.length ? html`<a class="btn small ghost" href="/competitions${q(ctx)}">Competitions ${ctx.season.name}</a>` : ""}
           <a class="btn small ghost" href="/presentation${q(ctx)}">Trophies &amp; winners</a><a class="btn small ghost" href="/season-review${q(ctx)}">Season review</a></div>
       </section>`; })}
+
+    ${pastWinnersSection(pastWon, { players, teams })}
   </div>`);
 }

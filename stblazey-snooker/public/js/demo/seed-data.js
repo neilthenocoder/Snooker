@@ -638,7 +638,7 @@ The league table is decided on frames won: one point for every frame.
       // Round 23: side adverts, sponsorship packages, downloads, Hall of Fame.
       ads: [], downloads: [], hall_of_fame_contacts: [],
       sponsor_packages: [
-        { id: uuid(), name: "Gold", price: "£250", period: "a season", colour: "#d4a017", summary: "Sample package — change it under Website → Sponsorship packages.", benefits: "Banner at the top of the sponsors at the bottom of every page\nSide advert on the website all season\nLogo on the presentation night programme", includes_advert: true, sort: 1, is_active: true },
+        { id: uuid(), name: "Gold", price: "£250", period: "a season", colour: "#ffd237", summary: "Sample package — change it under Website → Sponsorship packages.", benefits: "Banner at the top of the sponsors at the bottom of every page\nSide advert on the website all season\nLogo on the presentation night programme", includes_advert: true, sort: 1, is_active: true },
         { id: uuid(), name: "Silver", price: "£150", period: "a season", colour: "#9aa3ad", summary: "Sample package.", benefits: "Banner at the bottom of every page\nSide advert for half a season", includes_advert: true, sort: 2, is_active: true },
         { id: uuid(), name: "Bronze", price: "£75", period: "a season", colour: "#b36b2c", summary: "Sample package.", benefits: "Banner at the bottom of every page", includes_advert: false, sort: 3, is_active: true },
       ],

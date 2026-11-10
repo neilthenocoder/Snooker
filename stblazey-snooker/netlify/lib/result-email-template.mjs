@@ -32,7 +32,7 @@ export function resultEmail(m, { copyFor = null } = {}) {
   const html = `<!doctype html><html><body style="margin:0;background:#f9f8ee;font-family:Arial,Helvetica,sans-serif;color:#111">
   <div style="max-width:620px;margin:0 auto;padding:20px 14px">
     <div style="background:#111;color:#fff;padding:16px 18px;border-bottom:5px solid #e8003d">
-      <div style="font-size:13px;color:#fbb61a;font-weight:bold">${esc(m.siteName)}</div>
+      <div style="font-size:13px;color:#ffd237;font-weight:bold">${esc(m.siteName)}</div>
       <div style="font-size:20px;font-weight:bold;margin-top:4px">${copyFor ? "Your match result, as submitted" : "A result is waiting for approval"}</div>
     </div>
     <div style="background:#fff;padding:18px">
@@ -97,8 +97,8 @@ export function entriesEmail(e) {
       <td style="padding:8px 10px;border-bottom:1px solid #e6e6e0;white-space:nowrap">${esc(day(x.payBy))}</td></tr>`).join("");
   const html = `<!doctype html><html><body style="margin:0;background:#f9f8ee;font-family:Arial,Helvetica,sans-serif;color:#111">
   <div style="max-width:620px;margin:0 auto;padding:20px 14px">
-    <div style="background:#111;color:#fff;padding:16px 18px;border-bottom:5px solid #fbb61a">
-      <div style="font-size:13px;color:#fbb61a;font-weight:bold">${esc(e.siteName)}</div>
+    <div style="background:#111;color:#fff;padding:16px 18px;border-bottom:5px solid #ffd237">
+      <div style="font-size:13px;color:#ffd237;font-weight:bold">${esc(e.siteName)}</div>
       <div style="font-size:20px;font-weight:bold;margin-top:4px">New competition entr${n > 1 ? "ies" : "y"}</div>
     </div>
     <div style="background:#fff;padding:18px">

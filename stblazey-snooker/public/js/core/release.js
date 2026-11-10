@@ -4,8 +4,11 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.93.1";
+export const SITE_VERSION = "1.94.0";
 export const CHANGES = [
+  "Past winners: Admin → Competitions → Past winners — type in winners from before the website (a player or team on the site, or just a name), several seasons at once (1980/81, 1984/85). They show in the Season archive & roll of honour, under “Previous winners” on the competition's page, and as Honours (and in the trophy cabinet) on the player's or team's page. Run supabase/fixes/round114-past-winners.sql once",
+  "My Snooker: the Live and upcoming strip at the top is now exactly the home page's — same cards, colours and sizes — with an All teams / your team switch",
+  "One yellow everywhere: the Continue reading button's #FFD237 — the My Snooker star, competitions, Pending labels, trophies, emails and share pictures",
   "My Snooker is red with a gold star and white writing: the star in the menu bar and My Snooker at the top of the account menu (no more gold shine)",
   "Menu bar: your initials sit in a dark circle inside a light grey Admin pill, the same height as the red My Snooker star and the bell",
   "My Snooker star: a bigger gold star in a darker-red square, the same in the account menu and on the home page card",

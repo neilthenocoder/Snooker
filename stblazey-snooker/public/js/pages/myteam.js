@@ -36,15 +36,16 @@ export default async function myteam(view, { user, query }) {
   if (!teams.length && !players.length) return chooser(view, ctx, crumbs, prefs, user);
 
   view.classList.add("flush");
-  const lineClass = ["red", "yellow", "grey"].includes(site.strip_line ?? "red") ? `strip-line-${site.strip_line ?? "red"}` : "";
   mount(view, html`
-    <section class="hero hero-personal"><div class="live-strip-wrap ${lineClass}"><div class="wrap"><div class="live-strip" data-strip></div></div></div></section>
+    <section class="sb-strip live-strip sb-strip--mine" aria-labelledby="sb-strip-h"><div class="sb-strip__inner" data-strip></div></section>
     <div class="wrap ms ms-page">
       ${crumbs}
       ${hero(user, ctx, teams, players, look, saved)}
       <div data-ms></div>
     </div>`);
-  const stopStrip = await mountLiveStrip($("[data-strip]", view), user, { mode: "mine" }).catch(() => () => {});
+  // Round 114 (Neil): the same strip as the home page — same cards, colours and sizes — showing your teams' matches
+  // (with the All / your team switch).
+  const stopStrip = await mountLiveStrip($("[data-strip]", view), user, { mode: "mine", layout: "sb" }).catch(() => () => {});
   const stopMine = await mountMySnooker($("[data-ms]", view), user, { data, prefs });
   // Captains and vice captains: the "Manage team" box, as on the home page.
   const stopSquad = user ? await mountSquadBox(user, ctx, site).catch(() => () => {}) : () => {};

@@ -12,7 +12,7 @@
 import { html, mount } from "./dom.js";
 import { genericAvatar } from "./components.js";
 
-const COLOURS = ["#f1002a", "#FFB81C", "#0b8a12", "#6b3a2a", "#0088e0", "#ff7eb6", "#111111", "#ffffff"];
+const COLOURS = ["#f1002a", "#FFD237", "#0b8a12", "#6b3a2a", "#0088e0", "#ff7eb6", "#111111", "#ffffff"];
 const SHOW_MS = 6500;
 let open = null;
 

@@ -1,3 +1,4 @@
+import { pastWinners, honoursOf, honoursBox } from "../core/past-winners.js";
 import { html, mount, $, fmtDate, paragraphs } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { table, playerHistory, loadCompetitions, articles, settings } from "../core/api.js";
@@ -19,9 +20,9 @@ export default async function player(view, { params, user }) {
   const p = allPlayers.find((x) => x.slug === params.id) ?? allPlayers.find((x) => x.id === params.id);
   if (!p) return notFound(view);
   if (p.slug && params.id !== p.slug) history.replaceState(null, "", `${urls.player(p)}${location.search}${location.hash}`);
-  const [ctx, seasons, leagues, playerPast, comps, news, awards, site] = await Promise.all([
+  const [ctx, seasons, leagues, playerPast, comps, news, awards, site, pastWon] = await Promise.all([
     seasonContext(), table("seasons", "name"), table("leagues", "sort"),
-    playerHistory(p.id), loadCompetitions(), articles(), table("awards", "sort").catch(() => []), settings().catch(() => ({})),
+    playerHistory(p.id), loadCompetitions(), articles(), table("awards", "sort").catch(() => []), settings().catch(() => ({})), pastWinners(),
   ]);
   // Form (Rich, round 25): a mark out of 10 from the last 6 matches this season.
   const form = await loadForm(ctx).then((f) => f.player(p.id)).catch(() => null);
@@ -89,6 +90,9 @@ export default async function player(view, { params, user }) {
     if (b.champion && inEntry(b.entryById.get(b.champion), p.id)) addWin(c.name, c.season_id, c);
   }
   for (const a of awards) if (a.winner_player_id === p.id) addWin(a.name, a.season_id, a.trophy_url ? a : comps.competitions.find((c) => c.id === a.competition_id) ?? a);
+  // Round 114: Past winners typed in by hand (Admin → Competitions → Past winners) count too.
+  const myHonours = honoursOf(pastWon, { player: p });
+  for (const h of myHonours) if (h.place === "Winner") addWin(h.title, `pw:${h.season}`, comps.competitions.find((c) => c.id === h.competition_id) ?? null);
   const trophies = [...cabinet.values()].sort((x, y) => y.seasons.size - x.seasons.size || x.name.localeCompare(y.name));
 
   // Round 73 (Rich): career stats and the Triple Crown —
@@ -102,6 +106,7 @@ export default async function player(view, { params, user }) {
     if (me?.status === "Runner-up") finals.add(`${cleanName(c.name)}|${c.season_id}`);
   }
   for (const a of awards) if (a.runner_up_player_id === p.id) finals.add(`${cleanName(a.name)}|${a.season_id ?? a.id}`);
+  for (const h of myHonours) if (h.place === "Runner-up") finals.add(`${cleanName(h.title)}|pw:${h.season}`);
   const crownNames = listItems(site.triple_crown).slice(0, 3);
   const crownWins = (name) => cabinet.get(cleanName(name).toLowerCase())?.seasons.size ?? 0;
   const crownThing = (name) => cabinet.get(cleanName(name).toLowerCase())?.thing ?? comps.competitions.find((c) => cleanName(c.name).toLowerCase() === cleanName(name).toLowerCase()) ?? null;
@@ -194,6 +199,7 @@ export default async function player(view, { params, user }) {
       <ul>${trophies.map((t) => html`<li>${trophy(t.thing, "cab-trophy")}<span class="cab-name">${t.name}</span><b class="cab-count">×${t.seasons.size}</b></li>`)}</ul></section>` : ""}
     ${html`<div class="profile-grid">
       <section class="profile-box wide"><h3>Bio</h3>${bio ? html`<div class="prose">${paragraphs(bio)}</div>` : html`<p class="not-upd">Not updated yet</p>`}</section>
+      ${myHonours.length ? honoursBox(myHonours) : ""}
       ${career.length ? html`<section class="profile-box"><h3>Career history</h3><ul class="timeline">${career.map((line) => {
         const m = line.match(/^(\d{4}(?:\s*[–-]\s*\d{2,4})?)\s*[—–:-]\s*(.+)$/);
         return m ? html`<li><b>${m[1]}</b><span>${m[2]}</span></li>` : html`<li><span>${line}</span></li>`;
