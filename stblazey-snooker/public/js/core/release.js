@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────────────────────────
 export const SITE_VERSION = "1.95.0";
 export const CHANGES = [
+  "Phones: over the home page photo the ☰ menu and your account (now an avatar icon) show white; no thin white line under the red line when scrolled",
   "Phones, simpler: ☰ menu on the left (Fixtures, League, Competitions, News, Live, Explore, Notifications, Add to home screen), the logo in the middle, your account circle and Live on the right; the bar at the bottom is just Home, League, Comps, My Snooker and Search",
   "Results strip: scores on white tiles with black numbers, and Completed in the same green as everywhere else",
   "Scorecard: the big frame totals in yellow boxes with black numbers",

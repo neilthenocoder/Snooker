@@ -166,7 +166,7 @@ function markBottomNav() {
   if (!bar) return;
   const open = document.documentElement.classList.contains("menu-open");
   const section = document.documentElement.dataset.section || "";
-  const key = open ? "" : document.documentElement.dataset.page === "myteam" ? "mysnooker" : section === "home" ? "home" : ["league", "competitions"].includes(section) ? section : "";
+  const key = open ? "" : document.body.dataset.page === "myteam" ? "mysnooker" : section === "home" ? "home" : ["league", "competitions"].includes(section) ? section : "";
   let on = null;
   for (const a of bar.querySelectorAll("[data-bnav]")) { const hit = a.dataset.bnav === key; a.classList.toggle("on", hit); if (hit) { on = a; a.setAttribute("aria-current", "page"); } else a.removeAttribute("aria-current"); }
   if (!on || !on.offsetWidth) { bar.style.setProperty("--line-o", "0"); return; }
@@ -321,7 +321,7 @@ async function drawHeader() {
         ${liveItem ? html`<a class="sb-btn sb-btn--live sb-livebtn state-idle" data-live-btn href="${liveItem.href}"><span class="sb-dot" aria-hidden="true"></span><span>Live</span></a>` : ""}
         ${user ? html`<a class="sb-icon-btn sb-mystar" href="/mysnooker" data-nav-section="mysnooker" aria-label="My Snooker" title="My Snooker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.2l-5.8 3.2 1.2-6.5-4.8-4.5 6.5-.8z"/></svg></a>` : ""}
         ${user ? html`<div class="nav-drop-wrap sb-acct-wrap"><button type="button" class="sb-acct" data-drop="acct" aria-expanded="false" aria-haspopup="true" aria-label="${role} menu: ${name}" title="${name}">
-            <span class="sb-acct__initials">${initials(name)}</span><span class="sb-acct__word">${role}</span><svg class="sb-icon sb-acct__chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+            <span class="sb-acct__initials">${initials(name)}</span><svg class="sb-acct__ava" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 20c.9-3.6 3.8-5.6 7.2-5.6s6.3 2 7.2 5.6"/></svg><span class="sb-acct__word">${role}</span><svg class="sb-icon sb-acct__chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
           <div class="sb-drop" data-drop-panel="acct" hidden>
             <div class="sb-drop__who"><span class="sb-drop__initials">${initials(name)}</span><span><strong>${name}</strong><small>${role}</small></span></div>
             ${acctItems(user)}

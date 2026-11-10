@@ -2011,3 +2011,19 @@ html:not(#x) body:not(#sb) .notice-list { display: grid; gap: 10px; }
 html:not(#x) body:not(#sb) .notice-item { background: var(--soft) !important; border: 0 !important; border-radius: 16px !important; box-shadow: none !important; padding: 16px 18px !important; margin: 0 !important; }
 html:not(#x) body:not(#sb) .switch-list { background: var(--soft) !important; border: 0 !important; border-radius: 16px !important; overflow: hidden; }
 html:not(#x) body:not(#sb) .switch-list .switch-row { background: transparent !important; border-color: rgba(0, 0, 0, .06) !important; }
+/* Round 115b (Neil): over the home page photo the ☰ was dark on dark — white there, like the other header icons. */
+@media (max-width: 900px) {
+  html.sb-navover:not(.sb-scrolled):not(#x) body:not(#sb) .sb-burger { color: #fff !important; background: rgba(255, 255, 255, .14) !important; }
+  html.sb-navover:not(.sb-scrolled):not(#x) body:not(#sb) .sb-burger:hover { background: rgba(255, 255, 255, .24) !important; }
+  html.sb-navover:not(.sb-scrolled):not(#x) body:not(#sb) .sb-header .sb-loginbtn { background: rgba(255, 255, 255, .14) !important; color: #fff !important; }
+}
+/* Round 115c (Neil): a 1px white line could show under the red line of the scrolled header on phones — the bar's
+   transparent bottom border is gone, so the white backing runs right down to the red line. */
+html:not(#x) body:not(#sb) .sb-header__inner { border-bottom-width: 0 !important; }
+/* … and over the home page photo (phones), your account is a white avatar icon on glass, not the dark initials. */
+.sb-acct__ava { display: none; }
+@media (max-width: 900px) {
+  html.sb-navover:not(.sb-scrolled):not(#x) body:not(#sb) .sb-header button.sb-acct { background: rgba(255, 255, 255, .14) !important; border-radius: 999px !important; }
+  html.sb-navover:not(.sb-scrolled):not(#x) body:not(#sb) .sb-header .sb-acct__initials { display: none !important; }
+  html.sb-navover:not(.sb-scrolled):not(#x) body:not(#sb) .sb-header .sb-acct__ava { display: block; width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+}
