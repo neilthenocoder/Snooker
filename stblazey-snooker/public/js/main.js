@@ -134,6 +134,7 @@ const BNAV_ICONS = {
   more: bi("M5 10.2a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6Zm7 0a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6Zm7 0a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6Z"),
   search: bi("M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.8 4.8-1.4 1.4-4.8-4.8A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"),
   menu: bi("M3 6h18v2H3Zm0 5h18v2H3Zm0 5h18v2H3Z"),
+  mysnooker: bi("m12 2.5 2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5-4.9-4.5 6.6-.8Z"),
 };
 // Round 85 (Neil, like the Premier League app): a solid bar fixed to the bottom — nothing shows through it — with
 // Home, Fixtures, Tables, Comps and More (the full menu). Above it, a row of shortcuts: your account (a circle), Following,
@@ -146,25 +147,16 @@ const TRAY_ICONS = {
   star: bi("m12 2.5 2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5-4.9-4.5 6.6-.8Z"),
 };
 function bottomNav(seasons, user) {
+  // Round 115 (Rich: "it was all getting too complicated — need to simplify"): no shortcuts row above the bar any more,
+  // just five: Home, League, Competitions, My Snooker (where Following lives too) and Search. Everything else is in the
+  // menu at the top left (☰), and your account is the circle at the top right.
   const current = seasons.find((x) => x.is_current) ?? seasons.at(-1);
   const tables = current ? urls.season(current, "league-tables") : "/league";
   const item = (key, href, label) => html`<a class="bnav-item" href="${href}" data-bnav="${key}"><span class="bnav-ico">${BNAV_ICONS[key]}</span><span class="bnav-label">${label}</span></a>`;
-  const chip = (href, icon, label) => html`<a class="bnav-chip" href="${href}">${icon}<span>${label}</span></a>`;
-  const name = user?.profile?.full_name || user?.email || "";
-  return html`<nav class="bnav" aria-label="Quick menu">
-    <div class="bnav-tray">
-      <button type="button" class="bnav-handle" data-bnav-tray aria-label="Show or hide the shortcuts" aria-expanded="true"></button>
-      <div class="bnav-chips">
-        <button type="button" class="bnav-me ${user ? "in" : ""}" data-account-open aria-label="${user ? `Your menu: ${name}` : "Log in"}">${TRAY_ICONS.person}</button>
-        ${chip("/my/snooker", TRAY_ICONS.following, "Following")}
-        ${chip("/live", TRAY_ICONS.matches, "Matches")}
-        ${chip("/mysnooker", TRAY_ICONS.star, "My Snooker")}
-        <button type="button" class="bnav-chip" data-search-open>${BNAV_ICONS.search}<span>Search</span></button>
-      </div>
-    </div>
+  return html`<nav class="bnav bnav--five" aria-label="Quick menu">
     <div class="bnav-bar"><span class="bnav-line" aria-hidden="true"></span>
-      ${item("home", "/", "Home")}${item("fixtures", "/fixtures", "Fixtures")}${item("league", tables, "Tables")}${item("competitions", "/competitions", "Comps")}
-      <button type="button" class="bnav-item" data-bnav="more" data-menu-open aria-label="More: the full menu"><span class="bnav-ico">${BNAV_ICONS.menu}</span><span class="bnav-label">More</span></button>
+      ${item("home", "/", "Home")}${item("league", tables, "League")}${item("competitions", "/competitions", "Comps")}${item("mysnooker", "/mysnooker", "My Snooker")}
+      <button type="button" class="bnav-item" data-bnav="search" data-search-open aria-label="Search"><span class="bnav-ico">${BNAV_ICONS.search}</span><span class="bnav-label">Search</span></button>
     </div></nav>`;
 }
 /** Light up the part of the site you're in, and slide the red line over it. */
@@ -174,7 +166,7 @@ function markBottomNav() {
   if (!bar) return;
   const open = document.documentElement.classList.contains("menu-open");
   const section = document.documentElement.dataset.section || "";
-  const key = open ? "more" : section === "home" ? "home" : ["fixtures", "league", "competitions"].includes(section) ? section : "";
+  const key = open ? "" : document.documentElement.dataset.page === "myteam" ? "mysnooker" : section === "home" ? "home" : ["league", "competitions"].includes(section) ? section : "";
   let on = null;
   for (const a of bar.querySelectorAll("[data-bnav]")) { const hit = a.dataset.bnav === key; a.classList.toggle("on", hit); if (hit) { on = a; a.setAttribute("aria-current", "page"); } else a.removeAttribute("aria-current"); }
   if (!on || !on.offsetWidth) { bar.style.setProperty("--line-o", "0"); return; }
@@ -317,6 +309,8 @@ async function drawHeader() {
   mount($("#site-header"), html`
     ${DEMO_MODE ? html`<div class="demo-banner">Demo mode — sample data saved in this browser only. Add your Supabase keys in js/config.js to go live.</div>` : ""}
     <header class="sb-header" data-site-header><div class="sb-header__inner">
+      ${/* Round 115 (Rich): phones — the menu (☰) on the left, the logo in the middle, your account circle and Live on the right. */ ""}
+      <button type="button" class="sb-burger" data-menu-open aria-label="Menu" aria-expanded="false"><svg class="sb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
       <a class="sb-brand" href="/" aria-label="${SITE.name} home">${brandMark(site)}</a>
       <nav class="sb-header__links" aria-label="Main menu">
         ${MENU.filter((item) => item.color !== "live").map((item) => html`<a class="sb-navlink" data-nav-section="${navSection(item.href)}" href="${item.href}" ${isOutside(item.href) ? html`target="_blank" rel="noopener"` : ""}>${item.label}</a>`)}
@@ -333,7 +327,7 @@ async function drawHeader() {
             ${acctItems(user)}
             <button type="button" class="acct-item acct-out" data-logout><span class="acct-ico">${logoutIcon}</span><span><b>Log out</b></span></button>
           </div></div>`
-          : noLogin ? "" : html`<button type="button" class="sb-btn sb-btn--primary sb-loginbtn" data-account-open>Log in</button>`}
+          : noLogin ? "" : html`<button type="button" class="sb-btn sb-btn--primary sb-loginbtn" data-account-open aria-label="Log in"><svg class="sb-icon sb-loginbtn__ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 20c.9-3.6 3.8-5.6 7.2-5.6s6.3 2 7.2 5.6"/></svg><span class="sb-loginbtn__word">Log in</span></button>`}
         <button type="button" class="sb-icon-btn sb-bell" data-bell data-bell-btn aria-label="Notifications" title="Notifications">${bell}</button>
         <button type="button" class="sb-icon-btn sb-hide-phone" data-search-open aria-label="Search" title="Search"><svg class="sb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14M20 20l-3.5-3.5"/></svg></button>
       </div>
@@ -706,7 +700,7 @@ document.addEventListener("click", async (e) => {
     closeDrawer(); await drawHeader(); return navigate("/");
   }
   // The bottom bar's More opens the menu, and closes it again when it is already open (like an app's tab).
-  if (e.target.closest("[data-menu-open]")) return setMenu(!(e.target.closest(".bnav") && document.documentElement.classList.contains("menu-open")));
+  if (e.target.closest("[data-menu-open]")) return setMenu(!(e.target.closest(".bnav, .sb-burger") && document.documentElement.classList.contains("menu-open")));
   if (e.target.closest("[data-menu-close]")) return setMenu(false);
   if (e.target.closest("[data-reload]")) return location.reload();
   // Log in (logged out); once logged in the same buttons open the account menu instead (round 51 — one menu, not two).

@@ -647,7 +647,6 @@ export const RESOURCES = {
       { name: "strip_result_hours", label: "How long a result stays on the strip, in hours (0 = don't show results; standard 48). A cup result typed in later counts from when it was typed in.", short: "Results stay (hours)", type: "number", default: 48, min: 0, max: 336 },
       { name: "strip_live_color", label: "“Live” label and the edge of a live card (standard: green, like the Live button)", type: "color", optional: true, default: "#19a33a" },
       { name: "strip_soon_color", label: "“Live soon” label (standard: orange)", type: "color", optional: true, default: "#ff8a00" },
-      { name: "strip_done_color", label: "“Completed” label (standard: green)", type: "color", optional: true, default: "#2f7d32" },
       { name: "strip_pending_color", label: "“Pending” label — a league result waiting for approval (standard: yellow)", type: "color", optional: true, default: "#ffd237" },
       { name: "strip_walkover_color", label: "“Walkover” label (standard: red)", type: "color", optional: true, default: "#c4112f" },
       { name: "strip_postponed_color", label: "“Postponed” label — shown from the match's date until a week ahead (standard: red)", type: "color", optional: true, default: "#c4112f" },

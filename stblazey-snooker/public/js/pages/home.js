@@ -1147,7 +1147,7 @@ function scoreTiles(c) {
 function stripColours(site) {
   const hex = (v) => (/^#[0-9a-f]{6}$/i.test(v ?? "") ? v : null);
   const ink = (c) => { const n = parseInt(c.slice(1), 16), [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255]; return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#111" : "#fff"; };
-  const vars = [["live", site.strip_live_color], ["soon", site.strip_soon_color], ["done", site.strip_done_color], ["pending", /^#f2b705$/i.test(site.strip_pending_color ?? "") ? null : site.strip_pending_color], ["postponed", site.strip_postponed_color], ["walkover", site.strip_walkover_color]]
+  const vars = [["live", site.strip_live_color], ["soon", site.strip_soon_color], ["done", null /* round 115 (Rich): Completed is always the site green */], ["pending", /^#f2b705$/i.test(site.strip_pending_color ?? "") ? null : site.strip_pending_color], ["postponed", site.strip_postponed_color], ["walkover", site.strip_walkover_color]]
     .filter(([, c]) => hex(c)).map(([k, c]) => `--strip-${k}:${c};--strip-${k}-ink:${ink(c)}`).join(";");
   return vars ? html`<style>[data-strip]{${vars}}</style>` : "";
 }

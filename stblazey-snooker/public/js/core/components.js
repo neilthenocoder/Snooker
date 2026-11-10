@@ -273,7 +273,8 @@ export function leagueMarks(ctx, league, { highlightTeamId, shown } = {}) {
   // Within the promotion places and within the relegation places every other row is a shade lighter, so two
   // teams side by side in the same zone can be told apart (Rich, round 16).
   const upList = [...ups], downList = [...downs];
-  const alt = (r) => (ups.has(r) ? upList.indexOf(r) % 2 === 1 : downs.has(r) ? downList.indexOf(r) % 2 === 1 : false);
+  // Round 115 (Rich): the relegation places get darker towards the bottom — counted from the last place up.
+  const alt = (r) => (ups.has(r) ? upList.indexOf(r) % 2 === 1 : downs.has(r) ? (downList.length - 1 - downList.indexOf(r)) % 2 === 1 : false);
   return {
     // Only the leader is the big green row. The team someone follows (My Snooker, a team's page) keeps its own
     // cream row with a dark edge — the same size as the others.

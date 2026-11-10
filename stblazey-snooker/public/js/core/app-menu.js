@@ -81,7 +81,9 @@ export function appMenu({ menu, more, user, name = "", role = "", initials = "",
   // Which extra links go under which part; the rest under "More pages".
   const used = new Set();
   const screens = [];
-  const rows = menu.map((item) => {
+  // Round 115 (Rich): the ☰ menu holds Fixtures, League, Competitions, News, Live, Explore, Notifications and Add to
+  // home screen. Home is in the bar at the bottom, and your account is the circle at the top right.
+  const rows = menu.filter((item) => item.href !== "/").map((item) => {
     const fam = FAMILIES.find((f) => f.match.test(item.href));
     const link = (cls = "") => html`<a class="sbm__row ${cls} ${item.color === "live" ? "sbm__row--live state-idle" : ""}" ${item.color === "live" ? html`data-live-btn` : ""} data-nav-section="${navSection(item.href)}" href="${item.href}" ${isOutside(item.href) ? html`target="_blank" rel="noopener"` : ""}>
         <span class="sbm__icowrap">${lineIcon(iconFor(item.href))}</span><span class="sbm__label">${item.label}</span></a>`;
@@ -106,11 +108,9 @@ export function appMenu({ menu, more, user, name = "", role = "", initials = "",
     <div class="sbd__scrim" data-menu-close aria-hidden="true"></div>
     <div class="sbd__panel sbm__panel" role="dialog" aria-modal="true" aria-label="Menu">
       <section class="sbm__screen is-on" data-sbm-screen="root" aria-label="Menu">
-        <div class="sbm__head"><h2>More</h2>
+        <div class="sbm__head"><h2>Menu</h2>
           <button type="button" class="sbm__btn" data-search-open aria-label="Search">${lineIcon("search")}</button>
           <button type="button" class="sbm__btn" data-menu-close aria-label="Close the menu">${cross}</button></div>
-        ${user ? html`<button type="button" class="sbm__me" data-sbm-go="acct"><span class="sbm__initials">${initials}</span><span class="sbm__who"><b>${name}</b><small>${role} · your account</small></span>${chev}</button>`
-          : noLogin ? "" : html`<button type="button" class="sbm__login" data-account-open>Log in or create an account</button>`}
         <nav class="sbm__list" aria-label="Main menu">${rows}</nav>
         ${/* Round 112 (Neil): "Explore" — every other page of the website (the computer's More ▾ list) on a screen of its own */ ""}
         ${more.length ? html`<div class="sbm__list"><button type="button" class="sbm__row sbm__row--sub" data-sbm-go="explore"><span class="sbm__icowrap">${lineIcon("explore")}</span>

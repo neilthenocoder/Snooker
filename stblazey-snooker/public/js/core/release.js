@@ -4,8 +4,17 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.94.0";
+export const SITE_VERSION = "1.95.0";
 export const CHANGES = [
+  "Phones, simpler: ☰ menu on the left (Fixtures, League, Competitions, News, Live, Explore, Notifications, Add to home screen), the logo in the middle, your account circle and Live on the right; the bar at the bottom is just Home, League, Comps, My Snooker and Search",
+  "Results strip: scores on white tiles with black numbers, and Completed in the same green as everywhere else",
+  "Scorecard: the big frame totals in yellow boxes with black numbers",
+  "Admin buttons in soft blue with blue writing (Delete stays red)",
+  "Newsletter box: brown (#401d16) with a yellow Sign me up button",
+  "League tables: the relegation places get darker towards the bottom",
+  "Normal text 14px (was 16px); news articles 14px with the intro at 15px",
+  "News: the quote is a green line down the left with bolder words (no dark box); categories are rounded buttons",
+  "Notifications: a white panel with a plain header, each notification and group of switches on grey, even spacing",
   "Past winners: Admin → Competitions → Past winners — type in winners from before the website (a player or team on the site, or just a name), several seasons at once (1980/81, 1984/85). They show in the Season archive & roll of honour, under “Previous winners” on the competition's page, and as Honours (and in the trophy cabinet) on the player's or team's page. Run supabase/fixes/round114-past-winners.sql once",
   "My Snooker: the Live and upcoming strip at the top is now exactly the home page's — same cards, colours and sizes — with an All teams / your team switch",
   "One yellow everywhere: the Continue reading button's #FFD237 — the My Snooker star, competitions, Pending labels, trophies, emails and share pictures",

@@ -1929,3 +1929,85 @@ html:not(#x) body:not(#sb) .sb-header .sb-icon-btn.sb-mystar svg { width: 20px !
 .pw-honours__txt .pw-honours__yrs { flex-basis: 100%; font-weight: 500; line-height: 1.45; }
 .pw-archive { margin-top: 12px; }
 .pw-archive > div > h2 { margin: 0 0 6px; }
+
+/* ── Round 115 (Rich: "it was all getting too complicated — need to simplify") ───────────────── */
+/* Phones: ☰ menu on the left · the logo in the middle · your account circle and Live on the right. */
+.sb-burger { display: none; }
+@media (max-width: 900px) {
+  html:not(#x) body:not(#sb) .sb-header__inner { position: relative; display: flex; align-items: center; justify-content: space-between; min-height: 64px; }
+  html:not(#x) body:not(#sb) .sb-burger { display: grid; place-items: center; width: 44px; height: 44px; margin-left: -6px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); cursor: pointer; flex: none; }
+  html:not(#x) body:not(#sb) .sb-burger:hover { background: var(--soft); }
+  html:not(#x) body:not(#sb) .sb-burger .sb-icon { width: 26px; height: 26px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; }
+  html:not(#x) body:not(#sb) .sb-header .sb-brand { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); margin: 0 !important; }
+  html:not(#x) body:not(#sb) .sb-header__actions { margin-left: auto; gap: 8px; }
+  html:not(#x) body:not(#sb) .sb-header__actions .sb-mystar,
+  html:not(#x) body:not(#sb) .sb-header__actions .sb-bell { display: none !important; }
+  /* the account (or Log in) first, then Live */
+  html:not(#x) body:not(#sb) .sb-header__actions .sb-acct-wrap,
+  html:not(#x) body:not(#sb) .sb-header__actions .sb-loginbtn { order: 1; }
+  html:not(#x) body:not(#sb) .sb-header__actions .sb-livebtn { order: 2; }
+  html.has-bnav:not(#x) body:not(#sb) .sb-header .sb-acct-wrap { display: block !important; }
+  html.has-bnav:not(#x) body:not(#sb) .sb-header .sb-loginbtn { display: grid !important; }
+  html:not(#x) body:not(#sb) .sb-header button.sb-acct { width: 40px; height: 40px; padding: 0 !important; background: transparent !important; justify-content: center; }
+  html:not(#x) body:not(#sb) .sb-header button.sb-acct .sb-acct__initials { width: 40px; height: 40px; }
+  html:not(#x) body:not(#sb) .sb-header .sb-loginbtn { width: 40px; height: 40px; min-height: 40px; padding: 0 !important; border-radius: 999px !important; display: grid; place-items: center; background: var(--soft) !important; color: var(--ink) !important; }
+  html:not(#x) body:not(#sb) .sb-header .sb-loginbtn__word { display: none; }
+  html:not(#x) body:not(#sb) .sb-header .sb-loginbtn__ico { display: block; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+  /* the bar at the bottom: just the five */
+  html:not(#x) body:not(#sb) .bnav--five .bnav-bar { display: grid; grid-template-columns: repeat(5, 1fr); }
+}
+@media (min-width: 901px) { .sb-loginbtn__ico { display: none; } }
+
+/* Results strip (Rich): the score on white tiles with a faint gap between them and black numbers; and one green
+   everywhere — "Completed" is the same green as Live (and the rest of the site). */
+html:not(#x) body:not(#sb) .sb-score.sb-score--tone { background: transparent !important; border: 0 !important; gap: 3px; border-radius: 8px; }
+html:not(#x) body:not(#sb) .sb-score.sb-score--tone span { background: #fff !important; color: #111 !important; border: 0 !important; border-radius: 6px; }
+html:not(#x) body:not(#sb) .sb-score.sb-score--tone span + span { border-left: 0 !important; }
+html:not(#x) body:not(#sb) .sb-state--done { background: var(--live) !important; color: #fff !important; }
+html:not(#x) body:not(#sb) .sb-state--live { background: var(--live) !important; }
+:root:not(#x) { --strip-done: var(--live); --green: var(--live); --win: var(--live); }
+
+/* Text sizes (Rich): normal text 14px (was 16px); news articles 14px too, with the intro (lead) at 15px. */
+:root:not(#x) { --fs-body: 14px; --fs-prose: 14px; }
+html:not(#x) body:not(#sb) .art-body { font-size: var(--fs-prose, 14px) !important; line-height: 1.65; }
+html:not(#x) body:not(#sb) .art-body .lead { font-size: 15px !important; line-height: 1.55; font-weight: 600; }
+
+/* News quote (Rich): no dark box — a green line down the left, the words a little bolder. */
+html:not(#x) body:not(#sb) .quote-box { background: transparent !important; color: var(--ink) !important; padding: 4px 0 4px 20px !important; border: 0 !important; border-left: 4px solid var(--live) !important; border-radius: 0 !important; box-shadow: none !important; }
+html:not(#x) body:not(#sb) .quote-box::before { content: none !important; }
+html:not(#x) body:not(#sb) .quote-box p { color: var(--ink) !important; font: 700 17px/1.5 var(--font-sans) !important; }
+html:not(#x) body:not(#sb) .quote-box cite { color: var(--ink-muted, #5B6660) !important; font-weight: 600 !important; font-size: 14px !important; }
+
+/* News article categories (Rich): rounded buttons, like the tags on the home page. */
+html:not(#x) body:not(#sb) .art-hero .art-cats a, html:not(#x) body:not(#sb) .art-cats a { border-radius: 999px !important; padding: 7px 14px !important; background: #fff !important; color: #15201B !important; -webkit-text-fill-color: #15201B; text-transform: none !important; letter-spacing: 0 !important; font: 700 13px/1 var(--font-sans) !important; }
+html:not(#x) body:not(#sb) .art-cats a:hover { background: var(--soft) !important; filter: none !important; }
+
+/* Newsletter box (Rich): brown, not red. */
+html:not(#x) body:not(#sb) .sb-nlbox { background: #401d16 !important; color: #fff; }
+html:not(#x) body:not(#sb) .sb-nlbox h2 { color: #fff !important; }
+html:not(#x) body:not(#sb) .sb-nlbox p { color: rgba(255, 255, 255, .82) !important; }
+html:not(#x) body:not(#sb) .sb-nlbox__icon { color: var(--yellow) !important; }
+html:not(#x) body:not(#sb) .sb-nlbox .sb-nlbox__btn { background: var(--yellow) !important; color: #15201B !important; border-color: transparent !important; }
+
+/* Scorecard (Rich): the big frame totals in yellow boxes with black numbers. */
+html:not(#x) body:not(#sb) .sc-run { display: inline-grid; place-items: center; min-width: 1.6em; padding: 8px 16px; border-radius: 14px; background: var(--yellow) !important; color: #111 !important; }
+
+/* Admin (Rich): the blues from the banking app — soft blue buttons with blue writing (Delete stays red). */
+html:not(#x) body[data-page="admin"]:not(#sb) .btn:not(.ghost):not(.danger):not(.light):not(.plain):not(.link) { background: #E1EAF5 !important; border-color: #E1EAF5 !important; color: #0B5FB0 !important; }
+html:not(#x) body[data-page="admin"]:not(#sb) .btn:not(.ghost):not(.danger):not(.light):not(.plain):not(.link):hover { background: #D2E0F1 !important; border-color: #D2E0F1 !important; color: #084C8D !important; }
+
+/* Notifications (and the other slide-outs) (Rich): a plain white header with black writing — no black bar, no red
+   line; the panel white, each notification and each group of switches on grey; even spacing throughout. */
+html:not(#x) body:not(#sb) .drawer { background: #fff !important; }
+html:not(#x) body:not(#sb) .drawer-head { background: #fff !important; color: var(--ink) !important; border: 0 !important; box-shadow: none !important; padding: 20px 22px 8px !important; }
+html:not(#x) body:not(#sb) .drawer-head::after, html:not(#x) body:not(#sb) .drawer-head::before { content: none !important; display: none !important; }
+html:not(#x) body:not(#sb) .drawer-head h2 { color: var(--ink) !important; font-size: 22px !important; letter-spacing: -.01em; }
+html:not(#x) body:not(#sb) .drawer-x { color: var(--ink) !important; background: var(--soft) !important; border-radius: 999px !important; }
+html:not(#x) body:not(#sb) .drawer-x svg { stroke: currentColor !important; }
+html:not(#x) body:not(#sb) .drawer-body { padding: 8px 22px 28px !important; background: #fff !important; }
+html:not(#x) body:not(#sb) .drawer-h { margin: 22px 0 10px !important; font-size: 13px !important; letter-spacing: 0 !important; text-transform: none !important; color: var(--ink-muted, #5B6660) !important; font-weight: 700 !important; }
+html:not(#x) body:not(#sb) .drawer-lead { margin: 22px 0 12px !important; font-size: 14px !important; line-height: 1.5 !important; color: var(--ink-muted, #5B6660) !important; }
+html:not(#x) body:not(#sb) .notice-list { display: grid; gap: 10px; }
+html:not(#x) body:not(#sb) .notice-item { background: var(--soft) !important; border: 0 !important; border-radius: 16px !important; box-shadow: none !important; padding: 16px 18px !important; margin: 0 !important; }
+html:not(#x) body:not(#sb) .switch-list { background: var(--soft) !important; border: 0 !important; border-radius: 16px !important; overflow: hidden; }
+html:not(#x) body:not(#sb) .switch-list .switch-row { background: transparent !important; border-color: rgba(0, 0, 0, .06) !important; }

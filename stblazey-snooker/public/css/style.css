@@ -6242,7 +6242,7 @@ html.look-calm .live-strip .sc-foot, html.look-calm.strip-dark .live-strip .sc-f
 /* ── 7. Phones: a solid menu bar fixed to the bottom (nothing shows through), and a row of shortcuts above it ── */
 .bnav { display: none; }
 @media (max-width: 900px) {
-  :root { --bnav-bar: 62px; --bnav-tray: 82px; }
+  :root { --bnav-bar: 62px; --bnav-tray: 0px; }
   html.has-bnav body:not(:is([data-page="admin"], [data-page="scorecard"], [data-page="cup-scorecard"], [data-page="my"], [data-page="login"])) {
     --bnav-space: calc(var(--bnav-bar) + var(--bnav-tray) + env(safe-area-inset-bottom)); padding-bottom: var(--bnav-space); }
   html.has-bnav body:not(:is([data-page="admin"], [data-page="scorecard"], [data-page="cup-scorecard"], [data-page="my"], [data-page="login"])) .bnav {

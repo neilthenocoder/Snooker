@@ -34,7 +34,7 @@ const COLOURS = {
  * Leave one empty to keep the standard size. (Phones keep their own, smaller headings and menu.)
  */
 export const TEXT_SIZES = [
-  ["body", "Normal text (paragraphs, lists)", 15, "--fs-body"],
+  ["body", "Normal text (paragraphs, lists)", 14, "--fs-body"],
   ["h1", "Page titles (H1)", 42, "--fs-h1"],
   ["h2", "Section headings (H2)", 22, "--fs-h2"],
   ["h3", "Smaller headings (H3)", 20, "--fs-h3"],
@@ -43,7 +43,7 @@ export const TEXT_SIZES = [
   ["table_head", "Tables: column headings", 14, "--fs-table-head"],
   ["nav", "Menu buttons", 18, "--fs-nav"],
   ["button", "Buttons", 15, "--fs-button"],
-  ["prose", "Articles and info pages", 16, "--fs-prose"],
+  ["prose", "Articles and info pages", 14, "--fs-prose"],
 ];
 
 /** Ticker speed (Admin → Site settings → Announcements ticker): 1 = very slow … 10 = fast, in pixels a second. */
@@ -107,6 +107,8 @@ function brandOf(site) {
   // Text sizes: only the ones that have been changed.
   for (const [key, , , cssVar] of TEXT_SIZES) {
     const n = Number(site.text_sizes?.[key]);
+    // Round 115 (Rich: "reduce main body text from 16px to 14px"): an old 15/16px saved for normal text or articles gives way to 14px.
+    if ((key === "body" || key === "prose") && (n === 15 || n === 16)) continue;
     if (n >= 8 && n <= 90) vars[cssVar] = `${n}px`;
   }
   // Page titles shrink with the screen: keep that in step with the chosen size (42px ↔ 4.4vw as standard).
