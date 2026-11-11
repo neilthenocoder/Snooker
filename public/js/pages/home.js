@@ -109,10 +109,8 @@ export default async function home(view, { user } = {}) {
   const featured = news.filter((a) => a.featured);
   const slides = (featured.length ? featured : news).slice(0, Math.max(1, Math.min(4, site.hero_count || 3)));
   const rest = news.filter((a) => !slides.includes(a));
-  // Round 116 (Rich: "remove the smaller news items"): with the full-width or split banner, Top stories is the heading,
-  // All news and one large story — the next story after the banner's. The rounded-card banner keeps its list beside it.
-  const bigStory = full || split ? rest[0] ?? null : null;
-  const top = full || split ? [] : rest.slice(0, 4);
+  // Round 118: Top stories is back as it was — the list of four beside one large story (Rich: "they should go back").
+  const top = rest.slice(0, 4), bigStory = full || split ? rest[4] ?? null : null;
 
   const section = (inner, cls = "") => (inner ? html`<section class="sb-section ${cls}"><div class="sb-container">${inner}</div></section>` : "");
   const notices = [
@@ -150,7 +148,7 @@ export default async function home(view, { user } = {}) {
 
     ${/* Round 110 (Rich: "add the Runabout Shield holders … preferably higher up"): straight after the table */ ""}
     ${(everything && site.shields_show !== false) || on("shields") ? section(shieldHolders(ctx), "sb-section--tight") : ""}
-    ${(full || split) && bigStory ? section(html`<div class="sb-stories sb-stories--one"><div class="sb-top__head"><h2>Top stories</h2><a class="sb-pill-link" href="/news">All news</a></div>${storyCard(bigStory)}</div>`, "sb-section--tight") : ""}
+    ${(full || split) && top.length ? section(html`<div class="sb-stories">${topStories()}${bigStory ? storyCard(bigStory) : ""}</div>`, "sb-section--tight") : ""}
 
     ${promoWanted && on("promo") !== false ? section(promoBlock(site, ctx, dates, today), "sb-promo-sec") : ""}
 
@@ -228,6 +226,10 @@ export default async function home(view, { user } = {}) {
     place(0, true);
     schedule();
   };
+  // Round 118 (Rich: "instead of the main hero sliding, each article quickly fades to the next — too much scrolling
+  // going on"): the stories sit on top of each other and cross-fade (the .sb-fade rules in sb.css). A swipe or the bars
+  // under it still change the story.
+  heroBox?.classList.add("sb-fade");
   show(0); place(0, false);
   view.addEventListener("click", (e) => { const d = e.target.closest("[data-dot]"); if (d) { e.preventDefault(); show(Number(d.dataset.dot)); } });
   if (heroBox && track && slideEls.length > 1) {

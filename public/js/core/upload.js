@@ -33,7 +33,12 @@ export async function uploadImage(file, { folder = "misc", maxSize = 1600, libra
   if (DEMO_MODE) url = await toDataUrl(blob);
   else {
     const ext = blob.type === "image/svg+xml" ? "svg" : blob.type.split("/")[1];
-    path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    // Round 118 (Rich: "it looks messy without a proper filename"): the picture keeps its own name in its web address,
+    // tidied — "Bethel A Shield Night.JPG" becomes bethel-a-shield-night-x7k2.webp. (A camera's "IMG_1234" tells nobody
+    // anything, so that kind of name is left out.) The few letters on the end keep two pictures with one name apart.
+    const tidy = String(file.name || "").replace(/\.[^.]+$/, "").replace(/-crop$/, "").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+    const named = tidy && !/^(img|dsc|dscn|pxl|image|photo|screenshot|whatsapp-image|picture)[-0-9]*$/.test(tidy) && /[a-z]{3}/.test(tidy);
+    path = `${folder}/${named ? `${tidy}-${Math.random().toString(36).slice(2, 6)}` : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`}.${ext}`;
     const { error } = await db.storage.from("images").upload(path, blob, { contentType: blob.type, cacheControl: "31536000" });
     if (error) throw new Error(/row-level|unauthori/i.test(error.message) ? "You don't have permission to upload images." : error.message);
     url = db.storage.from("images").getPublicUrl(path).data.publicUrl;

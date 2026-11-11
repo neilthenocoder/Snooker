@@ -1,6 +1,6 @@
 import { html, mount, fmtDate, fmtTime, paragraphs, cssUrl, ukDay } from "../core/dom.js";
 import { seasonContext, sideBoxData } from "../core/context.js";
-import { articles, fullArticle, isLive, articleStatus } from "../core/api.js";
+import { articles, fullArticle, isLive, articleStatus, mediaMeta } from "../core/api.js";
 import { getUser, isMaster, canManage } from "../core/auth.js";
 import { addDays } from "../core/schedule.js";
 import { breadcrumb, panel, dataTable, quoteBox, playerLink, teamLink, leagueTablePanel, urls, cueviewSection, gallery, newsStrip, videoEmbed, shareBar, readTime, categoriesOf, tagsOf, breakTag } from "../core/components.js";
@@ -61,6 +61,8 @@ export default async function article(view, { params, query }) {
   const longDate = new Date(`${String(a.published_at).slice(0, 10)}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
   const video = videoEmbed(a.video_url);
 
+  // Round 118: the caption typed for the main picture in the image library (Admin → Image library → Details).
+  const picMeta = a.image_url ? (await mediaMeta([a.image_url]))[a.image_url] : null;
   mount(view, html`
     ${preview ? html`<div class="notice art-preview art-preview--${unsaved ? "unsaved" : articleStatus(a)}">${unsaved ? html`<b>Preview.</b> This is how the article will look with the changes in the form — they are not saved yet. Go back to the dashboard tab and press Save to keep them.`
       : articleStatus(a) === "scheduled" ? html`<b>Scheduled.</b> This article goes on the website by itself on ${fmtDate(a.publish_at)} at ${fmtTime(a.publish_at)}. Until then only the league's officers can see this page.`
@@ -72,6 +74,7 @@ export default async function article(view, { params, query }) {
         <h1>${a.title}</h1>
       </div>
     </header>
+    ${picMeta?.caption ? html`<p class="art-caption wrap">${picMeta.caption}</p>` : ""}
     <div class="wrap art-wrap">
       <div class="art-bar">
         <p class="art-by"><span>By: <b>${author}</b></span><span>Date: <b><time datetime="${String(a.published_at).slice(0, 10)}">${longDate}</time></b></span><span>${readTime(a)} min read</span></p>

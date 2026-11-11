@@ -237,6 +237,18 @@ export async function settings() {
 // ── image library ────────────────────────────────────────────────
 export const mediaLibrary = () => table("media", "created_at").then((rows) => [...rows].reverse());
 
+/**
+ * Round 118: the title, description (alt text) and caption typed for pictures in the image library, for the
+ * addresses given — { [url]: { title, alt_text, caption } }. Pictures with nothing typed are simply not in it.
+ * (The database function media_meta hands these out; the library itself stays private.)
+ */
+export async function mediaMeta(urls) {
+  const list = [...new Set(urls.filter((u) => typeof u === "string" && /^https?:/.test(u)))].slice(0, 40);
+  if (!list.length || DEMO_MODE) return {};
+  try { const { data, error } = await db.rpc("media_meta", { p_urls: list }); return error ? {} : Object.fromEntries((data ?? []).map((m) => [m.url, m])); }
+  catch { return {}; }
+}
+
 export async function addToLibrary(item) {
   await run(db.from("media").insert(item).select());
   invalidate();

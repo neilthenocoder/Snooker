@@ -310,9 +310,11 @@ export function scorecardEditor(opts) {
       <h3 class="g-h"><span>3</span> Finish</h3>
       <div class="g-sum">${frames.map((f, i) => { const w = winnerOf(f); return html`<button type="button" class="g-sum-row ${w ? "" : "open"}" data-go="${i}">
         <span class="g-no">${f.frame_no}</span>
-        <span class="${w === "a" ? "won" : ""}">${names(f, "a")}</span>
+        ${/* Round 118 (Rich: "make the win / lose more obvious against the players — a really small pill next to
+             each name in red or green"): W on green beside the winner, L on red beside the loser. */ ""}
+        <span class="${w === "a" ? "won" : w ? "lost" : ""}">${names(f, "a")}${w ? html`<i class="g-wl ${w === "a" ? "is-w" : "is-l"}" title="${w === "a" ? "Won" : "Lost"}">${w === "a" ? "W" : "L"}</i>` : ""}</span>
         <b>${f.a_points ?? "–"} – ${f.b_points ?? "–"}</b>
-        <span class="${w === "b" ? "won" : ""}">${names(f, "b")}</span></button>`; })}</div>
+        <span class="${w === "b" ? "won" : w ? "lost" : ""}">${w ? html`<i class="g-wl ${w === "b" ? "is-w" : "is-l"}" title="${w === "b" ? "Won" : "Lost"}">${w === "b" ? "W" : "L"}</i>` : ""}${names(f, "b")}</span></button>`; })}</div>
       <p class="g-total">${sides.a.name} <b>${s.a} – ${s.b}</b> ${sides.b.name}${left ? html`<small>${left} frame${left > 1 ? "s" : ""} not scored yet — tap a frame to fill it in.</small>` : ""}</p>
       ${totalsLine()}
       ${photoBlock()}

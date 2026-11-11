@@ -4,8 +4,13 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.97.0";
+export const SITE_VERSION = "1.98.0";
 export const CHANGES = [
+  "Round 118 — Home page: Top stories is back as it was, the list of four beside one large story",
+  "Home page banner: the stories fade from one to the next instead of sliding",
+  "Scorecard, Finish step: a small W on green beside each frame's winner and an L on red beside the loser",
+  "Image library: a Details button on each picture — rename it, and add a title, a description (alt text), a caption and keywords; a Find box searches them. The caption shows under the main picture of a news article. Run supabase/fixes/round118-image-details.sql once",
+  "New uploads keep the picture's own name, tidied, in their web address (bethel-a-shield-night-x7k2.webp) instead of a string of numbers",
   "Round 117 — Live scores: the match's captains and vice captains, and the league's officers, get an “Edit the scorecard” button on each live match",
   "My Snooker: when a team you follow is playing, a big live card at the top — crests, the score, the last frame — updating by itself",
   "Player and team header blocks can have their own colour and background (an SVG pattern or a picture): Admin → Teams → Header background for one team, Admin → Site settings → Player and team pages for all. Run supabase/fixes/round117-team-headers.sql once",

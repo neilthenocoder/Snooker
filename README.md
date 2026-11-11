@@ -682,6 +682,15 @@ Typical use (a round drawn before the round before has finished): set the round'
 - **The dashboard's bar on a phone**: `adminBar` in `pages/admin.js`. To change what it offers, edit `AB_WORD` (the order is the order of preference) — only sections a login can open are shown.
 - **Banner speed**: Site settings → “Seconds each lead story shows” (8 as standard).
 
+## 3zi. Round 118: picture details, the banner fades, W/L on the scorecard
+
+**Run once:** `supabase/fixes/round118-image-details.sql` (after rounds 116 and 117).
+
+- **Image library → Details**: rename a picture and give it a title, a description (alt text), a caption and keywords; **Find** searches them. The caption is shown under the main picture of a news article (`mediaMeta` in `core/api.js`, the `media_meta` database function). The file's web address is not changed by a rename — pages already showing the picture use it.
+- **New uploads** keep the picture's own name, tidied, in their address (`core/upload.js`).
+- **Home page banner** fades between stories (`.sb-fade` in `sb.css`); **Top stories** is the list beside one large story again.
+- **Scorecard, Finish step**: W / L pills beside each name (`core/scorecard-editor.js`).
+
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
 | Rule | Current setting |

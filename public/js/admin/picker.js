@@ -34,6 +34,7 @@ function libraryBar(items, state) {
       ${cats.map((c) => html`<button type="button" class="${state.category === c ? "on" : ""}" data-lib-cat="${c}">${c} <small>${counts.get(c) ?? 0}</small></button>`)}
     </div>
     ${state.master ? ownerSelect(state) : ""}
+    <label>Find <input type="search" data-lib-q value="${state.q ?? ""}" placeholder="name, title or keyword" autocomplete="off"></label>
     <label>Sort <select data-lib-sort>${Object.entries(SORTS).map(([k, l]) => html`<option value="${k}" ${state.sort === k ? "selected" : ""}>${l}</option>`)}</select></label>
   </div>`;
 }
@@ -52,7 +53,9 @@ function ownerSelect(state) {
 }
 
 function arrange(items, state) {
-  const list = items.filter((m) => (!state.master || !state.owner || ownerKey(m, state.user) === state.owner) && (!state.category || categoryOf(m) === state.category));
+  const q = String(state.q ?? "").trim().toLowerCase();
+  const list = items.filter((m) => (!state.master || !state.owner || ownerKey(m, state.user) === state.owner) && (!state.category || categoryOf(m) === state.category)
+    && (!q || `${m.name ?? ""} ${m.title ?? ""} ${m.keywords ?? ""} ${m.alt_text ?? ""} ${m.caption ?? ""}`.toLowerCase().includes(q)));
   if (state.sort === "name") list.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
   else if (state.sort === "oldest") list.reverse();
   return list;
@@ -65,8 +68,46 @@ export function libraryGrid(items, { pickable = false, deletable = false, owners
     <button type="button" class="lib-thumb" ${pickable ? html`data-pick-url="${m.url}"` : html`data-open="${m.url}"`} title="${m.name ?? ""}"><img src="${m.url}" alt="" loading="lazy"></button>
     <figcaption><span>${m.name ?? ""}</span><small>${owners ? `${ownerKey(m, owners) === "me" ? "Mine" : m.owner_name || "Someone"} · ` : ""}${categoryOf(m)} · ${fmtDate(m.created_at)}</small>
       ${deletable ? html`<select data-move-media="${m.id}" aria-label="Category">${[...new Set([...MEDIA_CATEGORIES, categoryOf(m)])].map((c) => html`<option ${c === categoryOf(m) ? "selected" : ""}>${c}</option>`)}</select>
+        <button type="button" class="btn small ghost" data-media-details="${m.id}" title="Rename it, and add a title, description, caption and keywords">${m.alt_text || m.title || m.caption ? "Details ✓" : "Details"}</button>
         <button type="button" class="btn small ghost" data-copy="${m.url}">Copy link</button><button type="button" class="btn small" data-del-media="${m.id}">Delete</button>` : ""}
     </figcaption></figure>`)}</div>`;
+}
+
+/**
+ * Round 118 (Rich: "rename images on the backend … add some meta data for SEO — title, description, keywords,
+ * caption"): the Details box for one picture. Resolves true when something was saved.
+ * The name is the picture's name in the library (what you search and sort by). The file's own web address is not
+ * changed — every page that already shows the picture uses that address, and changing it would blank them.
+ */
+function mediaDetails(m) {
+  return new Promise((resolve) => {
+    const dlg = document.createElement("dialog");
+    dlg.className = "media-dlg";
+    const file = (() => { try { return decodeURIComponent(new URL(m.url).pathname.split("/").pop()); } catch { return ""; } })();
+    mount(dlg, html`<form method="dialog" class="media-box">
+      <div class="crop-head"><h3>Picture details</h3><button type="button" class="crop-x" data-md-cancel aria-label="Close">×</button></div>
+      <div class="media-top"><img src="${m.url}" alt=""><p class="muted">These details are read by search engines and by screen readers, and the caption is shown under the picture on a news article.${file ? html`<br>File: <code>${file}</code>` : ""}</p></div>
+      <label>Name <small>(the picture's name in this library — e.g. “Bethel A with the Victory Shield 2026”)</small><input name="name" maxlength="160" value="${m.name ?? ""}"></label>
+      <label>Title <small>(a short title for the picture)</small><input name="title" maxlength="200" value="${m.title ?? ""}"></label>
+      <label>Description <small>(what the picture shows, in a sentence — the “alt text”)</small><textarea name="alt_text" rows="2" maxlength="500">${m.alt_text ?? ""}</textarea></label>
+      <label>Caption <small>(shown under the picture on a news article)</small><textarea name="caption" rows="2" maxlength="500">${m.caption ?? ""}</textarea></label>
+      <label>Keywords <small>(a few words with commas between — to find the picture again here)</small><input name="keywords" maxlength="300" value="${m.keywords ?? ""}" placeholder="shield, Bethel A, presentation"></label>
+      <div class="btn-row crop-actions"><button type="button" class="btn ghost" data-md-cancel>Cancel</button><button type="button" class="btn green" data-md-save>Save details</button></div>
+    </form>`);
+    document.body.append(dlg);
+    const done = (ok) => { try { dlg.close(); } catch { /* closed */ } dlg.remove(); resolve(ok); };
+    dlg.addEventListener("cancel", (e) => { e.preventDefault(); done(false); });
+    dlg.addEventListener("click", async (e) => {
+      if (e.target.closest("[data-md-cancel]")) return done(false);
+      const go = e.target.closest("[data-md-save]");
+      if (!go) return;
+      const f = dlg.querySelector("form").elements, val = (k) => f[k].value.trim();
+      go.disabled = true;
+      try { await save("media", { id: m.id, name: val("name") || m.name || "Picture", title: val("title"), alt_text: val("alt_text"), caption: val("caption"), keywords: val("keywords") }); toast("Details saved"); done(true); }
+      catch (err) { go.disabled = false; toast(/column|schema/i.test(err.message) ? "The database needs updating first — run supabase/fixes/round118-image-details.sql in Supabase." : err.message, "error"); }
+    });
+    dlg.showModal();
+  });
 }
 
 /** Upload one or more files from an <input type=file>; returns the URLs. */
@@ -89,6 +130,7 @@ function wireBar(root, state, redraw) {
   root.addEventListener("change", (e) => {
     if (e.target.matches("[data-lib-sort]")) { state.sort = e.target.value; redraw(); }
     if (e.target.matches("[data-lib-owner]")) { state.owner = e.target.value; state.category = ""; redraw(); }
+    if (e.target.matches("[data-lib-q]")) { state.q = e.target.value; redraw(); }      // Enter, or leaving the box
   });
 }
 
@@ -162,6 +204,8 @@ export async function mediaPage(el) {
     if (copy) { await navigator.clipboard?.writeText(copy.dataset.copy).catch(() => {}); return toast("Link copied"); }
     const open = e.target.closest("[data-open]");
     if (open) return window.open(open.dataset.open, "_blank", "noopener");
+    const det = e.target.closest("[data-media-details]");
+    if (det) { const item = (state.all ?? []).find((m) => m.id === det.dataset.mediaDetails); if (item && await mediaDetails(item)) draw(); return; }
     const del = e.target.closest("[data-del-media]");
     if (!del || !confirm("Delete this picture? Anywhere it's used will show a blank instead.")) return;
     try {
