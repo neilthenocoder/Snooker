@@ -672,6 +672,16 @@ Typical use (a round drawn before the round before has finished): set the round'
 - **News feed**: `/feed.xml` (`netlify/edge-functions/seo-files.js`).
 - **Speed**: after adding, removing or renaming a script file run `node scripts/modulepreload.mjs` — it rewrites the list of files in `public/index.html` that the browser fetches together. Nothing breaks if it is forgotten; the page just starts a little slower.
 
+## 3zh. Round 117: live cards, header backgrounds, the dashboard's phone bar
+
+**Run once:** `supabase/fixes/round117-team-headers.sql` (after `round116-news.sql`).
+
+- **Live scores**: each live match shows **Edit the scorecard** to that match's captains and vice captains and to the league's officers (`canEditFixture` in `core/auth.js` — the database has the same rule).
+- **My Snooker**: a big live card at the top while a team you follow is playing (`pages/myteam.js`, the `msl` styles).
+- **Header backgrounds**: Admin → Teams → *Header background* (a colour, and an SVG or picture as a faint repeated pattern or filling the block) for one team and its players; Admin → Site settings → *Player and team pages* for everyone. `heroLook` in `core/profile.js` decides which is used.
+- **The dashboard's bar on a phone**: `adminBar` in `pages/admin.js`. To change what it offers, edit `AB_WORD` (the order is the order of preference) — only sections a login can open are shown.
+- **Banner speed**: Site settings → “Seconds each lead story shows” (8 as standard).
+
 ## 4. Scoring rules (all in `public/js/core/rules.js`)
 
 | Rule | Current setting |

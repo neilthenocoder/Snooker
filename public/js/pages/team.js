@@ -2,8 +2,8 @@ import { pastWinners, honoursOf, honoursPanel } from "../core/past-winners.js";
 import { html, mount, fmtDate } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { breadcrumb, fixturesTable, urls, seasonPicker, seasonShort, badge, avatar, dataTable, playerLink, breakTag, topPoints, leagueTablePanel } from "../core/components.js";
-import { articles } from "../core/api.js";
-import { profileHero, profileTabs, statTiles, profileSection, nextMatch, teamForm as teamFormBlock, matesGrid, newsRail, teamNewsOf, wireProfile } from "../core/profile.js";
+import { articles, settings } from "../core/api.js";
+import { profileHero, heroLook, profileTabs, statTiles, profileSection, nextMatch, teamForm as teamFormBlock, matesGrid, newsRail, teamNewsOf, wireProfile } from "../core/profile.js";
 import { followButton } from "../core/my-snooker.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
@@ -38,6 +38,7 @@ export default async function team(view, { params, query, user }) {
   const started = !!row?.p;
   const ord = (k) => `${k}${k % 10 === 1 && k % 100 !== 11 ? "st" : k % 10 === 2 && k % 100 !== 12 ? "nd" : k % 10 === 3 && k % 100 !== 13 ? "rd" : "th"}`;
   const news = teamNewsOf(await articles().catch(() => []), team, players);
+  const site = await settings().catch(() => ({}));
   // Top performers: the most ranking points, the best form and the highest break in the squad.
   const byForm = players.map((p) => ({ p, f: form?.player(p.id) })).filter((x) => x.f?.n).sort((a, b) => b.f.form - a.f.form || b.f.n - a.f.n)[0];
   const performers = [
@@ -53,7 +54,7 @@ export default async function team(view, { params, query, user }) {
       ${profileHero({
         picture: html`<span class="pp-hero__crest">${badge(team)}</span>`, small: "Team", big: team.name,
         meta: [league ? html`<a href="${urls.standings(league)}">${league.name}</a>` : "", started ? html`<b>${ord(row.pos)}</b> in the table` : "", venue ? html`<a href="${urls.venue(venue)}">${venue.name}</a>` : ""],
-        follow: followButton("team", team.id, user),
+        follow: followButton("team", team.id, user), look: heroLook(team, site),
       })}
     </div>
     <div class="pp-tabsrow">${profileTabs([["Stats", "#stats"], ["Next match", "#next"], performers.length ? ["Top performers", "#performers"] : null, league ? ["Table", "#table"] : null, ["Form", "#team-form"],

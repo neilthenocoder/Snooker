@@ -9,7 +9,7 @@ import { listItems } from "../core/list-field.js";
 import { breadcrumb, dataTable, avatar, badge, teamLink, urls, gallery, cueviewSection, handicapText, handicapMove, breakTag, notUpdatedTag, trophy } from "../core/components.js";
 import { followButton } from "../core/my-snooker.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
-import { profileHero, profileTabs, statTiles, profileSection, nextMatch, teamForm, matesGrid, newsRail, teamNewsOf, wireProfile } from "../core/profile.js";
+import { profileHero, heroLook, profileTabs, statTiles, profileSection, nextMatch, teamForm, matesGrid, newsRail, teamNewsOf, wireProfile } from "../core/profile.js";
 import { PLAYER_TAG } from "../core/terms.js";
 import { lifeYears } from "./memoriam.js";
 import { loadForm, formPanel, formBadge } from "../core/form.js";
@@ -182,7 +182,7 @@ export default async function player(view, { params, user }) {
         meta: [team ? html`<a class="pp-hero__team" href="${urls.team(team)}">${badge(team)}${team.name}</a>` : "",
           rank && !gone ? html`<span title="${league.name} ranking">Ranked <b>${rank.pos}</b></span>` : "",
           tag && !gone ? tag : p.position && p.position !== "Player" ? p.position.replace(/^Team /i, "") : ""],
-        follow: gone ? "" : followButton("player", p.id, user),
+        follow: gone ? "" : followButton("player", p.id, user), look: heroLook(team, site),
       })}
     </div>
     ${profileTabs([["Stats", "#stats"], team && !gone ? ["Fixtures", "#fixtures"] : null, squad.length > 1 ? ["Team", "#team"] : null, allNews.length ? ["News", "#news"] : null,

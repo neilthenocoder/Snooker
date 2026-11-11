@@ -11,14 +11,30 @@
 //    newsRail      articles as picture cards in a row that slides
 //  No database calls here: everything is worked out from the season context (core/context.js).
 // ─────────────────────────────────────────────────────────────
-import { html, fmtTime, fmtDay, fmtAgo } from "./dom.js";
+import { html, fmtTime, fmtDay, fmtAgo, safeHref, cssUrl } from "./dom.js";
 import { avatar, badge, urls } from "./components.js";
 
 const star = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.5 2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5-4.9-4.5 6.6-.8Z"/></svg>`;
 
 /** The header block. opts: { picture, small, big, meta: [content…], follow, tone: "" | "dark" } */
-export function profileHero({ picture, small = "", big, meta = [], follow = "", tone = "" }) {
-  return html`<header class="pp-hero ${tone ? `pp-hero--${tone}` : ""}">
+/**
+ * Round 117 (Rich: "the ability to upload an SVG background — the emblems as a faint pattern, and a colour, to brand
+ * them"): the look of a header block. A team's own (Admin → Teams → "Header background") comes first, then the one for
+ * every player and team page (Admin → Site settings → Player and team pages), then the plain red block.
+ */
+export function heroLook(team, site) {
+  const h = site?.home_sections ?? {};
+  const hex = (v) => (/^#[0-9a-f]{6}$/i.test(String(v ?? "")) ? v : "");
+  const color = hex(team?.hero_color) || hex(h.profile_bg_color);
+  const own = safeHref(team?.hero_bg_url), bg = own || safeHref(h.profile_bg_url);
+  const fit = (own ? team?.hero_bg_fit : h.profile_bg_fit) === "cover" ? "cover" : "pattern";
+  // Light or dark writing, whichever reads on the colour.
+  const [r, g, b] = color ? [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16)) : [241, 0, 42];
+  return { color, bg, fit, light: (r * 299 + g * 587 + b * 114) / 1000 > 165 };
+}
+export function profileHero({ picture, small = "", big, meta = [], follow = "", tone = "", look = null }) {
+  const style = look && !tone ? `${look.color ? `--pp-color:${look.color};` : ""}${look.bg ? `--pp-bg:${cssUrl(look.bg)};` : ""}` : "";
+  return html`<header class="pp-hero ${tone ? `pp-hero--${tone}` : ""} ${style && look.bg ? `pp-hero--bg pp-hero--${look.fit}` : ""} ${style && look.light ? "pp-hero--light" : ""}" style="${style}">
     <span class="pp-hero__pic">${picture}</span>
     <div class="pp-hero__text">
       ${small ? html`<span class="pp-hero__small">${small}</span>` : ""}

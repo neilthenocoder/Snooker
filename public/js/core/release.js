@@ -4,8 +4,16 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.96.0";
+export const SITE_VERSION = "1.97.0";
 export const CHANGES = [
+  "Round 117 — Live scores: the match's captains and vice captains, and the league's officers, get an “Edit the scorecard” button on each live match",
+  "My Snooker: when a team you follow is playing, a big live card at the top — crests, the score, the last frame — updating by itself",
+  "Player and team header blocks can have their own colour and background (an SVG pattern or a picture): Admin → Teams → Header background for one team, Admin → Site settings → Player and team pages for all. Run supabase/fixes/round117-team-headers.sql once",
+  "Home page banner slowed down: 8 seconds a story (was 6) and a gentler slide",
+  "Home page colours, change of plan: the reds stay; All news, Full rankings, Form guide, All … breaks and the Next up date are green; All fixtures is a grey pill button; All competitions is a pill button",
+  "Manage team box: clear of the bar at the bottom of a phone, a rounded card, the heading no longer in capitals",
+  "The dashboard on a phone has its own bar at the bottom: Admin, Results, Fixtures, News and Menu for the Master Admin; an officer gets the jobs their role includes, and My team",
+  "Menu bar: no white line under the red line once scrolled; the change between the bar over the photo and the scrolled bar is one smooth movement (the logo cross-fades), and it no longer flickers near the top of the page",
   "Round 116 — player pages rebuilt to Rich's mock-up: a red header block (photo, name, team, ranking, Follow), a row of buttons that slides, Player stats tiles, Next match, Team form (the last six and next six matches as columns with the opponent's crest and the score), Team mates, Player and team news, then CueView, Season record, Breaks, Competitions and Frame history",
   "Team pages in the same style: header block, Team stats, Next match, Top performers, Table, Team form, Team news, Fixtures & results, Team, rankings and breaks",
   "Live scores: a dark header that says what is on, each match as a card with both crests and the score on tiles — and the next match night and latest results when nothing is being played",

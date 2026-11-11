@@ -172,7 +172,9 @@ export default async function home(view, { user } = {}) {
   const root = document.documentElement;
   root.classList.toggle("sb-navover", full);
   root.classList.toggle("sb-has-quick", everything);   // the Quick links replace "Find your way around" here
-  const onScroll = () => root.classList.toggle("sb-scrolled", scrollY > 24);
+  // Round 117: two lines, well apart (on above 36px, off below 8px), so the bar never flickers between its two looks
+  // while the page rests near the top.
+  const onScroll = () => { const on = root.classList.contains("sb-scrolled"); if (!on && scrollY > 36) root.classList.add("sb-scrolled"); else if (on && scrollY < 8) root.classList.remove("sb-scrolled"); };
   if (full) { onScroll(); addEventListener("scroll", onScroll, { passive: true }); }
 
   wireNewsletterBox(view);
@@ -194,14 +196,17 @@ export default async function home(view, { user } = {}) {
   const slideEls = $$("[data-slide]", view), dots = $$("[data-dot]", view);
   const track = $("[data-track]", view), heroBox = $("[data-hero]", view);
   const secs = Number(site.home_sections?.hero_seconds);
-  const heroMs = (secs >= 3 && secs <= 30 ? secs : 6) * 1000;
+  // Round 117 (Rich: "can hero 1 be slowed down a little"): 8 seconds as standard (was 6), and the slide itself glides
+  // a little slower (the stylesheet's .sb-fh__track rule). A number typed under Site settings still wins — unless it
+  // is the old standard of 6.
+  const heroMs = (secs >= 3 && secs <= 30 && secs !== 6 ? secs : 8) * 1000;
   view.style.setProperty("--hero-ms", `${heroMs}ms`);
   let current = 0, turn = null;
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const auto = slideEls.length > 1 && !reduce;
   const place = (px = 0, animate = true) => {
     if (!track) return;
-    track.style.transition = animate && !reduce ? "transform .6s cubic-bezier(.22, .7, .2, 1)" : "none";
+    track.style.transition = animate && !reduce ? "transform .95s cubic-bezier(.22, .7, .2, 1)" : "none";   // round 117: a slower glide
     track.style.transform = `translate3d(calc(${-current * 100}% + ${px}px), 0, 0)`;
   };
   const schedule = () => {
@@ -486,7 +491,7 @@ function nextUp(ctx) {
     <div class="sb-card-head"><h2>Next up</h2><span class="sb-chip sb-chip--date sb-num">${sbDay(coming[0].starts_at)}${times.length === 1 ? ` · ${times[0]}` : ""}</span></div>
     <div class="sb-next">${groups.map(({ l, list }) => html`<div class="sb-fixture-group"><span class="sb-meta">${l.name}</span>
       ${list.map((f) => html`<a class="sb-fixture" href="${urls.match(f)}"><span><span>${name(f.home_team_id)}</span>${crestOf(ctx, ctx.team.get(f.home_team_id))}</span><span class="sb-v">${times.length === 1 ? "v" : fmtTime(f.starts_at)}</span><span>${crestOf(ctx, ctx.team.get(f.away_team_id))}<span>${name(f.away_team_id)}</span></span></a>`)}</div>`)}</div>
-    <div class="sb-card-foot"><a class="sb-link" href="/fixtures">All fixtures ${sbIcon(ICON.arrow, 16)}</a></div>
+    <div class="sb-card-foot"><a class="sb-btn sb-btn--outline sb-btn--lg" href="/fixtures">All fixtures</a></div>
   </div>`;
 }
 

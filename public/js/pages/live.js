@@ -5,12 +5,13 @@ import { sideName, matchLabel, onTable as isOnTable } from "../core/live-score.j
 import { breadcrumb, dataTable, statusBadge, urls, badge } from "../core/components.js";
 import { frameWinner, isLiveNow } from "../core/rules.js";
 import { setTitle, adminEdit } from "../core/router.js";
+import { getUser, canEditFixture } from "../core/auth.js";
 
 export default async function live(view) {
   setTitle("Live scores");
   adminEdit("results");
   const draw = async () => {
-    const [ctx, competitions, boards, everyone] = await Promise.all([seasonContext(), table("competitions", "sort"), liveMatches().catch(() => []), table("players", "full_name")]);
+    const [ctx, competitions, boards, everyone, user] = await Promise.all([seasonContext(), table("competitions", "sort"), liveMatches().catch(() => []), table("players", "full_name"), getUser().catch(() => null)]);
     const onTable = boards.filter((m) => isOnTable(m));
     const liveDraws = competitions.filter((c) => c.draw_live?.status === "live");
     const today = todayUK();
@@ -59,6 +60,9 @@ export default async function live(view) {
             { label: "", cell: (f) => `${f.home_points ?? ""}-${f.away_points ?? ""}`, cls: "num" },
             { label: "Away", cell: (f) => who(fx, f, "away"), cls: "live-name" },
           ], frames) : html`<p class="lv-wait">Waiting for the first frame…</p>`}
+          ${/* Round 117 (Rich): the match's own captains and vice captains, and the league's officers, go straight to the
+               card from here. Everyone else sees no button — and the database refuses them anyway. */ ""}
+          ${user && canEditFixture(user, fx) ? html`<a class="lv-edit" href="${urls.scorecard(fx)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16Zm12.5-13.5 1 1"/></svg>Edit the scorecard</a>` : ""}
         </article>`;
       })}</div>` : onTable.length ? "" : html`<div class="lv-none">No matches being played right now.${nextDay ? "" : " Match nights are usually Tuesdays from 19:30."}</div>`}
       ${!games.length && nextNight.length ? html`<section class="lv-sec"><div class="lv-sec__head"><h2>Next match night</h2><span class="sb-chip sb-chip--date lv-date">${fmtDay(nextNight[0].starts_at, { withYear: true })}</span></div>

@@ -103,6 +103,37 @@ const logoutIcon = ico("M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5v-2H5V5h5Zm6.6 4
 const FOLD_KEY = "sbdsl-admin-folded";
 const folded = () => { try { return new Set(JSON.parse(localStorage.getItem(FOLD_KEY) || "[]")); } catch { return new Set(); } };
 
+// ── Round 117 (Rich: "when in admin on mobile there is no bottom nav — could we have one, with the core admin tasks?
+//    For the Master Admin it would have to be different"). A bar fixed to the bottom of a phone, in the dashboard only:
+//      the Master Admin:  Home · Results · Fixtures · News · Menu
+//      an officer:        Home · the first two jobs their role includes · My team (if they have one) · Menu
+//    Only sections the login can open are offered, so nobody is shown a button that would be refused. ──
+const AB_ICON = {
+  home: "M4 4h7v7H4Zm9 0h7v4h-7ZM4 13h7v7H4Zm9-3h7v10h-7Z",
+  results: "M9 2h6a2 2 0 0 1 2 2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2-2Zm0 2v2h6V4Zm1.6 13.4 6-6L15.2 10l-4.6 4.6-1.8-1.8-1.4 1.4Z",
+  fixtures: "M7 2h2v2h6V2h2v2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2Zm12 8H5v10h14ZM7 12h4v4H7Z",
+  articles: "M4 4h13v14a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2Zm15 4h2v10a2 2 0 0 1-2 2 1 1 0 0 1-1-1V8Zm-13 0v3h9V8Zm0 5v2h9v-2Z",
+  draws: "M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v2H8v-2h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3Zm0 4H6v1a2 2 0 0 0 1 1.7Zm10 0v2.7A2 2 0 0 0 18 8V7Z",
+  players: "M12 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8ZM4 21c0-4.4 3.6-7 8-7s8 2.6 8 7Z",
+  entries: "M5 3h14v18H5Zm2 2v14h10V5Zm2 3h6v2H9Zm0 4h6v2H9Z",
+  support: "M4 4h16v12H9.5L5 20v-4H4Zm4.2 3.2v2h7.6v-2Zm0 3.6v2h5.2v-2Z",
+  team: "m12 2.5 2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5-4.9-4.5 6.6-.8Z",
+  menu: "M3 6h18v2H3Zm0 5h18v2H3Zm0 5h18v2H3Z",
+};
+const AB_WORD = { results: "Results", fixtures: "Fixtures", articles: "News", draws: "Comps", players: "Players", entries: "Entries", support: "Support" };
+function adminBar(user, mine, section) {
+  const can = new Set(mine.map(([k]) => k)), master = isMaster(user), team = isMember(user) && !master;
+  const jobs = (master ? ["results", "fixtures", "articles"] : Object.keys(AB_WORD)).filter((k) => can.has(k)).slice(0, master ? 3 : team ? 2 : 3);
+  const home = can.has("overview") ? "overview" : mine[0]?.[0];
+  const item = (href, key, label, on) => html`<a class="abnav__item ${on ? "on" : ""}" href="${href}" ${on ? html`aria-current="page"` : ""}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${AB_ICON[key]}"/></svg><span>${label}</span></a>`;
+  return html`<nav class="abnav" aria-label="Dashboard shortcuts"><div class="abnav__bar" style="--n:${jobs.length + 2 + (team ? 1 : 0)}">
+    ${item(home === "overview" ? "/admin" : `/admin/${home}`, "home", "Admin", section === home && !jobs.includes(section))}
+    ${jobs.map((k) => item(`/admin/${k}`, k, AB_WORD[k], section === k))}
+    ${team ? item("/my", "team", "My team", false) : ""}
+    <button type="button" class="abnav__item" data-abnav-menu><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${AB_ICON.menu}"/></svg><span>Menu</span></button>
+  </div></nav>`;
+}
+
 export default async function admin(view, { params, user, query }) {
   if (!user) return mustLogin(view);
   if (!isStaff(user)) return navigate("/my", { replace: true });
@@ -146,7 +177,16 @@ export default async function admin(view, { params, user, query }) {
       <div id="admin-body"></div>
     </div>
     <button type="button" class="admin-logout admin-logout-m" data-logout>${logoutIcon}<span>Log out</span></button>
+    ${adminBar(user, mine, section)}
   </div>`);
+  // The bar's Menu button: open the dashboard's menu (the list at the top of the page on a phone).
+  $("[data-abnav-menu]", view)?.addEventListener("click", () => {
+    const pick = $("[data-admin-jump]", view);
+    if (!pick) return;
+    scrollTo({ top: 0, behavior: "smooth" });
+    pick.focus({ preventScroll: true });
+    try { pick.showPicker?.(); } catch { /* the browser opens it on the next tap */ }
+  });
 
   // The website files and the database are updated separately. If the database is the older of the two, say so —
   // loudly, on every page of the dashboard — because the newest features cannot work until it has caught up.

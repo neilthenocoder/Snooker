@@ -2069,11 +2069,11 @@ html:not(#x) body:not(#sb) :is(.sb-hero__slide, .sb-fh__slide):hover :is(.sb-her
 /* … its category on white, like the banner's. */
 html:not(#x) body:not(#sb) .sb-storycard .sb-tag:not(.sb-tag--yellow) { background: #fff !important; color: #15201B !important; }
 
-/* Yellow, not faded red: the "see all" pills, the date on Next up, and the league switches. */
-html:not(#x) body:not(#sb) .sb-pill-link { background: var(--yellow) !important; color: #15201B !important; }
-html:not(#x) body:not(#sb) .sb-pill-link:hover { background: var(--yellow-hover) !important; color: #15201B !important; }
-html:not(#x) body:not(#sb) .sb-split .sb-chip--date { background: var(--yellow) !important; color: #15201B !important; }
-html:not(#x) body:not(#sb) .sb-seg:not(.sb-strip .sb-seg):not(.sb-compsec--gold .sb-seg) button[aria-pressed="true"] { background: var(--yellow) !important; color: #15201B !important; }
+/* Round 117 (Rich, a change of plan): the reds on the home page stay — the league switches and the strip's "All" —
+   and the "see all" pills (All news, Full rankings, Form guide, All … breaks) and the date on Next up are green. */
+html:not(#x) body:not(#sb) .sb-pill-link { background: var(--live) !important; color: #fff !important; }
+html:not(#x) body:not(#sb) .sb-pill-link:hover { background: #14613A !important; color: #fff !important; }
+html:not(#x) body:not(#sb) .sb-split .sb-chip--date { background: var(--live) !important; color: #fff !important; }
 
 /* The league table on the home page: rows go grey under the pointer, like the rankings below it. */
 html:not(#x) body:not(#sb) .sb-lt tbody tr { transition: background-color .12s; }
@@ -2439,7 +2439,7 @@ html:not(#x) body:not(#sb) #view .lv-match { padding: 16px 4px 14px; }
 .lv-sec__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; }
 html:not(#x) body:not(#sb) #view .lv-sec__head h2 { margin: 0 !important; font-size: 24px !important; font-weight: 800 !important; text-transform: none !important; }
 html:not(#x) body:not(#sb) #view .lv-sec__head h2::before { content: none !important; }
-html:not(#x) body:not(#sb) #view .lv-date { background: var(--yellow) !important; color: #15201B !important; }
+html:not(#x) body:not(#sb) #view .lv-date { background: var(--live) !important; color: #fff !important; }
 .lv-minis { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 10px; }
 html:not(#x) body:not(#sb) #view .lv-mini { background: var(--surface); border-radius: 16px; padding: 14px 10px; }
 html:not(#x) body:not(#sb) #view .lv-mini:hover { background: var(--soft); }
@@ -2498,3 +2498,116 @@ html:not(#x) body:not(#sb) .pop-box { border-radius: 20px !important; }
 html:not(#x) body:not(#sb) .pop-advert.is-image .pop-box { border-radius: 16px !important; overflow: hidden; }
 html:not(#x) body:not(#sb) .pop-form { padding: 0 !important; background: transparent !important; border: 0 !important; box-shadow: none !important; }
 html:not(#x) body:not(#sb) .pop-form :is(input, select, textarea) { border-radius: 12px !important; }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════
+   Round 117 (Rich's follow-up)
+   ═══════════════════════════════════════════════════════════════════════════════════════════════ */
+/* Competitions: "All competitions" is a pill button. */
+html:not(#x) body:not(#sb) .sb-comps__side .sb-btn--ink { height: 48px !important; border-radius: 999px !important; border: 0 !important; font-weight: 700 !important; }
+html:not(#x) body:not(#sb) .sb-compsec--gold .sb-comps__side .sb-btn--ink { background: var(--yellow) !important; color: #15130C !important; }
+html:not(#x) body:not(#sb) .sb-compsec--gold .sb-comps__side .sb-btn--ink:hover { background: var(--yellow-hover) !important; color: #15130C !important; }
+/* Next up: "All fixtures" is the grey pill button, like "Full table". */
+html:not(#x) body:not(#sb) .sb-split__side .sb-card-foot { margin-top: 14px; }
+
+/* ── The menu bar ─────────────────────────────────────────────────────────────────────────────────
+   1. The white line under the red line once scrolled (phones): the bar's box is a few pixels taller than the bar
+      drawn inside it, and that box was white — so a sliver of white showed below the red line. The box is clear now;
+      the white is only ever the bar itself (and the strip above the screen for the rubber-band scroll). */
+@media (max-width: 900px) {
+  html:not(#x) body:not(#sb) .sb-header { background: transparent !important; }
+  html:not(#x) body:not(#sb) .sb-header__inner { border-left-width: 0 !important; border-right-width: 0 !important; }
+}
+html:not(#x) body:not(#sb) .sb-header__inner::after { transform: translateZ(0); }
+/* 2. Over the photo ⇄ scrolled: one movement, one speed. The bar's shape, its backing, the line, the buttons and the
+      logo all change together over the same time with the same easing (they used to start and finish apart, and the
+      logo and the glass snapped). */
+:root:not(#x) { --bar-t: .5s; --bar-ease: cubic-bezier(.3, .7, .2, 1); }
+html:not(#x) body:not(#sb) .sb-header__inner { transition: padding var(--bar-t) var(--bar-ease), margin var(--bar-t) var(--bar-ease), max-width var(--bar-t) var(--bar-ease), border-radius var(--bar-t) var(--bar-ease),
+  min-height var(--bar-t) var(--bar-ease), background-color var(--bar-t) var(--bar-ease), border-color var(--bar-t) var(--bar-ease), -webkit-backdrop-filter var(--bar-t) var(--bar-ease), backdrop-filter var(--bar-t) var(--bar-ease) !important; will-change: padding, margin; }
+html:not(#x) body:not(#sb) .sb-header__inner::before { transition: opacity var(--bar-t) var(--bar-ease) !important; }
+html:not(#x) body:not(#sb) .sb-header__inner::after { transition: opacity var(--bar-t) var(--bar-ease), background-color var(--bar-t) var(--bar-ease), height var(--bar-t) var(--bar-ease), bottom var(--bar-t) var(--bar-ease) !important; }
+html:not(#x) body:not(#sb) .sb-header .sb-brand__mark { transition: height var(--bar-t) var(--bar-ease) !important; }
+html:not(#x) body:not(#sb) .sb-header :is(.sb-navlink, .sb-btn, .sb-icon-btn, .sb-acct, .sb-burger, .sb-loginbtn) { transition: background-color var(--bar-t) var(--bar-ease), color var(--bar-t) var(--bar-ease), border-color var(--bar-t) var(--bar-ease), height var(--bar-t) var(--bar-ease), width var(--bar-t) var(--bar-ease) !important; }
+html:not(#x) body:not(#sb) .sb-header :is(.sb-burger, .sb-acct, .sb-loginbtn, .sb-icon-btn) svg { transition: stroke var(--bar-t) var(--bar-ease), color var(--bar-t) var(--bar-ease), fill var(--bar-t) var(--bar-ease); }
+/* the two logos sit on top of each other and cross-fade */
+html:not(#x) body:not(#sb) .sb-header .sb-brand__mark { display: grid !important; place-items: center; }
+html:not(#x) body:not(#sb) .sb-header .sb-brand__mark img { grid-area: 1 / 1; display: block !important; transition: opacity var(--bar-t) var(--bar-ease); }
+html:not(#x) body:not(#sb) .sb-header .sb-logo-dark { opacity: 0; }
+html:not(#x) body:not(#sb) .sb-header .sb-logo-light { opacity: 1; }
+html.sb-navover:not(.sb-scrolled):not(#x) body:not(#sb) .sb-header .sb-logo-dark { opacity: 1; }
+html.sb-navover:not(.sb-scrolled):not(#x) body:not(#sb) .sb-header .sb-logo-light { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { :root:not(#x) { --bar-t: .01s; } }
+
+/* ── Player and team header blocks: your own colour and background (Admin → Teams, Admin → Site settings) ── */
+.pp-hero { background-color: var(--pp-color, var(--red)); isolation: isolate; }
+.pp-hero--dark { background-color: #2A2F2C; }
+.pp-hero--bg::before { content: ""; position: absolute; inset: 0; z-index: -1; background-image: var(--pp-bg); pointer-events: none; }
+.pp-hero--pattern::before { background-repeat: repeat; background-size: 150px auto; background-position: center; opacity: .12; }
+.pp-hero--cover::before { background-repeat: no-repeat; background-size: cover; background-position: center; opacity: .55; }
+.pp-hero--cover::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, var(--pp-color, var(--red)) 0%, transparent 85%); opacity: .85; pointer-events: none; }
+@media (max-width: 640px) { .pp-hero--pattern::before { background-size: 110px auto; } }
+/* a light colour gets dark writing */
+html:not(#x) body:not(#sb) #view .pp-hero--light, html:not(#x) body:not(#sb) #view .pp-hero--light h1.pp-hero__big, html:not(#x) body:not(#sb) #view .pp-hero--light .pp-hero__meta, html:not(#x) body:not(#sb) #view .pp-hero--light .pp-hero__meta a { color: #15201B !important; }
+
+/* ── Live scores: straight to the card, for the match's captains and the league's officers ── */
+html:not(#x) body:not(#sb) #view .lv-edit { display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; margin: 8px 0 6px; border-radius: 999px; background: var(--blue-tint); color: var(--blue) !important; font: 700 14px/1 var(--font-sans); text-decoration: none; }
+html:not(#x) body:not(#sb) #view .lv-edit:hover { background: var(--blue-tint-hover); color: var(--blue-dark) !important; }
+.lv-edit svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── My Snooker: your team is playing — the big live card ── */
+.msl-list { display: grid; gap: 14px; margin: 0 0 18px; }
+.msl { border-radius: 22px; padding: 20px 20px 18px; color: #fff; background: radial-gradient(ellipse 90% 130% at 50% 0%, rgba(27, 128, 71, .6), rgba(27, 128, 71, 0) 62%), #0A0E0C; box-shadow: inset 0 0 0 1.5px var(--live); }
+.msl__top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; }
+.msl__live { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--live); font: 800 13px/1 var(--font-sans); }
+.msl__live i { width: 9px; height: 9px; border-radius: 50%; background: #fff; animation: lv-pulse 1.4s ease-in-out infinite; }
+.msl__league { font-size: 13px; color: #C9D1CC; font-weight: 600; }
+html:not(#x) body:not(#sb) #view .msl__match { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 14px; padding: 22px 0 14px; color: #fff !important; text-decoration: none; }
+.msl__side { display: grid; justify-items: center; gap: 10px; text-align: center; min-width: 0; }
+.msl__side b { font-size: clamp(16px, 2.6vw, 24px); font-weight: 800; line-height: 1.15; overflow-wrap: anywhere; }
+.msl__crest .badge { width: clamp(56px, 9vw, 84px) !important; height: clamp(56px, 9vw, 84px) !important; min-width: 0; font-size: 17px !important; background: #fff !important; color: #15201B !important; border: 0 !important; }
+.msl__score { display: inline-flex; gap: 6px; }
+.msl__score i { display: grid; place-items: center; min-width: clamp(54px, 9vw, 84px); height: clamp(66px, 11vw, 100px); border-radius: 14px; background: #fff; color: #0A0E0C; font: 800 clamp(38px, 7vw, 64px)/1 var(--font-sans); font-style: normal; font-variant-numeric: tabular-nums; }
+.msl__line { margin: 0; text-align: center; font-size: 14px; color: #DDE1DC; }
+.msl__btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 14px; }
+html:not(#x) body:not(#sb) #view .msl__btn { display: inline-flex; align-items: center; height: 44px; padding: 0 20px; border-radius: 999px; background: #fff; color: #0A0E0C !important; font: 700 14px/1 var(--font-sans); text-decoration: none; }
+html:not(#x) body:not(#sb) #view .msl__btn--edit { background: var(--yellow); }
+html:not(#x) body:not(#sb) #view .msl__btn:hover { filter: brightness(.94); }
+
+/* ── "Manage team" (captains, on the home page and My Snooker): a rounded card, sentence case, clear of the bar at
+      the bottom of a phone ── */
+html:not(#x) body:not(#sb) .squad-box { border: 0 !important; border-radius: 20px !important; background: #fff !important; box-shadow: 0 10px 34px rgba(0, 0, 0, .18) !important; padding: 14px 44px 14px 18px !important; align-items: center; }
+html:not(#x) body:not(#sb) .squad-box::before, html:not(#x) body:not(#sb) .squad-box::after { content: none !important; }
+html:not(#x) body:not(#sb) .squad-box-text strong { font: 800 17px/1.2 var(--font-head, var(--font-sans)) !important; text-transform: none !important; letter-spacing: -.01em !important; color: var(--ink) !important; }
+html:not(#x) body:not(#sb) .squad-box-text span { font-size: 13.5px !important; color: var(--ink-muted) !important; }
+html:not(#x) body:not(#sb) .squad-box-text span b { color: var(--ink) !important; }
+html:not(#x) body:not(#sb) .squad-box-text small { color: var(--ink-muted) !important; font-weight: 600 !important; }
+html:not(#x) body:not(#sb) .squad-box-text small.ok { color: var(--live) !important; }
+html:not(#x) body:not(#sb) .squad-box .btn { height: 42px; padding: 0 18px !important; border-radius: 999px !important; background: var(--ink) !important; border-color: var(--ink) !important; color: #fff !important; font: 700 14px/1 var(--font-sans) !important; text-transform: none !important; display: inline-flex; align-items: center; }
+html:not(#x) body:not(#sb) .squad-box-x { top: 8px !important; right: 8px !important; background: var(--soft) !important; color: var(--ink) !important; font-size: 20px !important; }
+@media (max-width: 900px) {
+  html.has-bnav:not(#x) body:not(#sb) .squad-box { bottom: calc(var(--bnav-bar, 62px) + 38px + env(safe-area-inset-bottom)) !important; }
+  html.has-bnav.has-squad-box:not(#x) body:not(#sb) :is(.to-top, .edit-page, .live-pops) { bottom: calc(var(--bnav-bar, 62px) + 150px + env(safe-area-inset-bottom)) !important; }
+}
+
+/* ── The dashboard on a phone: its own bar at the bottom (pages/admin.js → adminBar) ── */
+.abnav { display: none; }
+@media (max-width: 900px) {
+  body[data-page="admin"] .abnav { display: block; position: fixed; z-index: 60; left: 0; right: 0; bottom: 0; padding: 0 8px max(14px, calc(8px + env(safe-area-inset-bottom))); pointer-events: none;
+    background: linear-gradient(0deg, var(--bg, #F9F9F9) 55%, rgba(249, 249, 249, 0)); }
+  .abnav__bar { pointer-events: auto; display: grid; grid-template-columns: repeat(var(--n, 5), minmax(0, 1fr)); height: 62px; border-radius: 22px; background: #fff; box-shadow: 0 6px 24px rgba(0, 0, 0, .14), inset 0 0 0 1px var(--line); }
+  html:not(#x) body:not(#sb) .abnav__item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; height: auto !important; padding: 0 !important; border: 0 !important; border-radius: 18px !important; background: none !important; box-shadow: none !important; color: var(--ink-muted) !important; font: 600 11px/1 var(--font-sans) !important; text-decoration: none; text-transform: none !important; letter-spacing: 0 !important; cursor: pointer; }
+  .abnav__item svg { width: 23px; height: 23px; fill: currentColor; }
+  .abnav__item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  html:not(#x) body:not(#sb) .abnav__item.on { color: var(--blue) !important; font-weight: 700 !important; }
+  /* room for it: the page's end, the Save bar that follows the screen, and the round buttons */
+  body[data-page="admin"] { padding-bottom: calc(96px + env(safe-area-inset-bottom)) !important; }
+  body[data-page="admin"] #admin-body :is(.form-actions, .nw-buttons), body[data-page="admin"] .save-all-row { bottom: calc(84px + env(safe-area-inset-bottom)) !important; }
+  body[data-page="admin"] :is(.to-top, .edit-page, .scroll-hint) { bottom: calc(160px + env(safe-area-inset-bottom)) !important; }
+  html.menu-open body[data-page="admin"] .abnav, html.drawer-open body[data-page="admin"] .abnav { display: none; }
+}
+/* The red line overlaps the bar by a pixel, so on screens where a pixel is not a whole number of dots (most phones)
+   no hairline of the page can show between the white bar and the line. */
+html.sb-scrolled:not(#x) body:not(#sb) .sb-header__inner::after { height: 3px !important; bottom: -2px !important; }
+html:not(#x) body:not(#sb) .sb-header__inner::before { bottom: -1px !important; }
+html.sb-navover:not(.sb-scrolled):not(#x) body:not(#sb) .sb-header__inner::before { bottom: 0 !important; }

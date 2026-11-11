@@ -57,7 +57,7 @@ export async function mountSquadBox(user, ctx, site) {
   el.className = "squad-box";
   el.setAttribute("aria-label", "Manage team");
   mount(el, html`<div class="squad-box-text">
-      <strong>Manage team</strong>
+      <strong>Manage team</strong>${/* round 117: sentence case, a rounded card, and clear of the bar at the bottom of a phone (sb.css) */ ""}
       <span><b>${untilText(fx.starts_at)}:</b> ${fx.home_team_id === teamId ? "home" : "away"} v ${opp?.name ?? "?"} · ${dayText(fx.starts_at)}, ${fmtTime(fx.starts_at)}</span>
       <small class="${n >= want ? "ok" : ""}">${n >= want ? "Your team is picked ✓" : n ? `${n} of ${want} players picked so far` : "Pick your players for the night"}</small>
     </div>
