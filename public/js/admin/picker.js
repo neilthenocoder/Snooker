@@ -1,6 +1,7 @@
 // Image library pop-up: pick a picture that's already on the website,
 // or upload new ones. Returns the chosen URL (or null if cancelled).
 // Pictures are filed in categories, and can be sorted.
+import { icon } from "./icons.js";
 import { html, mount, $, toast, fmtDate } from "../core/dom.js";
 import { mediaLibrary, deleteFromLibrary, save } from "../core/api.js";
 import { uploadImage, MEDIA_CATEGORIES } from "../core/upload.js";
@@ -68,8 +69,9 @@ export function libraryGrid(items, { pickable = false, deletable = false, owners
     <button type="button" class="lib-thumb" ${pickable ? html`data-pick-url="${m.url}"` : html`data-open="${m.url}"`} title="${m.name ?? ""}"><img src="${m.url}" alt="" loading="lazy"></button>
     <figcaption><span>${m.name ?? ""}</span><small>${owners ? `${ownerKey(m, owners) === "me" ? "Mine" : m.owner_name || "Someone"} · ` : ""}${categoryOf(m)} · ${fmtDate(m.created_at)}</small>
       ${deletable ? html`<select data-move-media="${m.id}" aria-label="Category">${[...new Set([...MEDIA_CATEGORIES, categoryOf(m)])].map((c) => html`<option ${c === categoryOf(m) ? "selected" : ""}>${c}</option>`)}</select>
-        <button type="button" class="btn small ghost" data-media-details="${m.id}" title="Rename it, and add a title, description, caption and keywords">${m.alt_text || m.title || m.caption ? "Details ✓" : "Details"}</button>
-        <button type="button" class="btn small ghost" data-copy="${m.url}">Copy link</button><button type="button" class="btn small" data-del-media="${m.id}">Delete</button>` : ""}
+        <span class="lib-acts"><button type="button" class="lib-act ${m.alt_text || m.title || m.caption ? "has-details" : ""}" data-media-details="${m.id}" aria-label="Details" title="Details: rename it, and add a title, description, caption and keywords${m.alt_text || m.title || m.caption ? " (filled in)" : ""}">${icon("pencil", 18)}</button>
+        <button type="button" class="lib-act" data-copy="${m.url}" aria-label="Copy link" title="Copy link">${icon("link", 18)}</button>
+        <button type="button" class="lib-act lib-act--del" data-del-media="${m.id}" aria-label="Delete" title="Delete">${icon("trash", 18)}</button></span>` : ""}
     </figcaption></figure>`)}</div>`;
 }
 

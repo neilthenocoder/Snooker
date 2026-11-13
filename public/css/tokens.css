@@ -8,12 +8,12 @@
   --ink-muted: #5B6660;
   --line: #EDE7EB;
   --red: #F1002A;
-  --red-dark: #C80023;
+  --red-dark: #F1002A;
   --on-red: #FFFFFF;
   --on-red-muted: #FFE3EA;
-  --red-text: var(--brand-red-text, #C80023);
+  --red-text: var(--brand-red-text, #F1002A);
   --red-tint: #FEE4E8;
-  --red-tint-text: #C80023;
+  --red-tint-text: #F1002A;
   --live: var(--brand-green, #1B8047);
   --live-line: #1F7A47;
   --live-text: #2BD46B;

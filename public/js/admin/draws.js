@@ -1,4 +1,5 @@
 // Admin: entrants, the draw and results for one knockout competition.
+import { icon } from "./icons.js";
 import { html, mount, $, $$, toast, readForm, toLocalInput, fromLocalInput, fmtDate, fmtTime, confirmBox } from "../core/dom.js";
 import { table, save, remove, insertMany, loadCompetitions, replaceDraw, setWalkover } from "../core/api.js";
 import { buildBracket, makeDraw, shuffle, roundName, isEntry, walkoverSide, placeLabel, EMPTY, redrawNextRound, winnerAdvance, firstMatchLosers, drawPlan, drawNextTie, PENDING, inEntry, autoPrelims, maxPrelims, drawShape } from "../core/bracket.js";
@@ -70,7 +71,7 @@ export async function draws(el, { user, step = 0 } = {}) {
   const plateEntrants = (main, already = []) => firstMatchLosers(bracketOf(main)).filter((e) => !already.some((x) => sameEntrant(x, e)));
 
   mount(el, html`<div class="stack" id="draws-root">
-    ${step ? "" : html`<a class="nw-invite" href="/admin/comp_wizard?c=${c.id}&step=1"><b>🏆 Set up a competition step by step</b><span>One step at a time: the competition, the details, entries, entrants, the draw, deadlines and dates.</span></a>`}
+    ${step ? "" : html`<a class="nw-invite" href="/admin/comp_wizard?c=${c.id}&step=1"><b>${icon("trophy", 20)}Set up a competition step by step</b><span>One step at a time: the competition, the details, entries, entrants, the draw, deadlines and dates.</span></a>`}
     <div class="toolbar">
       <label style="font-weight:700">Competition
         <select data-pick>${data.competitions.map((x) => html`<option value="${x.id}" ${x.id === c.id ? "selected" : ""}>${x.name}</option>`)}</select></label>

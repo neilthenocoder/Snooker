@@ -5,6 +5,7 @@
 //   • Needs you    — everything waiting for someone in the league office, in one list, oldest first.
 //   • Your recent changes (Master Admin) — the last things you changed, with Undo.
 // ─────────────────────────────────────────────────────────────
+import { icon } from "./icons.js";
 import { html, mount, $, toast, fmtDate, fmtTime, ukDay, todayUK, confirmBox } from "../core/dom.js";
 import { setFixtureStatus, save, invalidate, currentCompetitions, auditLog, table, subscribe } from "../core/api.js";
 import { db, run } from "../core/db.js";
@@ -90,7 +91,7 @@ export async function tonightPanel(el, user) {
       const { c, b, m } = x, r = m.row, name = (id) => b.entryById.get(id)?.name ?? "?";
       return html`<div class="tn-row tn-${cls} tn-cup">
         <span class="tn-time">${fmtTime(r.starts_at)}</span>
-        <span class="tn-what"><small>🏆 ${c.name} · ${roundName(m.round, b.totalRounds, b)}</small><a href="/cup-match/${r.no ?? r.id}">${name(m.a)} v ${name(m.b)}</a></span>
+        <span class="tn-what"><small>${icon("trophy", 13)} ${c.name} · ${roundName(m.round, b.totalRounds, b)}</small><a href="/cup-match/${r.no ?? r.id}">${name(m.a)} v ${name(m.b)}</a></span>
         <span class="tn-score">${compScoreText(r, " – ") || (r.status === "postponed" ? "P – P" : "–")}</span>
         <span class="tn-state">${words}</span>
         <span class="tn-acts">
@@ -139,22 +140,22 @@ export async function needsYouPanel(el, user, ctx, waiting) {
   const fx = (f) => html`<b>${ctx.team.get(f.home_team_id)?.name} v ${ctx.team.get(f.away_team_id)?.name}</b> <small class="muted">${fmtDate(f.starts_at)}</small>`;
   if (canOpenSection(user, "results")) {
     for (const f of ctx.fixtures.filter((x) => x.status === "submitted"))
-      add("approve", "✅", (n) => `${n} result${n > 1 ? "s" : ""} to approve`, "/admin/results", "Approve", f.starts_at, fx(f), urls.match(f));
+      add("approve", "done", (n) => `${n} result${n > 1 ? "s" : ""} to approve`, "/admin/results", "Approve", f.starts_at, fx(f), urls.match(f));
     for (const f of ctx.fixtures.filter((x) => x.status === "scheduled" && Date.parse(x.starts_at) < Date.now() - 864e5 && Date.parse(x.starts_at) > Date.now() - 42 * 864e5))
-      add("cards", "📝", (n) => `${n} match${n > 1 ? "es" : ""} with no scorecard yet (last six weeks)`, "/admin/results", "Results", f.starts_at,
+      add("cards", "form", (n) => `${n} match${n > 1 ? "es" : ""} with no scorecard yet (last six weeks)`, "/admin/results", "Results", f.starts_at,
         html`${fx(f)}${f.reminder_sent_at ? html` <small class="muted">· captains reminded ${ago(f.reminder_sent_at)}</small>` : ""}`, urls.scorecard(f));
     for (const f of ctx.fixtures.filter((x) => x.status === "postponed")) {
       const late = Date.parse(rearrangeBy(f)) < Date.now();
-      add(late ? "pp-late" : "pp", late ? "⛔" : "📅", (n) => late ? `${n} postponed match${n > 1 ? "es" : ""} past the rearrange-by date` : `${n} postponed match${n > 1 ? "es" : ""} to rearrange`,
+      add(late ? "pp-late" : "pp", late ? "ban" : "calendar", (n) => late ? `${n} postponed match${n > 1 ? "es" : ""} past the rearrange-by date` : `${n} postponed match${n > 1 ? "es" : ""} to rearrange`,
         "/admin/results#postponed", "Find dates", rearrangeBy(f), html`${fx(f)} <small class="muted">— by ${fmtDate(rearrangeBy(f))}</small>`);
     }
   }
-  for (const p of waiting.players ?? []) add("players", "👤", (n) => `${n} new player${n > 1 ? "s" : ""} to check`, "/admin/players", "Players", p.created_at,
+  for (const p of waiting.players ?? []) add("players", "user", (n) => `${n} new player${n > 1 ? "s" : ""} to check`, "/admin/players", "Players", p.created_at,
     html`<b>${p.full_name}</b> <small class="muted">${ctx.team.get(p.team_id)?.name ?? ""}</small>`, `/admin/players?edit=${p.id}`);
-  for (const r of waiting.entries ?? []) add("entries", "💷", (n) => `${n} competition entr${n > 1 ? "ies" : "y"} waiting for payment`, "/admin/entries", "Entries", r.created_at, html`<b>${r.name ?? "entry"}</b>`);
-  for (const r of waiting.news ?? []) add("news", "📰", (n) => `${n} news article${n > 1 ? "s" : ""} to approve`, "/admin/approvals", "Read", r.created_at ?? r.published_at, html`<b>${r.title}</b>`);
-  for (const r of waiting.cueviews ?? []) add("cueviews", "🎤", (n) => `${n} CueView${n > 1 ? "s" : ""} to check`, "/admin/cueviews", "Check", r.created_at, html`<b>${r.player_name ?? r.name ?? "answers"}</b>`);
-  for (const r of waiting.ads ?? []) add("ads", "🏷", (n) => `${n} marketplace advert${n > 1 ? "s" : ""} to approve`, "/admin/market", "Check", r.created_at, html`<b>${r.title ?? "advert"}</b>`);
+  for (const r of waiting.entries ?? []) add("entries", "pound", (n) => `${n} competition entr${n > 1 ? "ies" : "y"} waiting for payment`, "/admin/entries", "Entries", r.created_at, html`<b>${r.name ?? "entry"}</b>`);
+  for (const r of waiting.news ?? []) add("news", "news", (n) => `${n} news article${n > 1 ? "s" : ""} to approve`, "/admin/approvals", "Read", r.created_at ?? r.published_at, html`<b>${r.title}</b>`);
+  for (const r of waiting.cueviews ?? []) add("cueviews", "mic", (n) => `${n} CueView${n > 1 ? "s" : ""} to check`, "/admin/cueviews", "Check", r.created_at, html`<b>${r.player_name ?? r.name ?? "answers"}</b>`);
+  for (const r of waiting.ads ?? []) add("ads", "tag", (n) => `${n} marketplace advert${n > 1 ? "s" : ""} to approve`, "/admin/market", "Check", r.created_at, html`<b>${r.title ?? "advert"}</b>`);
   // Cup matches past their round's play-by date with no result.
   if (canOpenSection(user, "draws")) {
     const comps = await currentCompetitions().catch(() => ({ competitions: [], entries: [], matches: [] }));
@@ -163,7 +164,7 @@ export async function needsYouPanel(el, user, ctx, waiting) {
       for (const m of b.rounds.flat()) {
         const by = c.round_deadlines?.[m.round] ?? c.round_deadlines?.[String(m.round)];
         if (!by || m.isBye || m.played || !isEntry(m.a) || !isEntry(m.b) || by >= todayUK()) continue;
-        add("cups", "🏆", (n) => `${n} cup match${n > 1 ? "es" : ""} past the round deadline`, "/admin/draws", "Draws", by,
+        add("cups", "trophy", (n) => `${n} cup match${n > 1 ? "es" : ""} past the round deadline`, "/admin/draws", "Draws", by,
           html`<b>${b.entryById.get(m.a)?.name} v ${b.entryById.get(m.b)?.name}</b> <small class="muted">${c.name} · play by ${fmtDate(`${by}T12:00:00Z`)}</small>`, `/admin/draws?c=${c.id}`);
       }
     }
@@ -173,10 +174,10 @@ export async function needsYouPanel(el, user, ctx, waiting) {
   const total = list.reduce((n, g) => n + g.items.length, 0);
   mount(el, panel(`Needs you${total ? ` (${total})` : ""}`, list.length
     ? html`<div class="ny-list">${list.map((g) => html`<details class="ny-group" ${list.length === 1 ? "open" : ""}>
-        <summary><span class="ny-ico" aria-hidden="true">${g.icon}</span><span class="ny-text">${g.title(g.items.length)}</span><a class="btn small" href="${g.href}">${g.label}</a></summary>
+        <summary><span class="ny-ico ny-ico--${g.icon}" aria-hidden="true">${icon(g.icon, 18)}</span><span class="ny-text">${g.title(g.items.length)}</span><a class="btn small" href="${g.href}">${g.label}</a></summary>
         <ul>${g.items.slice(0, 25).map((i) => html`<li>${i.href ? html`<a href="${i.href}">${i.text}</a>` : i.text}</li>`)}${g.items.length > 25 ? html`<li class="muted">and ${g.items.length - 25} more</li>` : ""}</ul>
       </details>`)}</div>`
-    : html`<p class="ny-done">Nothing waiting — all caught up. 🎉</p>`, { color: "red" }));
+    : html`<p class="ny-done">${icon("done", 20)}Nothing waiting — all caught up.</p>`, { color: "red" }));
 }
 
 // ── Your recent changes, with Undo (Master Admin) ───────────

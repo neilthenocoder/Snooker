@@ -5,7 +5,7 @@
    ───────────────────────────────────────────────────────────── */
 :root {
   --red: #f1002a;
-  --red-dark: #c80023;
+  --red-dark: #f1002a;
   --blue: #0088e0;
   --yellow: var(--brand-yellow, #FFD237);
   --green: #0b8a12;
@@ -6479,7 +6479,7 @@ html.look-calm .hz-top .feature-box .feature-go { flex: none; font-size: 18px; }
 html.look-calm body:not([data-page="admin"]) .ms-invite > i {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 42px; padding: 0 20px; background: var(--red); color: #fff;
   font: 700 14px/1 var(--font-head); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; clip-path: none; border-radius: var(--r); transition: background .18s; }
-html.look-calm body:not([data-page="admin"]) .ms-invite:hover > i { background: var(--red-dark, #c80023); }
+html.look-calm body:not([data-page="admin"]) .ms-invite:hover > i { background: var(--red-dark, #f1002a); }
 .ms-invite > i svg { width: 16px; height: 16px; fill: currentColor; }
 @media (max-width: 560px) { .hz-top .ms-invite { grid-template-columns: auto minmax(0, 1fr); } html.look-calm body:not([data-page="admin"]) .ms-invite > i { grid-column: 1 / -1; width: 100%; } }
 
@@ -6683,7 +6683,7 @@ html.look-calm.head-light .nav-acct { background: var(--surface); border: 1px so
 .bz-slide-title a:hover { color: var(--red-text, var(--red-text)); }
 .bz-slide-meta { margin: 0; font-size: 14px; font-weight: 500; color: var(--muted); }
 .bz-read { margin-top: 6px; background: var(--red) !important; color: #FFFFFF !important; text-transform: none !important; letter-spacing: 0 !important; font-size: 15px !important; padding: 12px 22px !important; }
-.bz-read:hover { background: var(--red-dark, #C80023) !important; filter: none; }
+.bz-read:hover { background: var(--red-dark, #F1002A) !important; filter: none; }
 .bz-dots { position: absolute; right: 24px; bottom: 30px; display: flex; gap: 6px; margin: 0 !important; }
 .bz-dots button { width: 8px; height: 8px; padding: 0; border: 0 !important; border-radius: 4px; background: #C9CEC8 !important; cursor: pointer; transition: width .25s, background .25s; }
 .bz-dots button.on { width: 24px; background: var(--red) !important; }

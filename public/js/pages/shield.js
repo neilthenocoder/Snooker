@@ -4,7 +4,7 @@
 import { html, mount, fmtDate } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { shieldHolder, shieldTable, matchScore } from "../core/rules.js";
-import { breadcrumb, panel, dataTable, teamLink, badge, seasonPicker, shortName, urls, shieldPicture } from "../core/components.js";
+import { breadcrumb, panel, dataTable, teamLink, badge, seasonPicker, shortName, urls, shieldPicture, seasonTitle } from "../core/components.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
 
@@ -27,7 +27,7 @@ export default async function shield(view, { params, query }) {
 
   mount(view, html`<div class="wrap stack">
     <div>${breadcrumb([["Home", "/"], ["Our League", "/league"], [league.name, urls.standings(league)], [name]])}
-      <h1>${name} ${ctx.season?.name ?? ""}</h1>${seasonPicker(ctx)}</div>
+      <div class="title-plain">${seasonTitle(name, ctx.season)}${seasonPicker(ctx)}</div></div>
 
     ${!league.shield_team_id ? html`<div class="notice">This league's shield hasn't been set up yet. The league admin chooses who holds it at the start of the season under Admin → Leagues.</div>` : html`
     <div class="shield-now">

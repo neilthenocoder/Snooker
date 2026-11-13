@@ -384,7 +384,7 @@ function sbQuickLinks(ctx) {
   return html`<div class="sb-quick">
     <div class="sb-quick__head"><h2>Quick links</h2><span class="sb-quick__ctrl">
       <button type="button" class="sb-icon-btn sb-quick__btn" data-quick-move="-1" aria-label="Earlier links">${sbIcon(ICON.left)}</button>
-      <button type="button" class="sb-icon-btn sb-quick__btn sb-quick__btn--solid" data-quick-move="1" aria-label="More links">${sbIcon(ICON.right)}</button></span></div>
+      <button type="button" class="sb-icon-btn sb-quick__btn" data-quick-move="1" aria-label="More links">${sbIcon(ICON.right)}</button></span></div>
     <div class="sb-quick__row">${links.map(([label, href, icon]) => html`<a class="sb-quick__item" href="${href}"><span class="sb-quick__ico" aria-hidden="true">${icon}</span><span>${label}</span></a>`)}</div></div>`;
 }
 
@@ -1079,11 +1079,13 @@ async function liveStrip(user = null, mode = "filters", layout = "strip") {
         ${mode === "mine" && toggle ? html`<span class="sb-strip__mine">${toggle}</span>` : ""}
         <div class="sb-seg sb-seg--arena sb-seg--pick" role="group" aria-label="Which matches">${tab("all", "All")}${tab("live", `Live · ${live.length}`)}${tab("upcoming", "Upcoming")}${tab("results", "Results")}</div>
         <div class="sb-strip__ctrl">
-          <button type="button" class="sb-icon-btn sb-icon-btn--arena" data-strip-move="-1" aria-label="Previous matches">${sbIcon(ICON.left)}</button>
+          <button type="button" class="sb-icon-btn sb-icon-btn--arena-solid" data-strip-move="-1" aria-label="Previous matches">${sbIcon(ICON.left)}</button>
           <button type="button" class="sb-icon-btn sb-icon-btn--arena-solid" data-strip-move="1" aria-label="Next matches">${sbIcon(ICON.right)}</button>
           <a class="sb-strip__all" href="/fixtures">View all matches</a>
         </div></div>
-      ${list.length ? html`<div class="sb-strip__row strip-row">${list.map(card)}</div>` : empty}
+      ${list.length ? html`<div class="sb-strip__rowwrap"><div class="sb-strip__row strip-row">${list.map(card)}</div>
+        ${list.length > 1 ? html`<button type="button" class="sb-strip__edge sb-strip__edge--prev" data-strip-move="-1" aria-label="Previous matches">${sbIcon(ICON.left)}</button>
+        <button type="button" class="sb-strip__edge sb-strip__edge--next" data-strip-move="1" aria-label="Next matches">${sbIcon(ICON.right)}</button>` : ""}</div>` : empty}
       <a class="sb-strip__all sb-strip__all--below" href="/fixtures">View all matches ${sbIcon(ICON.arrow, 18)}</a>`;
   }
 

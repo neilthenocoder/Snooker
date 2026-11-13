@@ -9,7 +9,7 @@
 import { html, mount, fmtDate } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
 import { table } from "../core/api.js";
-import { breadcrumb, panel, dataTable, playerLink, teamLink, urls, seasonShort, breaksPanel, leagueMarks, topPoints } from "../core/components.js";
+import { breadcrumb, panel, dataTable, playerLink, teamLink, urls, seasonShort, breaksPanel, leagueMarks, topPoints, seasonTitle } from "../core/components.js";
 import { RULES_TEXT } from "../core/rules.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
@@ -91,7 +91,7 @@ function chooser(view, ctx, season, section) {
   };
   mount(view, html`<div class="wrap">
     ${crumbs(["Seasons", "/seasons"], [`${season.name} Season`, urls.season(season)], [title])}
-    <h1>${title}</h1>
+    ${seasonTitle(name, season)}
     <div class="cards season-leagues-pick">${ctx.leagues.map((l) => big(l.name, line, urls.season(season, section, l), note(l)))}</div>
   </div>`);
 }
@@ -101,7 +101,7 @@ const head = (ctx, season, section, league) => {
   const title = `${pageTitle(league)} ${season.name}`;
   setTitle(title);
   return html`<div>${crumbs(["Seasons", "/seasons"], [`${season.name} Season`, urls.season(season)], [`${name} ${seasonShort(season)}`, urls.season(season, section)], [title])}
-    <div class="title-plain"><h1>${title}</h1></div></div>`;
+    <div class="title-plain">${seasonTitle(pageTitle(league), season)}</div></div>`;
 };
 // The other lists for the same league, and the same list for the other leagues.
 const more = (ctx, season, section, league) => html`<div class="btn-row season-more">

@@ -1742,7 +1742,7 @@ html body .ob .ob-link { height: 46px; border: 0 !important; background: none; c
 html body .ob .ob-link:hover { text-decoration: underline; }
 html body .ob .ob-link--left { height: auto; padding: 4px 0; margin: 2px 0 6px; color: var(--red-text); text-align: left; font-size: 15px; }
 /* welcome */
-.ob-hero { position: relative; flex: none; height: 46%; min-height: 260px; display: grid; place-items: center; overflow: hidden; background: radial-gradient(120% 90% at 50% 0%, #ff2d4f 0%, var(--red) 55%, #c80023 100%); }
+.ob-hero { position: relative; flex: none; height: 46%; min-height: 260px; display: grid; place-items: center; overflow: hidden; background: radial-gradient(120% 90% at 50% 0%, #ff2d4f 0%, var(--red) 55%, #f1002a 100%); }
 .ob-hero__logo { position: relative; z-index: 1; width: 132px; height: 132px; display: grid; place-items: center; padding: 18px; border-radius: 34px; background: #fff; }
 .ob-hero__logo img { width: 100%; height: 100%; object-fit: contain; }
 .ob-ball { position: absolute; border-radius: 50%; }
@@ -2642,3 +2642,195 @@ html:not(#x) body:not(#sb) .g-sum-row .lost { color: var(--ink-muted); font-weig
 html:not(#x) body:not(#sb) .media-dlg .btn.green { background: var(--blue, #0B5FB0) !important; border-color: var(--blue, #0B5FB0) !important; color: #fff !important; }
 .lib-bar input[type="search"] { min-width: 180px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; font: inherit; }
 .art-caption { margin: 10px auto 0 !important; font-size: 13px; color: var(--ink-muted); font-style: italic; }
+
+/* ═════════════════════════════════════════════════════════════
+   Round 120 (Rich's feedback of 12 November)
+   ═════════════════════════════════════════════════════════════ */
+
+/* 1. Quick links: both arrows are the same button. The one that has nowhere left to go is faded. */
+html:not(#x) body:not(#sb) .sb-quick__btn { width: 40px; height: 40px; background-color: var(--soft) !important; color: var(--ink) !important; }
+html:not(#x) body:not(#sb) .sb-quick__btn svg { stroke: currentColor; color: var(--ink); }
+html:not(#x) body:not(#sb) .sb-quick__btn:hover { background-color: #EAE7EB !important; }
+
+/* 2. Match strip: both arrows the same white button, the same size. On a phone they sit on the left and right
+      edges of the cards, half way up, so the strip can be moved with a thumb. */
+html:not(#x) body:not(#sb) .sb-strip__ctrl .sb-icon-btn { width: 44px; height: 44px; flex: none; }
+.sb-strip__rowwrap { position: relative; }
+.sb-strip__edge { display: none; }
+@media (max-width: 760px) {
+  html:not(#x) body:not(#sb) .sb-strip__edge { display: grid; place-items: center; position: absolute; z-index: 2; top: calc(50% - 2px); transform: translateY(-50%); width: 40px; height: 40px; padding: 0;
+    border: 0; border-radius: 50%; background-color: #fff !important; color: #15201B !important; box-shadow: 0 4px 14px rgba(0, 0, 0, .45); cursor: pointer; }
+  html:not(#x) body:not(#sb) .sb-strip__edge svg { width: 18px; height: 18px; stroke: currentColor; color: #15201B; }
+  .sb-strip__edge--prev { left: -8px; }
+  .sb-strip__edge--next { right: -8px; }
+}
+
+/* 4. The season is not in the title: it sits under it in a pill. */
+.title-season { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-width: 0; margin-bottom: 20px; }
+html body .title-season h1 { margin: 0; }
+.title-plain .title-season { margin-bottom: 0; }
+.season-pill { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; background: var(--red-tint); color: var(--red); font-size: 13px; font-weight: 700; letter-spacing: .01em; white-space: nowrap; }
+
+/* 5. League tables: a gap between the W and L squares under Form. */
+html:not(#x) body:not(#sb) .lt-form, html:not(#x) body:not(#sb) .lt-form .form-chips { display: inline-flex !important; gap: 6px !important; }
+html:not(#x) body:not(#sb) .lt-form .fc { width: 22px; height: 22px; font-size: 11px; border-radius: 6px; }
+
+/* 7. A venue's side column: one tidy style for its four boxes. */
+html:not(#x) body:not(#sb) .venue-side { display: grid; gap: 20px; align-content: start; }
+html:not(#x) body:not(#sb) .venue-side .panel { margin: 0; padding: 0; border-radius: 18px; background: var(--surface); overflow: hidden; }
+html:not(#x) body:not(#sb) .venue-side .panel-head { padding: 18px 20px 12px; margin: 0; font-size: 17px; line-height: 1.3; font-weight: 800; letter-spacing: -.01em; text-transform: none; background: none; color: var(--ink); border: 0; }
+html:not(#x) body:not(#sb) .venue-side .panel-head .new-badge { margin-left: 8px; vertical-align: 2px; }
+html:not(#x) body:not(#sb) .venue-side .empty { padding: 4px 20px 20px; text-align: left; background: none; color: var(--ink-muted); }
+html:not(#x) body:not(#sb) .venue-side .res-list { padding: 0 0 8px; }
+html:not(#x) body:not(#sb) .venue-side .res-mini { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 4px 10px; padding: 12px 20px; border: 0; border-top: 1px solid var(--line); background: none; color: var(--ink); text-decoration: none; box-shadow: none; }
+html:not(#x) body:not(#sb) .venue-side .res-mini:hover { background: var(--soft); }
+html:not(#x) body:not(#sb) .venue-side .res-mini small { grid-column: 1 / -1; text-align: center; font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+html:not(#x) body:not(#sb) .venue-side .res-mini span { font-size: 14px; line-height: 1.3; font-weight: 500; overflow-wrap: anywhere; }
+html:not(#x) body:not(#sb) .venue-side .res-mini span:first-of-type { text-align: right; }
+html:not(#x) body:not(#sb) .venue-side .res-mini span.won { font-weight: 800; }
+html:not(#x) body:not(#sb) .venue-side .res-mini b { min-width: 58px; padding: 5px 10px; border-radius: 8px; background: var(--scoreboard) !important; color: #fff !important; font-size: 14px; font-weight: 800; text-align: center; white-space: nowrap; }
+html:not(#x) body:not(#sb) .venue-side .list-links { padding: 0 0 8px; }
+html:not(#x) body:not(#sb) .venue-side .list-links a { display: grid; gap: 3px; padding: 12px 20px; border: 0; border-top: 1px solid var(--line); background: none; color: var(--ink); font-size: 14px; font-weight: 700; line-height: 1.35; text-decoration: none; }
+html:not(#x) body:not(#sb) .venue-side .list-links a:hover { background: var(--soft); }
+html:not(#x) body:not(#sb) .venue-side .list-links a b { font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+html:not(#x) body:not(#sb) .venue-side .bk-podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 8px; margin: 0; padding: 4px 16px 18px; background: none; border: 0; }
+html:not(#x) body:not(#sb) .venue-side .bk-pod { min-width: 0; padding: 14px 6px 12px; border-radius: 14px; background: var(--soft); text-align: center; }
+html:not(#x) body:not(#sb) .venue-side .bk-pod.p1 { padding-top: 22px; padding-bottom: 18px; }
+html:not(#x) body:not(#sb) .venue-side .bk-pod b { font-size: 26px; line-height: 1.1; }
+html:not(#x) body:not(#sb) .venue-side .bk-pod.p1 b { font-size: 34px; }
+html:not(#x) body:not(#sb) .venue-side .bk-pod small { display: block; font-size: 12px; line-height: 1.25; overflow-wrap: anywhere; }
+html:not(#x) body:not(#sb) .venue-side .bk-rest { padding: 0 8px 10px; }
+html:not(#x) body:not(#sb) .venue-side .news-mini { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: start; margin: 0; padding: 14px 20px; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: none; text-decoration: none; }
+html:not(#x) body:not(#sb) .venue-side .news-mini:hover { background: var(--soft); }
+html:not(#x) body:not(#sb) .venue-side .news-mini :is(img, picture, .ph) { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; }
+html:not(#x) body:not(#sb) .venue-side .news-mini :is(strong, h4, b) { font-size: 14px; line-height: 1.3; font-weight: 800; text-transform: none; letter-spacing: 0; }
+html:not(#x) body:not(#sb) .venue-side .news-mini p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 4px 0 0; font-size: 13px; line-height: 1.4; color: var(--ink-muted); }
+
+/* ── The dashboard (admin) ───────────────────────────────────── */
+.ai { flex: none; fill: none !important; stroke: currentColor !important; vertical-align: -4px; }
+
+/* The search bar and its three links. */
+.adm-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.adm-find { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 16px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-muted); }
+.adm-find:focus-within { box-shadow: inset 0 0 0 2px var(--ink); }
+html:not(#x) body:not(#sb) .adm-find input { flex: 1; min-width: 0; height: 100%; margin: 0; padding: 0; border: 0 !important; outline: 0; background: none !important; box-shadow: none !important; font-size: 15px; color: var(--ink); }
+.adm-results { position: absolute; z-index: 40; left: 0; right: 0; top: calc(100% + 8px); max-height: min(60vh, 520px); overflow-y: auto; padding: 8px; border-radius: 16px; background: var(--surface); box-shadow: 0 18px 44px rgba(0, 0, 0, .18), 0 0 0 1px var(--line); }
+.adm-results[hidden] { display: none; }
+html:not(#x) body:not(#sb) .adm-results a { display: flex; align-items: baseline; gap: 12px; padding: 9px 12px; border-radius: 10px; color: var(--ink); font-size: 14px; font-weight: 600; text-decoration: none; }
+html:not(#x) body:not(#sb) .adm-results a:hover, html:not(#x) body:not(#sb) .adm-results a:focus { background: var(--soft); }
+.adm-results i { flex: none; min-width: 84px; font-style: normal; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-muted); }
+.adm-results small { color: var(--ink-muted); font-weight: 500; }
+.adm-results .ar-head { display: block; padding: 10px 12px; color: var(--ink-muted); font-size: 14px; }
+html:not(#x) body:not(#sb) .adm-barlink { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 16px; border: 0; border-radius: 999px; background-color: var(--surface) !important; box-shadow: inset 0 0 0 1px var(--line); color: var(--ink) !important; font: 700 14px var(--font-sans); text-decoration: none; cursor: pointer; white-space: nowrap; }
+html:not(#x) body:not(#sb) .adm-barlink:hover { background-color: var(--soft) !important; }
+
+/* The sections: a row that slides. */
+.adm-tabs, .adm-sub { display: flex; align-items: center; gap: 8px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; cursor: grab; }
+.adm-tabs::-webkit-scrollbar, .adm-sub::-webkit-scrollbar { display: none; }
+.adm-tabs.is-dragging, .adm-sub.is-dragging { cursor: grabbing; user-select: none; }
+.adm-tabs.more-right, .adm-sub.more-right { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); }
+.adm-tabs.more-left, .adm-sub.more-left { -webkit-mask-image: linear-gradient(270deg, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(270deg, #000 calc(100% - 48px), transparent); }
+.adm-tabs.more-left.more-right, .adm-sub.more-left.more-right { -webkit-mask-image: linear-gradient(90deg, transparent, #000 48px, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(90deg, transparent, #000 48px, #000 calc(100% - 48px), transparent); }
+.adm-tabs { margin-bottom: 26px; padding: 6px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
+html:not(#x) body:not(#sb) .adm-tab { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 16px; border-radius: 999px; color: var(--ink) !important; font-size: 15px; font-weight: 700; text-decoration: none; white-space: nowrap; -webkit-user-drag: none; }
+html:not(#x) body:not(#sb) .adm-tab:hover { background: var(--soft); }
+html:not(#x) body:not(#sb) .adm-tab.on { background: var(--ink); color: #fff !important; }
+.adm-tab .nav-count, .adm-pill .nav-count, .adm-card .nav-count, .adm-sec .nav-count { margin-left: 6px; vertical-align: 1px; }
+
+/* The page's title, what it is for, and the link to the page of the website it looks after. */
+.adm-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; margin-bottom: 18px; }
+html body .adm-head h1 { margin: 0; }
+.adm-lede { margin: 8px 0 0; color: var(--ink-muted); font-size: 16px; }
+html:not(#x) body:not(#sb) .adm-view { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 16px; border-radius: 999px; background: var(--soft); color: var(--ink) !important; font-size: 14px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+html:not(#x) body:not(#sb) .adm-view:hover { background: #EAE7EB; }
+
+/* The pages of the section you are in. */
+.adm-sub { margin-bottom: 22px; padding-bottom: 2px; }
+html:not(#x) body:not(#sb) .adm-pill { flex: none; display: inline-flex; align-items: center; height: 38px; padding: 0 15px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink) !important; font-size: 14px; font-weight: 600; text-decoration: none; white-space: nowrap; -webkit-user-drag: none; }
+html:not(#x) body:not(#sb) .adm-pill:hover { background: var(--soft); }
+html:not(#x) body:not(#sb) .adm-pill.on { background: var(--red); box-shadow: none; color: #fff !important; font-weight: 700; }
+.adm-pill.on .nav-count { background: #fff; color: var(--red); }
+.adm-tab.on .nav-count { background: var(--red); }
+.adm-sub__label { flex: none; margin: 0 2px 0 12px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); white-space: nowrap; }
+
+/* No left-hand menu any more: the page has the whole width. */
+html:not(#x) body:not(#sb) .adm .admin { display: block; }
+.adm .admin-version { margin: 36px 0 0; text-align: center; font-size: 12px; color: var(--ink-muted); }
+
+/* A section's own page: its pages as cards. */
+.adm-group + .adm-group { margin-top: 30px; }
+html body .adm-group__h, html body .adm-h2 { margin: 0 0 14px; font-size: 18px; font-weight: 800; letter-spacing: -.01em; text-transform: none; }
+html body .adm-h2 { margin-top: 34px; }
+.adm-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+html:not(#x) body:not(#sb) .adm-card { display: grid; grid-template-columns: 44px minmax(0, 1fr) 18px; align-items: center; gap: 14px; min-height: 84px; padding: 16px 18px; border-radius: 18px; background: var(--surface); color: var(--ink) !important; text-decoration: none; transition: box-shadow .15s, transform .15s; }
+html:not(#x) body:not(#sb) .adm-card:hover { box-shadow: 0 10px 26px rgba(0, 0, 0, .09); transform: translateY(-2px); }
+.adm-card__ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: var(--red-tint); color: var(--red); }
+.adm-card__txt { display: grid; gap: 3px; min-width: 0; }
+.adm-card__txt b { font-size: 16px; font-weight: 700; line-height: 1.25; }
+.adm-card__txt small { font-size: 13.5px; line-height: 1.35; color: var(--ink-muted); }
+.adm-card__go { color: #B9B3B8; display: grid; }
+.adm-card:hover .adm-card__go { color: var(--ink); }
+.adm-all + .adm-all { margin-top: 40px; }
+html:not(#x) body:not(#sb) .adm-all__h { display: inline-grid; grid-template-columns: 44px auto; align-items: center; gap: 14px; margin-bottom: 14px; color: var(--ink) !important; text-decoration: none; }
+.adm-all__h > span:last-child { display: grid; gap: 2px; }
+.adm-all__h b { font-size: 22px; font-weight: 800; letter-spacing: -.01em; }
+.adm-all__h small { font-size: 14px; color: var(--ink-muted); }
+.adm-all .adm-group__h { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); }
+
+/* The Dashboard: the sections as large cards. */
+.adm-secs { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+html:not(#x) body:not(#sb) .adm-sec { display: grid; align-content: start; gap: 8px; padding: 20px; border-radius: 18px; background: var(--surface); color: var(--ink) !important; text-decoration: none; transition: box-shadow .15s, transform .15s; }
+html:not(#x) body:not(#sb) .adm-sec:hover { box-shadow: 0 10px 26px rgba(0, 0, 0, .09); transform: translateY(-2px); }
+.adm-sec b { margin-top: 6px; font-size: 18px; font-weight: 800; }
+.adm-sec small { font-size: 14px; line-height: 1.4; color: var(--ink-muted); }
+.adm-sec__n { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; font-weight: 700; color: var(--red); }
+html:not(#x) body:not(#sb) a.stat.stat-link i { color: #B9B3B8; display: grid; }
+
+/* Needs you, and the step-by-step buttons: line icons, not emoji. */
+html:not(#x) body:not(#sb) .ny-group summary { grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; }
+.ny-ico { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; background: var(--soft); color: var(--ink); }
+.ny-ico--done { background: var(--win-soft); color: var(--live); }
+.ny-ico--ban, .ny-ico--trophy, .ny-ico--form { background: var(--red-tint); color: var(--red); }
+.ny-ico--calendar, .ny-ico--pound { background: var(--yellow-soft); color: #7A5B00; }
+html:not(#x) body:not(#sb) .ny-group ul { padding-left: 62px; }
+.ny-done { display: flex; align-items: center; gap: 10px; }
+.nw-invite b { display: inline-flex; align-items: center; gap: 10px; }
+.art-tools .btn .ai, .btn .ai { margin-right: 6px; }
+.tn-what small .ai { vertical-align: -2px; }
+
+/* Lists: the buttons at the end of a row never break onto two lines ("View article"). */
+html:not(#x) body:not(#sb) #admin-body table.data td .btn-row .btn { white-space: nowrap; flex: none; min-width: max-content; }
+
+/* Image library: Details, Copy link and Delete as three icons in one row. */
+html:not(#x) body:not(#sb) .lib-item figcaption .lib-acts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 2px; overflow: visible; }
+html:not(#x) body:not(#sb) .lib-act { position: relative; display: grid; place-items: center; height: 36px; padding: 0; border: 0; border-radius: 10px; background-color: var(--soft) !important; color: var(--ink) !important; cursor: pointer; }
+html:not(#x) body:not(#sb) .lib-act:hover { background-color: #EAE7EB !important; }
+html:not(#x) body:not(#sb) .lib-act--del { background-color: var(--red-tint) !important; color: var(--red) !important; }
+html:not(#x) body:not(#sb) .lib-act--del:hover { background-color: var(--red) !important; color: #fff !important; }
+.lib-act.has-details::after { content: ""; position: absolute; top: 6px; right: 8px; width: 7px; height: 7px; border-radius: 50%; background: var(--live); }
+
+@media (max-width: 760px) {
+  .adm-bar { flex-wrap: wrap; }
+  .adm-find { flex: 1 0 100%; }
+  html:not(#x) body:not(#sb) .adm-barlink { flex: 1; justify-content: center; height: 40px; padding: 0 10px; font-size: 13px; }
+  .adm-tabs { margin: 0 calc(var(--gutter) * -1) 20px; padding: 6px var(--gutter); border-radius: 0; box-shadow: inset 0 -1px 0 var(--line), inset 0 1px 0 var(--line); }
+  .adm-sub { margin-left: calc(var(--gutter) * -1); margin-right: calc(var(--gutter) * -1); padding-left: var(--gutter); padding-right: var(--gutter); }
+  .adm-cards, .adm-secs { grid-template-columns: 1fr; }
+  html:not(#x) body:not(#sb) .adm-view { width: 100%; justify-content: center; }
+  .adm .admin-version { margin-bottom: 90px; }
+}
+
+html:not(#x) body:not(#sb) .adm-tabs { gap: 2px; }
+html:not(#x) body:not(#sb) .adm-tab { padding: 0 13px; font-size: 14.5px; }
+html:not(#x) body:not(#sb) .adm-pill { gap: 7px; }
+/* The step-by-step invitations, in the dashboard's own style. */
+html:not(#x) body:not(#sb) .nw-invite { gap: 4px; padding: 18px 22px; border: 0; border-radius: 18px; background: var(--live); color: #fff; text-decoration: none; }
+html:not(#x) body:not(#sb) .nw-invite:hover { background: var(--live-line); }
+html:not(#x) body:not(#sb) .nw-invite b { font: 800 18px var(--font-sans); text-transform: none; letter-spacing: -.01em; color: #fff; }
+html:not(#x) body:not(#sb) .nw-invite span { color: #fff; }
+
+/* A podium with only two breaks: two even columns, not a gap where third place would be. */
+html:not(#x) body:not(#sb) .venue-side .bk-podium:has(> .bk-pod.empty) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+html:not(#x) body:not(#sb) .venue-side .bk-podium > .bk-pod.empty { display: none; }
+.title-plain + .chips { margin-top: 18px; }
+html:not(#x) body:not(#sb) .adm-find input:focus, html:not(#x) body:not(#sb) .adm-find input:focus-visible { outline: 0 !important; box-shadow: none !important; }

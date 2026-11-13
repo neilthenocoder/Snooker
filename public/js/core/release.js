@@ -4,8 +4,16 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.98.0";
+export const SITE_VERSION = "1.99.0";
 export const CHANGES = [
+  "Round 120 — the dashboard has no left-hand menu any more: seven sections along the top (Matches, League, Competitions, News, Website, Community, Admin tools) in a row that slides, each with a page of its own listing what is in it in plain words; the pages of the section you are in sit under the title; Everything shows the lot on one screen",
+  "Dashboard: one search box at the top finds any page, setting, player, team, match or article; a View on the website button on every page that has one; View links on teams, venues, leagues, seasons and fixtures",
+  "Dashboard: line icons everywhere instead of emoji; Image library has three icon buttons in a row (Details, Copy link, a red Delete); View article no longer breaks onto two lines",
+  "The season is out of the page titles and in a small pill underneath (league tables, fixtures, results, competitions, calendar, shield, rankings and breaks)",
+  "One red: #C80023 replaced by #F1002A everywhere",
+  "League tables: a gap between the W and L squares under Form",
+  "Home page: the two Quick links arrows match, the two match strip arrows match, and on a phone the match strip has an arrow on each side",
+  "Venue pages: the side column (latest results, next matches, breaks, news) restyled",
   "Round 118 — Home page: Top stories is back as it was, the list of four beside one large story",
   "Home page banner: the stories fade from one to the next instead of sliding",
   "Scorecard, Finish step: a small W on green beside each frame's winner and an L on red beside the loser",

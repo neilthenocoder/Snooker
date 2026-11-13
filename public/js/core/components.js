@@ -153,6 +153,12 @@ function trail(items) {
     href ? html`<a href="${href}">${label}</a>` : html`<span aria-current="page">${label}</span>`)}</nav>`;
 }
 
+/** Round 120 (Rich: "where 2026-2027 appears in the title, could this be removed and put underneath in a pill"). */
+export function seasonTitle(title, season) {
+  const name = typeof season === "string" ? season : season?.name;
+  return html`<div class="title-season"><h1>${title}</h1>${name ? html`<span class="season-pill">${name} season</span>` : ""}</div>`;
+}
+
 export function panel(title, body, { color = "", href = "", foot = null, cls = "" } = {}) {
   const head = href ? html`<a class="panel-head ${color}" href="${href}">${title}</a>` : html`<div class="panel-head ${color}">${title}</div>`;
   return html`<section class="panel ${cls}">${head}${body}${foot ? html`<a class="panel-foot" href="${foot.href}">${foot.label}</a>` : ""}</section>`;
@@ -295,7 +301,7 @@ export function leagueTablePanel(ctx, league, { limit = Infinity, highlightTeamI
     { label: "A", cell: (r) => r.a, cls: "num" },
     { label: "Pts", cell: m.pts, cls: "num strong" },
     // Form (Rich, round 25): on the full table, when the page has loaded it (see core/form.js).
-    ...(ctx.form && !Number.isFinite(limit) ? [{ label: "Form", cell: (r) => html`<a class="lt-form" href="/form?view=teams&league=${league.slug}">${formChipsFn(ctx.form.team(r.team.id))}</a>`, cls: "hide-sm lt-form-cell" }] : []),
+    ...(ctx.form && !Number.isFinite(limit) ? [{ label: "Form", cell: (r) => html`<span class="lt-form">${formChipsFn(ctx.form.team(r.team.id))}</span>`, cls: "hide-sm lt-form-cell" }] : []),
   ], rows, { highlight: m.highlight, rowClass: m.rowClass, empty: "No teams in this league yet." });
   return panel(html`${trophy(league, "tiny", { always: false })}${league.name} Table`, html`${table}${m.key}${provisionalNote(ctx, league)}`, {
     foot: Number.isFinite(limit) ? { href: urls.standings(league), label: "View full table" } : null, cls: "lt-panel",

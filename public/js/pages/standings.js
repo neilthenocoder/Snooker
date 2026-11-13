@@ -1,6 +1,6 @@
 import { html, mount } from "../core/dom.js";
 import { seasonContext } from "../core/context.js";
-import { breadcrumb, leagueTablePanel, rankingsPanel, breaksPanel, seasonPicker, urls } from "../core/components.js";
+import { breadcrumb, leagueTablePanel, rankingsPanel, breaksPanel, seasonPicker, urls, seasonTitle } from "../core/components.js";
 import { RULES_TEXT } from "../core/rules.js";
 import { setTitle, adminEdit, sideContext } from "../core/router.js";
 import notFound from "./not-found.js";
@@ -17,7 +17,7 @@ export default async function standings(view, { params, query }) {
   mount(view, html`<div class="wrap stack">
     <div>${breadcrumb([["Home", "/"], ["Our League", "/league"], ["Seasons", "/seasons"], [`${ctx.season?.name} Season`, urls.season(ctx.season)], [league.name]])}
     ${/* Round 116 (Rich: "let's remove the trophy and the league emblem from the header"). */ ""}
-    <div class="title-plain"><h1>${league.name} ${ctx.season?.name}</h1>${seasonPicker(ctx)}</div></div>
+    <div class="title-plain">${seasonTitle(league.name, ctx.season)}${seasonPicker(ctx)}</div></div>
     ${leagueTablePanel(ctx, league)}
     <div id="players">${rankingsPanel(ctx, league)}</div>
     <div id="breaks">${breaksPanel(ctx, league)}</div>

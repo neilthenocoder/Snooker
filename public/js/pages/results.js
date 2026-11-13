@@ -3,7 +3,7 @@
 // "Latest Results" box links here.
 import { html, mount, fmtDate, ukDay } from "../core/dom.js";
 import { seasonContext, cupResults } from "../core/context.js";
-import { breadcrumb, panel, seasonPicker, urls, shortName } from "../core/components.js";
+import { breadcrumb, panel, seasonPicker, urls, shortName, seasonTitle } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 
 const PER_PAGE = 12;   // match days shown before "Show earlier results"
@@ -40,7 +40,7 @@ export default async function results(view, { query }) {
 
   const draw = () => mount(view, html`<div class="wrap stack">
     <div>${breadcrumb([["Home", "/"], ["Fixtures", "/fixtures"], ["Results"]])}
-      <h1>Results ${ctx.season?.name ?? ""}</h1>${seasonPicker(ctx)}
+      <div class="title-plain">${seasonTitle("Results", ctx.season)}${seasonPicker(ctx)}</div>
       <div class="chips">
         <a class="tag-link ${which ? "" : "on"}" href="${link("")}">All results</a>
         ${ctx.leagues.map((l) => html`<a class="tag-link ${which === l.id ? "on" : ""}" href="${link(l.id)}">${l.name}</a>`)}

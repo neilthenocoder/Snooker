@@ -1,7 +1,7 @@
 import { html, mount, fmtDate } from "../core/dom.js";
 import { table, loadCompetitions, currentCompetitions } from "../core/api.js";
 import { buildBracket, progressText } from "../core/bracket.js";
-import { breadcrumb, picture, urls, shortName, trophy, compBoxStyle } from "../core/components.js";
+import { breadcrumb, picture, urls, shortName, trophy, compBoxStyle, seasonTitle } from "../core/components.js";
 import { setTitle, adminEdit } from "../core/router.js";
 import { openForEntry } from "./enter.js";
 
@@ -37,7 +37,7 @@ export default async function competitions(view, { query }) {
 
   mount(view, html`<div class="wrap">
     ${breadcrumb([["Home", "/"], ["Our League", "/league"], ["Competitions"]])}
-    <h1>Competitions ${season?.name ?? ""}</h1>
+    ${seasonTitle("Competitions", season)}
     ${choices.length > 1 ? html`<label class="toolbar" style="font-weight:700">Season
       <select data-season-picker>${choices.map((s) => html`<option value="${s.id}" ${s.id === season?.id ? "selected" : ""}>${s.name}${s.id === current?.id ? " (this season)" : ""}</option>`)}</select></label>` : ""}
     ${openForEntry(all.map((x) => x.c)).length ? html`<a class="enter-bar" href="/enter"><b>Entries are open</b> for ${openForEntry(all.map((x) => x.c)).map((c) => c.name).join(", ")} <span>Enter now →</span></a>` : ""}

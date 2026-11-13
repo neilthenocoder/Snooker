@@ -20,6 +20,7 @@
 //               formatted: true on a textarea = headings, bullets and tables can be typed (core/markup.js) — adds the help line and a Preview button.
 //  Section hooks: validate(row) → problem text, beforeSave(row, refs), afterSave(), onInput(form, changedElement).
 // ─────────────────────────────────────────────────────────────
+import { icon } from "./icons.js";
 import { HOME_SECTIONS } from "../core/home-blocks.js";
 import { html, fmtDate, fmtTime, ukDay, toast } from "../core/dom.js";
 import { adminUsers } from "../core/db.js";
@@ -108,7 +109,7 @@ export const RESOURCES = {
     validate: (row) => (row.home_team_id === row.away_team_id ? "A team can't play itself."
       : (row.home_score == null) !== (row.away_score == null) ? "Enter both final scores, or leave both blank." : null),
     beforeSave: (row, refs) => ({ ...row, venue_id: row.venue_id || refs.teams.find((t) => t.id === row.home_team_id)?.venue_id || null }),
-    rowActions: [{ label: "Scorecard", href: (row) => `/scorecard/${row.code || row.id}` }],
+    rowActions: [{ label: "Scorecard", href: (row) => `/scorecard/${row.code || row.id}` }, { label: "View", title: "Open the match page on the website", href: (row) => `/match/${row.code || row.id}` }],
   },
   competitions: {
     label: "Competitions", table: "competitions", order: "sort", filters: ["season_id", "kind"],
@@ -166,6 +167,7 @@ export const RESOURCES = {
   teams: {
     label: "Teams", table: "teams", order: "name", filters: ["league_id"],
     columns: ["logo_url", "name", "league_id", "venue_id", "active"],
+    rowActions: [{ label: "View", title: "Open the team's page on the website", href: (row) => `/team/${row.slug}` }],
     fields: [
       { name: "name", label: "Team name", type: "text", required: true },
       { name: "slug", label: "Web address (auto)", type: "slug", from: "name" },
@@ -244,6 +246,7 @@ export const RESOURCES = {
   },
   venues: {
     label: "Venues", table: "venues", order: "name", columns: ["image_url", "name", "tables", "address", "phone"],
+    rowActions: [{ label: "View", title: "Open the venue's page on the website", href: (row) => `/venue/${row.slug}` }],
     fields: [
       { name: "name", label: "Venue name", type: "text", required: true },
       { name: "slug", label: "Web address (auto)", type: "slug", from: "name" },
@@ -264,6 +267,7 @@ export const RESOURCES = {
   },
   leagues: {
     label: "Leagues", table: "leagues", order: "sort", columns: ["logo_url", "name", "short_name", "sort", "promote_count", "relegate_count"],
+    rowActions: [{ label: "View", title: "Open the league's table on the website", href: (row) => `/standings/${row.slug}` }],
     intro: "Add a league here and it appears automatically on the home page, the fixtures page and the League page. Then add its teams under Teams and create its fixtures with the Fixture generator.",
     // An emptied number box means "none".
     beforeSave: (row) => ({ ...row, promote_count: row.promote_count ?? 0, relegate_count: row.relegate_count ?? 0 }),
@@ -285,6 +289,7 @@ export const RESOURCES = {
   },
   seasons: {
     label: "Seasons", table: "seasons", order: "name", columns: ["name", "is_current"],
+    rowActions: [{ label: "View", title: "Open the season's page on the website", href: (row) => `/seasons/${encodeURIComponent(row.name ?? "")}` }],
     fields: [
       { name: "name", label: "Season (e.g. 2027-2028)", type: "text", required: true },
       { name: "is_current", label: "This is the current season", type: "checkbox" },
@@ -341,7 +346,7 @@ export const RESOURCES = {
       { name: "author", label: "Written by (shown as “By …”; leave empty to use the name under Site settings → News)", short: "Written by", type: "text", placeholder: "Rich Pearson" },
       { name: "competition_id", label: "Competition (optional)", type: "ref", ref: "competitions" },
       { name: "player_ids", label: "Players this article is about (it appears under “Player news” on their pages)", type: "tags", ref: "players" },
-      { type: "custom", render: (editing) => html`<div class="art-tools"><button type="button" class="btn small" data-res-action="preview">👁 Preview</button>
+      { type: "custom", render: (editing) => html`<div class="art-tools"><button type="button" class="btn small" data-res-action="preview">${icon("eye", 16)}Preview</button>
         ${editing?.id && editing.slug ? html`<a class="btn small ghost" href="/news/${editing.slug}" target="_blank" rel="noopener">View article ↗</a>` : ""}
         <small class="muted">Preview opens the article in a new tab exactly as it will look with what is in this form — nothing is saved until you press Save.</small></div>` },
       { name: "pub_status", label: "Status", type: "select", options: ["published", "draft", "scheduled"], default: "published",
