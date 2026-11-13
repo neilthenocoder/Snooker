@@ -324,7 +324,6 @@ async function drawHeader() {
         ${user ? html`<div class="nav-drop-wrap sb-acct-wrap"><button type="button" class="sb-acct" data-drop="acct" aria-expanded="false" aria-haspopup="true" aria-label="${role} menu: ${name}" title="${name}">
             <span class="sb-acct__initials">${initials(name)}</span><svg class="sb-acct__ava" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 20c.9-3.6 3.8-5.6 7.2-5.6s6.3 2 7.2 5.6"/></svg><span class="sb-acct__word">${role}</span><svg class="sb-icon sb-acct__chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
           <div class="sb-drop" data-drop-panel="acct" hidden>
-            <div class="sb-drop__who"><span class="sb-drop__initials">${initials(name)}</span><span><strong>${name}</strong><small>${role}</small></span></div>
             ${acctItems(user)}
             <button type="button" class="acct-item acct-out" data-logout><span class="acct-ico">${logoutIcon}</span><span><b>Log out</b></span></button>
           </div></div>`
@@ -562,8 +561,14 @@ setShellRefresher(refreshShell);
 
 async function renderRoute({ quiet = false, keepPlace = false } = {}) {
   routing = true;
+  // Round 120b (Neil: "make sure the nav bar does not change back to any other variant when I am away from the browser
+  // for a while and then come back"). Leaving a page takes its menu-bar look with it (the bar over the home page photo,
+  // say). A quiet redraw is the same page again, so the look is put straight back: the bar never shows its other
+  // variant while the page's data is fetched, and keeps the right one even if that fetch fails.
+  const barLook = quiet ? ["sb-navover", "sb-has-quick"].filter((c) => document.documentElement.classList.contains(c)) : [];
   if (typeof cleanup === "function") cleanup();
   cleanup = null;
+  document.documentElement.classList.add(...barLook);
   stopPageText(); stopPageText = () => {};
   document.querySelector(".tw-bar")?.remove(); document.querySelector(".tw-menu")?.remove(); document.body.classList.remove("tw-on");
   document.querySelector(".edit-page")?.remove();
@@ -886,9 +891,14 @@ async function quietRefresh({ force = false } = {}) {
   if (busy() || (!force && Date.now() - lastUse < 120e3)) return;
   const y = window.scrollY;
   invalidate();
+  // The page keeps its height while it is redrawn, so it cannot jump to the top for a moment (which made the menu bar
+  // grow back to full size and shrink again).
+  const view = $("#view");
+  if (view) view.style.minHeight = `${view.offsetHeight}px`;
   await Promise.all([drawHeader(), drawFooter()]).catch(() => {});
   await renderRoute({ quiet: true }).catch(() => {});
   window.scrollTo(0, y);
+  if (view) view.style.minHeight = "";
 }
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) { awayAt = Date.now(); return; }

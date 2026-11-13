@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────────────────────────
 export const SITE_VERSION = "1.99.0";
 export const CHANGES = [
+  "Round 120b — dashboard: an arrow button on each sliding row wherever there is more to see; the account button shows the avatar icon on computers too; the name box is gone from the account menu; the banner's scroll-down arrow is in the middle; the menu bar keeps its look when you come back to the site after time away",
   "Round 120 — the dashboard has no left-hand menu any more: seven sections along the top (Matches, League, Competitions, News, Website, Community, Admin tools) in a row that slides, each with a page of its own listing what is in it in plain words; the pages of the section you are in sit under the title; Everything shows the lot on one screen",
   "Dashboard: one search box at the top finds any page, setting, player, team, match or article; a View on the website button on every page that has one; View links on teams, venues, leagues, seasons and fixtures",
   "Dashboard: line icons everywhere instead of emoji; Image library has three icon buttons in a row (Details, Copy link, a red Delete); View article no longer breaks onto two lines",

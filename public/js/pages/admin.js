@@ -208,10 +208,22 @@ function adminBar(user, mine, section) {
  */
 function pullRow(row) {
   if (!row) return;
+  // Round 120b (Neil: "how would anyone know they need to scroll sideways?"): a round arrow button on whichever side
+  // has more — plain to see on a phone, and a tap moves the row along.
+  const wrap = document.createElement("div");
+  wrap.className = `adm-pull ${row.classList.contains("adm-tabs") ? "adm-pull--tabs" : "adm-pull--sub"}`;
+  row.before(wrap); wrap.append(row);
+  for (const [dir, cls, name, label] of [[-1, "prev", "chevLeft", "Show the earlier ones"], [1, "next", "chevRight", "Show more"]]) {
+    const b = Object.assign(document.createElement("button"), { type: "button", className: `adm-pull__btn adm-pull__btn--${cls}` });
+    b.setAttribute("aria-label", label); mount(b, icon(name, 18));
+    b.addEventListener("click", () => row.scrollBy({ left: dir * Math.max(160, row.clientWidth * 0.7), behavior: "smooth" }));
+    wrap.append(b);
+  }
   const ends = () => {
     const can = row.scrollWidth - row.clientWidth > 4;
-    row.classList.toggle("more-left", can && row.scrollLeft > 4);
-    row.classList.toggle("more-right", can && row.scrollLeft + row.clientWidth < row.scrollWidth - 4);
+    const left = can && row.scrollLeft > 4, right = can && row.scrollLeft + row.clientWidth < row.scrollWidth - 4;
+    row.classList.toggle("more-left", left); wrap.classList.toggle("more-left", left);
+    row.classList.toggle("more-right", right); wrap.classList.toggle("more-right", right);
   };
   const on = row.querySelector("[aria-current]");
   if (on) row.scrollLeft = Math.max(0, on.offsetLeft - (row.clientWidth - on.offsetWidth) / 2);

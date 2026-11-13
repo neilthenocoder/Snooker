@@ -2834,3 +2834,31 @@ html:not(#x) body:not(#sb) .venue-side .bk-podium:has(> .bk-pod.empty) { grid-te
 html:not(#x) body:not(#sb) .venue-side .bk-podium > .bk-pod.empty { display: none; }
 .title-plain + .chips { margin-top: 18px; }
 html:not(#x) body:not(#sb) .adm-find input:focus, html:not(#x) body:not(#sb) .adm-find input:focus-visible { outline: 0 !important; box-shadow: none !important; }
+
+/* ── Round 120b (Neil) ── */
+/* The dashboard's sliding rows: an arrow button on whichever side has more to show. */
+.adm-pull { position: relative; }
+.adm-pull--tabs { margin-bottom: 26px; }
+.adm-pull--sub { margin-bottom: 22px; }
+html:not(#x) body:not(#sb) .adm-pull > :is(.adm-tabs, .adm-sub) { margin: 0; }
+html:not(#x) body:not(#sb) .adm-pull__btn { display: none; place-items: center; position: absolute; z-index: 2; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%;
+  background-color: var(--ink) !important; color: #fff !important; box-shadow: 0 4px 12px rgba(0, 0, 0, .22); cursor: pointer; }
+html:not(#x) body:not(#sb) .adm-pull__btn:hover { background-color: var(--red) !important; }
+html:not(#x) body:not(#sb) .adm-pull.more-left > .adm-pull__btn--prev, html:not(#x) body:not(#sb) .adm-pull.more-right > .adm-pull__btn--next { display: grid; }
+.adm-pull__btn--prev { left: 6px; }
+.adm-pull__btn--next { right: 6px; }
+.adm-pull--sub > .adm-pull__btn--prev { left: 0; }
+.adm-pull--sub > .adm-pull__btn--next { right: 0; }
+@media (max-width: 760px) {
+  .adm-pull--tabs { margin: 0 calc(var(--gutter) * -1) 20px; }
+  .adm-pull--sub { margin-left: calc(var(--gutter) * -1); margin-right: calc(var(--gutter) * -1); }
+  html:not(#x) body:not(#sb) .adm-pull > .adm-pull__btn--prev { left: 8px; }
+  html:not(#x) body:not(#sb) .adm-pull > .adm-pull__btn--next { right: 8px; }
+}
+/* Your account in the menu bar: the avatar icon on a computer too, not initials. */
+@media (min-width: 901px) {
+  html:not(#x) body:not(#sb) .sb-header .sb-acct__initials { display: none !important; }
+  html:not(#x) body:not(#sb) .sb-header .sb-acct__ava { display: block; flex: none; box-sizing: border-box; width: 32px; height: 32px; padding: 6px; border-radius: 50%; background: #15201B; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+}
+/* The banner's scroll-down arrow: in the middle of the banner, not above the match strip's arrows. */
+html:not(#x) body:not(#sb) .sb-fh__down { right: auto; left: 50%; margin-left: -23px; }
