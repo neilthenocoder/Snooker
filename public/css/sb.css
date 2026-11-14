@@ -2943,8 +2943,6 @@ html:not(#x) body:not(#sb):not(#y) .sb-fh__down { display: none !important; }
   html:not(#x) body:not(#sb):not(#y) .sb-strip--over .sb-strip__down { display: grid; place-items: center; flex: none; width: 44px; height: 44px; margin: 0 auto 0 0; padding: 0; border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, .35) !important; background: rgba(12, 15, 14, .45) !important; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); cursor: pointer; }
   html:not(#x) body:not(#sb):not(#y) .sb-strip--over .sb-strip__down svg { width: 22px; height: 22px; fill: #fff; animation: nudge 1.4s infinite; }
-  html:not(#x) body:not(#sb):not(#y) .sb-strip--over .sb-strip__down:hover { background: var(--yellow) !important; border-color: var(--yellow) !important; }
-  html:not(#x) body:not(#sb):not(#y) .sb-strip--over .sb-strip__down:hover svg { fill: var(--on-yellow); }
   html:not(#x) body:not(#sb):not(#y) .sb-strip--over .sb-strip__head .sb-seg { margin-right: auto; }
 }
 @media (prefers-reduced-motion: reduce) { .sb-strip__down svg { animation: none !important; } }
@@ -2954,5 +2952,18 @@ html:not(#x) body:not(#sb):not(#y) .sc-team .sc-run { background: #fff !importan
    On a narrower computer screen, where the middle would land on the tabs, it stays in the gap between the tabs and the arrows. */
 @media (min-width: 1360px) {
   html:not(#x) body:not(#sb):not(#y) .sb-strip--over .sb-strip__head { position: relative; }
-  html:not(#x) body:not(#sb):not(#y) .sb-strip--over .sb-strip__down { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -50%); }
+  html:not(#x) body:not(#sb):not(#y) .sb-strip--over .sb-strip__down { position: absolute; left: calc(50% - 22px); top: calc(50% - 22px); margin: 0; }
 }
+
+/* ── Round 121b (Neil: "that layout shift and blinking … make sure there is no such bug") ──
+   Nothing moves or changes size when the pointer is over it. A card or button that lifts on hover can slide out from
+   under the pointer at its bottom edge, lose the hover, drop back, and flicker; a button placed with a transform
+   jumps if a hover rule replaces it. So no hover lifts anywhere: hover is shown by colour and shadow only. */
+html:not(#x) body:not(#sb):not(#y) :is(.strip-card, .br-match, .socials a, .person-card, .merch-card, .hub-card, .feat-card, .comp-row,
+  a.stat.stat-link, .list-rows.comp-cols a, .mk-card, .dl-card, .hof-card, a.fc, .quick-links a, .tile, .glance-tile, .my-snooker-btn,
+  .pick-team, .cs-card, .story-card, .team-tile, .tile.with-emblem, .live-strip a.strip-cal, .btn-bar, .back-link, .share-page, .share-btn,
+  .sb-promo4__card, .adm-card, .adm-sec, .hero-pic-link, .hero-circle-link, .hub-tabs a, .league-jump a, .pick-go):hover { transform: none !important; }
+/* The round arrow buttons at the edges of the sliding rows are centred with a transform: hover keeps it exactly. */
+html:not(#x) body:not(#sb):not(#y) .edge-btn:hover, html:not(#x) body:not(#sb):not(#y) #view button.edge-btn:hover { transform: translateY(-50%) !important; }
+/* The scroll-down arrow: no hover look at all. */
+html:not(#x) body:not(#sb):not(#y) .sb-strip__down:hover { background: rgba(12, 15, 14, .45) !important; border-color: rgba(255, 255, 255, .35) !important; transform: none !important; }

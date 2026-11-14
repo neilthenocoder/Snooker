@@ -6739,7 +6739,10 @@ html.look-calm body:not([data-page="admin"]) :is(.panel, .hub-card, .story-card,
 html.look-calm body:not([data-page="admin"]) :is(.hub-card, .story-card, .feat-card, .spotlight, .team-tile, .tile, .lg-card, .cf-card, .cs-card, .person-card) {
   border: 1px solid var(--line) !important; box-shadow: none !important; }
 html.look-calm body:not([data-page="admin"]) #view .panel { border: 1px solid var(--line) !important; box-shadow: none !important; }
-html.look-calm body:not([data-page="admin"]) :is(a, button, .team-tile, .tile, .lg-card, .story-card, .cs-card, .strip-card, .feat-card, .feat-main, .hub-card, .cf-card, .cf-main, .spotlight, .btn-bar, .back-link, .share-page, .share-btn, .league-jump a, .quick-links a, .person-card, .cv-chip, .shield-row):hover {
+/* Round 121b: this rule used to cancel the transform of every link and button on hover. A button placed with a
+   transform (centred with translate) then jumped on hover, left the pointer, jumped back, and flickered. It now names
+   only the cards and links that used to lift on hover; sb.css (round 121b) has the full list, for every page. */
+html.look-calm body:not([data-page="admin"]) :is(.team-tile, .tile, .lg-card, .story-card, .cs-card, .strip-card, .feat-card, .feat-main, .hub-card, .cf-card, .cf-main, .spotlight, .btn-bar, .back-link, .share-page, .share-btn, .league-jump a, .quick-links a, .person-card, .cv-chip, .shield-row):hover {
   transform: none !important; }
 html.look-calm body:not([data-page="admin"]) :is(.hub-card, .story-card, .feat-card, .spotlight, .team-tile, .tile, .lg-card, .cf-card, .cs-card, .person-card, .cv-chip, .shield-row):hover {
   border-color: var(--hover-line) !important; box-shadow: none !important; }

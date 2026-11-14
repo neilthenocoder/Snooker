@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────────────────────────
 export const SITE_VERSION = "1.100.0";
 export const CHANGES = [
+  "Round 121b — nothing moves when the pointer is over it: no more cards or buttons lifting on hover (a card could slide out from under the pointer and flicker), and the scroll-down arrow no longer jumps or turns yellow; it sits in the middle of the screen, level with the match strip's arrows",
   "Round 121 — results look the same everywhere: every score is a black box with white figures (a white box on the dark scorecard header), the winner's name in bold; no more green and red score boxes (results, the competition draws, team and player form, match pages, the side columns)",
   "Won, Lost and Drawn are one soft pill everywhere, and the W and L form squares use the same soft green and red, so nothing shouts",
   "League tables on a phone: room between the green and red lines and the position numbers",
