@@ -114,7 +114,7 @@ export function matesGrid(players, { skipId = null, note = () => "" } = {}) {
   const list = [...players].sort((a, b) => order(a) - order(b) || a.full_name.localeCompare(b.full_name)).map((p, i) => ({ p, n: i + 1 })).filter(({ p }) => p.id !== skipId);
   if (!list.length) return "";
   return html`<div class="pp-card pp-mates">${list.map(({ p, n }) => html`<a class="pp-mate" href="${urls.player(p)}">
-    <span class="pp-mate__no">${n}</span>${avatar(p, "avatar pp-mate__face")}
+    ${avatar(p, "avatar pp-mate__face")}
     <span class="pp-mate__text"><b>${p.full_name}</b><small>${(p.position || "Player").replace(/^Team /i, "")}</small>${note(p) ? html`<small class="pp-mate__note">${note(p)}</small>` : ""}</span></a>`)}</div>`;
 }
 

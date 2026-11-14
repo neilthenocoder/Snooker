@@ -283,7 +283,7 @@ export default async function admin(view, { params, user, query }) {
     <div data-db-behind></div>
     ${cur ? html`<nav class="adm-sub" aria-label="${cur.label}" data-pull>
       <a class="adm-pill ${hub ? "on" : ""}" href="/admin/hub_${cur.id}" ${hub ? html`aria-current="page"` : ""}>${icon("grid", 16)}<span>All pages</span></a>
-      ${cur.groups.map(([group, items]) => html`${cur.groups.length > 1 ? html`<span class="adm-sub__label">${group}</span>` : ""}${items.map(([key, label]) =>
+      ${cur.groups.map(([group, items]) => html`${cur.groups.length > 1 ? html`<span class="adm-sub__sep" role="separator" aria-label="${group}"></span>` : ""}${items.map(([key, label]) =>
         html`<a class="adm-pill ${key === section ? "on" : ""}" href="/admin/${key}" ${key === section ? html`aria-current="page"` : ""}>${label}${countBadge(key)}</a>`)}`)}
     </nav>` : ""}
     <div class="admin"><div id="admin-body"></div></div>

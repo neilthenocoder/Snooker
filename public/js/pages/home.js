@@ -1078,6 +1078,8 @@ async function liveStrip(user = null, mode = "filters", layout = "strip") {
         <h2 id="sb-strip-h">Live and upcoming matches</h2>
         ${mode === "mine" && toggle ? html`<span class="sb-strip__mine">${toggle}</span>` : ""}
         <div class="sb-seg sb-seg--arena sb-seg--pick" role="group" aria-label="Which matches">${tab("all", "All")}${tab("live", `Live · ${live.length}`)}${tab("upcoming", "Upcoming")}${tab("results", "Results")}</div>
+        ${/* Round 121 (Rich): the banner's scroll-down arrow sits in this row, between the tabs and the arrows. */ ""}
+        <button type="button" class="sb-strip__down" data-scroll-down aria-label="Scroll down"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16.5 5 9.6l1.4-1.4L12 13.7l5.6-5.5L19 9.6Z"/></svg></button>
         <div class="sb-strip__ctrl">
           <button type="button" class="sb-icon-btn sb-icon-btn--arena-solid" data-strip-move="-1" aria-label="Previous matches">${sbIcon(ICON.left)}</button>
           <button type="button" class="sb-icon-btn sb-icon-btn--arena-solid" data-strip-move="1" aria-label="Next matches">${sbIcon(ICON.right)}</button>

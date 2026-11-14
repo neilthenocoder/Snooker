@@ -2862,3 +2862,91 @@ html:not(#x) body:not(#sb) .adm-pull.more-left > .adm-pull__btn--prev, html:not(
 }
 /* The banner's scroll-down arrow: in the middle of the banner, not above the match strip's arrows. */
 html:not(#x) body:not(#sb) .sb-fh__down { right: auto; left: 50%; margin-left: -23px; }
+
+/* ═════════════════════════════════════════════════════════════
+   Round 121 (Rich's feedback of 13 November): one look for results and win/loss everywhere
+   ═════════════════════════════════════════════════════════════ */
+:root {
+  --score-bg: #15201B; --score-ink: #FFFFFF;
+  --wl-win-bg: #DDF0E3; --wl-win-ink: #17683A;
+  --wl-loss-bg: #FCE3E8; --wl-loss-ink: #B3122F;
+  --wl-draw-bg: #ECEBEE; --wl-draw-ink: #5B6660;
+}
+
+/* 1. Every score is a black box with white figures (as on the match strip). The colour says nothing about who won:
+      that is the pill's job, or the winner's name in bold. */
+html:not(#x) body:not(#sb):not(#y) :is(.res-mini b.rs i, .res-mini b.rs i.w, .res-mini b.rs i.l,
+  .br-team.won .br-score, .br-team.lost .br-score, .fx-side.won b, .fx-side.lost b,
+  .pp-mw__chip, .pp-mw__chip.is-w, .pp-mw__chip.is-l, .res-num, .res-num.won, .res-num.lost,
+  .res-line.won b, .res-line.lost b, .cf-g-line.won b, .cf-g-line.lost b, .cf-main .cf-round li.cf-game .won b, .cf-main .cf-round li.cf-game .lost b,
+  .sc-mid b.sc-tiles i.w, .sc-mid b.sc-tiles i.l, .md-mid b.sc-tiles i.w, .md-mid b.sc-tiles i.l,
+  .live-strip .sc-row-score.w, .live-strip .sc-row-score.l, .sb-score--tone span.w, .sb-score--tone span.l) {
+  background: var(--score-bg) !important; border-color: var(--score-bg) !important; color: var(--score-ink) !important; }
+html:not(#x) body:not(#sb):not(#y) .res-num:is(.won, .lost) { display: inline-grid; place-items: center; min-width: 30px; height: 28px; padding: 0 8px; border-radius: 6px; }
+html:not(#x) body:not(#sb):not(#y) .br-team.won .br-name, html:not(#x) body:not(#sb):not(#y) .fx-side.won span { font-weight: 800; }
+html:not(#x) body:not(#sb):not(#y) .br-team.lost .br-name { opacity: .75; }
+
+/* 2. Won / Lost / Drawn: one pill, in soft colours, wherever it appears. */
+html:not(#x) body:not(#sb):not(#y) .wl { display: inline-flex; align-items: center; justify-content: center; height: 22px; min-width: 50px; padding: 0 9px; border-radius: 999px;
+  font: 700 11px/1 var(--font-sans); letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; border: 0; box-shadow: none; }
+html:not(#x) body:not(#sb):not(#y) :is(.wl.won, .tally.win, .g-wl.is-w, .fc.w, .ms-form a.w) { background: var(--wl-win-bg) !important; color: var(--wl-win-ink) !important; }
+html:not(#x) body:not(#sb):not(#y) :is(.wl.lost, .tally.loss, .g-wl.is-l, .fc.l, .ms-form a.l) { background: var(--wl-loss-bg) !important; color: var(--wl-loss-ink) !important; }
+html:not(#x) body:not(#sb):not(#y) :is(.wl.drawn, .fc.d) { background: var(--wl-draw-bg) !important; color: var(--wl-draw-ink) !important; }
+html:not(#x) body:not(#sb):not(#y) a.fc:hover { filter: none; transform: none; box-shadow: inset 0 0 0 1.5px currentColor; }
+/* The W and L squares (form): the same soft colours, the same size everywhere. */
+html:not(#x) body:not(#sb):not(#y) .fc { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; font: 700 11px/1 var(--font-sans); }
+html:not(#x) body:not(#sb):not(#y) .ms-form a:is(.w, .l) { font-weight: 700; }
+/* The scorecard's own W / L beside each frame's players. */
+html:not(#x) body:not(#sb):not(#y) .g-wl { border-radius: 5px; }
+/* A won frame in the scorecard editor: a soft green, not a solid block. */
+html:not(#x) body:not(#sb):not(#y) :is(tr.won-a td:nth-child(2) input, tr.won-b td:nth-child(5) input) { background: var(--wl-win-bg) !important; color: var(--wl-win-ink) !important; font-weight: 800; }
+/* The winning side's name on a match page: bold, not coloured. */
+html:not(#x) body:not(#sb):not(#y) .mh-side.won span { font-weight: 800; color: inherit !important; }
+html:not(#x) body:not(#sb):not(#y) .mh-side.lost span { color: inherit !important; opacity: .8; }
+
+/* 3. League tables on a phone: room between the green and red lines and the position numbers. */
+@media (max-width: 760px) {
+  html:not(#x) body:not(#sb):not(#y) :is(.sb-lt, table.data) :is(tbody, thead) tr > :first-child { padding-left: 16px !important; }
+}
+
+/* 4. A competition's page: a little space between its header and the Admin bar. */
+html:not(#x) body:not(#sb):not(#y) .comp-admin { margin-top: 14px; }
+
+/* 5. At a glance (a competition's side column): four even tiles, two by two. */
+html:not(#x) body:not(#sb):not(#y) .sidebar .glance { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 4px 16px 16px; background: none; }
+html:not(#x) body:not(#sb):not(#y) .sidebar .glance > div { padding: 14px; border-radius: 12px; background: var(--soft); font-size: 13px; color: var(--ink-muted); }
+html:not(#x) body:not(#sb):not(#y) .sidebar .glance b { display: block; margin-bottom: 2px; font: 800 22px/1.15 var(--font-sans); color: var(--ink); }
+html:not(#x) body:not(#sb):not(#y) .sidebar .glance-next { padding: 12px 16px 16px; border-top: 0; }
+
+/* 6. Team and Team mates: each player's photo, not a red number. */
+html:not(#x) body:not(#sb):not(#y) .pp-mate__face { display: block; width: 44px !important; height: 44px !important; border-radius: 50%; object-fit: cover; background: var(--surface); }
+
+/* 7. The dashboard: a thin line between the groups of pages, not a word that looks like a missing button. */
+.adm-sub__sep { flex: none; width: 1px; height: 24px; margin: 0 6px; background: var(--line); }
+
+/* 8. Home page banner on a phone: the match strip's arrows are small, at the top right beside its heading,
+      not over the match cards. */
+html:not(#x) body:not(#sb):not(#y) .sb-strip__edge { display: none !important; }
+@media (max-width: 760px) {
+  html:not(#x) body:not(#sb):not(#y) .sb-strip__head { position: relative; }
+  html:not(#x) body:not(#sb):not(#y) .sb-strip__head h2 { padding-right: 84px; }
+  html:not(#x) body:not(#sb):not(#y) .sb-strip__ctrl { position: absolute; top: 0; right: 0; gap: 6px; }
+  html:not(#x) body:not(#sb):not(#y) .sb-strip__ctrl .sb-icon-btn { display: grid !important; place-items: center; width: 34px !important; height: 34px !important; }
+  html:not(#x) body:not(#sb):not(#y) .sb-strip__ctrl .sb-icon-btn svg { width: 16px; height: 16px; }
+  html:not(#x) body:not(#sb):not(#y) .sb-strip__ctrl .sb-strip__all { display: none !important; }
+}
+
+/* 9. The banner's scroll-down arrow: in the match strip's heading row, half way between the tabs and the arrows. */
+html:not(#x) body:not(#sb):not(#y) .sb-fh__down { display: none !important; }
+.sb-strip__down { display: none; }
+@media (min-width: 761px) {
+  html:not(#x) body:not(#sb):not(#y) .sb-strip--over .sb-strip__down { display: grid; place-items: center; flex: none; width: 44px; height: 44px; margin: 0 auto 0 0; padding: 0; border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, .35) !important; background: rgba(12, 15, 14, .45) !important; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); cursor: pointer; }
+  html:not(#x) body:not(#sb):not(#y) .sb-strip--over .sb-strip__down svg { width: 22px; height: 22px; fill: #fff; animation: nudge 1.4s infinite; }
+  html:not(#x) body:not(#sb):not(#y) .sb-strip--over .sb-strip__down:hover { background: var(--yellow) !important; border-color: var(--yellow) !important; }
+  html:not(#x) body:not(#sb):not(#y) .sb-strip--over .sb-strip__down:hover svg { fill: var(--on-yellow); }
+  html:not(#x) body:not(#sb):not(#y) .sb-strip--over .sb-strip__head .sb-seg { margin-right: auto; }
+}
+@media (prefers-reduced-motion: reduce) { .sb-strip__down svg { animation: none !important; } }
+/* The running score on a scorecard: the reverse of the black box (white, black figures) on its dark header. */
+html:not(#x) body:not(#sb):not(#y) .sc-team .sc-run { background: #fff !important; color: var(--score-bg) !important; border-color: #fff !important; }

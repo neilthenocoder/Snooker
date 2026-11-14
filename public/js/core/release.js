@@ -4,8 +4,15 @@
 //  Version history shows it against the update Netlify is serving, and remembers it for that update.
 //  It is shown in the dashboard only — never on the public pages (Security → Hide version).
 // ─────────────────────────────────────────────────────────────
-export const SITE_VERSION = "1.99.0";
+export const SITE_VERSION = "1.100.0";
 export const CHANGES = [
+  "Round 121 — results look the same everywhere: every score is a black box with white figures (a white box on the dark scorecard header), the winner's name in bold; no more green and red score boxes (results, the competition draws, team and player form, match pages, the side columns)",
+  "Won, Lost and Drawn are one soft pill everywhere, and the W and L form squares use the same soft green and red, so nothing shouts",
+  "League tables on a phone: room between the green and red lines and the position numbers",
+  "A competition's page: a gap between its header and the Admin bar; At a glance in four even tiles; Next match never shows a date that has passed (it shows the round's play-by date when a match has no date of its own, or the next round's)",
+  "Team and Team mates: each player's photo instead of a red number",
+  "Dashboard: a thin line between groups of pages instead of the small headings that looked like a missing button",
+  "Home page banner: on a phone the match strip's arrows are small, at the top right by its heading; on a computer the scroll-down arrow sits in the strip's heading row, between the tabs and the arrows",
   "Round 120b — dashboard: an arrow button on each sliding row wherever there is more to see; the account button shows the avatar icon on computers too; the name box is gone from the account menu; the banner's scroll-down arrow is in the middle; the menu bar keeps its look when you come back to the site after time away",
   "Round 120 — the dashboard has no left-hand menu any more: seven sections along the top (Matches, League, Competitions, News, Website, Community, Admin tools) in a row that slides, each with a page of its own listing what is in it in plain words; the pages of the section you are in sit under the title; Everything shows the lot on one screen",
   "Dashboard: one search box at the top finds any page, setting, player, team, match or article; a View on the website button on every page that has one; View links on teams, venues, leagues, seasons and fixtures",

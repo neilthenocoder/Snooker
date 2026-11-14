@@ -25,7 +25,19 @@ export default async function competition(view, { params, user }) {
     const season = seasons.find((s) => s.id === c.season_id);
     const champ = b.champion ? b.entryById.get(b.champion) : null;
     const real = b.rounds.flat().filter((m) => !m.isBye);
-    const next = real.filter((m) => !m.played && m.row.starts_at).sort((x, y) => x.row.starts_at.localeCompare(y.row.starts_at))[0];
+    // Round 121 (Rich: "Next match date here looks wrong"): the next match still to come, never one whose date has
+    // passed. A match with no date of its own is due by its round's play-by date, so that is shown instead.
+    const soon = Date.now() - 6 * 36e5, today = new Date().toISOString().slice(0, 10);
+    const dueBy = (m) => c.round_deadlines?.[m.round] ?? c.round_deadlines?.[String(m.round)] ?? null;
+    const toPlay = real.filter((m) => !m.played && isEntry(m.a) && isEntry(m.b));
+    const dated = toPlay.filter((m) => m.row.starts_at && Date.parse(m.row.starts_at) >= soon).sort((x, y) => x.row.starts_at.localeCompare(y.row.starts_at));
+    const byDate = toPlay.filter((m) => !m.row.starts_at && dueBy(m) && dueBy(m) >= today).sort((x, y) => dueBy(x).localeCompare(dueBy(y)));
+    const next = dated[0] ?? byDate[0] ?? null;
+    // Nothing ready to play yet (the next round not drawn): the next round's play-by date, if it is still to come.
+    const nextRound = next ? null : Object.entries(c.round_deadlines ?? {}).filter(([r, d]) => d && d >= today && real.some((m) => String(m.round) === String(r) && !m.played))
+      .sort((x, y) => x[1].localeCompare(y[1]))[0];
+    const nextWhen = next ? (next.row.starts_at ? fmtDate(next.row.starts_at) : fmtDate(`${dueBy(next)}T12:00:00Z`)) : nextRound ? fmtDate(`${nextRound[1]}T12:00:00Z`) : "–";
+    const nextWord = next ? (next.row.starts_at ? "Next match" : "Next match, play by") : nextRound ? "Next round, play by" : "Next match";
     const related = news.filter((a) => a.competition_id === c.id);
     // This competition's own breaks, for its sidebar.
     const matchIds = data.matches.filter((m) => m.competition_id === c.id).map((m) => m.id);
@@ -92,9 +104,9 @@ export default async function competition(view, { params, user }) {
             <div><b>${entries.length}</b>Entrants</div>
             <div><b>${real.filter((m) => m.played).length}/${real.length}</b>Matches played</div>
             <div><b>${b.rounds.flat().filter((m) => m.played && m.row.score_a != null).reduce((n, m) => n + m.row.score_a + m.row.score_b, 0)}</b>Frames played</div>
-            <div><b>${next ? fmtDate(next.row.starts_at) : "–"}</b>Next match</div>
+            <div><b>${nextWhen}</b>${nextWord}</div>
           </div>
-          ${next && isEntry(next.a) && isEntry(next.b) ? html`<p class="glance-next">Next up: <b>${b.entryById.get(next.a).name}</b> v <b>${b.entryById.get(next.b).name}</b></p>` : ""}`)}
+          ${next ? html`<p class="glance-next">Next up: <b>${b.entryById.get(next.a).name}</b> v <b>${b.entryById.get(next.b).name}</b></p>` : ""}`)}
           ${previousWinnersPanel(winnersOf(pastWon, c), { players, teams }, { compact: true })}
           ${others.length ? panel("Other competitions", html`<div class="list-links">${others.map((x) => html`<a href="${urls.competition(x)}">${x.name}</a>`)}</div>`) : ""}
         </aside>
