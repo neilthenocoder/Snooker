@@ -2950,3 +2950,9 @@ html:not(#x) body:not(#sb):not(#y) .sb-fh__down { display: none !important; }
 @media (prefers-reduced-motion: reduce) { .sb-strip__down svg { animation: none !important; } }
 /* The running score on a scorecard: the reverse of the black box (white, black figures) on its dark header. */
 html:not(#x) body:not(#sb):not(#y) .sc-team .sc-run { background: #fff !important; color: var(--score-bg) !important; border-color: #fff !important; }
+/* Round 121b (Neil): the scroll-down arrow in the middle of the screen, on the same line as the strip's arrows.
+   On a narrower computer screen, where the middle would land on the tabs, it stays in the gap between the tabs and the arrows. */
+@media (min-width: 1360px) {
+  html:not(#x) body:not(#sb):not(#y) .sb-strip--over .sb-strip__head { position: relative; }
+  html:not(#x) body:not(#sb):not(#y) .sb-strip--over .sb-strip__down { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -50%); }
+}
